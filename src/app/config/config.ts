@@ -1,6 +1,6 @@
-export const NAME_APP_LONG = "AUTHORIZA - Access control for CycloNet applications.";
-export const NAME_APP_SHORT = "AUTHORIZA";
-export const DESCRIPTION_APP = "Access control for CycloNet applications.";
+export const NAME_APP_LONG = "INOUT - Inventory Management";
+export const NAME_APP_SHORT = "INOUT";
+export const DESCRIPTION_APP = "Inventory Management";
 
 //Rutas para el control de acceso
 
@@ -18,10 +18,10 @@ export const ROOT_HOME = 'home';
 export const ROOT_CONFIGURATION= 'setup';
 
 //Variables para definir el color
-export const HEADER_BACKGROUND_COLOR = '#6600CC'
+export const HEADER_BACKGROUND_COLOR = '#EECC8D'
 export const HEADER_ICON_COLOR = '#000000'
-export const SIDEBAR_BACKGROUND_COLOR = '#6E6E6E'
-export const PRIMARY_TEXT_COLOR = '#99CCFF';
+export const SIDEBAR_BACKGROUND_COLOR = '#D65303'
+export const PRIMARY_TEXT_COLOR = '#FFD19B';
 export const PRIMARY_ACTIVE_TEXT_COLOR = '#000000';
 export const PRIMARY_BACKGROUND_COLOR = '#E6E6E6';
 //export const PRIMARY_BACKGROUND_COLOR = '#FFFDED';
