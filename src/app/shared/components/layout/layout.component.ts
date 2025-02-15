@@ -5,6 +5,8 @@ import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
+import { Application } from '../../model/application.model';
+import { ApplicationsService } from '../../services/applications/applications.service';
 
 @Component({
   selector: 'app-layout',
@@ -23,8 +25,9 @@ export default class LayoutComponent implements OnInit {
   optionsMenu: OptionMenu[] = [];
   isSidebarVisible = true;
   isLargeScreen = false;
+  application: Application | undefined;
 
-  constructor() {
+  constructor(private applicationsService: ApplicationsService) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
     }
@@ -41,6 +44,19 @@ export default class LayoutComponent implements OnInit {
       //{ id: '7', name: 'requetsShotraCreate', description: 'Add', url: '/requests', icon: null, type: 'submenu_l1', idMPather: '3', order: '1', idApplication: '3' },
       //{ id: '8', name: 'requetsShotraList', description: 'List', url: null, icon: null, type: 'submenu_l1', idMPather: '3', order: '2', idApplication: '3' }
     ];
+    this.fetchApplication('Inout');
+    console.log('APLICACION OBTENIDA: ', this.application);
+  }
+
+  fetchApplication(name: string): void {
+    this.applicationsService.getApplicationByName(name).subscribe(
+      (app) => {
+        this.application = app;
+      },
+      (error) => {
+        console.error('Error fetching application:', error);
+      }
+    );
   }
 
   toggleSidebar() {
