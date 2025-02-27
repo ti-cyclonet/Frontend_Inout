@@ -87,12 +87,3 @@
     top: 10px;
   }
 }
-
-/* Asegúrate de que la ruta de la imagen sea relativa */
-body {
-  display: block;
-  height: 100vh;
-  background-image: url('./assets/img/login_inout.jpg');
-  background-size: cover;
-  background-position: center;
-}
