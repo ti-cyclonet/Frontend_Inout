@@ -28,7 +28,7 @@
 }
 
 .sidebar-toggle-btn svg {
-    fill: var(--header-icon-color);
+    fill: var(--primary-text-color);
     width: 24px;
     height: 24px;
 }
