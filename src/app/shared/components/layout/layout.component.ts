@@ -16,10 +16,10 @@ import { ApplicationsService } from '../../services/applications/applications.se
     HeaderComponent,
     SidebarComponent,
     FooterComponent,
-    RouterOutlet
+    RouterOutlet,
   ],
   templateUrl: './layout.component.html',
-  styleUrls: ['./layout.component.css']
+  styleUrls: ['./layout.component.css'],
 })
 export default class LayoutComponent implements OnInit {
   optionsMenu: OptionMenu[] = [];
@@ -34,30 +34,40 @@ export default class LayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.optionsMenu = [
-      { id: '1', name: 'homeShotra', description: 'Home', url: '/home', icon: 'house-fill', type: 'main_menu', idMPather: null, order: '1', idApplication: '3' },
-      { id: '2', name: 'usersShotra', description: 'Users', url: '/users', icon: 'people-fill', type: 'main_menu', idMPather: null, order: '2', idApplication: '1' },
-      { id: '3', name: 'requestsShotra', description: 'Requests', url: '/requests', icon: 'file-text-fill', type: 'main_menu', idMPather: null, order: '3', idApplication: '3' },
-      { id: '4', name: 'settingsShotra', description: 'Settings', url: '/setup', icon: 'gear-fill', type: 'main_menu', idMPather: null, order: '4', idApplication: '3' }
-      //{ id: '5', name: 'usersShotraCreate', description: 'Add', url: '/users', icon: 'person-add', type: 'submenu_l1', idMPather: '2', order: '1', idApplication: '3' }
-      //{ id: '6', name: 'usersShotraDelete', description: 'Delete', url: null, icon: 'person-dash', type: 'submenu_l1', idMPather: '2', order: '2', idApplication: '3' }
-      //{ id: '7', name: 'requetsShotraCreate', description: 'Add', url: '/requests', icon: null, type: 'submenu_l1', idMPather: '3', order: '1', idApplication: '3' },
-      //{ id: '8', name: 'requetsShotraList', description: 'List', url: null, icon: null, type: 'submenu_l1', idMPather: '3', order: '2', idApplication: '3' }
-    ];
     this.fetchApplication('Inout');
-    console.log('APLICACION OBTENIDA: ', this.application);
   }
 
   fetchApplication(name: string): void {
     this.applicationsService.getApplicationByName(name).subscribe(
       (app) => {
+        if (!app) {
+          console.error('Aplicación no encontrada');
+          return;
+        }
+  
         this.application = app;
+
+        // Validamos que strRoles y strMenuOptions existen antes de mapear
+        this.optionsMenu = this.application?.strRoles?.flatMap(role =>
+          role?.menuOptions?.map(menu => ({
+            id: menu?.id ?? '',
+            name: menu?.strName ?? 'Unnamed Menu',
+            description: menu?.strDescription ?? '',
+            url: menu?.strUrl ?? '#',
+            icon: menu?.strIcon ?? 'default-icon',
+            type: menu?.strType ?? 'main_menu',
+            idMPather: null,
+            order: menu?.ingOrder ?? '99',
+            idApplication: this.application?.id ?? '',
+          })) || []
+        ) || [];
       },
       (error) => {
         console.error('Error fetching application:', error);
       }
     );
   }
+  
 
   toggleSidebar() {
     this.isSidebarVisible = !this.isSidebarVisible;

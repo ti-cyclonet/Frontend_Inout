@@ -17,7 +17,7 @@ export class ApplicationsService {
 
   // Método para obtener una aplicación por nombre
   getApplicationByName(strName: string): Observable<Application> {
-    return this.http.get<Application>(`http://localhost:3000/api/applications/Inout`);
+    return this.http.get<Application>(`http://localhost:3000/api/applications/${strName}`);
     // return this.http.get<Application>(`${this.AuthorizaApiUrl}/${strName}`);
   }
   
