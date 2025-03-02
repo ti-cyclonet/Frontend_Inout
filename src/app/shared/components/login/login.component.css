@@ -3,3 +3,35 @@
     width: 90%;
   }
    */
+   .forgot-password-link {
+    color: white; /* Cambia el color a blanco */
+    text-decoration: none; /* Elimina el subrayado predeterminado */
+  }
+  
+  .forgot-password-link:hover {
+    text-decoration: underline; /* Si deseas un subrayado al pasar el ratón */
+    color: white; /* Mantiene el color blanco también al pasar el ratón */
+  }
+  .login-container .custom-btn {
+    background-color: #f0730d;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .login-container .custom-btn:hover {
+    background-color: #0b1783;
+  }
+  /* Redondear los campos de entrada */
+input.form-control {
+  border-radius: 30px; /* Cambiar este valor para ajustar el nivel de redondez */
+}
+
+/* Redondear el botón de "Sign in" */
+.custom-btn {
+  border-radius: 30px; /* Asegúrate de que el botón también sea redondeado */
+}

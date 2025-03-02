@@ -1,12 +1,11 @@
 html, body {
-    height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-image: url('/assets/img/login_inout.jpg');
-    background-size: cover;
-    background-position: center;
-    overflow: hidden;
-  }
-  
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: url('/assets/img/imagen_cajas.png');
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
