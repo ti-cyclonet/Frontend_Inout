@@ -44,8 +44,8 @@ export default class LayoutComponent implements OnInit {
       //{ id: '7', name: 'requetsShotraCreate', description: 'Add', url: '/requests', icon: null, type: 'submenu_l1', idMPather: '3', order: '1', idApplication: '3' },
       //{ id: '8', name: 'requetsShotraList', description: 'List', url: null, icon: null, type: 'submenu_l1', idMPather: '3', order: '2', idApplication: '3' }
     ];
-    this.fetchApplication('Inout');
-    console.log('APLICACION OBTENIDA: ', this.application);
+    //this.fetchApplication('Inout');
+    //console.log('APLICACION OBTENIDA: ', this.application);
   }
 
   fetchApplication(name: string): void {
