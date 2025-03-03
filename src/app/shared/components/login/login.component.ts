@@ -15,19 +15,19 @@ import { NAME_APP_SHORT } from '../../../config/config';
 export class LoginComponent {
   loginForm: FormGroup;
   loginDTO: LoginDTO;
-  submitted = false; // Para controlar si el usuario ya intentó enviar el formulario
+  submitted = false; 
 
   constructor(private fb: FormBuilder) {
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.email]], // Validación de email
+      username: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
+
     this.loginDTO = {
-      aplicationName: 'myapp',
+      applicationName: NAME_APP_SHORT, 
       email: '',
       password: ''
     };
-    console.log('LoginDTO inicial:', this.loginDTO);
   }
 
   get f() {
@@ -43,15 +43,12 @@ export class LoginComponent {
       return;
     }
 
-    // Asignar valores correctamente desde el formulario
+    // Asignar valores del formulario al DTO
     this.loginDTO = {
-      aplicationName: NAME_APP_SHORT, // Puedes asignar el nombre de la aplicación aquí
-      email: this.loginForm.get('username')?.value, // Obtiene el valor del campo username
-      password: this.loginForm.get('password')?.value // Obtiene el valor del campo password
+      applicationName: NAME_APP_SHORT,
+      email: this.loginForm.get('username')?.value,
+      password: this.loginForm.get('password')?.value
     };
-
-    // Mostrar los valores en consola
-    console.log('LoginDTO actualizado:', this.loginDTO);
-    console.log('Valores del formulario:', this.loginForm.value);
+    console.table(this.loginDTO);
   }
 }

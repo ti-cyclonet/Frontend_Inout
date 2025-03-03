@@ -1,5 +1,5 @@
 export interface LoginDTO{
-    aplicationName: string;
+    applicationName: string;
     email: string;
     password: string;
 }
