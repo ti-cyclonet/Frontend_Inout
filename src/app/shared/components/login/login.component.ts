@@ -8,7 +8,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
   loginForm: FormGroup;
@@ -27,12 +27,11 @@ export class LoginComponent {
 
   onSubmit() {
     this.submitted = true;
-
-    if (this.loginForm.valid) {
-      console.log('Form Data:', this.loginForm.value);
-      // Aquí iría la lógica de autenticación
-    } else {
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
       console.log('Formulario inválido');
+      return;
     }
-  }
+    console.log('Form Data:', this.loginForm.value);
+  }  
 }
