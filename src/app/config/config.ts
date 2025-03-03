@@ -25,3 +25,5 @@ export const PRIMARY_TEXT_COLOR = '#FFD19B';
 export const PRIMARY_ACTIVE_TEXT_COLOR = '#000000';
 export const PRIMARY_BACKGROUND_COLOR = '#E6E6E6';
 //export const PRIMARY_BACKGROUND_COLOR = '#FFFDED';
+
+export const BASE_URL='http://localhost:3000'
