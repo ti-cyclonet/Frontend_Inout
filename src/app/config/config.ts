@@ -11,7 +11,7 @@ export const ROOT_REGISTER = 'register';
 
 export const ROOT_USUERS = 'users';
 export const ROOT_REQUIRES = 'requests';
-export const ROOT_HOME = 'login';
+export const ROOT_HOME = 'home';
 
 //Rutas de administración de la aplicación
 
@@ -25,4 +25,4 @@ export const PRIMARY_TEXT_COLOR = '#0057B8';
 export const PRIMARY_ACTIVE_TEXT_COLOR = '#000000'; 
 export const PRIMARY_BACKGROUND_COLOR = '#F2F2F2'; 
 
-export const BASE_URL='http://localhost:3000'
+// export const BASE_URL='http://localhost:3000'
