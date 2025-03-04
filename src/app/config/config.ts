@@ -11,19 +11,18 @@ export const ROOT_REGISTER = 'register';
 
 export const ROOT_USUERS = 'users';
 export const ROOT_REQUIRES = 'requests';
-export const ROOT_HOME = 'home';
+export const ROOT_HOME = 'login';
 
 //Rutas de administración de la aplicación
 
 export const ROOT_CONFIGURATION= 'setup';
 
 //Variables para definir el color
-export const HEADER_BACKGROUND_COLOR = '#EECC8D'
-export const HEADER_ICON_COLOR = '#000000'
-export const SIDEBAR_BACKGROUND_COLOR = '#D65303'
-export const PRIMARY_TEXT_COLOR = '#FFD19B';
-export const PRIMARY_ACTIVE_TEXT_COLOR = '#000000';
-export const PRIMARY_BACKGROUND_COLOR = '#E6E6E6';
-//export const PRIMARY_BACKGROUND_COLOR = '#FFFDED';
+export const HEADER_BACKGROUND_COLOR = '#0057B8'; 
+export const HEADER_ICON_COLOR = '#FFFFFF'; 
+export const SIDEBAR_BACKGROUND_COLOR = '#FF6600'; 
+export const PRIMARY_TEXT_COLOR = '#0057B8'; 
+export const PRIMARY_ACTIVE_TEXT_COLOR = '#000000'; 
+export const PRIMARY_BACKGROUND_COLOR = '#F2F2F2'; 
 
 export const BASE_URL='http://localhost:3000'

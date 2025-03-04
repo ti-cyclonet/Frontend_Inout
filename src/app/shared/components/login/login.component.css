@@ -13,7 +13,7 @@
     color: white; /* Mantiene el color blanco también al pasar el ratón */
   }
   .login-container .custom-btn {
-    background-color: #f0730d;
+    background-color: transparent;
     color: white;
     padding: 12px 24px;
     border: none;
