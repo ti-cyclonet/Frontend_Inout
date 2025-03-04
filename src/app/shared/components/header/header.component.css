@@ -12,14 +12,15 @@
 
 /* Estilo para la imagen del logo */
 .logo-img {
-    max-width: 100%;
+    max-width: 80%;
     height: auto;
+    margin: 5px;
 }
 
 /* Estilo para la marca de la aplicación */
 .navbar-brand {
     text-align: center;
-    color: var(--primary-text-color); /* Color del texto de la aplicación */
+    color: var(--header-icon-color); /* Color del texto de la aplicación */
     font-size: 1.5rem;
 }
 
@@ -66,7 +67,7 @@
 
 /* Efecto de sombra y cambio de color para los íconos al pasar el mouse */
 .btn-group .btn:hover svg {
-    fill: var(--primary-text-color); /* Cambia el color a negro */
+    fill: var(--primary-active-text-color); /* Cambia el color a negro */
     transform: scale(1.2);
 }
 
@@ -101,7 +102,7 @@
   
   /* Efecto de hover para los íconos */
   .toggle-button:hover .toggle-icon {
-    fill: var(--primary-text-color);
+    fill: var(--primary-active-text-color);
     transform: scale(1.1);
   }
   
