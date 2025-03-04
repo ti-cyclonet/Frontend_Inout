@@ -7,6 +7,7 @@ import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { Application } from '../../model/application.model';
 import { ApplicationsService } from '../../services/applications/applications.service';
+import { NAME_APP_SHORT } from '../../../config/config';
 
 @Component({
   selector: 'app-layout',
@@ -34,7 +35,7 @@ export default class LayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.fetchApplication('Inout');
+    this.fetchApplication(NAME_APP_SHORT);
   }
 
   fetchApplication(name: string): void {
@@ -67,7 +68,6 @@ export default class LayoutComponent implements OnInit {
       }
     );
   }
-  
 
   toggleSidebar() {
     this.isSidebarVisible = !this.isSidebarVisible;

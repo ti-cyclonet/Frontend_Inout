@@ -24,7 +24,7 @@ export class LoginComponent {
     });
 
     this.loginDTO = {
-      applicationName: NAME_APP_SHORT, 
+      applicationName: '', 
       email: '',
       password: ''
     };
