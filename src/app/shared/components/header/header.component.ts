@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.css']
+  styleUrls: ['./header.component.css'],
 })
 export class HeaderComponent {
   private _isSidebarVisible: boolean = false;
@@ -21,11 +21,18 @@ export class HeaderComponent {
   }
 
   @Output() sidebarToggle = new EventEmitter<void>();
+
   nombreApp = DESCRIPTION_APP;
+
+  // Nuevas propiedades relacionadas con el usuario
+  @Input() userName: string | null = '';
+  @Input() userImage: string | null = '';
+  @Input() userEmail: string | null = '';
+  @Input() userRol: string | null = '';
+  @Input() accessToken: string | null = '';
 
   onToggleSidebar(): void {
     this._isSidebarVisible = !this._isSidebarVisible;
-    this.sidebarToggle.emit(); // Opcional: Notificar al componente padre sobre el cambio
+    this.sidebarToggle.emit(); // Notificar al componente padre sobre el cambio
   }
 }
-

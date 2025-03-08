@@ -1,35 +1,37 @@
 <div class="header-container w-100 d-flex justify-content-between align-items-center">
- <!-- Botón de toggle para la barra lateral -->
+  <!-- Botón de toggle para la barra lateral -->
   <button (click)="onToggleSidebar()" title="Sidebar" class="toggle-button" data-bs-toggle="tooltip" data-bs-placement="top"
-  data-bs-custom-class="custom-tooltip"
-  data-bs-title="Sidebar">
+    data-bs-custom-class="custom-tooltip" data-bs-title="Sidebar">
     <svg class="toggle-icon" viewBox="0 0 16 16">
       <use [attr.xlink:href]="!isSidebarVisible ? './assets/icons/bootstrap-icons.svg#layout-sidebar' : './assets/icons/bootstrap-icons.svg#layout-sidebar-inset'"></use>
     </svg>
   </button>
-  
+
   <div class="d-flex align-items-center w-100">
     <a href="#" class="logo-container">
       <img src="./assets/img/logo_inout_v4.png" alt="Logo" class="logo-img">
     </a>
     <div class="navbar-brand mx-auto">{{ nombreApp | uppercase }}</div>
     
+    <!-- Notificaciones y Dropdown de usuario -->
     <div class="btn-group ms-lg-0" style="margin-right: 4px;">
       <a class="btn" href="#">        
         <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#bell"/>
         </svg>
-      </a>      
+      </a>
+
       <div class="btn-group">
-        <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" href="#">
-          <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#person-circle"/>
-          </svg>
-        </a>        
+        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <img *ngIf="userImage" [src]="userImage" alt="User Image" class="user-image" style="width: 40px; height: 40px; border-radius: 50%;"> 
+          <span>{{ userName }}</span> <!-- Nombre de usuario -->
+        </button>
+        
         <ul class="dropdown-menu m-2" style="margin-right: 3px;">
-          <li><a class="dropdown-item" href="#">UserName</a></li>
-          <li><a class="dropdown-item" href="#">Update</a></li>
-          <li><a class="dropdown-item" href="#">Add image</a></li>
+          <li><a class="dropdown-item" href="#">{{ userName }}</a></li> <!-- Nombre de usuario -->
+          <li><a class="dropdown-item" href="mailto:{{ userEmail }}">{{ userEmail }}</a></li> <!-- Correo electrónico -->
+          <li><a class="dropdown-item" href="#">{{ userRol }}</a></li> <!-- Rol del usuario -->
+          <li><a class="dropdown-item" href="#">Token: {{ accessToken }}</a></li> <!-- Mostrar token de acceso -->
           <li><hr class="dropdown-divider"></li>
           <li>
             <a class="dropdown-item" href="#">

@@ -35,3 +35,17 @@ input.form-control {
 .custom-btn {
   border-radius: 30px; /* Asegúrate de que el botón también sea redondeado */
 }
+.custom-card {
+  background-color: #779bc5; 
+  color: white; /* Color del texto */
+  border-radius: 10px; /* Bordes redondeados */
+  border: 2px solid #eafcfb; /* Borde verde oscuro */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra suave */
+}
+/* Estilo personalizado para los errores del formulario */
+.custom-error {
+  color: #ff5733;
+  font-weight: bold; 
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
