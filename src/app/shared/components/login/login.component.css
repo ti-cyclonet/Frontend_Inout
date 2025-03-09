@@ -13,7 +13,7 @@
     color: white; /* Mantiene el color blanco también al pasar el ratón */
   }
   .login-container .custom-btn {
-    background-color: transparent;
+    background-color:  blue;
     color: white;
     padding: 12px 24px;
     border: none;
@@ -21,10 +21,6 @@
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s;
-  }
-  
-  .login-container .custom-btn:hover {
-    background-color: #0b1783;
   }
   /* Redondear los campos de entrada */
 input.form-control {
@@ -36,16 +32,30 @@ input.form-control {
   border-radius: 30px; /* Asegúrate de que el botón también sea redondeado */
 }
 .custom-card {
-  background-color: #779bc5; 
+  background-color: #c58f7e; 
   color: white; /* Color del texto */
   border-radius: 10px; /* Bordes redondeados */
   border: 2px solid #eafcfb; /* Borde verde oscuro */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra suave */
 }
-/* Estilo personalizado para los errores del formulario */
+/* Estilo personalizado para los mensajes de error */
 .custom-error {
-  color: #ff5733;
-  font-weight: bold; 
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  color: #680e0e;
+  font-weight: bold;
 }
+/* Cuadro de texto debajo de los errores */
+.custom-error-box {
+  background-color: #e7a0a0; /* Fondo rojo claro */
+  color: #680e0e; /* Color del texto */
+  padding: 0.2px 8px; /* Espaciado interno */
+  border-radius: 5px; /* Bordes redondeados */
+  margin-top: 50000px; /* Espaciado respecto al mensaje de error */
+  font-size: 14px; /* Tamaño del texto */
+  border: 1px solid #680e0e; /* Borde rojo oscuro */
+}
+
+.custom-welcome {
+  color: rgb(255, 255, 255); /* Cambia "red" por el color que desees */
+}
+
 
