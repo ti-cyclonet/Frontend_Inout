@@ -3,11 +3,12 @@ import { OptionMenu } from '../../model/option_menu';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { Application } from '../../model/application.model';
 import { ApplicationsService } from '../../services/applications/applications.service';
 import { NAME_APP_SHORT } from '../../../config/config';
+
 
 @Component({
   selector: 'app-layout',
@@ -18,6 +19,7 @@ import { NAME_APP_SHORT } from '../../../config/config';
     SidebarComponent,
     FooterComponent,
     RouterOutlet,
+    RouterModule
   ],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css'],
@@ -28,16 +30,22 @@ export default class LayoutComponent implements OnInit {
   isLargeScreen = false;
   application: Application | undefined;
 
-  constructor(private applicationsService: ApplicationsService) {
+ 
+
+  constructor(
+    private applicationsService: ApplicationsService
+  ) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
     }
   }
 
   ngOnInit(): void {
+    // Obtener la aplicación
     this.fetchApplication(NAME_APP_SHORT);
   }
 
+  // Función para obtener la aplicación
   fetchApplication(name: string): void {
     this.applicationsService.getApplicationByName(name).subscribe(
       (app) => {
@@ -45,7 +53,7 @@ export default class LayoutComponent implements OnInit {
           console.error('Aplicación no encontrada');
           return;
         }
-  
+
         this.application = app;
 
         // Validamos que strRoles y strMenuOptions existen antes de mapear

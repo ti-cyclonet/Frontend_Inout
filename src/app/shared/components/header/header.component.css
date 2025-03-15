@@ -106,3 +106,11 @@
     transform: scale(1.1);
   }
   
+  .user-img {
+    width: 80px;  
+    height: 80px; 
+    border-radius: 50%; 
+    display: block;
+    margin: 10px auto; 
+    border: 3px solid #ccc; 
+  }

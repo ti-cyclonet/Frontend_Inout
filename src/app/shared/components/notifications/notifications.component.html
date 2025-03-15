@@ -1,0 +1,6 @@
+<div class="notification-card" [ngClass]="['notification-card', type]">
+    <svg viewBox="0 0 16 16" class="notification-icon" [ngClass]="getIconColor()" style="width: 1.5rem; height: 1.5rem; margin-right: 8px;">
+        <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + getIcon()" />
+    </svg>
+    <span>{{ title }}</span>
+</div>
