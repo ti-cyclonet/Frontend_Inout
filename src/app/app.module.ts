@@ -3,17 +3,16 @@ import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router'; // Importa RouterModule
 import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
-  declarations: [
-    AppComponent
-  ],
+  declarations: [],
   imports: [
     BrowserModule,
+    NoopAnimationsModule,
     RouterModule,
     SharedModule
   ],
-  providers: [],
-  bootstrap: [AppComponent]
+  providers: [],  
 })
 export class AppModule { }
