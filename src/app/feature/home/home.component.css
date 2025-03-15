@@ -27,19 +27,19 @@
 /* Efecto hover para el enlace (opcional) */
 .title-link:hover {
   /* text-decoration: underline; Subraya el texto cuando se pasa el ratón sobre él */
-  color: #4A4A4A; /* Cambia el color del texto del enlace cuando se pasa el ratón sobre él (opcional) */
+  color: #4A4A4A; 
 }
 
 /* Estilo para la tarjeta de contenido */
 .card {
-  border: 1px solid #cccccc; /* Quitar el borde predeterminado de la tarjeta */
-  border-radius: 0.5rem; /* Bordes redondeados */
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Sombra de la tarjeta */
-  background-color: #fff; /* Fondo blanco para la tarjeta */
+  border: 1px solid #cccccc;
+  border-radius: 0.5rem; 
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); 
+  background-color: #fff; 
 }
 
 .card-body {
-  padding: 1.5rem; /* Espacio dentro de la tarjeta */      
+  padding: 1.5rem;
   margin-top: 0.1rem;
   /* color: var(--primary-text-color); Color del texto en la tarjeta */
 }

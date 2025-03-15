@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from "./shared/components/header/header.component";
 import { HEADER_BACKGROUND_COLOR, HEADER_ICON_COLOR, NAME_APP_LONG, PRIMARY_ACTIVE_TEXT_COLOR, PRIMARY_BACKGROUND_COLOR, PRIMARY_TEXT_COLOR, SIDEBAR_BACKGROUND_COLOR } from './config/config';
 import { FooterComponent } from "./shared/components/footer/footer.component";
@@ -12,7 +12,7 @@ import { OptionMenu } from './shared/model/option_menu';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, SidebarComponent, LayoutComponent, LoginComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, SidebarComponent, LayoutComponent, LoginComponent, RouterModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

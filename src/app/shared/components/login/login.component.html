@@ -1,22 +1,31 @@
+<div *ngIf="isVisible && notifications.length > 0" class="notification-container">
+  <app-notifications
+    *ngFor="let notification of notifications"
+    [title]="notification.title"
+    [type]="notification.type">
+  </app-notifications>
+</div>
+
 <div class="row login-container d-flex align-items-center min-vh-100">
-  <div class="col-md-3 col-lg-4  d-none d-md-block"></div>
+  <div class="col-md-3 col-lg-4 d-none d-md-block"></div>
   <div class="col-sm-12 col-md-6 col-lg-4 p-5">
-    <div class="login-form">
-      <div class="row justify-content-center w-100">
+    <!-- Cuadro con el formulario -->
+    <div class="card shadow-lg p-4 custom-card">
+      <div class="row justify-content-center w-130">
         <a class="navbar-brand mb-2 mb-lg-0 d-flex justify-content-center" href="#">
-          <img src="./assets/img/logo_inout_v6.png" alt="Logo" class="logo-img">
+          <img src="./assets/img/logo_inout_v1.png" alt="Logo" class="logo-img">
         </a>
       </div>
-      <h3 class="text-white text-center">Welcome</h3>
-      <hr style="border: 2px solid black">
+      <h3 class="text-center custom-welcome">Welcome</h3>
+      <hr style="border: 2px solid rgb(255, 255, 255)">
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <!-- Campo email -->
         <div class="form-group m-2">
           <input type="email" class="form-control mt-2" placeholder="Email" formControlName="username" 
                  [ngClass]="{'is-invalid': submitted && f['username'].invalid}">
           <div *ngIf="submitted && f['username'].errors" class="text-danger">
-            <small *ngIf="f['username'].errors?.['required']">Este campo es obligatorio.</small>
-            <small *ngIf="f['username'].errors?.['email']">El formato del correo es inválido.</small>
+            <div *ngIf="f['username'].errors?.['required']" class="custom-error-box" >This field is required.</div>
+            <div *ngIf="f['username'].errors?.['email']" class="custom-error-box">The email format is invalid.</div>
           </div>
         </div>
         <!-- Campo Contraseña -->
@@ -25,11 +34,11 @@
                  formControlName="password"
                  [ngClass]="{'is-invalid': submitted && f['password'].invalid}">
           <div *ngIf="submitted && f['password'].errors" class="text-danger">
-            <small *ngIf="f['password'].errors?.['required']">La contraseña es obligatoria.</small>
-            <small *ngIf="f['password'].errors?.['minlength']">Debe tener al menos 6 caracteres.</small>
+            <small *ngIf="f['password'].errors?.['required']" class="custom-error" class="custom-error-box">Password is required.</small>
+            <small *ngIf="f['password'].errors?.['minlength']" class="custom-error" class="custom-error-box">Must be at least 6 characters long.</small>
           </div>
         </div>      
-        <hr style="border: 2px solid black">
+        <hr style="border: 2px solid rgb(255, 255, 255)">
         <!-- Contenedor para centrar el botón -->
         <div class="d-flex justify-content-center">
           <button type="submit" class="custom-btn">
