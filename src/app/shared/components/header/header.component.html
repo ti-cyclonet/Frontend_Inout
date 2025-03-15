@@ -14,7 +14,7 @@
     <div class="navbar-brand mx-auto">{{ nombreApp | uppercase }}</div>
     
     <!-- Notificaciones y Dropdown de usuario -->
-    <div class="btn-group ms-lg-0" style="margin-right: 4px;">
+    <div class="btn-group ms-lg-0" style="margin-right: 8px;">
       <a class="btn" href="#">        
         <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#bell"/>
@@ -22,19 +22,22 @@
       </a>
 
       <div class="btn-group">
-        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <img *ngIf="userImage" [src]="userImage" alt="User Image" class="user-image" style="width: 40px; height: 40px; border-radius: 50%;"> 
-          <span>{{ userName }}</span> <!-- Nombre de usuario -->
-        </button>
+        <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" href="#">
+          <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#person-circle"/>
+          </svg>
+        </a>
         
         <ul class="dropdown-menu m-2" style="margin-right: 3px;">
-          <li><a class="dropdown-item" href="#">{{ userName }}</a></li> <!-- Nombre de usuario -->
-          <li><a class="dropdown-item" href="mailto:{{ userEmail }}">{{ userEmail }}</a></li> <!-- Correo electrónico -->
-          <li><a class="dropdown-item" href="#">{{ userRol }}</a></li> <!-- Rol del usuario -->
-          <!-- <li><a class="dropdown-item" href="#">Token: {{ accessToken }}</a></li> -Mostrar token de acceso -->
+          <li class="text-center">
+            <img *ngIf="userImage" [src]="userImage" alt="Foto de usuario" class="user-img">
+          </li>
+          <li><a class="dropdown-item" href="#">Name: {{ userName }}</a></li>
+          <li><a class="dropdown-item" href="mailto:{{ userEmail }}">Email: {{ userEmail }}</a></li>
+          <li><a class="dropdown-item" href="#">Rol: {{ userRol }}</a></li>
           <li><hr class="dropdown-divider"></li>
           <li>
-            <a class="dropdown-item" href="#">
+            <a class="dropdown-item" href="#" (click)="logout()">
               <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-right"/>
               </svg>

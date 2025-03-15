@@ -27,31 +27,34 @@ input.form-control {
   border-radius: 30px; /* Cambiar este valor para ajustar el nivel de redondez */
 }
 
+.text-danger {
+  width: 200px;
+}
+
 /* Redondear el botón de "Sign in" */
 .custom-btn {
   border-radius: 30px; /* Asegúrate de que el botón también sea redondeado */
 }
 .custom-card {
-  background-color: #c58f7e; 
+  background-color: #e2d1cc; 
   color: white; /* Color del texto */
   border-radius: 10px; /* Bordes redondeados */
   border: 2px solid #eafcfb; /* Borde verde oscuro */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra suave */
 }
-/* Estilo personalizado para los mensajes de error */
-.custom-error {
-  color: #680e0e;
-  font-weight: bold;
-}
 /* Cuadro de texto debajo de los errores */
 .custom-error-box {
-  background-color: #e7a0a0; /* Fondo rojo claro */
-  color: #680e0e; /* Color del texto */
-  padding: 0.2px 8px; /* Espaciado interno */
+  display: block; /* Asegura que ocupe todo el ancho */
+  width: 400px; /* Hace que tenga el mismo ancho del input */
+  background-color: rgba(255, 0, 0, 0.1); /* Fondo rojo claro */
+  color: #680e0e; /* Texto rojo */
+  padding: 5px; /* Espaciado interno */
   border-radius: 5px; /* Bordes redondeados */
-  margin-top: 50000px; /* Espaciado respecto al mensaje de error */
-  font-size: 14px; /* Tamaño del texto */
-  border: 1px solid #680e0e; /* Borde rojo oscuro */
+  font-size: 14px;
+  text-align: left;
+  font-weight: bold;
+  margin-top: 4px;
+  margin-left: 15px; /* Espaciado entre el input y el error */
 }
 
 .custom-welcome {
