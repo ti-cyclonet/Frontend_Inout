@@ -1,14 +1,147 @@
 <div class="title-container">
-    <a href="/materials" class="title-link">
-      <svg viewBox="0 0 16 16">
-        <use xlink:href="./assets/icons/bootstrap-icons.svg#boxes"/>
-      </svg>
-      /Materials
-    </a>
-  </div>
-  <div class="card shadow m-3">
-    <div class="card-body">
-      Materials container
+  <a href="/materials" class="title-link">
+    <svg viewBox="0 0 16 16">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#boxes" />
+    </svg>
+    /Materials
+  </a>
+</div>
+<div class="card shadow m-3">
+  <div class="card-body">
+    <div class="d-flex align-items-center w-100">
+      <h5
+        class="card-title text-nowrap bg-body-secondary border"
+        style="width: 5.4rem"
+      >
+        Materials <b>Management</b>.
+      </h5>
+
+      <div class="btn-group ms-auto" style="margin-right: 4px">
+        <a href="#" class="text-success" (click)="openMaterialModal()">
+          <svg fill="currentColor" viewBox="0 0 16 16" class="title-icon">
+            <use
+              xlink:href="./assets/icons/bootstrap-icons.svg#plus-square-fill"
+            ></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-bordered border-secondary table-striped">
+        <thead>
+          <tr>
+            <th scope="col" class="id-col text-center">Id</th>
+            <th scope="col" class="text-center">Name</th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">
+              Description
+            </th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">
+              Image
+            </th>
+            <th class="actions-col text-center" scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let material of materials; trackBy: trackById">
+            <th scope="row" class="id-col text-end">
+              <span
+                class="badge rounded-badge"
+                style="background-color: var(--header-icon-color)"
+              >
+                {{ material.id }}
+              </span>
+            </th>
+            <td class="text-start">{{ material.name.toUpperCase() }}</td>
+            <td class="text-start d-none d-xl-table-cell">
+              {{ material.description }}
+            </td>
+            <td
+              class="text-start d-none d-xl-table-cell text-center"
+              style="width: 200px"
+            >
+              <img
+                src="{{ material.image }}"
+                style="width: 30%; height: auto"
+                alt="Material Image"
+              />
+            </td>
+            <td class="text-center actions-col">
+              <button
+                type="button"
+                class="btn btn-outline-dark btn-sm me-2"
+                title="Details"
+              >
+                <svg
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                  class="status-icon"
+                >
+                  <use
+                    xlink:href="./assets/icons/bootstrap-icons.svg#list-nested"
+                  ></use>
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-dark btn-sm me-2"
+                title="Edit"
+              >
+                <svg
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                  class="status-icon"
+                >
+                  <use
+                    xlink:href="./assets/icons/bootstrap-icons.svg#pencil"
+                  ></use>
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-dark btn-sm me-2"
+                title="Delete"
+                (click)="setSelectedMaterial(material)"
+                data-bs-toggle="modal"
+                data-bs-target="#confirmDeleteMaterial"
+              >
+                <svg
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                  class="status-icon"
+                >
+                  <use
+                    xlink:href="./assets/icons/bootstrap-icons.svg#trash3"
+                  ></use>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
-  
+</div>
+<!-- Modal para confirmar eliminación -->
+<div class="modal fade" id="confirmDeleteMaterial" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header custom-modal-header bg-light">
+        <h1 class="modal-title fs-5 text-danger">Confirm</h1>
+      </div>
+      <div class="modal-body text-center">
+        Are you sure you want to delete this material? <br /><br />
+        <h3>{{ selectedMaterial?.name.toUpperCase() }}</h3>
+      </div>
+      <div class="modal-footer d-flex justify-content-center">
+        <button type="button" class="btn btn-danger btn-sm me-4" (click)="confirmDeleteMaterial()" data-bs-dismiss="modal">
+          YES
+        </button>
+        <button type="button" class="btn btn-outline-dark btn-sm me-4" data-bs-dismiss="modal">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
