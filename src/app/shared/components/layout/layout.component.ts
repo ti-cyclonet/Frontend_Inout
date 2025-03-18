@@ -30,8 +30,6 @@ export default class LayoutComponent implements OnInit {
   isLargeScreen = false;
   application: Application | undefined;
 
- 
-
   constructor(
     private applicationsService: ApplicationsService
   ) {
@@ -41,7 +39,6 @@ export default class LayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Obtener la aplicación
     this.fetchApplication(NAME_APP_SHORT);
   }
 
@@ -66,10 +63,10 @@ export default class LayoutComponent implements OnInit {
             icon: menu?.strIcon ?? 'default-icon',
             type: menu?.strType ?? 'main_menu',
             idMPather: null,
-            order: menu?.ingOrder ?? '99',
+            order: menu?.ingOrder !== undefined && menu?.ingOrder !== null ? menu.ingOrder.toString() : '99',
             idApplication: this.application?.id ?? '',
           })) || []
-        ) || [];
+        ) || [];        
       },
       (error) => {
         console.error('Error fetching application:', error);

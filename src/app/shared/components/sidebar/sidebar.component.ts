@@ -16,13 +16,22 @@ export class SidebarComponent implements OnInit {
   private openSubmenuId: string | null = null;
 
   ngOnInit(): void {
-    this.optionsMenu.sort((a, b) => parseInt(a.order, 10) - parseInt(b.order, 10));
+    console.log('OPTIONS MENU', this.optionsMenu);
+    this.optionsMenu.sort((a, b) => {
+      const orderA = a.order ? parseInt(a.order, 10) : 99;
+      const orderB = b.order ? parseInt(b.order, 10) : 99;
+      return orderA - orderB;
+    });
   }
 
   getSubmenus(id: string): OptionMenu[] {
     return this.optionsMenu
-      .filter(option => option.idMPather === id)
-      .sort((a, b) => parseInt(a.order, 10) - parseInt(b.order, 10));
+    .filter(option => option.idMPather === id)
+    .sort((a, b) => {
+      const orderA = a.order ? parseInt(a.order, 10) : 99;
+      const orderB = b.order ? parseInt(b.order, 10) : 99;
+      return orderA - orderB;
+    });
   }
 
   toggleSubmenu(id: string) {

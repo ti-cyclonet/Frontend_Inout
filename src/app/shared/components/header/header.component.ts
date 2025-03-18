@@ -52,8 +52,7 @@ export class HeaderComponent implements OnInit{
         sessionStorage.clear();
     }
 
-    this.router.navigate(['/login']).then(() => {
-        console.log('Sesión cerrada correctamente');
+    this.router.navigate(['/login']).then(() => {        
         setTimeout(() => {
             window.location.reload();
         }, 100);
