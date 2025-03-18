@@ -8,7 +8,7 @@ export const ROOT_LOGIN = 'login';
 export const ROOT_REGISTER = 'register';
 
 //Rutas de la aplicación
-export const ROOT_USUERS = 'users';
+export const ROOT_MATERIALS = 'materials';
 export const ROOT_REQUIRES = 'requests';
 export const ROOT_HOME = 'home';
 
