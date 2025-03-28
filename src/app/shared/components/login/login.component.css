@@ -4,13 +4,13 @@
   }
    */
    .forgot-password-link {
-    color: white; /* Cambia el color a blanco */
+    color: rgb(39, 28, 28); /* Cambia el color a blanco */
     text-decoration: none; /* Elimina el subrayado predeterminado */
   }
   
   .forgot-password-link:hover {
     text-decoration: underline; /* Si deseas un subrayado al pasar el ratón */
-    color: white; /* Mantiene el color blanco también al pasar el ratón */
+    color: rgb(12, 13, 99); /* Mantiene el color blanco también al pasar el ratón */
   }
   .login-container .custom-btn {
     background-color:  blue;
@@ -45,7 +45,7 @@ input.form-control {
 /* Cuadro de texto debajo de los errores */
 .custom-error-box {
   display: block; /* Asegura que ocupe todo el ancho */
-  width: 400px; /* Hace que tenga el mismo ancho del input */
+  width: 275px; /* Hace que tenga el mismo ancho del input */
   background-color: rgba(255, 0, 0, 0.1); /* Fondo rojo claro */
   color: #680e0e; /* Texto rojo */
   padding: 5px; /* Espaciado interno */
@@ -58,7 +58,16 @@ input.form-control {
 }
 
 .custom-welcome {
-  color: rgb(255, 255, 255); /* Cambia "red" por el color que desees */
+  color: rgb(54, 39, 39); /* Cambia "red" por el color que desees */
 }
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050; /* Asegura que las notificaciones estén por encima de otros elementos */
+  width: auto;
+  max-width: 300px;
+}
+
 
 
