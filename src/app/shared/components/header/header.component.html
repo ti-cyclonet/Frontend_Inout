@@ -28,23 +28,49 @@
           </svg>
         </a>
         
-        <ul class="dropdown-menu m-2" style="margin-right: 3px;">
-          <li class="text-center">
-            <img *ngIf="userImage" [src]="userImage" alt="Foto de usuario" class="user-img">
+        <ul class="dropdown-menu p-3">
+          <li class="d-flex align-items-center">
+            <img *ngIf="userImage" [src]="userImage" alt="Foto de usuario" class="user-img me-2">
+            <div>
+              <strong>{{ userName }}</strong>
+              <p class="text-muted small mb-0">{{ userRol }}</p>
+            </div>
           </li>
-          <li><a class="dropdown-item" href="#">Name: {{ userName }}</a></li>
-          <li><a class="dropdown-item" href="mailto:{{ userEmail }}">Email: {{ userEmail }}</a></li>
-          <li><a class="dropdown-item" href="#">Rol: {{ userRol }}</a></li>
           <li><hr class="dropdown-divider"></li>
           <li>
-            <a class="dropdown-item" href="#" (click)="logout()">
-              <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <a class="dropdown-item" href="#">
+              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#person"/>
+              </svg>
+               {{ userName }}
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="mailto:{{ userEmail }}">
+              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#envelope"/>
+              </svg>
+             {{ userEmail }}
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="#">
+              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#patch-check"/>
+              </svg>
+               {{ userRol }}
+            </a>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <a class="dropdown-item logout-btn" href="#" (click)="logout()">
+              <svg width="20" height="20" fill="currentColor">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-right"/>
               </svg>
               Logout
             </a>
           </li>
-        </ul>
+        </ul>        
       </div>
     </div>
   </div>
