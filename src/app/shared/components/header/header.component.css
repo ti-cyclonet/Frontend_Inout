@@ -114,3 +114,51 @@
     margin: 10px auto; 
     border: 3px solid #ccc; 
   }
+ /* Contenedor del dropdown */
+.dropdown-menu {
+    background-color: #d4d4e9; /* Fondo oscuro elegante */
+    border-radius: 8px;
+    padding: 10px;
+    min-width: 200px;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  /* Texto blanco y espaciado adecuado */
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    color: #9b9696;
+    font-size: 14px;
+    padding: 8px;
+  }
+  
+  /* Estilos de los íconos */
+  .dropdown-item .dropdown-icon {
+    margin-right: 8px;
+    color: #ff6200; /* Amarillo */
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Imagen de usuario */
+  .user-img {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: block;
+    margin: 0 auto 10px;
+    border: 2px solid #ff6200;
+  }
+  
+  /* Botón de logout con hover */
+  .logout-btn:hover {
+    background-color: #ff4d4d;
+    color: white;
+  }
+  
+  .logout-btn svg {
+    fill: orange !important;
+  }
+  
+  
+   
