@@ -127,7 +127,7 @@
   .dropdown-item {
     display: flex;
     align-items: center;
-    color: #9b9696;
+    color: #2c2929;
     font-size: 14px;
     padding: 8px;
   }
@@ -152,12 +152,13 @@
   
   /* Botón de logout con hover */
   .logout-btn:hover {
-    background-color: #ff4d4d;
+    background-color: var(--header-background-color);
     color: white;
   }
   
   .logout-btn svg {
-    fill: orange !important;
+    fill: #ff6200 !important;
+    margin-right: 8px;
   }
   
   

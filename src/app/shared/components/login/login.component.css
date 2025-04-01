@@ -22,13 +22,33 @@
     cursor: pointer;
     transition: background-color 0.3s;
   }
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Mantiene el formulario centrado en toda la pantalla */
+    width: 100%;
+    padding: 20px; /* Espaciado para evitar que quede pegado en pantallas pequeñas */
+    margin: 0;
+  }
+  .cuadroPrincipal {
+    min-width: 300px;
+    max-width: 410px;
+    width: 100%;
+    margin: auto;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
   /* Redondear los campos de entrada */
 input.form-control {
   border-radius: 30px; /* Cambiar este valor para ajustar el nivel de redondez */
 }
 
 .text-danger {
-  width: 200px;
+  width: 100%;
 }
 
 /* Redondear el botón de "Sign in" */
@@ -45,7 +65,7 @@ input.form-control {
 /* Cuadro de texto debajo de los errores */
 .custom-error-box {
   display: block; /* Asegura que ocupe todo el ancho */
-  width: 275px; /* Hace que tenga el mismo ancho del input */
+  width: 100%; /* Hace que tenga el mismo ancho del input */
   background-color: rgba(255, 0, 0, 0.1); /* Fondo rojo claro */
   color: #680e0e; /* Texto rojo */
   padding: 5px; /* Espaciado interno */
@@ -54,7 +74,7 @@ input.form-control {
   text-align: left;
   font-weight: bold;
   margin-top: 4px;
-  margin-left: 15px; /* Espaciado entre el input y el error */
+  margin-left: 0px; /* Espaciado entre el input y el error */
 }
 
 .custom-welcome {
