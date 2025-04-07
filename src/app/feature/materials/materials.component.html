@@ -9,12 +9,17 @@
 <div class="card shadow m-3">
   <div class="card-body">
     <div class="d-flex align-items-center w-100">
-      <h5
-        class="card-title text-nowrap bg-body-secondary border"
-        style="width: 5.4rem"
-      >
-        Materials <b>Management</b>.
-      </h5>
+      <div class="w-100 d-flex justify-content-end pe-4">
+        <h5 class="card-title title-right">
+          <span class="title-text">
+            <span class="text-muted">Management of</span>
+            <span class="text-primary fw-bold">MATERIALS</span>
+            <span class="orange-dot"></span>
+          </span>
+        </h5>           
+      </div>      
+      
+      
 
       <div class="btn-group ms-auto" style="margin-right: 4px">
         <a href="#" class="text-success" (click)="openMaterialModal()">
@@ -27,98 +32,58 @@
       </div>
     </div>
     <div class="table-responsive mt-3">
-      <table class="table table-bordered border-secondary table-striped">
+      <table class="table custom-table small">
         <thead>
           <tr>
-            <th scope="col" class="id-col text-center">Id</th>
+            <th scope="col" class="id-col text-center">Item</th>
             <th scope="col" class="text-center">Name</th>
-            <th scope="col" class="text-center d-none d-xl-table-cell">
-              Description
-            </th>
-            <th scope="col" class="text-center d-none d-xl-table-cell">
-              Image
-            </th>
-            <th class="actions-col text-center" scope="col">Actions</th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">Description</th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">Quantity</th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">Price</th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">MinStock</th>
+            <th scope="col" class="text-center d-none d-xl-table-cell">MaxStock</th>
+            <th class="actions-col text-center" scope="col">Measurement unit</th>
           </tr>
-        </thead>
+        </thead>        
         <tbody>
-          <tr *ngFor="let material of materials; trackBy: trackById">
-            <th scope="row" class="id-col text-end">
-              <span
-                class="badge rounded-badge"
-                style="background-color: var(--header-icon-color)"
-              >
-                {{ material.id }}
-              </span>
-            </th>
-            <td class="text-start">{{ material.name.toUpperCase() }}</td>
-            <td class="text-start d-none d-xl-table-cell">
-              {{ material.description }}
-            </td>
-            <td
-              class="text-start d-none d-xl-table-cell text-center"
-              style="width: 200px"
-            >
-              <img
-                src="{{ material.image }}"
-                style="width: 30%; height: auto"
-                alt="Material Image"
-              />
-            </td>
-            <td class="text-center actions-col">
-              <button
-                type="button"
-                class="btn btn-outline-dark btn-sm me-2"
-                title="Details"
-              >
-                <svg
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                  class="status-icon"
-                >
-                  <use
-                    xlink:href="./assets/icons/bootstrap-icons.svg#list-nested"
-                  ></use>
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-outline-dark btn-sm me-2"
-                title="Edit"
-              >
-                <svg
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                  class="status-icon"
-                >
-                  <use
-                    xlink:href="./assets/icons/bootstrap-icons.svg#pencil"
-                  ></use>
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-outline-dark btn-sm me-2"
-                title="Delete"
-                (click)="setSelectedMaterial(material)"
-                data-bs-toggle="modal"
-                data-bs-target="#confirmDeleteMaterial"
-              >
-                <svg
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                  class="status-icon"
-                >
-                  <use
-                    xlink:href="./assets/icons/bootstrap-icons.svg#trash3"
-                  ></use>
-                </svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
+          <tbody>
+            <tr>
+              <th scope="row" class="id-col text-end">
+                <span class="badge rounded-badge" style="background-color: var(--header-icon-color)">1</span>
+              </th>
+              <td class="text-start">WOOD</td>
+              <td class="text-start d-none d-xl-table-cell">High quality oak wood</td>
+              <td class="text-center d-none d-xl-table-cell">150</td>
+              <td class="text-center d-none d-xl-table-cell">$25.00</td>
+              <td class="text-center d-none d-xl-table-cell">50</td>
+              <td class="text-center d-none d-xl-table-cell">300</td>
+              <td class="text-center">kg</td>
+            </tr>
+            <tr>
+              <th scope="row" class="id-col text-end">
+                <span class="badge rounded-badge" style="background-color: var(--header-icon-color)">2</span>
+              </th>
+              <td class="text-start">STEEL</td>
+              <td class="text-start d-none d-xl-table-cell">Industrial-grade steel rods</td>
+              <td class="text-center d-none d-xl-table-cell">80</td>
+              <td class="text-center d-none d-xl-table-cell">$45.50</td>
+              <td class="text-center d-none d-xl-table-cell">20</td>
+              <td class="text-center d-none d-xl-table-cell">200</td>
+              <td class="text-center">units</td>
+            </tr>
+            <tr>
+              <th scope="row" class="id-col text-end">
+                <span class="badge rounded-badge" style="background-color: var(--header-icon-color)">3</span>
+              </th>
+              <td class="text-start">PAINT</td>
+              <td class="text-start d-none d-xl-table-cell">White matte wall paint</td>
+              <td class="text-center d-none d-xl-table-cell">230</td>
+              <td class="text-center d-none d-xl-table-cell">$12.75</td>
+              <td class="text-center d-none d-xl-table-cell">30</td>
+              <td class="text-center d-none d-xl-table-cell">500</td>
+              <td class="text-center">liters</td>
+            </tr>
+          </tbody>
       </table>
     </div>
   </div>
