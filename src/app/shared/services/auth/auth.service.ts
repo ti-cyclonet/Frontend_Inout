@@ -19,9 +19,10 @@ export class AuthService {
   login(credentials: { email: string; password: string }): Observable<any> {
     return this.http.post<{ access_token: string; email: string; name: string; rol: string; image: string }>(
       this.apiUrl,
-      credentials
+      credentials      
     ).pipe(
       tap(response => {
+        console.log('Login response:', response);
         if (isPlatformBrowser(this.platformId)) {
           this.setUserSession(response);
         }
