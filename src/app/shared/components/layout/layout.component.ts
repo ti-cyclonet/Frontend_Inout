@@ -44,18 +44,23 @@ export default class LayoutComponent implements OnInit {
 
   // Función para obtener la aplicación
   fetchApplication(name: string): void {
-    this.applicationsService.getApplicationByName(name).subscribe(
+    const userRol = sessionStorage.getItem('user_rol');  
+    if (!userRol) {
+      console.error('No se encontró el rol del usuario en la sesión');
+      return;
+    }
+  
+    this.applicationsService.getApplicationByNameAndRol(name, userRol).subscribe(
       (app) => {
         if (!app) {
           console.error('Aplicación no encontrada');
           return;
         }
-
+  
         this.application = app;
-
-        // Validamos que strRoles y strMenuOptions existen antes de mapear
-        this.optionsMenu = this.application?.strRoles?.flatMap(role =>
-          role?.menuOptions?.map(menu => ({
+  
+        this.optionsMenu = this.application?.strRoles?.flatMap(rol =>
+          rol?.menuOptions?.map(menu => ({
             id: menu?.id ?? '',
             name: menu?.strName ?? 'Unnamed Menu',
             description: menu?.strDescription ?? '',
@@ -66,13 +71,14 @@ export default class LayoutComponent implements OnInit {
             order: menu?.ingOrder !== undefined && menu?.ingOrder !== null ? menu.ingOrder.toString() : '99',
             idApplication: this.application?.id ?? '',
           })) || []
-        ) || [];        
+        ) || [];
       },
       (error) => {
         console.error('Error fetching application:', error);
       }
     );
   }
+  
 
   toggleSidebar() {
     this.isSidebarVisible = !this.isSidebarVisible;
