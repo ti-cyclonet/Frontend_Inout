@@ -1,19 +1,19 @@
 .main-content {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Mantiene el alto del contenedor */
+  height: 100vh;
 }
 
 .router-outlet-container {
-  overflow-y: auto; /* Desplazamiento vertical */
-  flex-grow: 1; /* Permite que el contenedor ocupe el espacio restante */
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 
 /* Estilo general para el contenedor principal cuando el sidebar está visible */
 .main-content.reduced-width {
-  margin-left: 100px; /* Ajuste según el ancho del sidebar */
-  width: calc(100% - 100px); /* Resta el ancho del sidebar al contenedor principal */
+  margin-left: 100px;
+  width: calc(100% - 100px);
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
@@ -27,10 +27,10 @@
 /* Estilo general para el sidebar */
 #sidebar {
   transition: transform 0.3s ease, width 0.3s ease;
-  position: fixed; /* Fijo para pantallas pequeñas */
+  position: fixed;
   top: 0;
   left: 0;
-  z-index: 1000; /* Asegúrate de que esté por encima del contenido */
+  z-index: 1000;
   width: 100px;
 }
 
@@ -43,11 +43,11 @@
 .sidebar-toggle-btn {
   position: absolute;
   top: 10px;
-  right: -30px; /* Ubica el botón por fuera del sidebar cuando está visible */
+  right: -30px;
   background-color: transparent;
   border: none;
   cursor: pointer;
-  z-index: 1001; /* Asegúrate de que esté por encima del contenido */
+  z-index: 1001; 
 }
 
 .sidebar-toggle-btn svg {
@@ -95,26 +95,26 @@
 
   /* El botón de toggle se posiciona dentro del sidebar cuando está visible */
   .sidebar-toggle-btn {
-    right: -30px; /* Ajuste la posición del botón de toggle */
+    right: -30px;
     top: 10px;
   }
 }
 .main-content {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Mantiene el alto del contenedor */
+  height: 100vh;
 }
 
 .router-outlet-container {
-  overflow-y: auto; /* Desplazamiento vertical */
-  flex-grow: 1; /* Permite que el contenedor ocupe el espacio restante */
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 
 /* Estilo general para el contenedor principal cuando el sidebar está visible */
 .main-content.reduced-width {
-  margin-left: 100px; /* Ajuste según el ancho del sidebar */
-  width: calc(100% - 100px); /* Resta el ancho del sidebar al contenedor principal */
+  margin-left: 100px; 
+  width: calc(100% - 100px);
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
@@ -128,10 +128,10 @@
 /* Estilo general para el sidebar */
 #sidebar {
   transition: transform 0.3s ease, width 0.3s ease;
-  position: fixed; /* Fijo para pantallas pequeñas */
+  position: fixed;
   top: 0;
   left: 0;
-  z-index: 1000; /* Asegúrate de que esté por encima del contenido */
+  z-index: 1000;
   width: 100px;
 }
 
@@ -144,11 +144,11 @@
 .sidebar-toggle-btn {
   position: absolute;
   top: 10px;
-  right: -30px; /* Ubica el botón por fuera del sidebar cuando está visible */
+  right: -30px;
   background-color: transparent;
   border: none;
   cursor: pointer;
-  z-index: 1001; /* Asegúrate de que esté por encima del contenido */
+  z-index: 1001;
 }
 
 .sidebar-toggle-btn svg {
@@ -196,7 +196,7 @@
 
   /* El botón de toggle se posiciona dentro del sidebar cuando está visible */
   .sidebar-toggle-btn {
-    right: -30px; /* Ajuste la posición del botón de toggle */
+    right: -30px;
     top: 10px;
   }
 }
