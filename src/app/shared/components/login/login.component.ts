@@ -21,10 +21,19 @@ export class LoginComponent {
   submitted = false;
   isVisible: boolean = true;
   errorMessage = '';
-  notifications: Array<{
-    title: string;
-    type: 'success' | 'warning' | 'danger';
-  }> = [];
+
+  // configuración notificaciones tipo toast
+    toastTitle: string = '';
+    toastType: 'success' | 'warning' | 'danger' | 'primary' = 'success';
+    notifications: Array<{
+      title: string;
+      type: 'success' | 'warning' | 'danger' | 'primary';
+      alertType: 'A' | 'B';
+      container: 0 | 1;
+      visible: boolean;
+    }> = [];
+    SWNTF: number = 0;
+  // ----------------------------------------------
 
   constructor(
     private fb: FormBuilder,
@@ -66,40 +75,49 @@ export class LoginComponent {
     this.authService.login(loginDTO).subscribe(response => {
       if (response.access_token) {
         sessionStorage.setItem('token', response.access_token);
-        this.showToast('Inicio de sesión exitoso', 'success');
+        this.showToast('Inicio de sesión exitoso', 'success', 'A', 0);
   
         setTimeout(() => {
           this.router.navigate(['/home']);
         }, 3000);
       } else {
-        this.showToast('Credenciales incorrectas', 'danger');
+        this.showToast('Credenciales incorrectas', 'danger', 'A', 0);
         console.error('❌ Error: No se recibió un token válido.');
       }
     }, error => {
-      this.showToast('Error en la autenticación', 'danger');
+      this.showToast('Error en la autenticación', 'danger', 'A', 0);
       console.error('❌ Error de login:', error);
     });
   }
-  // Método para agregar una nueva notificación
-  addNotification(title: string, type: 'success' | 'warning' | 'danger') {
-    this.notifications.push({ title, type });
-  }
-  // Método para mostrar la notificación
-  showToast(message: string, type: 'success' | 'warning' | 'danger') {
-    this.notifications.push({ title: message, type });
 
-    // Asegurar que el cambio se detecte
-    this.isVisible = true;
-    this.cdr.detectChanges();
+  // Funciones para NOTIFICACIONES
+    addNotification(title: string, type: 'success' | 'warning' | 'danger' | 'primary', alertType: 'A' | 'B', container: 0 | 1) {
+      this.notifications.push({ title, type, alertType, container, visible: true });
+    }
 
-    // Ocultar la notificación después de 3 segundos
-    setTimeout(() => {
-      this.notifications.shift();
-      if (this.notifications.length === 0) {
-        this.isVisible = false;
-      }
+    removeNotification(index: number) {
+      this.notifications.splice(index, 1);
+    }
+  
+    showToast(message: string, type: 'success' | 'warning' | 'danger' | 'primary', alertType: 'A' | 'B',  container: 0 | 1 ) {
+      const notification = {
+        title: message,
+        type,
+        alertType,
+        container,
+        visible: true
+      };
+      this.notifications.push(notification);
       this.cdr.detectChanges();
-    }, 3000);
-  }
+
+      if (alertType === 'A') {
+        setTimeout(() => {
+          notification.visible = false;
+          this.cdr.detectChanges();
+        }, 5000);
+      }
+    }
+  // ----------------------------------------------
+
 
 }
