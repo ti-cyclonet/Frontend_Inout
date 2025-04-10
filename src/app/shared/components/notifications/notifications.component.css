@@ -39,9 +39,9 @@
 }
 
 .notification-card.warning {
-  border-color: orange;
-  background-color: #362302;
-  color: #ffe6b3;
+  border-color: #362302;  
+  background-color: rgb(248, 211, 143);
+  color: #362302;
 }
 
 .notification-card.danger {
@@ -50,16 +50,25 @@
   color: #530505;
 }
 
+.notification-card.primary {
+  border-color: #2196f3 ;
+  background-color: #2196f3 ;
+  color: black;
+}
+
 .notification-icon.success {
   fill: green;
 }
 
 .notification-icon.warning {
-  fill: orange; 
+  fill: #362302; 
 }
 
 .notification-icon.danger {
-  fill: rgb(148, 37, 37);
+  fill: #530505;
+}
+.notification-icon.primary {
+  fill: black;
 }
 
 .notification-card svg {
@@ -76,4 +85,14 @@
   border-radius: 5px;
   color: rgb(0, 0, 0);
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
 }
