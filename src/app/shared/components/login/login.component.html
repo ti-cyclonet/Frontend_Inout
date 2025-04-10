@@ -1,9 +1,27 @@
-<div *ngIf="isVisible && notifications.length > 0" class="notification-container">
-  <app-notifications
-    *ngFor="let notification of notifications"
-    [title]="notification.title"
-    [type]="notification.type">
-  </app-notifications>
+<!-- Contenedor flotante (derecha) -->
+<div class="notification-container">
+  <ng-container *ngFor="let notification of notifications; let i = index">
+    <app-notifications
+      *ngIf="notification.container === 0 && notification.visible"
+      [title]="notification.title"
+      [type]="notification.type"
+      [alertType]="notification.alertType"
+      (close)="removeNotification(i)"
+    ></app-notifications>
+  </ng-container>
+</div>
+
+<!-- Contenedor superior (todo el ancho) -->
+<div>
+  <ng-container *ngFor="let notification of notifications; let i = index">
+    <app-notifications
+      *ngIf="notification.container === 1 && notification.visible"
+      [title]="notification.title"
+      [type]="notification.type"
+      [alertType]="notification.alertType"
+      (close)="removeNotification(i)"
+    ></app-notifications>
+  </ng-container>
 </div>
 
 <div class="row login-container d-flex align-items-center min-vh-100">

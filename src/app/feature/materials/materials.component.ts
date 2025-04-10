@@ -1,21 +1,39 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialsService } from '../../shared/services/materials/materials.service';
+import { NotificationsComponent } from "../../shared/components/notifications/notifications.component";
 @Component({
   selector: 'app-materials',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NotificationsComponent],
   templateUrl: './materials.component.html',
   styleUrls: ['./materials.component.css']
 })
 export class MaterialsComponent implements OnInit {
+  @ViewChild('notification') notification!: NotificationsComponent;
   materials: any[] = [];
   selectedMaterial: any = null; 
   isModalOpen = false; 
 
-  constructor(private materialsService: MaterialsService) {}
+  // configuración notificaciones tipo toast
+  toastTitle: string = '';
+  toastType: 'success' | 'warning' | 'danger' | 'primary' = 'success';
+  notifications: Array<{
+    title: string;
+    type: 'success' | 'warning' | 'danger' | 'primary';
+    alertType: 'A' | 'B';
+    container: 0 | 1;
+    visible: boolean;
+  }> = [];
+  SWNTF: number = 0;
+// ----------------------------------------------
+
+  constructor(private materialsService: MaterialsService, private cdr: ChangeDetectorRef,) {
+    this.notifications = [];
+  }
 
   ngOnInit(): void {
+    this.showToast('WELCOME!', 'success', 'A', 1);
     this.materialsService.getMaterials().subscribe({
       next: (materials: any) => {
         this.materials = materials;
@@ -55,4 +73,33 @@ export class MaterialsComponent implements OnInit {
   trackById(index: number, material: any): number {
     return material.id;
   }
+
+  // Funciones para NOTIFICACIONES
+  addNotification(title: string, type: 'success' | 'warning' | 'danger' | 'primary', alertType: 'A' | 'B', container: 0 | 1) {
+    this.notifications.push({ title, type, alertType, container, visible: true });
+  }
+
+  removeNotification(index: number) {
+    this.notifications.splice(index, 1);
+  }
+
+  showToast(message: string, type: 'success' | 'warning' | 'danger' | 'primary', alertType: 'A' | 'B',  container: 0 | 1 ) {
+    const notification = {
+      title: message,
+      type,
+      alertType,
+      container,
+      visible: true
+    };
+    this.notifications.push(notification);
+    this.cdr.detectChanges();
+
+    if (alertType === 'A') {
+      setTimeout(() => {
+        notification.visible = false;
+        this.cdr.detectChanges();
+      }, 5000);
+    }
+  }
+// ----------------------------------------------
 }
