@@ -11,7 +11,7 @@
     top: 0;
     left: 0;
     z-index: 1000;
-    border-right: 2px solid black;
+    border-right: 3px solid #4F4F4F;
     transition: transform 0.3s ease;
 }
 
@@ -35,7 +35,8 @@
 
 /* Estilo de los ítems del menú */
 .menu-item {
-    color: var(--primary-text-color);
+    color: #FFC17A;
+    /* color: var(--primary-text-color); */
     margin-bottom: 1.5rem; /* Asegura que las opciones de menú principal estén bien separadas */
     text-decoration: none;
     display: flex;
@@ -49,7 +50,8 @@
 .menu-item svg {
     width: 36px;
     height: 36px;
-    fill: var(--primary-text-color);
+    fill: #FFC17A;
+    /* fill: var(--primary-text-color); */
     margin-bottom: 0.5rem;
 }
 
