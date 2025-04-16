@@ -39,6 +39,7 @@ export default class LayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadSidebarPreference();
     this.fetchApplication(NAME_APP_SHORT);
   }
 
@@ -78,10 +79,23 @@ export default class LayoutComponent implements OnInit {
       }
     );
   }
-  
+
+  loadSidebarPreference(): void {
+    if (typeof window !== 'undefined' && localStorage) {
+      const storedValue = localStorage.getItem('sidebarVisible');
+      if (storedValue !== null) {
+        this.isSidebarVisible = JSON.parse(storedValue);
+      } else {
+        this.isSidebarVisible = this.isLargeScreen;
+      }
+    }
+  }
 
   toggleSidebar() {
     this.isSidebarVisible = !this.isSidebarVisible;
+    if (typeof window !== 'undefined' && localStorage) {
+      localStorage.setItem('sidebarVisible', JSON.stringify(this.isSidebarVisible));
+    }
   }
 
   @HostListener('window:resize', ['$event'])
