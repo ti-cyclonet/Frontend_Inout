@@ -33,7 +33,7 @@ export class MaterialsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.showToast('WELCOME!', 'success', 'A', 1);
+    // this.showToast('WELCOME!', 'success', 'A', 1);
     this.materialsService.getMaterials().subscribe({
       next: (materials: any) => {
         this.materials = materials;
