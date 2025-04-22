@@ -53,6 +53,8 @@
     fill: #FFC17A;
     /* fill: var(--primary-text-color); */
     margin-bottom: 0.5rem;
+    stroke: #ec9e45;
+    stroke-width: 0.3px;
 }
 
 .menu-item div {

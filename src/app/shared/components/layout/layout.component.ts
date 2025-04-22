@@ -41,6 +41,7 @@ export default class LayoutComponent implements OnInit {
   ngOnInit(): void {
     this.loadSidebarPreference();
     this.fetchApplication(NAME_APP_SHORT);
+    // consumo de materiales
   }
 
   // Función para obtener la aplicación

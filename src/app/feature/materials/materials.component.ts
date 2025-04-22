@@ -26,6 +26,8 @@ export class MaterialsComponent implements OnInit {
     visible: boolean;
   }> = [];
   SWNTF: number = 0;
+  showOptions = true;
+
 // ----------------------------------------------
 
   constructor(private materialsService: MaterialsService, private cdr: ChangeDetectorRef,) {

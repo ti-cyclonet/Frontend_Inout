@@ -112,3 +112,33 @@
   flex-direction: column;
   gap: 10px; 
 }
+
+.options-panel {
+  width: 100px;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+  border: 2px solid #ff6a00;
+}
+
+@media (max-width: 768px) {
+  .options-panel {
+    width: 100%;
+  }
+}
+
+.icon-only-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.icon-only-btn:hover {
+  transform: scale(1.1);
+}
+
+.option-icon {
+  width: 32px;
+  height: 32px;
+}
