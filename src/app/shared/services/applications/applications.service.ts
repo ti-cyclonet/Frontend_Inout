@@ -10,7 +10,7 @@ export class ApplicationsService {
   private applicationsSubject = new BehaviorSubject<Application[]>([]);
   public applications$ = this.applicationsSubject.asObservable();
 
-  private AuthorizaApiUrl = `${environment.BASE_URL}/api/applications`;  
+  private AuthorizaApiUrl = `${environment.BASE_URL_AUTHORIZA}/api/applications`;  
  
   constructor(private http: HttpClient) {}
 
