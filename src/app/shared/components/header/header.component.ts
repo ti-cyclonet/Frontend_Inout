@@ -16,6 +16,7 @@ export class HeaderComponent implements OnInit{
   userName: string | null = null;
   userEmail: string | null = null;
   userRol: string | null = null;
+  userRolDescription: string | null = null;
   userImage: string | null = null;
   private _isSidebarVisible: boolean = false;
 
@@ -38,6 +39,7 @@ export class HeaderComponent implements OnInit{
       this.userName = sessionStorage.getItem('user_name');
       this.userEmail = sessionStorage.getItem('user_email');
       this.userRol = sessionStorage.getItem('user_rol');
+      this.userRolDescription = sessionStorage.getItem('user_rolDescription');
       this.userImage = sessionStorage.getItem('user_image');
     }
   }
