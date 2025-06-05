@@ -36,6 +36,7 @@ export class AuthService {
       sessionStorage.setItem('user_email', userData.user.email);
       sessionStorage.setItem('user_name', userData.user.name);
       sessionStorage.setItem('user_rol', userData.user.rol);
+      sessionStorage.setItem('user_rolDescription', userData.user.rolDescription);
       sessionStorage.setItem('user_image', userData.user.image);
     }
   }
