@@ -33,7 +33,7 @@
             <img *ngIf="userImage" [src]="userImage" alt="Foto de usuario" class="user-img me-2">
             <div>
               <strong>{{ userName }}</strong>
-              <p class="text-muted small mb-0">{{ userRol }}</p>
+              <p class="text-muted small mb-0">{{ userRolDescription }}</p>
             </div>
           </li>
           <li><hr class="dropdown-divider"></li>
@@ -52,15 +52,7 @@
               </svg>
              {{ userEmail }}
             </a>
-          </li>
-          <li>
-            <a class="dropdown-item" href="#">
-              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#patch-check"/>
-              </svg>
-               {{ userRol }}
-            </a>
-          </li>
+          </li>          
           <li><hr class="dropdown-divider"></li>
           <li>
             <a class="dropdown-item logout-btn" href="#" (click)="logout()">
