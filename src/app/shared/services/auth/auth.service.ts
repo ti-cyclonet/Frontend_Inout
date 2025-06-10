@@ -21,8 +21,7 @@ export class AuthService {
       this.apiUrl,
       credentials      
     ).pipe(
-      tap(response => {
-        console.log('Login response:', response);
+      tap(response => {        
         if (isPlatformBrowser(this.platformId)) {
           this.setUserSession(response);
         }
@@ -33,6 +32,7 @@ export class AuthService {
   setUserSession(userData: any): void {
     if (isPlatformBrowser(this.platformId)) {
       sessionStorage.setItem('authToken', userData.access_token);
+      sessionStorage.setItem('user_id', userData.user.id);
       sessionStorage.setItem('user_email', userData.user.email);
       sessionStorage.setItem('user_name', userData.user.name);
       sessionStorage.setItem('user_rol', userData.user.rol);
