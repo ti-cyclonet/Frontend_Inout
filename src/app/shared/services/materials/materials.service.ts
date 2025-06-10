@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class MaterialsService {
-  private apiUrl = '/api/applications'; // URL del backend
+  private apiUrl = '/api/applications'; 
 
   constructor(private http: HttpClient) {}
 

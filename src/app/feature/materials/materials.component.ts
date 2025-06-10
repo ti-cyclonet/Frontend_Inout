@@ -34,16 +34,15 @@ export class MaterialsComponent implements OnInit {
     this.notifications = [];
   }
 
-  ngOnInit(): void {
-    // this.showToast('WELCOME!', 'success', 'A', 1);
-    this.materialsService.getMaterials().subscribe({
-      next: (materials: any) => {
-        this.materials = materials;
-      },
-      error: (e: any) => {
-        console.error('Error loading materials:', e);
-      }
-    });
+  ngOnInit(): void {    
+    // this.materialsService.getMaterials().subscribe({
+    //   next: (materials: any) => {
+    //     this.materials = materials;
+    //   },
+    //   error: (e: any) => {
+    //     console.error('Error loading materials:', e);
+    //   }
+    // });
   }
 
   // Abre el modal para agregar un nuevo material
