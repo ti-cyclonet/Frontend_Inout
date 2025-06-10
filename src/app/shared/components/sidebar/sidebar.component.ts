@@ -16,7 +16,6 @@ export class SidebarComponent implements OnInit {
   private openSubmenuId: string | null = null;
 
   ngOnInit(): void {
-    console.log('OPTIONS MENU', this.optionsMenu);
     this.optionsMenu.sort((a, b) => {
       const orderA = a.order ? parseInt(a.order, 10) : 99;
       const orderB = b.order ? parseInt(b.order, 10) : 99;

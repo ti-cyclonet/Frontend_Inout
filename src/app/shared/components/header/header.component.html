@@ -1,68 +1,248 @@
-<div class="header-container w-100 d-flex justify-content-between align-items-center" style="border-bottom: 3px solid #4F4F4F;">
+<div
+  class="header-container w-100 d-flex justify-content-between align-items-center"
+>
   <!-- Botón de toggle para la barra lateral -->
-  <button (click)="onToggleSidebar()" title="Sidebar" class="toggle-button" data-bs-toggle="tooltip" data-bs-placement="top"
-    data-bs-custom-class="custom-tooltip" data-bs-title="Sidebar">
+  <button
+    (click)="onToggleSidebar()"
+    title="Sidebar"
+    class="toggle-button"
+    data-bs-toggle="tooltip"
+    data-bs-placement="top"
+    data-bs-custom-class="custom-tooltip"
+    data-bs-title="Sidebar"
+  >
     <svg class="toggle-icon" viewBox="0 0 16 16">
-      <use [attr.xlink:href]="!isSidebarVisible ? './assets/icons/bootstrap-icons.svg#layout-sidebar' : './assets/icons/bootstrap-icons.svg#layout-sidebar-inset'"></use>
+      <use
+        [attr.xlink:href]="
+          !isSidebarVisible
+            ? './assets/icons/bootstrap-icons.svg#layout-sidebar'
+            : './assets/icons/bootstrap-icons.svg#layout-sidebar-inset'
+        "
+      ></use>
     </svg>
   </button>
 
   <div class="d-flex align-items-center w-100">
     <a href="#" class="logo-container">
-      <img src="./assets/img/logo_inout_v4.png" alt="Logo" class="logo-img">
+      <img src="./assets/img/logo_inout_v5.png" alt="Logo" class="logo-img" />
     </a>
     <div class="navbar-brand mx-auto">{{ nombreApp | uppercase }}</div>
-    
+
     <!-- Notificaciones y Dropdown de usuario -->
-    <div class="btn-group ms-lg-0" style="margin-right: 8px;">
-      <a class="btn">        
+    <div class="btn-group ms-lg-0" style="margin-right: 8px">
+      <a class="btn">
         <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#bell"/>
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#bell" />
         </svg>
       </a>
 
       <div class="btn-group">
-        <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" href="#">
+        <a
+          class="btn dropdown-toggle"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          href="#"
+        >
           <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#person-circle"/>
+            <use
+              xlink:href="./assets/icons/bootstrap-icons.svg#person-circle"
+            />
           </svg>
         </a>
-        
-        <ul class="dropdown-menu p-3">
+        <ul class="dropdown-menu p-3 mt-2">
           <li class="d-flex align-items-center">
-            <img *ngIf="userImage" [src]="userImage" alt="Foto de usuario" class="user-img me-2">
+            <img
+              *ngIf="userImage"
+              [src]="userImage"
+              alt="Foto de usuario"
+              class="user-img me-2"
+            />
             <div>
               <strong>{{ userName }}</strong>
               <p class="text-muted small mb-0">{{ userRolDescription }}</p>
             </div>
           </li>
-          <li><hr class="dropdown-divider"></li>
+          <li><hr class="dropdown-divider" /></li>
           <li>
             <a class="dropdown-item" href="#">
-              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#person"/>
+              <svg
+                class="dropdown-icon"
+                width="16"
+                height="16"
+                fill="currentColor"
+              >
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#person" />
               </svg>
-               {{ userName }}
+              {{ userName }}
             </a>
           </li>
           <li>
             <a class="dropdown-item" href="mailto:{{ userEmail }}">
-              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#envelope"/>
+              <svg
+                class="dropdown-icon"
+                width="16"
+                height="16"
+                fill="currentColor"
+              >
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#envelope" />
               </svg>
-             {{ userEmail }}
+              {{ userEmail }}
             </a>
-          </li>          
-          <li><hr class="dropdown-divider"></li>
+          </li>
+          <li>
+            <a
+              class="dropdown-item"
+              href="#"
+              data-bs-toggle="modal"
+              data-bs-target="#changePasswordModal"
+            >
+              <svg
+                class="dropdown-icon"
+                width="16"
+                height="16"
+                fill="currentColor"
+              >
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#key" />
+              </svg>
+              Change password
+            </a>
+          </li>
+
+          <li><hr class="dropdown-divider" /></li>
           <li>
             <a class="dropdown-item logout-btn" href="#" (click)="logout()">
               <svg width="20" height="20" fill="currentColor">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-right"/>
+                <use
+                  xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-right"
+                />
               </svg>
               Logout
             </a>
           </li>
-        </ul>        
+        </ul>
+      </div>
+      <!-- Modal completo embebido en el header.component.html -->
+      <div
+        class="modal fade"
+        id="changePasswordModal"
+        tabindex="-1"
+        aria-labelledby="changePasswordModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="changePasswordModalLabel">
+                Password Change Form
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <!-- Contenedor flotante (derecha) -->
+            <div class="notification-container">
+              <ng-container
+                *ngFor="let notification of notifications; let i = index"
+              >
+                <app-notifications
+                  *ngIf="notification.container === 0 && notification.visible"
+                  [title]="notification.title"
+                  [type]="notification.type"
+                  [alertType]="notification.alertType"
+                  (close)="removeNotification(i)"
+                ></app-notifications>
+              </ng-container>
+            </div>
+
+            <!-- Contenedor superior -->
+            <div class="notification-container-1 p-1 w-100">
+              <ng-container
+                *ngFor="let notification of notifications; let i = index"
+              >
+                <app-notifications
+                  *ngIf="notification.container === 1 && notification.visible"
+                  [title]="notification.title"
+                  [type]="notification.type"
+                  [alertType]="notification.alertType"
+                  (close)="removeNotification(i)"
+                ></app-notifications>
+              </ng-container>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="onSubmit()">
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="oldPassword" class="form-label"
+                    >Old password</label
+                  >
+                  <input
+                    type="password"
+                    id="oldPassword"
+                    formControlName="oldPassword"
+                    class="form-control"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="newPassword" class="form-label"
+                    >New password</label
+                  >
+                  <input
+                    type="password"
+                    id="newPassword"
+                    formControlName="newPassword"
+                    class="form-control"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="repeatPassword" class="form-label"
+                    >Repeat password</label
+                  >
+                  <input
+                    type="password"
+                    id="repeatPassword"
+                    formControlName="repeatPassword"
+                    class="form-control"
+                    required
+                  />
+                  <div
+                    *ngIf="
+                      form.get('repeatPassword')?.value !==
+                        form.get('newPassword')?.value &&
+                      form.get('repeatPassword')?.touched
+                    "
+                    class="text-danger"
+                  >
+                    The passwords don't match.
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="
+                    form.invalid ||
+                    form.get('repeatPassword')?.value !==
+                      form.get('newPassword')?.value
+                  "
+                >
+                  Update
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
