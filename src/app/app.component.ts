@@ -8,6 +8,7 @@ import LayoutComponent from "./shared/components/layout/layout.component";
 import { LoginComponent } from './shared/components/login/login.component';
 import { isPlatformBrowser } from '@angular/common';
 import { OptionMenu } from './shared/model/option_menu';
+import { IdleTimeoutService } from './shared/services/idle-timeout.service';
 
 @Component({
   selector: 'app-root',
@@ -20,7 +21,7 @@ export class AppComponent implements OnInit{
   
   title = NAME_APP_LONG;
   
-  constructor(@Inject(PLATFORM_ID) private platformId: object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: object, private idleTimeoutService: IdleTimeoutService ) {this.idleTimeoutService.startWatching();}
 
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
