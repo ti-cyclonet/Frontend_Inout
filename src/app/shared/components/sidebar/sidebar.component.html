@@ -11,9 +11,11 @@
           }"
           class="menu-item"
           (click)="toggleSubmenu(option.id)">
-          <svg fill="currentcolor" viewBox="0 0 16 16">
-            <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
-          </svg>
+          <div class="icon-container">
+            <svg fill="currentcolor" viewBox="0 0 16 16">
+              <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
+            </svg>
+          </div>
           <div>{{ option.description }}</div>
         
           <!-- Renderiza el badge solo si hay submenú -->

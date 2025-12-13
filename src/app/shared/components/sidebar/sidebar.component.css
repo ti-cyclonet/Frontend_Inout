@@ -47,14 +47,34 @@
     position: relative; /* Para posicionar el badge */
 }
 
-.menu-item svg {
-    width: 36px;
-    height: 36px;
-    fill: #FFC17A;
-    /* fill: var(--primary-text-color); */
+.icon-container {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 0.5rem;
-    stroke: #ec9e45;
-    stroke-width: 0.3px;
+    transition: transform 0.3s ease;
+}
+
+.icon-container svg {
+    width: 28px;
+    height: 28px;
+    fill: var(--sidebar-background-color);
+}
+
+.menu-item:hover .icon-container,
+.menu-item.active .icon-container {
+    transform: scale(1.1);
+    border: 1px solid var(--header-background-color);
+}
+
+.menu-item:hover .icon-container svg,
+.menu-item.active .icon-container svg {
+    fill: var(--header-background-color);
 }
 
 .menu-item div {
@@ -67,11 +87,7 @@
     color: var(--primary-active-text-color);
 }
 
-.menu-item:hover svg,
-.menu-item.active svg {
-    fill: var(--primary-active-text-color);
-    transform: scale(1.2);
-}
+
 
 /* Estilo para el submenú */
 .submenu {

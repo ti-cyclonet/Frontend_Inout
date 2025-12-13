@@ -5,6 +5,6 @@ export interface MenuOption{
     strUrl: string | null;
     strIcon: string | null;
     strType: string;
-    ingOrder: string;
+    ingOrder: number;
     strSubmenus: MenuOption[];
   }

@@ -74,6 +74,9 @@ export default class LayoutComponent implements OnInit {
             idApplication: this.application?.id ?? '',
           })) || []
         ) || [];
+
+        // Ordenar por ingOrder numérico
+        this.optionsMenu.sort((a, b) => parseInt(a.order) - parseInt(b.order));
       },
       (error) => {
         console.error('Error fetching application:', error);
