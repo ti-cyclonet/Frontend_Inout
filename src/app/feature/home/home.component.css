@@ -43,3 +43,15 @@
   margin-top: 0.1rem;
   /* color: var(--primary-text-color); Color del texto en la tarjeta */
 }
+
+@media (max-width: 768px) {
+  .title-container {
+    font-size: 0.9rem;
+    padding-left: 1rem;
+  }
+  
+  .title-container svg {
+    width: 18px;
+    height: 18px;
+  }
+}

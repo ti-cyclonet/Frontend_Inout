@@ -35,27 +35,6 @@
 <div class="card shadow m-3">
   <div class="card-body">
     <div class="d-flex align-items-center w-100">
-      <!-- Botón para mostrar/ocultar la cinta -->
-      <button
-        class="btn btn-sm btn-outline-dark mb-3"
-        (click)="showOptions = !showOptions"
-      >
-        <svg
-          fill="currentColor"
-          viewBox="0 0 16 16"
-          width="16"
-          height="16"
-          style="vertical-align: middle"
-        >
-          <use
-            [attr.xlink:href]="
-              './assets/icons/bootstrap-icons.svg#' +
-              (showOptions ? 'chevron-right' : 'chevron-left')
-            "
-          ></use>
-        </svg>
-        <span class="ms-1">{{ showOptions ? "Hide" : "Show" }} Options</span>
-      </button>
       <div class="w-100 d-flex justify-content-end pe-4">
         <h5 class="card-title title-right">
           <span class="title-text">
@@ -132,35 +111,43 @@
         </div>
       </div>
 
-      
-      <div
-        class="options-panel p-3 border-start"
-        [ngClass]="{ 'd-none': !showOptions }"
-      >
-        <div class="d-flex flex-column align-items-center gap-3 mt-3">
-          <button class="icon-only-btn" title="Add">
-            <svg fill="#ff6a00" viewBox="0 0 16 16" class="option-icon">
-              <use
-                xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"
-              />
-            </svg>
-          </button>
 
-          <button class="icon-only-btn" title="Edit">
-            <svg fill="#ff6a00" viewBox="0 0 16 16" class="option-icon">
-              <use
-                xlink:href="./assets/icons/bootstrap-icons.svg#pencil-square"
-              />
-            </svg>
-          </button>
-
-          <button class="icon-only-btn" title="Delete">
-            <svg fill="#ff6a00" viewBox="0 0 16 16" class="option-icon">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
-            </svg>
-          </button>
-        </div>
-      </div>
     </div>
   </div>
+</div>
+
+<!-- Botón flotante -->
+<button 
+  class="floating-btn"
+  (click)="showFloatingMenu = !showFloatingMenu"
+  title="Options">
+  <svg fill="white" viewBox="0 0 16 16">
+    <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showFloatingMenu ? 'x' : 'three-dots-vertical')"></use>
+  </svg>
+</button>
+
+<!-- Menú flotante -->
+<div 
+  class="floating-menu"
+  [ngClass]="{ 'show': showFloatingMenu }">
+  <button class="floating-menu-item" title="Add">
+    <svg fill="#ff6a00" viewBox="0 0 16 16">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+    </svg>
+    <span>Add</span>
+  </button>
+  
+  <button class="floating-menu-item" title="Edit">
+    <svg fill="#ff6a00" viewBox="0 0 16 16">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil-square" />
+    </svg>
+    <span>Edit</span>
+  </button>
+  
+  <button class="floating-menu-item" title="Delete">
+    <svg fill="#ff6a00" viewBox="0 0 16 16">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+    </svg>
+    <span>Delete</span>
+  </button>
 </div>

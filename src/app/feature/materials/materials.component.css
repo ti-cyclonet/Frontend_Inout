@@ -55,6 +55,27 @@
   font-size: 1.25rem;
 }
 
+@media (max-width: 768px) {
+  .title-container {
+    font-size: 0.9rem;
+    padding-left: 1rem;
+  }
+  
+  .title-container svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .title-right {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+  }
+  
+  .title-text {
+    gap: 0.2rem;
+  }
+}
+
 .title-text {
   display: flex;
   align-items: center;
@@ -141,4 +162,80 @@
 .option-icon {
   width: 32px;
   height: 32px;
+}
+
+/* Botón flotante */
+.floating-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background-color: #ff6a00;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+  background-color: #e55a00;
+  transform: scale(1.1);
+}
+
+.floating-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Menú flotante */
+.floating-menu {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.floating-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.floating-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  color: #333;
+}
+
+.floating-menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.floating-menu-item svg {
+  width: 20px;
+  height: 20px;
 }
