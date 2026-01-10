@@ -1,57 +1,171 @@
-/* Estilo para el contenedor del título */
-.title-container {
+.dashboard-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.breadcrumb-modern {
   display: flex;
-  align-items: center; /* Centra verticalmente el contenido */
-  font-size: 1.0rem; /* Tamaño del texto del título */
-  color: #6E6E6E; /* Color del texto del título */
-  margin-bottom: 1rem; /* Espacio debajo del título */
-  margin-top: 1rem;    
-  padding-left: 1.5rem;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2rem;
+  padding: 1rem 0;
 }
 
-.title-container svg {
-  width: 20px; /* Tamaño del ícono SVG */
-  height: 20px; /* Tamaño del ícono SVG */
-  margin-right: 0.3rem; /* Espacio entre el ícono y el texto */
-  fill: #6E6E6E; /* Color del ícono SVG */
+.breadcrumb-icon {
+  width: 18px;
+  height: 18px;
+  fill: #666;
 }
 
-/* Estilo para el enlace en el contenedor del título */
-.title-link {
-  display: flex;
-  align-items: center; /* Alinea el ícono y el texto verticalmente */
-  color: #6E6E6E; /* Color del texto del enlace (debe coincidir con el color del texto normal) */
-  text-decoration: none; /* Elimina el subrayado del enlace */
+.breadcrumb-text {
+  color: #666;
+  font-weight: 500;
+  font-size: 1.1rem;
 }
 
-/* Efecto hover para el enlace (opcional) */
-.title-link:hover {
-  /* text-decoration: underline; Subraya el texto cuando se pasa el ratón sobre él */
-  color: #4A4A4A; 
+.welcome-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo para la tarjeta de contenido */
-.card {
-  border: 1px solid #cccccc;
-  border-radius: 0.5rem; 
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); 
-  background-color: #fff; 
+.card-title-modern {
+  font-size: 2rem;
+  font-weight: 300;
+  color: #333;
+  margin-bottom: 0.5rem;
 }
 
-.card-body {
+.card-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card-modern {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
   padding: 1.5rem;
-  margin-top: 0.1rem;
-  /* color: var(--primary-text-color); Color del texto en la tarjeta */
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.stat-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon-container {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.inventory-theme .stat-icon-container {
+  background: linear-gradient(135deg, #0057B8, #003d82);
+}
+
+.manufacturing-theme .stat-icon-container {
+  background: linear-gradient(135deg, #FF6600, #cc5200);
+}
+
+.stat-icon {
+  width: 28px;
+  height: 28px;
+  fill: white;
+}
+
+.stat-content {
+  position: relative;
+  z-index: 2;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.inventory-theme .stat-number {
+  color: #0057B8;
+}
+
+.manufacturing-theme .stat-number {
+  color: #FF6600;
+}
+
+.stat-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.inventory-theme .stat-glow {
+  background: radial-gradient(circle at center, rgba(0,87,184,0.1) 0%, transparent 70%);
+}
+
+.manufacturing-theme .stat-glow {
+  background: radial-gradient(circle at center, rgba(255,102,0,0.1) 0%, transparent 70%);
+}
+
+.stat-card-modern:hover .stat-glow {
+  opacity: 1;
+}
+
+.stat-card-modern:hover .stat-icon-container {
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {
-  .title-container {
-    font-size: 0.9rem;
-    padding-left: 1rem;
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
   
-  .title-container svg {
-    width: 18px;
-    height: 18px;
+  .welcome-card {
+    padding: 1.5rem;
+  }
+  
+  .card-title-modern {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-container {
+    padding: 1rem;
   }
 }

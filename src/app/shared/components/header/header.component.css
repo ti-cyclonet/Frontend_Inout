@@ -6,7 +6,7 @@
 .logo-container {
     display: flex;
     align-items: center;
-    margin-left: 10px;
+    margin-left: 20px;
     margin-top: 3px;
 }
 
@@ -82,18 +82,19 @@
     border: none;
     height: 25px;
     width: 50px;
-    margin-left: 10px;
+    margin-left: 25px;
     display: flex;
     align-items: center;
     justify-content: space-around;
     padding: 0;
     cursor: pointer;
-    z-index: 1000;
+    z-index: 300;
+    position: relative;
   }
   
   /* Estilo para los íconos dentro del botón */
   .toggle-icon {
-    fill: var(--header-icon-color);
+    fill: black;
     width: 20px;
     height: 20px;
     transition: fill 0.3s ease, transform 0.3s ease;
@@ -101,8 +102,13 @@
   
   /* Efecto de hover para los íconos */
   .toggle-button:hover .toggle-icon {
-    fill: var(--primary-active-text-color);
+    fill: black;
     transform: scale(1.1);
+  }
+  
+  /* Estilo para el botón toggle cuando está activo */
+  .toggle-button.active .toggle-icon {
+    fill: black;
   }
   
   .user-img {
@@ -158,6 +164,3 @@
   .logout-btn svg {
     fill: orange !important;
   }
-  
-  
-   

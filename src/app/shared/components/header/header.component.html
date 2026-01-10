@@ -26,13 +26,20 @@
     <a href="#" class="logo-container">
       <img src="./assets/img/logo_inout_v5.png" alt="Logo" class="logo-img" />
     </a>
+    
     <div class="navbar-brand mx-auto">{{ nombreApp | uppercase }}</div>
 
     <!-- Notificaciones y Dropdown de usuario -->
     <div class="btn-group ms-lg-0" style="margin-right: 8px">
-      <a class="btn">
+      <!-- Botón cambiar módulo -->
+      <a 
+        *ngIf="currentModule" 
+        (click)="changeModule()" 
+        class="btn"
+        title="Cambiar módulo"
+      >
         <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#bell" />
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-repeat" />
         </svg>
       </a>
 

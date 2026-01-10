@@ -10,10 +10,12 @@ import { SetupComponent } from './feature/setup/setup.component';
 import { LoginComponent } from './shared/components/login/login.component';
 import { RegisterComponent } from './shared/components/register/register.component';
 import { MaterialsComponent } from './feature/materials/materials.component';
+import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
     { path: ROOT_REGISTER, component: RegisterComponent },
+    { path: 'module-selector', component: ModuleSelectorComponent, canActivate: [AuthGuard] },
     {
         path: '',
         component: LayoutComponent,

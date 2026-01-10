@@ -7,6 +7,7 @@ import { RouterModule, RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { Application } from '../../model/application.model';
 import { ApplicationsService } from '../../services/applications/applications.service';
+import { ModuleService, ModuleType } from '../../services/module/module.service';
 import { NAME_APP_SHORT } from '../../../config/config';
 
 
@@ -29,9 +30,11 @@ export default class LayoutComponent implements OnInit {
   isSidebarVisible = true;
   isLargeScreen = false;
   application: Application | undefined;
+  currentModule: ModuleType | null = null;
 
   constructor(
-    private applicationsService: ApplicationsService
+    private applicationsService: ApplicationsService,
+    private moduleService: ModuleService
   ) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
@@ -40,12 +43,18 @@ export default class LayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSidebarPreference();
-    this.fetchApplication(NAME_APP_SHORT);
-    // consumo de materiales
+    
+    // Suscribirse a cambios de módulo
+    this.moduleService.currentModule$.subscribe(module => {
+      this.currentModule = module;
+      if (module) {
+        this.fetchApplicationForModule(NAME_APP_SHORT, module);
+      }
+    });
   }
 
-  // Función para obtener la aplicación
-  fetchApplication(name: string): void {
+  // Función para obtener la aplicación según el módulo
+  fetchApplicationForModule(name: string, module: ModuleType): void {
     const userRol = sessionStorage.getItem('user_rol');  
     if (!userRol) {
       console.error('No se encontró el rol del usuario en la sesión');
@@ -60,9 +69,14 @@ export default class LayoutComponent implements OnInit {
         }
   
         this.application = app;
-  
+        
+        // Filtrar menús según el módulo seleccionado
+        const moduleConfig = this.moduleService.getModuleConfig(module);
+        
         this.optionsMenu = this.application?.strRoles?.flatMap(rol =>
-          rol?.menuOptions?.map(menu => ({
+          rol?.menuOptions?.filter(menu => 
+            this.isMenuForModule(menu.strUrl || '', module)
+          ).map(menu => ({
             id: menu?.id ?? '',
             name: menu?.strName ?? 'Unnamed Menu',
             description: menu?.strDescription ?? '',
@@ -82,6 +96,21 @@ export default class LayoutComponent implements OnInit {
         console.error('Error fetching application:', error);
       }
     );
+  }
+
+  // Determinar si un menú pertenece al módulo actual
+  private isMenuForModule(url: string, module: ModuleType): boolean {
+    const moduleConfig = this.moduleService.getModuleConfig(module);
+    
+    if (module === 'inventory') {
+      return url.includes('warehouse') || url.includes('location') || url.includes('movement') || 
+             url.includes('inventory') || url === '/home';
+    } else if (module === 'manufacturing') {
+      return url.includes('material') || url.includes('product') || url.includes('menu') || 
+             url.includes('sale') || url.includes('cost') || url.includes('manufacturing') || url === '/home';
+    }
+    
+    return url === '/home' || url.includes('setup'); // Menús comunes
   }
 
   loadSidebarPreference(): void {

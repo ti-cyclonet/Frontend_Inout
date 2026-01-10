@@ -21,6 +21,7 @@ import {
 } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { NotificationsComponent } from '../notifications/notifications.component';
+import { ModuleService, ModuleType } from '../../services/module/module.service';
 
 @Component({
   selector: 'app-header',
@@ -41,6 +42,7 @@ export class HeaderComponent implements OnInit {
   userRol: string | null = null;
   userRolDescription: string | null = null;
   userImage: string | null = null;
+  currentModule: ModuleType | null = null;
   private _isSidebarVisible: boolean = false;
 
   @Input()
@@ -76,7 +78,8 @@ export class HeaderComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private moduleService: ModuleService
   ) {}
 
   ngOnInit(): void {
@@ -87,6 +90,12 @@ export class HeaderComponent implements OnInit {
       this.userRolDescription = sessionStorage.getItem('user_rolDescription');
       this.userImage = sessionStorage.getItem('user_image');
     }
+    
+    // Suscribirse a cambios de módulo
+    this.moduleService.currentModule$.subscribe(module => {
+      this.currentModule = module;
+    });
+    
     this.form = this.fb.group({
       oldPassword: ['', Validators.required],
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
@@ -127,6 +136,20 @@ export class HeaderComponent implements OnInit {
           },
         });
     }
+  }
+
+  changeModule(): void {
+    this.router.navigate(['/module-selector']);
+  }
+
+  getModuleDisplayName(): string {
+    if (!this.currentModule) return '';
+    return this.moduleService.getModuleConfig(this.currentModule).displayName;
+  }
+
+  getModuleIcon(): string {
+    if (!this.currentModule) return 'house-fill';
+    return this.moduleService.getModuleConfig(this.currentModule).icon;
   }
 
   logout() {

@@ -1,13 +1,71 @@
-<div class="title-container">
-  <a href="/home" class="title-link">
-    <svg viewBox="0 0 16 16">
+<div class="dashboard-container">
+  <div class="breadcrumb-modern">
+    <svg viewBox="0 0 16 16" class="breadcrumb-icon">
       <use xlink:href="./assets/icons/bootstrap-icons.svg#house-fill"/>
     </svg>
-    /Dashboard
-  </a>
-</div>
-<div class="card shadow m-3">
-  <div class="card-body">
-    Dashboard container
+    <span class="breadcrumb-text">Dashboard</span>
+  </div>
+
+  <div class="welcome-card">
+    <div class="card-header-modern">
+      <h4 class="card-title-modern">{{ getModuleDisplayName() || 'Sistema' }}</h4>
+      <p class="card-subtitle">Bienvenido al módulo de {{ getModuleDisplayName()?.toLowerCase() || 'gestión' }}</p>
+    </div>
+  </div>
+  
+  <div class="stats-grid" *ngIf="currentModule === 'inventory'">
+    <div class="stat-card-modern inventory-theme">
+      <div class="stat-icon-container">
+        <svg viewBox="0 0 16 16" class="stat-icon">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#boxes"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h5 class="stat-label">Bodegas</h5>
+        <p class="stat-number">12</p>
+      </div>
+      <div class="stat-glow"></div>
+    </div>
+    
+    <div class="stat-card-modern inventory-theme">
+      <div class="stat-icon-container">
+        <svg viewBox="0 0 16 16" class="stat-icon">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h5 class="stat-label">Ubicaciones</h5>
+        <p class="stat-number">248</p>
+      </div>
+      <div class="stat-glow"></div>
+    </div>
+  </div>
+  
+  <div class="stats-grid" *ngIf="currentModule === 'manufacturing'">
+    <div class="stat-card-modern manufacturing-theme">
+      <div class="stat-icon-container">
+        <svg viewBox="0 0 16 16" class="stat-icon">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#gear-fill"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h5 class="stat-label">Productos</h5>
+        <p class="stat-number">156</p>
+      </div>
+      <div class="stat-glow"></div>
+    </div>
+    
+    <div class="stat-card-modern manufacturing-theme">
+      <div class="stat-icon-container">
+        <svg viewBox="0 0 16 16" class="stat-icon">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#currency-dollar"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <h5 class="stat-label">Ventas Hoy</h5>
+        <p class="stat-number">$2,450</p>
+      </div>
+      <div class="stat-glow"></div>
+    </div>
   </div>
 </div>

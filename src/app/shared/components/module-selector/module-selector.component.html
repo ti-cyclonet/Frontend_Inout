@@ -1,0 +1,70 @@
+<!-- Selector de Módulos Minimalista -->
+<div class="modern-selector-container">
+  <div class="background-pattern"></div>
+  
+  <div class="content-wrapper">
+    <!-- Header animado -->
+    <div class="header-section" [@fadeInUp]>
+      <div class="logo-wrapper">
+        <img src="./assets/img/logo_inout_v1.png" alt="InOut Logo" class="animated-logo">
+      </div>
+      <h1 class="main-title">Selecciona tu área de trabajo</h1>
+      <p class="subtitle">Elige el módulo donde deseas trabajar</p>
+    </div>
+
+    <!-- Módulos -->
+    <div class="modules-grid" [@staggerIn]>
+      <!-- INVENTARIO -->
+      <div class="module-card inventory" 
+           (click)="selectModule('inventory')"
+           [@cardHover]="hoveredCard === 'inventory' ? 'hovered' : 'idle'"
+           (mouseenter)="hoveredCard = 'inventory'"
+           (mouseleave)="hoveredCard = null">
+        <div class="card-content">
+          <div class="icon-container">
+            <svg class="module-icon" viewBox="0 0 24 24">
+              <path d="M12 2L2 7v10c0 5.55 3.84 10 9 11 1.16.21 2.76.21 3.91 0C20.16 27 24 22.55 24 17V7l-10-5z"/>
+            </svg>
+          </div>
+          <h3 class="module-name">Inventario</h3>
+          <p class="module-desc">Gestión de almacenes y ubicaciones</p>
+          <div class="feature-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+        <div class="card-glow"></div>
+      </div>
+
+      <!-- MANUFACTURA -->
+      <div class="module-card manufacturing" 
+           (click)="selectModule('manufacturing')"
+           [@cardHover]="hoveredCard === 'manufacturing' ? 'hovered' : 'idle'"
+           (mouseenter)="hoveredCard = 'manufacturing'"
+           (mouseleave)="hoveredCard = null">
+        <div class="card-content">
+          <div class="icon-container">
+            <svg class="module-icon" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="module-name">Manufactura</h3>
+          <p class="module-desc">Producción y gestión de ventas</p>
+          <div class="feature-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+        <div class="card-glow"></div>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div class="loading-overlay" *ngIf="isLoading" [@fadeIn]>
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Cargando {{ selectedModuleName }}...</p>
+    </div>
+  </div>
+</div>

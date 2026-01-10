@@ -10,55 +10,177 @@
   
   .forgot-password-link:hover {
     text-decoration: underline; /* Si deseas un subrayado al pasar el ratón */
-    color: rgb(12, 13, 99); /* Mantiene el color blanco también al pasar el ratón */
+    color: rgb(255, 255, 255); /* Mantiene el color blanco también al pasar el ratón */
   }
   .login-container .custom-btn {
-    background-color:  blue;
-    color: white;
+    background-color: rgb(0, 10, 102);
+    color: rgb(254, 254, 254);
     padding: 12px 24px;
     border: none;
     border-radius: 30px;
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s;
-  }
+    width: 60%;
+    max-width: 250px;
+    min-width: 120px;
+}
+
+/* Botón responsive para tablets */
+@media (max-width: 768px) {
+    .login-container .custom-btn {
+        width: 70%;
+        max-width: 200px;
+    }
+}
+
+/* Botón responsive para móviles */
+@media (max-width: 576px) {
+    .login-container .custom-btn {
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+}
+
+  .login-container .custom-btn:hover {
+  background-color: rgb(0, 6, 58); /* Un gris claro para el efecto hover */
+  color: rgb(255, 254, 254); /* Mantiene el color del texto negro */
+}
+.login-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background-image: url('/assets/img/login_inout.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.login-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.20); /* 🌑 aquí ajustas la oscuridad */
+    backdrop-filter: blur(3px);       /* opcional: suaviza el fondo */
+    z-index: 1;
+}
+
+/* Asegura que el contenido esté encima del overlay */
+.login-container > * {
+    position: relative;
+    z-index: 2;
+}
+
+  
   /* Redondear los campos de entrada */
 input.form-control {
   border-radius: 30px; /* Cambiar este valor para ajustar el nivel de redondez */
 }
 
-.text-danger {
-  width: 200px;
-}
-
 /* Redondear el botón de "Sign in" */
 .custom-btn {
-  border-radius: 30px; /* Asegúrate de que el botón también sea redondeado */
+  border-radius: 30px;
+    width: 50%;
+    max-width: 250px; /* Asegúrate de que el botón también sea redondeado */
 }
 .custom-card {
-  background-color: #e2d1cc; 
-  color: white; /* Color del texto */
-  border-radius: 10px; /* Bordes redondeados */
-  border: 2px solid #eafcfb; /* Borde verde oscuro */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra suave */
+    border-radius: 18px !important;
+    padding: 35px 40px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    width: 420px;
+    margin: auto;
 }
+
+/* Responsive cuando la pantalla es menor a 412px */
+@media (max-width: 412px) {
+    .custom-card {
+        width: 98%;
+        padding: 25px 15px !important;
+    }
+}
+
+/* Para pantallas muy pequeñas */
+@media (max-width: 200px) {
+    .custom-card {
+        width: 99%;
+        padding: 20px 10px !important;
+        min-width: 180px;
+    }
+}
+/* Logo responsive */
+.logo-img {
+    max-width: 70%;
+    height: auto;
+    width: auto;
+}
+
+@media (max-width: 576px) {
+    .logo-img {
+        max-width: 60%;
+    }
+}
+
+/* Inputs responsive */
+.custom-card .form-control {
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 576px) {
+    .custom-card .form-control {
+        font-size: 0.9rem;
+    }
+}
+
+
 /* Cuadro de texto debajo de los errores */
 .custom-error-box {
-  display: block; /* Asegura que ocupe todo el ancho */
-  width: 275px; /* Hace que tenga el mismo ancho del input */
-  background-color: rgba(255, 0, 0, 0.1); /* Fondo rojo claro */
-  color: #680e0e; /* Texto rojo */
-  padding: 5px; /* Espaciado interno */
-  border-radius: 5px; /* Bordes redondeados */
-  font-size: 14px;
-  text-align: left;
-  font-weight: bold;
-  margin-top: 4px;
-  margin-left: 15px; /* Espaciado entre el input y el error */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    background-color: rgba(255, 0, 0, 0.1);
+    color: #680e0e;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: left;
+    font-weight: bold;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 576px) {
+    .custom-error-box {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
 }
 
 .custom-welcome {
-  color: rgb(54, 39, 39); /* Cambia "red" por el color que desees */
+    padding-top: 1%;
+    font-family: 'Roboto Condensed', sans-serif;
+    color: rgb(253, 244, 244);
+    font-size: 1.5rem;
+}
+
+@media (max-width: 576px) {
+    .custom-welcome {
+        font-size: 1.3rem;
+        padding-top: 0.5%;
+    }
 }
 
 .notification-container {

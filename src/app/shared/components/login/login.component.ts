@@ -78,8 +78,8 @@ export class LoginComponent {
         this.showToast('Inicio de sesión exitoso', 'success', 'A', 0);
   
         setTimeout(() => {
-          this.router.navigate(['/home']);
-        }, 3000);
+          this.router.navigate(['/module-selector']);
+        }, 2000);
       } else {
         this.showToast('Credenciales incorrectas', 'danger', 'A', 0);
         console.error('❌ Error: No se recibió un token válido.');
