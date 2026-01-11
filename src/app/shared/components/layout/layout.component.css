@@ -8,6 +8,7 @@
   overflow-y: auto;
   flex-grow: 1; 
   background-color: #e8e8e8;
+  min-height: calc(100vh - 120px);
 }
 
 .main-content.reduced-width {

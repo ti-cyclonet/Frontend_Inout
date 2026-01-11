@@ -1,0 +1,182 @@
+<div class="composition-container">
+  <!-- Header -->
+  <div class="composition-header">
+    <div class="title-section">
+      <h3>Material Composition</h3>
+      <p>Define the components that make up this material</p>
+    </div>
+    
+    <div class="header-actions">
+      <button 
+        class="btn btn-primary" 
+        (click)="showAddForm = !showAddForm"
+        [disabled]="getFilteredMaterials().length === 0">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Add Component
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Component Form -->
+  <div class="add-form" [class.show]="showAddForm">
+    <div class="form-content">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Component Material</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="selectedMaterialId">
+            <option [value]="null">Select a material</option>
+            <option 
+              *ngFor="let material of getFilteredMaterials()" 
+              [value]="material.id">
+              {{ material.name }} ({{ material.measurementUnit }})
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Quantity</label>
+          <input 
+            type="number" 
+            class="form-control" 
+            [(ngModel)]="quantity"
+            min="0.01"
+            step="0.01"
+            placeholder="0.00">
+        </div>
+        
+        <div class="form-actions">
+          <button 
+            class="btn btn-success btn-sm" 
+            (click)="addComponent()"
+            [disabled]="!selectedMaterialId || quantity <= 0">
+            Add
+          </button>
+          <button 
+            class="btn btn-outline-secondary btn-sm" 
+            (click)="resetForm()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compositions List -->
+  <div class="compositions-list" *ngIf="compositions.length > 0">
+    <div class="list-header">
+      <h4>Components ({{ compositions.length }})</h4>
+      <div class="total-cost">
+        <span class="cost-label">Total Cost:</span>
+        <span class="cost-value">${{ getTotalCost() | number:'1.2-2' }}</span>
+      </div>
+    </div>
+    
+    <div class="composition-table">
+      <div class="table-header">
+        <div class="col-material">Material</div>
+        <div class="col-quantity">Quantity</div>
+        <div class="col-unit-cost">Unit Cost</div>
+        <div class="col-total-cost">Total Cost</div>
+        <div class="col-actions">Actions</div>
+      </div>
+      
+      <div class="table-body">
+        <div 
+          class="composition-row" 
+          *ngFor="let composition of compositions; trackBy: trackByCompositionId">
+          
+          <div class="col-material">
+            <div class="material-info">
+              <span class="material-name">{{ composition.componentMaterial?.name }}</span>
+              <small class="material-unit">{{ composition.componentMaterial?.measurementUnit }}</small>
+            </div>
+          </div>
+          
+          <div class="col-quantity">
+            <input 
+              type="number" 
+              class="quantity-input"
+              [value]="composition.quantity"
+              (input)="updateQuantity(composition, +$any($event.target).value)"
+              min="0.01"
+              step="0.01">
+          </div>
+          
+          <div class="col-unit-cost">
+            <span class="cost-value">
+              ${{ composition.componentMaterial?.price | number:'1.2-2' }}
+            </span>
+          </div>
+          
+          <div class="col-total-cost">
+            <span class="cost-value total">
+              ${{ (composition.componentMaterial?.price || 0) * composition.quantity | number:'1.2-2' }}
+            </span>
+          </div>
+          
+          <div class="col-actions">
+            <button 
+              class="btn btn-sm btn-outline-danger"
+              (click)="removeComponent(composition)"
+              title="Remove component">
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="compositions.length === 0">
+    <svg class="empty-icon" viewBox="0 0 16 16">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
+    </svg>
+    <h4>No components defined</h4>
+    <p>This material doesn't have any components yet. Add components to create a bill of materials.</p>
+  </div>
+
+  <!-- Save Actions -->
+  <div class="save-actions" *ngIf="compositions.length > 0">
+    <button 
+      class="btn btn-success" 
+      (click)="saveComposition()"
+      [disabled]="saving">
+      <div class="btn-spinner" *ngIf="saving"></div>
+      <svg viewBox="0 0 16 16" *ngIf="!saving">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
+      </svg>
+      {{ saving ? 'Saving...' : 'Save Composition' }}
+    </button>
+  </div>
+
+  <!-- Cost Breakdown -->
+  <div class="cost-breakdown" *ngIf="compositions.length > 0">
+    <h4>Cost Breakdown</h4>
+    <div class="breakdown-list">
+      <div class="breakdown-item" *ngFor="let composition of compositions">
+        <div class="item-info">
+          <span class="item-name">{{ composition.componentMaterial?.name }}</span>
+          <span class="item-detail">
+            {{ composition.quantity }} {{ composition.componentMaterial?.measurementUnit }} 
+            × ${{ composition.componentMaterial?.price | number:'1.2-2' }}
+          </span>
+        </div>
+        <div class="item-cost">
+          ${{ (composition.componentMaterial?.price || 0) * composition.quantity | number:'1.2-2' }}
+        </div>
+      </div>
+      
+      <div class="breakdown-total">
+        <div class="total-label">Total Material Cost</div>
+        <div class="total-amount">${{ getTotalCost() | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
+</div>

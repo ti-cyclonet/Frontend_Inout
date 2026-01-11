@@ -1,0 +1,334 @@
+<div class="material-form-container">
+  <!-- Header -->
+  <div class="form-header">
+    <div class="title-container">
+      <a href="/materials" class="title-link">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#boxes" />
+        </svg>
+        /Materials / {{ isEditMode ? 'Editar' : 'Crear' }}
+      </a>
+    </div>
+    
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
+        <div class="step-number">1</div>
+        <div class="step-label">Info Básica</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 1"></div>
+      <div class="step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2">
+        <div class="step-number">2</div>
+        <div class="step-label">Inventario</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 2"></div>
+      <div class="step" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3">
+        <div class="step-number">3</div>
+        <div class="step-label">Estado</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 3"></div>
+      <div class="step" [class.active]="currentStep >= 4">
+        <div class="step-number">4</div>
+        <div class="step-label">Imágenes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando material...</p>
+  </div>
+
+  <!-- Form Content -->
+  <div class="form-content" *ngIf="!loading">
+    <form [formGroup]="materialForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Step 1: Basic Information -->
+      <div class="form-step" *ngIf="currentStep === 1">
+        <div class="step-header">
+          <h3>Información Básica</h3>
+          <p>Ingresa los detalles básicos del material</p>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Nombre del Material *</label>
+            <input 
+              type="text" 
+              id="name"
+              class="form-control"
+              formControlName="name"
+              placeholder="Ingresa el nombre del material"
+              [class.is-invalid]="materialForm.get('name')?.invalid && materialForm.get('name')?.touched">
+            <div class="invalid-feedback">{{ getFieldError('name') }}</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="measurementUnit">Unidad de Medida *</label>
+            <select 
+              id="measurementUnit"
+              class="form-select"
+              formControlName="measurementUnit"
+              [class.is-invalid]="materialForm.get('measurementUnit')?.invalid && materialForm.get('measurementUnit')?.touched">
+              <option value="">Seleccionar unidad</option>
+              <option value="kg">Kilogramos (kg)</option>
+              <option value="g">Gramos (g)</option>
+              <option value="units">Unidades</option>
+              <option value="liters">Litros</option>
+              <option value="meters">Metros</option>
+              <option value="pieces">Piezas</option>
+              <option value="boxes">Cajas</option>
+            </select>
+            <div class="invalid-feedback">{{ getFieldError('measurementUnit') }}</div>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="description">Descripción *</label>
+            <textarea 
+              id="description"
+              class="form-control"
+              formControlName="description"
+              rows="3"
+              placeholder="Ingresa la descripción del material"
+              [class.is-invalid]="materialForm.get('description')?.invalid && materialForm.get('description')?.touched"></textarea>
+            <div class="invalid-feedback">{{ getFieldError('description') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Inventory -->
+      <div class="form-step" *ngIf="currentStep === 2">
+        <div class="step-header">
+          <h3>Información de Inventario</h3>
+          <p>Configura precios y niveles de stock</p>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="price">Precio por Unidad *</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input 
+                type="number" 
+                id="price"
+                class="form-control"
+                formControlName="price"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                [class.is-invalid]="materialForm.get('price')?.invalid && materialForm.get('price')?.touched">
+            </div>
+            <div class="invalid-feedback">{{ getFieldError('price') }}</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="ubicacion">Ubicación *</label>
+            <select 
+              id="ubicacion"
+              class="form-select"
+              formControlName="ubicacion"
+              [class.is-invalid]="materialForm.get('ubicacion')?.invalid && materialForm.get('ubicacion')?.touched">
+              <option value="">Seleccionar ubicación</option>
+              <option value="Warehouse A">Bodega A</option>
+              <option value="Warehouse B">Bodega B</option>
+              <option value="Warehouse C">Bodega C</option>
+              <option value="Storage Room 1">Cuarto de Almacenamiento 1</option>
+              <option value="Storage Room 2">Cuarto de Almacenamiento 2</option>
+            </select>
+            <div class="invalid-feedback">{{ getFieldError('ubicacion') }}</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="stockMin">Stock Mínimo *</label>
+            <input 
+              type="number" 
+              id="stockMin"
+              class="form-control"
+              formControlName="stockMin"
+              min="0"
+              placeholder="0"
+              [class.is-invalid]="materialForm.get('stockMin')?.invalid && materialForm.get('stockMin')?.touched">
+            <div class="invalid-feedback">{{ getFieldError('stockMin') }}</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="stockMax">Stock Máximo *</label>
+            <input 
+              type="number" 
+              id="stockMax"
+              class="form-control"
+              formControlName="stockMax"
+              min="1"
+              placeholder="0"
+              [class.is-invalid]="materialForm.get('stockMax')?.invalid && materialForm.get('stockMax')?.touched">
+            <div class="invalid-feedback">{{ getFieldError('stockMax') }}</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="currentStock">Stock Actual</label>
+            <input 
+              type="number" 
+              id="currentStock"
+              class="form-control"
+              formControlName="currentStock"
+              min="0"
+              placeholder="0">
+            <small class="form-text text-muted">Dejar vacío si es un material nuevo</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Status -->
+      <div class="form-step" *ngIf="currentStep === 3">
+        <div class="step-header">
+          <h3>Estado del Material</h3>
+          <p>Establece el estado y revisa tu información</p>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="status">Status *</label>
+            <select 
+              id="status"
+              class="form-select"
+              formControlName="status">
+              <option value="active">Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="form-summary">
+          <h4>Resumen</h4>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <label>Nombre:</label>
+              <span>{{ materialForm.get('name')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Descripción:</label>
+              <span>{{ materialForm.get('description')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Unidad:</label>
+              <span>{{ materialForm.get('measurementUnit')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Precio:</label>
+              <span>${{ materialForm.get('price')?.value || 0 | number:'1.2-2' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Ubicación:</label>
+              <span>{{ materialForm.get('ubicacion')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Rango de Stock:</label>
+              <span>{{ materialForm.get('stockMin')?.value || 0 }} - {{ materialForm.get('stockMax')?.value || 0 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Images -->
+      <div class="form-step" *ngIf="currentStep === 4">
+        <div class="step-header">
+          <h3>Imágenes del Material</h3>
+          <p>Sube imágenes para mostrar este material</p>
+        </div>
+        
+        <app-image-manager
+          [images]="materialImages"
+          [maxImages]="5"
+          [allowMultiple]="true"
+          (imagesChange)="onImagesChange($event)">
+        </app-image-manager>
+        
+        <!-- Final Summary -->
+        <div class="form-summary">
+          <h4>Revisión Final</h4>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <label>Nombre:</label>
+              <span>{{ materialForm.get('name')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Descripción:</label>
+              <span>{{ materialForm.get('description')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Unidad:</label>
+              <span>{{ materialForm.get('measurementUnit')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Precio:</label>
+              <span>${{ materialForm.get('price')?.value || 0 | number:'1.2-2' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Ubicación:</label>
+              <span>{{ materialForm.get('ubicacion')?.value || 'No establecido' }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Rango de Stock:</label>
+              <span>{{ materialForm.get('stockMin')?.value || 0 }} - {{ materialForm.get('stockMax')?.value || 0 }}</span>
+            </div>
+            <div class="summary-item">
+              <label>Imágenes:</label>
+              <span>{{ materialImages.length }} subidas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <div class="left-actions">
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary"
+            (click)="cancel()">
+            Cancelar
+          </button>
+        </div>
+        
+        <div class="right-actions">
+          <button 
+            type="button" 
+            class="btn btn-outline-primary"
+            *ngIf="currentStep > 1"
+            (click)="previousStep()">
+            <svg viewBox="0 0 16 16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
+            </svg>
+            Anterior
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-primary"
+            *ngIf="currentStep < totalSteps"
+            [disabled]="!isStepValid(currentStep)"
+            (click)="nextStep()">
+            Siguiente
+            <svg viewBox="0 0 16 16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
+            </svg>
+          </button>
+          
+          <button 
+            type="submit" 
+            class="btn btn-success"
+            *ngIf="currentStep === totalSteps"
+            [disabled]="materialForm.invalid || saving">
+            <div class="btn-spinner" *ngIf="saving"></div>
+            <svg viewBox="0 0 16 16" *ngIf="!saving">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
+            </svg>
+            {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar Material' : 'Crear Material') }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

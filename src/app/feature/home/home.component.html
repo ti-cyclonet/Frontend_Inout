@@ -9,7 +9,7 @@
   <div class="welcome-card">
     <div class="card-header-modern">
       <h4 class="card-title-modern">{{ getModuleDisplayName() || 'Sistema' }}</h4>
-      <p class="card-subtitle">Bienvenido al módulo de {{ getModuleDisplayName()?.toLowerCase() || 'gestión' }}</p>
+      <p class="card-subtitle">Bienvenido al módulo de {{ getModuleDisplayName()!.toLowerCase() || 'gestión' }}</p>
     </div>
   </div>
   

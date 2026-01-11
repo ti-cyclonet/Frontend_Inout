@@ -1,0 +1,309 @@
+<div class="materials-list-container">
+  <!-- Header -->
+  <div class="list-header">
+    <div class="title-container">
+      <a href="/materials" class="title-link">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#boxes" />
+        </svg>
+        /Lista de Materiales
+      </a>
+    </div>
+    
+    <div class="header-actions">
+      <button class="btn btn-outline-secondary" (click)="showFilters = !showFilters">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
+        </svg>
+        Filtros
+      </button>
+      
+      <div class="view-toggle">
+        <button 
+          class="btn btn-sm" 
+          [class.btn-primary]="viewMode === 'table'"
+          [class.btn-outline-primary]="viewMode !== 'table'"
+          (click)="viewMode = 'table'">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#table" />
+          </svg>
+        </button>
+        <button 
+          class="btn btn-sm" 
+          [class.btn-primary]="viewMode === 'cards'"
+          [class.btn-outline-primary]="viewMode !== 'cards'"
+          (click)="viewMode = 'cards'">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" />
+          </svg>
+        </button>
+      </div>
+      
+      <button class="btn btn-primary">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Agregar Material
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" [class.show]="showFilters">
+    <div class="filters-content">
+      <div class="filter-group">
+        <label>Buscar</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="filters.search"
+          (input)="onFilterChange()"
+          placeholder="Buscar por nombre o descripción...">
+      </div>
+      
+      <div class="filter-group">
+        <label>Estado del Stock</label>
+        <select class="form-select" [(ngModel)]="filters.stockStatus" (change)="onFilterChange()">
+          <option value="all">Todos</option>
+          <option value="low">Stock Bajo</option>
+          <option value="normal">Normal</option>
+          <option value="high">Stock Alto</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Estado</label>
+        <select class="form-select" [(ngModel)]="filters.status" (change)="onFilterChange()">
+          <option value="all">Todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="bulk-actions" *ngIf="selectedMaterials.size > 0">
+    <div class="selected-count">
+      {{ selectedMaterials.size }} material(es) seleccionado(s)
+    </div>
+    <div class="bulk-buttons">
+      <button class="btn btn-outline-primary btn-sm" (click)="exportSelected()">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#download" />
+        </svg>
+        Exportar
+      </button>
+      <button class="btn btn-outline-danger btn-sm" (click)="deleteSelected()">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+        </svg>
+        Eliminar
+      </button>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-container" *ngIf="viewMode === 'table'">
+    <div class="table-responsive">
+      <table class="table materials-table">
+        <thead>
+          <tr>
+            <th class="checkbox-col">
+              <input 
+                type="checkbox" 
+                [checked]="selectedMaterials.size === materials.length && materials.length > 0"
+                [indeterminate]="selectedMaterials.size > 0 && selectedMaterials.size < materials.length"
+                (change)="selectAllMaterials()">
+            </th>
+            <th (click)="onSort('name')" class="sortable">
+              Nombre
+              <svg viewBox="0 0 16 16" class="sort-icon">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
+              </svg>
+            </th>
+            <th class="d-none d-md-table-cell">Descripción</th>
+            <th (click)="onSort('currentStock')" class="sortable text-center">
+              Stock
+              <svg viewBox="0 0 16 16" class="sort-icon">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
+              </svg>
+            </th>
+            <th (click)="onSort('price')" class="sortable text-center">
+              Precio
+              <svg viewBox="0 0 16 16" class="sort-icon">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
+              </svg>
+            </th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let material of materials; trackBy: trackById" 
+              [class.selected]="selectedMaterials.has(material.id)">
+            <td>
+              <input 
+                type="checkbox" 
+                [checked]="selectedMaterials.has(material.id)"
+                (change)="toggleMaterialSelection(material.id)">
+            </td>
+            <td>
+              <div class="material-info">
+                <img 
+                  *ngIf="material.images && material.images.length > 0" 
+                  [src]="material.images[0].strImageUrl || material.images[0].url" 
+                  [alt]="material.name"
+                  class="material-image">
+                <div class="material-fallback" *ngIf="!material.images || material.images.length === 0">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#image" />
+                  </svg>
+                </div>
+                <div class="material-name">
+                  <strong>{{ material.name }}</strong>
+                  <small class="text-muted d-block">{{ material.measurementUnit }}</small>
+                </div>
+              </div>
+            </td>
+            <td class="d-none d-md-table-cell">
+              <span class="description-text">{{ material.description }}</span>
+            </td>
+            <td class="text-center">
+              <div class="stock-info">
+                <span class="stock-value" [ngClass]="getStockStatusClass(material)">
+                  {{ material.currentStock || 0 | numberFormat:0 }}
+                </span>
+                <small class="text-muted d-block">/ {{ material.stockMax | numberFormat:0 }}</small>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="price-value">${{ material.price | numberFormat:2 }}</span>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="'status-' + material.status">
+                {{ material.status }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-primary" (click)="viewMaterial(material)" title="Ver">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(material)" title="Editar">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deleteMaterial(material)" title="Eliminar">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cards View -->
+  <div class="cards-container" *ngIf="viewMode === 'cards'">
+    <div class="material-card" *ngFor="let material of materials; trackBy: trackById"
+         [class.selected]="selectedMaterials.has(material.id)">
+      <div class="card-header">
+        <input 
+          type="checkbox" 
+          [checked]="selectedMaterials.has(material.id)"
+          (change)="toggleMaterialSelection(material.id)">
+        <span class="status-badge" [ngClass]="'status-' + material.status">
+          {{ material.status }}
+        </span>
+      </div>
+      
+      <div class="card-content">
+        <h4 class="material-name">{{ material.name }}</h4>
+        <p class="material-description">{{ material.description }}</p>
+        
+        <div class="material-stats">
+          <div class="stat">
+            <label>Stock</label>
+            <span class="value" [ngClass]="getStockStatusClass(material)">
+              {{ material.currentStock || 0 | numberFormat:0 }} / {{ material.stockMax | numberFormat:0 }}
+            </span>
+          </div>
+          <div class="stat">
+            <label>Price</label>
+            <span class="value">${{ material.price | numberFormat:2 }}</span>
+          </div>
+          <div class="stat">
+            <label>Unit</label>
+            <span class="value">{{ material.measurementUnit }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-actions">
+        <button class="btn btn-sm btn-outline-primary" (click)="viewMaterial(material)">Ver</button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(material)">Editar</button>
+        <button class="btn btn-sm btn-outline-danger" (click)="deleteMaterial(material)">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando materiales...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && materials.length === 0">
+    <svg viewBox="0 0 16 16" class="empty-icon">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#inbox" />
+    </svg>
+    <h3>No se encontraron materiales</h3>
+    <p>Intenta ajustar tus filtros o agregar un nuevo material.</p>
+    <button class="btn btn-primary">Agregar Primer Material</button>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading && materials.length > 0">
+    <div class="pagination-info">
+      Mostrando {{ (currentPage - 1) * pageSize + 1 }} a {{ Math.min(currentPage * pageSize, totalItems) }} de {{ totalItems }} materiales
+    </div>
+    
+    <div class="pagination-controls">
+      <select class="form-select page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} por página</option>
+      </select>
+      
+      <div class="pagination-buttons">
+        <button 
+          class="btn btn-outline-secondary btn-sm" 
+          [disabled]="currentPage === 1"
+          (click)="onPageChange(currentPage - 1)">
+          Anterior
+        </button>
+        
+        <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+        
+        <button 
+          class="btn btn-outline-secondary btn-sm" 
+          [disabled]="currentPage === totalPages"
+          (click)="onPageChange(currentPage + 1)">
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

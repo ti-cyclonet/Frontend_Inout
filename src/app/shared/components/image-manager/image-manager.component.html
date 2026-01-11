@@ -1,0 +1,117 @@
+<div class="image-manager">
+  <!-- Upload Area -->
+  <div class="upload-area" 
+       [class.drag-over]="dragOver"
+       [class.disabled]="!canAddMore()"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event)"
+       *ngIf="canAddMore()">
+    
+    <div class="upload-content">
+      <svg class="upload-icon" viewBox="0 0 16 16">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#cloud-upload" />
+      </svg>
+      
+      <h4>Upload Images</h4>
+      <p>Drag and drop images here or click to browse</p>
+      
+      <input 
+        type="file" 
+        class="file-input"
+        accept="image/*"
+        [multiple]="allowMultiple"
+        (change)="onFileSelected($event)">
+      
+      <button type="button" class="btn btn-primary">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Choose Images
+      </button>
+      
+      <small class="upload-info">
+        Maximum {{ maxImages }} images. JPEG, PNG, WebP, GIF up to 5MB each.
+      </small>
+    </div>
+  </div>
+
+  <!-- Upload Progress -->
+  <div class="upload-progress" *ngIf="uploading">
+    <div class="progress-item" *ngFor="let progress of getProgressEntries()">
+      <div class="progress-info">
+        <span class="file-name">{{ progress.key.split('_').slice(1).join('_') }}</span>
+        <span class="progress-percent">{{ progress.value | number:'1.0-0' }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="progress.value"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Images Grid -->
+  <div class="images-grid" *ngIf="images.length > 0">
+    <div class="image-item" *ngFor="let image of images; trackBy: trackByImageId">
+      <div class="image-container">
+        <img [src]="image.url" [alt]="'Material image ' + image.id" class="material-image">
+        
+        <div class="image-overlay">
+          <div class="image-actions">
+            <button 
+              type="button" 
+              class="btn btn-sm btn-light"
+              title="View full size"
+              (click)="viewImage(image)">
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+              </svg>
+            </button>
+            
+            <button 
+              type="button" 
+              class="btn btn-sm btn-danger"
+              title="Remove image"
+              (click)="removeImage(image)">
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="image-status" [ngClass]="'status-' + image.status">
+          {{ image.status }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="images.length === 0 && !uploading">
+    <svg class="empty-icon" viewBox="0 0 16 16">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#image" />
+    </svg>
+    <h4>No images uploaded</h4>
+    <p>Add images to showcase this material</p>
+  </div>
+
+  <!-- Image Counter -->
+  <div class="image-counter" *ngIf="maxImages > 1">
+    <span class="counter-text">{{ images.length }} / {{ maxImages }} images</span>
+    <div class="counter-bar">
+      <div class="counter-fill" [style.width.%]="(images.length / maxImages) * 100"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Viewer Modal (Simple implementation) -->
+<div class="image-modal" *ngIf="selectedImage" (click)="closeImageViewer()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeImageViewer()">
+      <svg viewBox="0 0 16 16">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#x" />
+      </svg>
+    </button>
+    <img [src]="selectedImage.url" [alt]="'Material image ' + selectedImage.id" class="modal-image">
+  </div>
+</div>
