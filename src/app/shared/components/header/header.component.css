@@ -22,6 +22,16 @@
     text-align: center;
     color: var(--header-icon-color); /* Color del texto de la aplicación */
     font-size: 1.5rem;
+    pointer-events: none;
+}
+
+/* Estilo para el nombre del cliente */
+.client-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--header-icon-color);
+    opacity: 0.8;
+    margin-top: 2px;
 }
 
 /* Ocultar el título en pantallas medianas o menores */

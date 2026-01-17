@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, of, BehaviorSubject } from 'rxjs';
-import { delay, map, catchError } from 'rxjs/operators';
+import { Observable, of, BehaviorSubject, forkJoin } from 'rxjs';
+import { delay, map, catchError, switchMap } from 'rxjs/operators';
 import { Material, MaterialFilters, MaterialMetrics, PaginatedResponse } from '../models/material.model';
 import { ApiConfigService } from './api-config.service';
 
@@ -45,12 +45,12 @@ export class MaterialService {
           currentStock: item.ingQuantity,
           status: item.strStatus.toLowerCase(),
           ubicacion: item.strLocation,
+          location: item.strLocation,
           createDate: new Date(item.dtmCreationDate),
           images: item.images || []
         }))
       })),
       catchError(error => {
-        console.error('Error loading materials:', error);
         return this.getFallbackMaterials(filters, page, limit);
       })
     );
@@ -59,7 +59,6 @@ export class MaterialService {
   getMaterialById(id: number): Observable<Material | undefined> {
     return this.http.get<Material>(`${this.apiConfig.ENDPOINTS.MATERIALS}/${id}`).pipe(
       catchError(error => {
-        console.error('Error loading material:', error);
         return of(undefined);
       })
     );
@@ -68,7 +67,6 @@ export class MaterialService {
   getMetrics(): Observable<MaterialMetrics> {
     return this.http.get<MaterialMetrics>(this.apiConfig.ENDPOINTS.MATERIALS_METRICS).pipe(
       catchError(error => {
-        console.error('Error loading metrics:', error);
         return this.getFallbackMetrics();
       })
     );
@@ -77,7 +75,14 @@ export class MaterialService {
   createMaterial(material: Omit<Material, 'id' | 'createDate'>): Observable<Material> {
     return this.http.post<Material>(this.apiConfig.ENDPOINTS.MATERIALS, material).pipe(
       catchError(error => {
-        console.error('Error creating material:', error);
+        throw error;
+      })
+    );
+  }
+
+  createTransformedMaterial(materialData: any): Observable<Material> {
+    return this.http.post<Material>(`${this.apiConfig.baseUrl}/materials-t`, materialData).pipe(
+      catchError(error => {
         throw error;
       })
     );
@@ -86,7 +91,6 @@ export class MaterialService {
   updateMaterial(id: number, material: Partial<Material>): Observable<Material> {
     return this.http.put<Material>(`${this.apiConfig.ENDPOINTS.MATERIALS}/${id}`, material).pipe(
       catchError(error => {
-        console.error('Error updating material:', error);
         throw error;
       })
     );
@@ -96,7 +100,6 @@ export class MaterialService {
     return this.http.delete<void>(`${this.apiConfig.ENDPOINTS.MATERIALS}/${id}`).pipe(
       map(() => true),
       catchError(error => {
-        console.error('Error deleting material:', error);
         return of(false);
       })
     );
@@ -107,7 +110,6 @@ export class MaterialService {
     const url = this.apiConfig.getEndpoint('MATERIAL_COMPOSITION', { id: materialId });
     return this.http.get<any[]>(url).pipe(
       catchError(error => {
-        console.error('Error loading composition:', error);
         return of([]);
       })
     );
@@ -117,7 +119,6 @@ export class MaterialService {
     const url = this.apiConfig.getEndpoint('MATERIAL_COMPOSITION', { id: materialId });
     return this.http.put<any[]>(url, { composition }).pipe(
       catchError(error => {
-        console.error('Error updating composition:', error);
         throw error;
       })
     );
@@ -146,11 +147,32 @@ export class MaterialService {
     }).pipe(delay(300));
   }
 
+  getTransformedMaterials(): Observable<any[]> {
+    return this.http.get<any>(`${this.apiConfig.baseUrl}/materials-t`).pipe(
+      switchMap((response: any): Observable<any[]> => {
+        const materials = Array.isArray(response) ? response : (response.data || []);
+        
+        if (materials.length === 0) {
+          return of([]);
+        }
+        
+        const materialRequests = materials.map((material: any) => 
+          this.http.get<any[]>(`${this.apiConfig.baseUrl}/materials-t/${material.strId}/compositions`).pipe(
+            catchError(() => of([])),
+            map(compositions => ({ ...material, compositions }))
+          )
+        );
+        
+        return forkJoin(materialRequests) as Observable<any[]>;
+      }),
+      catchError(() => of([]))
+    );
+  }
+
   // Recent Activities
   getRecentActivities(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiConfig.ENDPOINTS.MATERIALS}/activities`).pipe(
       catchError(error => {
-        console.error('Error loading activities:', error);
         return of([]);
       })
     );

@@ -7,6 +7,13 @@ import { AuthService } from '../../services/auth/auth.service';
 import { LoginDTO } from '../../model/login';
 import { NAME_APP_SHORT } from '../../../config/config';
 import { NotificationsComponent } from "../notifications/notifications.component";
+
+interface ClientContract {
+  contractId: string;
+  clientName: string;
+  packageName: string;
+}
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,6 +28,12 @@ export class LoginComponent {
   submitted = false;
   isVisible: boolean = true;
   errorMessage = '';
+  
+  // Selector de cliente
+  showClientSelector: boolean = false;
+  availableContracts: ClientContract[] = [];
+  selectedContractId: string = '';
+  pendingLoginResponse: any = null;
 
   // configuración notificaciones tipo toast
     toastTitle: string = '';
@@ -73,21 +86,43 @@ export class LoginComponent {
     };
   
     this.authService.login(loginDTO).subscribe(response => {
-      if (response.access_token) {
-        sessionStorage.setItem('token', response.access_token);
-        this.showToast('Inicio de sesión exitoso', 'success', 'A', 0);
-  
-        setTimeout(() => {
-          this.router.navigate(['/module-selector']);
-        }, 2000);
+      if (response.contracts && response.contracts.length > 1) {
+        this.pendingLoginResponse = response;
+        this.availableContracts = response.contracts;
+        this.showClientSelector = true;
+        this.cdr.detectChanges();
       } else {
-        this.showToast('Credenciales incorrectas', 'danger', 'A', 0);
-        console.error('❌ Error: No se recibió un token válido.');
+        this.completeLogin(response);
       }
     }, error => {
       this.showToast('Error en la autenticación', 'danger', 'A', 0);
-      console.error('❌ Error de login:', error);
     });
+  }
+
+  selectClient() {
+    if (!this.selectedContractId) {
+      this.showToast('Por favor seleccione un cliente', 'warning', 'A', 0);
+      return;
+    }
+
+    const completeLoginDTO = {
+      email: this.loginForm.get('username')?.value,
+      applicationName: NAME_APP_SHORT,
+      contractId: this.selectedContractId
+    };
+
+    this.authService.completeLogin(completeLoginDTO).subscribe(response => {
+      this.showClientSelector = false;
+      this.completeLogin(response);
+    }, error => {
+      this.showToast('Error al seleccionar cliente', 'danger', 'A', 0);
+    });
+  }
+
+  private completeLogin(response: any) {
+    this.authService.setUserSession(response);
+    this.showToast('Inicio de sesión exitoso', 'success', 'A', 0);
+    this.router.navigate(['/module-selector']);
   }
 
   // Funciones para NOTIFICACIONES

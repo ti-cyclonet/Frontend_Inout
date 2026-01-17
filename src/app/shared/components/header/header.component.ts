@@ -42,6 +42,8 @@ export class HeaderComponent implements OnInit {
   userRol: string | null = null;
   userRolDescription: string | null = null;
   userImage: string | null = null;
+  clientName: string | null = null;
+  appDescription: string = 'INVENTORY MANAGEMENT';
   currentModule: ModuleType | null = null;
   private _isSidebarVisible: boolean = false;
 
@@ -89,6 +91,12 @@ export class HeaderComponent implements OnInit {
       this.userRol = sessionStorage.getItem('user_rol');
       this.userRolDescription = sessionStorage.getItem('user_rolDescription');
       this.userImage = sessionStorage.getItem('user_image');
+      
+      // Obtener nombre del cliente desde el token
+      this.getClientNameFromToken();
+      
+      // Obtener descripción de la aplicación
+      this.getAppDescription();
     }
     
     // Suscribirse a cambios de módulo
@@ -210,6 +218,41 @@ export class HeaderComponent implements OnInit {
         this.cdr.detectChanges();
       }, 5000);
     }
+  }
+
+  private getClientNameFromToken(): void {
+    try {
+      const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('token');
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Hacer llamada al backend para obtener el nombre del cliente usando el tenantId
+        this.http.get(`http://localhost:3000/api/users/${payload.tenantId}`).subscribe({
+          next: (user: any) => {
+            if (user.basicData?.strPersonType === 'N') {
+              this.clientName = `${user.basicData.naturalPersonData?.firstName || ''} ${user.basicData.naturalPersonData?.firstSurname || ''}`.trim();
+            } else if (user.basicData?.strPersonType === 'J') {
+              this.clientName = user.basicData.legalEntityData?.businessName || '';
+            }
+          },
+          error: () => {
+            this.clientName = null;
+          }
+        });
+      }
+    } catch (error) {
+      this.clientName = null;
+    }
+  }
+
+  private getAppDescription(): void {
+    this.http.get('http://localhost:3000/api/applications/INOUT').subscribe({
+      next: (application: any) => {
+        this.appDescription = application.strDescription || 'INVENTORY MANAGEMENT';
+      },
+      error: () => {
+        this.appDescription = 'INVENTORY MANAGEMENT';
+      }
+    });
   }
   // ----------------------------------------------
 }

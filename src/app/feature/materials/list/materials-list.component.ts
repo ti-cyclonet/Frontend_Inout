@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
@@ -12,17 +12,19 @@ import { Material, MaterialFilters, PaginatedResponse } from '../../../shared/mo
   templateUrl: './materials-list.component.html',
   styleUrls: ['./materials-list.component.css']
 })
-export class MaterialsListComponent implements OnInit {
+export class MaterialsListComponent implements OnInit, OnChanges {
+  @Input() refreshTrigger = 0;
+  @Output() openCreateModal = new EventEmitter<void>();
   materials: Material[] = [];
   loading = false;
   selectedMaterials: Set<number> = new Set();
   
   // Pagination
   currentPage = 1;
-  pageSize = 10;
+  pageSize = 6;
   totalItems = 0;
   totalPages = 0;
-  pageSizeOptions = [10, 25, 50, 100];
+  pageSizeOptions = [6, 12, 18, 30];
 
   // Filters
   filters: MaterialFilters = {
@@ -47,8 +49,16 @@ export class MaterialsListComponent implements OnInit {
     this.loadMaterials();
   }
 
+  ngOnChanges(): void {
+    if (this.refreshTrigger > 0) {
+      this.loadMaterials();
+    }
+  }
+
   loadMaterials(): void {
     this.loading = true;
+    
+    // Load only regular materials (not transformed materials)
     this.materialService.getMaterials(this.filters, this.currentPage, this.pageSize)
       .subscribe({
         next: (response: PaginatedResponse<Material>) => {
@@ -105,16 +115,19 @@ export class MaterialsListComponent implements OnInit {
     }
   }
 
-  getStockStatus(material: Material): 'low' | 'normal' | 'high' {
-    const stockPercentage = (material.currentStock || 0) / material.stockMax;
-    if (stockPercentage < 0.3) return 'low';
-    if (stockPercentage > 0.8) return 'high';
+  getStockStatus(material: any): 'low' | 'normal' | 'high' {
+    const currentStock = material.ingQuantity || material.currentStock || 0;
+    const minStock = material.ingMinStock || material.stockMin || 0;
+    
+    if (currentStock < minStock) return 'low';
     return 'normal';
   }
 
-  getStockStatusClass(material: Material): string {
-    const status = this.getStockStatus(material);
-    return `stock-${status}`;
+  getStockStatusClass(material: any): string {
+    const currentStock = parseFloat(material.ingQuantity || material.currentStock || 0);
+    const minStock = parseFloat(material.ingMinStock || material.stockMin || 0);
+    const status = currentStock < minStock ? 'low' : 'normal';
+    return status === 'low' ? 'stock-low' : 'stock-normal';
   }
 
   clearFilters(): void {

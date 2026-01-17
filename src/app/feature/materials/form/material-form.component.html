@@ -9,7 +9,10 @@
         /Materials / {{ isEditMode ? 'Editar' : 'Crear' }}
       </a>
     </div>
-    
+  </div>
+
+  <!-- Mobile Layout -->
+  <div class="mobile-layout" *ngIf="!loading">
     <!-- Step Indicator -->
     <div class="step-indicator">
       <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
@@ -32,17 +35,10 @@
         <div class="step-label">Imágenes</div>
       </div>
     </div>
-  </div>
 
-  <!-- Loading State -->
-  <div class="loading-container" *ngIf="loading">
-    <div class="loading-spinner"></div>
-    <p>Cargando material...</p>
-  </div>
-
-  <!-- Form Content -->
-  <div class="form-content" *ngIf="!loading">
-    <form [formGroup]="materialForm" (ngSubmit)="onSubmit()">
+    <!-- Form Content -->
+    <div class="form-content">
+      <form [formGroup]="materialForm" (ngSubmit)="onSubmit()">
       
       <!-- Step 1: Basic Information -->
       <div class="form-step" *ngIf="currentStep === 1">
@@ -164,18 +160,6 @@
               [class.is-invalid]="materialForm.get('stockMax')?.invalid && materialForm.get('stockMax')?.touched">
             <div class="invalid-feedback">{{ getFieldError('stockMax') }}</div>
           </div>
-          
-          <div class="form-group">
-            <label for="currentStock">Stock Actual</label>
-            <input 
-              type="number" 
-              id="currentStock"
-              class="form-control"
-              formControlName="currentStock"
-              min="0"
-              placeholder="0">
-            <small class="form-text text-muted">Dejar vacío si es un material nuevo</small>
-          </div>
         </div>
       </div>
 
@@ -281,54 +265,61 @@
         </div>
       </div>
 
-      <!-- Form Actions -->
-      <div class="form-actions">
-        <div class="left-actions">
-          <button 
-            type="button" 
-            class="btn btn-outline-secondary"
-            (click)="cancel()">
-            Cancelar
-          </button>
-        </div>
-        
-        <div class="right-actions">
-          <button 
-            type="button" 
-            class="btn btn-outline-primary"
-            *ngIf="currentStep > 1"
-            (click)="previousStep()">
-            <svg viewBox="0 0 16 16">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
-            </svg>
-            Anterior
-          </button>
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <div class="left-actions">
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary"
+              (click)="cancel()">
+              Cancelar
+            </button>
+            
+            <button 
+              type="button" 
+              class="btn btn-outline-primary"
+              *ngIf="currentStep > 1"
+              (click)="previousStep()">
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
+              </svg>
+              <span class="btn-text">Anterior</span>
+            </button>
+            
+            <button 
+              type="button" 
+              class="btn btn-primary"
+              *ngIf="currentStep < totalSteps"
+              [disabled]="!isStepValid(currentStep)"
+              (click)="nextStep()">
+              <span class="btn-text">Siguiente</span>
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
+              </svg>
+            </button>
+          </div>
           
-          <button 
-            type="button" 
-            class="btn btn-primary"
-            *ngIf="currentStep < totalSteps"
-            [disabled]="!isStepValid(currentStep)"
-            (click)="nextStep()">
-            Siguiente
-            <svg viewBox="0 0 16 16">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
-            </svg>
-          </button>
-          
-          <button 
-            type="submit" 
-            class="btn btn-success"
-            *ngIf="currentStep === totalSteps"
-            [disabled]="materialForm.invalid || saving">
-            <div class="btn-spinner" *ngIf="saving"></div>
-            <svg viewBox="0 0 16 16" *ngIf="!saving">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
-            </svg>
-            {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar Material' : 'Crear Material') }}
-          </button>
+          <div class="right-actions">
+            <button 
+              type="submit" 
+              class="btn btn-success"
+              *ngIf="currentStep === totalSteps"
+              [disabled]="materialForm.invalid || saving">
+              <div class="btn-spinner" *ngIf="saving"></div>
+              <svg viewBox="0 0 16 16" *ngIf="!saving">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
+              </svg>
+              <span class="btn-text">{{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar Material' : 'Crear Material') }}</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando material...</p>
   </div>
 </div>

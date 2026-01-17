@@ -39,7 +39,7 @@
         </button>
       </div>
       
-      <button class="btn btn-primary">
+      <button class="btn btn-primary" (click)="openCreateModal.emit()">
         <svg viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
@@ -141,7 +141,7 @@
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
               </svg>
             </th>
-            <th class="text-center">Estado</th>
+            <th class="text-center hide-mobile">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
@@ -178,15 +178,15 @@
             <td class="text-center">
               <div class="stock-info">
                 <span class="stock-value" [ngClass]="getStockStatusClass(material)">
-                  {{ material.currentStock || 0 | numberFormat:0 }}
+                  {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}
                 </span>
-                <small class="text-muted d-block">/ {{ material.stockMax | numberFormat:0 }}</small>
+                <small class="text-muted d-block">Min: {{ (material.ingMinStock || material.stockMin || 0) | numberFormat:2 }} | Max: {{ (material.ingMaxStock || material.stockMax || 0) | numberFormat:2 }}</small>
               </div>
             </td>
             <td class="text-center">
               <span class="price-value">${{ material.price | numberFormat:2 }}</span>
             </td>
-            <td class="text-center">
+            <td class="text-center hide-mobile">
               <span class="status-badge" [ngClass]="'status-' + material.status">
                 {{ material.status }}
               </span>
@@ -236,9 +236,15 @@
         
         <div class="material-stats">
           <div class="stat">
-            <label>Stock</label>
+            <label>Stock Actual</label>
             <span class="value" [ngClass]="getStockStatusClass(material)">
-              {{ material.currentStock || 0 | numberFormat:0 }} / {{ material.stockMax | numberFormat:0 }}
+              {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}
+            </span>
+          </div>
+          <div class="stat">
+            <label>Stock Min/Max</label>
+            <span class="value">
+              {{ (material.ingMinStock || material.stockMin || 0) | numberFormat:2 }} / {{ (material.ingMaxStock || material.stockMax || 0) | numberFormat:2 }}
             </span>
           </div>
           <div class="stat">
@@ -273,7 +279,7 @@
     </svg>
     <h3>No se encontraron materiales</h3>
     <p>Intenta ajustar tus filtros o agregar un nuevo material.</p>
-    <button class="btn btn-primary">Agregar Primer Material</button>
+    <button class="btn btn-primary" (click)="openCreateModal.emit()">Agregar Primer Material</button>
   </div>
 
   <!-- Pagination -->

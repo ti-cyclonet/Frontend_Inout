@@ -469,6 +469,10 @@
   .pagination-controls {
     justify-content: space-between;
   }
+  
+  .hide-mobile {
+    display: none !important;
+  }
 }
 
 /* Button Styles */

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,6 +17,8 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
 export class MaterialFormComponent implements OnInit {
   @Input() materialId?: number;
   @Input() isModal = false;
+  @Output() materialCreated = new EventEmitter<void>();
+  @Output() formCancelled = new EventEmitter<void>();
 
   materialForm: FormGroup;
   loading = false;
@@ -137,7 +139,11 @@ export class MaterialFormComponent implements OnInit {
       operation.subscribe({
         next: (material) => {
           this.notificationService.success('¡Éxito!', 'Material guardado correctamente').then(() => {
-            this.router.navigate(['/materials']);
+            if (this.isModal) {
+              this.materialCreated.emit();
+            } else {
+              this.router.navigate(['/materials']);
+            }
           });
           this.saving = false;
         },
@@ -170,8 +176,11 @@ export class MaterialFormComponent implements OnInit {
   }
 
   cancel(): void {
-    // Navigate back or emit cancel event
-    console.log('Form cancelled');
+    if (this.isModal) {
+      this.formCancelled.emit();
+    } else {
+      console.log('Form cancelled');
+    }
   }
 
   onImagesChange(images: MaterialImage[]): void {

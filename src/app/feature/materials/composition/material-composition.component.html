@@ -1,182 +1,504 @@
-<div class="composition-container">
+<div class="materials-list-container">
   <!-- Header -->
-  <div class="composition-header">
-    <div class="title-section">
-      <h3>Material Composition</h3>
-      <p>Define the components that make up this material</p>
+  <div class="list-header">
+    <div class="title-container">
+      <a href="/materials" class="title-link">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
+        </svg>
+        /Materiales Compuestos
+      </a>
     </div>
     
     <div class="header-actions">
-      <button 
-        class="btn btn-primary" 
-        (click)="showAddForm = !showAddForm"
-        [disabled]="getFilteredMaterials().length === 0">
+      <button class="btn btn-outline-secondary" (click)="showFilters = !showFilters">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
+        </svg>
+        Filtros
+      </button>
+      
+      <div class="view-toggle">
+        <button 
+          class="btn btn-sm" 
+          [class.btn-primary]="viewMode === 'table'"
+          [class.btn-outline-primary]="viewMode !== 'table'"
+          (click)="viewMode = 'table'">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#table" />
+          </svg>
+        </button>
+        <button 
+          class="btn btn-sm" 
+          [class.btn-primary]="viewMode === 'cards'"
+          [class.btn-outline-primary]="viewMode !== 'cards'"
+          (click)="viewMode = 'cards'">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" />
+          </svg>
+        </button>
+      </div>
+      
+      <button class="btn btn-primary" (click)="showCreateModal = true">
         <svg viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
-        Add Component
+        Agregar Material Compuesto
       </button>
     </div>
   </div>
 
-  <!-- Add Component Form -->
-  <div class="add-form" [class.show]="showAddForm">
-    <div class="form-content">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Component Material</label>
-          <select 
-            class="form-select" 
-            [(ngModel)]="selectedMaterialId">
-            <option [value]="null">Select a material</option>
-            <option 
-              *ngFor="let material of getFilteredMaterials()" 
-              [value]="material.id">
-              {{ material.name }} ({{ material.measurementUnit }})
-            </option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>Quantity</label>
-          <input 
-            type="number" 
-            class="form-control" 
-            [(ngModel)]="quantity"
-            min="0.01"
-            step="0.01"
-            placeholder="0.00">
-        </div>
-        
-        <div class="form-actions">
-          <button 
-            class="btn btn-success btn-sm" 
-            (click)="addComponent()"
-            [disabled]="!selectedMaterialId || quantity <= 0">
-            Add
-          </button>
-          <button 
-            class="btn btn-outline-secondary btn-sm" 
-            (click)="resetForm()">
-            Cancel
-          </button>
-        </div>
+  <!-- Filters Panel -->
+  <div class="filters-panel" [class.show]="showFilters">
+    <div class="filters-content">
+      <div class="filter-group">
+        <label>Buscar</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="searchFilter"
+          placeholder="Buscar por nombre o descripción...">
+      </div>
+      
+      <div class="filter-group">
+        <label>Estado</label>
+        <select class="form-select" [(ngModel)]="statusFilter">
+          <option value="all">Todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+          Limpiar Filtros
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Compositions List -->
-  <div class="compositions-list" *ngIf="compositions.length > 0">
-    <div class="list-header">
-      <h4>Components ({{ compositions.length }})</h4>
-      <div class="total-cost">
-        <span class="cost-label">Total Cost:</span>
-        <span class="cost-value">${{ getTotalCost() | number:'1.2-2' }}</span>
-      </div>
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando materiales compuestos...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-container" *ngIf="viewMode === 'table' && transformedMaterials.length > 0 && !loading">
+    <div class="table-responsive">
+      <table class="table materials-table">
+        <thead>
+          <tr>
+            <th class="checkbox-col">
+              <input type="checkbox">
+            </th>
+            <th>Nombre</th>
+            <th class="d-none d-md-table-cell">Descripción</th>
+            <th class="text-center">Componentes</th>
+            <th class="text-center">Stock</th>
+            <th class="text-center">Costo Total</th>
+            <th class="text-center hide-mobile">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let material of transformedMaterials">
+            <td>
+              <input type="checkbox">
+            </td>
+            <td>
+              <div class="material-info">
+                <div class="material-fallback" *ngIf="!material.images || material.images.length === 0">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
+                  </svg>
+                </div>
+                <img *ngIf="material.images && material.images.length > 0" 
+                     [src]="material.images[0].strImageUrl" 
+                     alt="{{ material.name }}"
+                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e9ecef;">
+                <div class="material-name">
+                  <strong>{{ material.name }}</strong>
+                  <small class="text-muted d-block">{{ material.measurementUnit || material.strUnitMeasure }}</small>
+                </div>
+              </div>
+            </td>
+            <td class="d-none d-md-table-cell">
+              <span class="description-text">{{ material.description }}</span>
+            </td>
+            <td class="text-center">
+              <span class="component-count">{{ material.componentCount }} material(es)</span>
+            </td>
+            <td class="text-center">
+              <div class="stock-info">
+                <span class="stock-value" [ngClass]="getStockStatusClass(material)">
+                  {{ material.currentStock | numberFormat:2 }}
+                </span>
+                <small class="text-muted d-block">Min: {{ material.stockMin | numberFormat:2 }} | Max: {{ material.stockMax | numberFormat:2 }}</small>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="price-value">${{ material.totalCost | numberFormat:2 }}</span>
+            </td>
+            <td class="text-center hide-mobile">
+              <span class="status-badge status-active">{{ material.status }}</span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-primary" title="Ver">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    
-    <div class="composition-table">
-      <div class="table-header">
-        <div class="col-material">Material</div>
-        <div class="col-quantity">Quantity</div>
-        <div class="col-unit-cost">Unit Cost</div>
-        <div class="col-total-cost">Total Cost</div>
-        <div class="col-actions">Actions</div>
+  </div>
+
+  <!-- Cards View -->
+  <div class="cards-container" *ngIf="viewMode === 'cards' && transformedMaterials.length > 0 && !loading">
+    <div class="material-card" *ngFor="let material of transformedMaterials">
+      <div class="card-header">
+        <input type="checkbox">
+        <span class="status-badge status-active">{{ material.status }}</span>
       </div>
       
-      <div class="table-body">
-        <div 
-          class="composition-row" 
-          *ngFor="let composition of compositions; trackBy: trackByCompositionId">
-          
-          <div class="col-material">
-            <div class="material-info">
-              <span class="material-name">{{ composition.componentMaterial?.name }}</span>
-              <small class="material-unit">{{ composition.componentMaterial?.measurementUnit }}</small>
-            </div>
-          </div>
-          
-          <div class="col-quantity">
-            <input 
-              type="number" 
-              class="quantity-input"
-              [value]="composition.quantity"
-              (input)="updateQuantity(composition, +$any($event.target).value)"
-              min="0.01"
-              step="0.01">
-          </div>
-          
-          <div class="col-unit-cost">
-            <span class="cost-value">
-              ${{ composition.componentMaterial?.price | number:'1.2-2' }}
+      <div class="card-content">
+        <h4 class="material-name">{{ material.name }}</h4>
+        <p class="material-description">{{ material.description }}</p>
+        
+        <div class="material-stats">
+          <div class="stat">
+            <label>Stock Actual</label>
+            <span class="value" [style.color]="getStockStatus(material) === 'low' ? '#dc3545' : (getStockStatus(material) === 'high' ? '#007bff' : '#28a745')">
+              {{ material.currentStock | numberFormat:2 }}
             </span>
           </div>
-          
-          <div class="col-total-cost">
-            <span class="cost-value total">
-              ${{ (composition.componentMaterial?.price || 0) * composition.quantity | number:'1.2-2' }}
+          <div class="stat">
+            <label>Stock Min/Max</label>
+            <span class="value">
+              {{ material.stockMin | numberFormat:2 }} / {{ material.stockMax | numberFormat:2 }}
             </span>
           </div>
-          
-          <div class="col-actions">
-            <button 
-              class="btn btn-sm btn-outline-danger"
-              (click)="removeComponent(composition)"
-              title="Remove component">
-              <svg viewBox="0 0 16 16">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
-              </svg>
-            </button>
+          <div class="stat">
+            <label>Componentes</label>
+            <span class="value">{{ material.componentCount }}</span>
+          </div>
+          <div class="stat">
+            <label>Costo Total</label>
+            <span class="value">${{ material.totalCost | numberFormat:2 }}</span>
           </div>
         </div>
+      </div>
+      
+      <div class="card-actions">
+        <button class="btn btn-sm btn-outline-primary">Ver</button>
+        <button class="btn btn-sm btn-outline-secondary">Editar</button>
+        <button class="btn btn-sm btn-outline-danger">Eliminar</button>
       </div>
     </div>
   </div>
 
   <!-- Empty State -->
-  <div class="empty-state" *ngIf="compositions.length === 0">
-    <svg class="empty-icon" viewBox="0 0 16 16">
+  <div class="empty-state" *ngIf="transformedMaterials.length === 0 && !loading">
+    <svg viewBox="0 0 16 16" class="empty-icon">
       <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
     </svg>
-    <h4>No components defined</h4>
-    <p>This material doesn't have any components yet. Add components to create a bill of materials.</p>
+    <h3>No se encontraron materiales compuestos</h3>
+    <p>Crea tu primer material compuesto combinando materiales existentes.</p>
   </div>
 
-  <!-- Save Actions -->
-  <div class="save-actions" *ngIf="compositions.length > 0">
-    <button 
-      class="btn btn-success" 
-      (click)="saveComposition()"
-      [disabled]="saving">
-      <div class="btn-spinner" *ngIf="saving"></div>
-      <svg viewBox="0 0 16 16" *ngIf="!saving">
-        <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
-      </svg>
-      {{ saving ? 'Saving...' : 'Save Composition' }}
-    </button>
-  </div>
+  <!-- Create Modal -->
+  <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Crear Material Compuesto</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Step Indicator -->
+          <div class="step-indicator">
+            <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
+              <span class="step-number">1</span>
+              <span class="step-label">Información Básica</span>
+            </div>
+            <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
+              <span class="step-number">2</span>
+              <span class="step-label">Materiales</span>
+            </div>
+            <div class="step" [class.active]="currentStep === 3">
+              <span class="step-number">3</span>
+              <span class="step-label">Resumen</span>
+            </div>
+          </div>
 
-  <!-- Cost Breakdown -->
-  <div class="cost-breakdown" *ngIf="compositions.length > 0">
-    <h4>Cost Breakdown</h4>
-    <div class="breakdown-list">
-      <div class="breakdown-item" *ngFor="let composition of compositions">
-        <div class="item-info">
-          <span class="item-name">{{ composition.componentMaterial?.name }}</span>
-          <span class="item-detail">
-            {{ composition.quantity }} {{ composition.componentMaterial?.measurementUnit }} 
-            × ${{ composition.componentMaterial?.price | number:'1.2-2' }}
-          </span>
+          <!-- Step 1: Basic Information -->
+          <div class="step-content" *ngIf="currentStep === 1">
+            <h4>Información del Material</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" class="form-control" [(ngModel)]="newMaterial.name" placeholder="ej. Salsa Rosada">
+              </div>
+              <div class="form-group">
+                <label>Descripción *</label>
+                <input type="text" class="form-control" [(ngModel)]="newMaterial.description" placeholder="Descripción del material">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Unidad de Medida *</label>
+                <select class="form-select" [(ngModel)]="newMaterial.measurementUnit">
+                  <option value="">Seleccionar unidad</option>
+                  <option value="g">Gramos (g)</option>
+                  <option value="ml">Mililitros (ml)</option>
+                  <option value="units">Unidades</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Ubicación *</label>
+                <input type="text" class="form-control" [(ngModel)]="newMaterial.ubicacion" placeholder="ej. Cocina">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>Imágenes (Opcional - Máximo 5)</label>
+                <app-image-manager 
+                  [images]="materialImages"
+                  [maxImages]="5"
+                  [allowMultiple]="true"
+                  (imagesChange)="onImagesChange($event)">
+                </app-image-manager>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Ingredients -->
+          <div class="step-content" *ngIf="currentStep === 2">
+            <h4>Materiales</h4>
+            
+            <!-- Add Ingredient Form -->
+            <div class="ingredient-form">
+              <!-- Filters -->
+              <div class="filters-section">
+                <h5>Filtros</h5>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Buscar por nombre</label>
+                    <input type="text" class="form-control" [(ngModel)]="nameFilter" placeholder="Filtrar por nombre...">
+                  </div>
+                  <div class="form-group">
+                    <label>Filtrar por ubicación</label>
+                    <select class="form-select" [(ngModel)]="locationFilter">
+                      <option value="">Todas las ubicaciones</option>
+                      <option *ngFor="let location of availableLocations" [value]="location">
+                        {{ location }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn btn-outline-secondary" (click)="clearFilters()" [disabled]="!nameFilter && !locationFilter">
+                      Limpiar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              
+              <!-- Materials List with Pagination -->
+              <div class="materials-list">
+                <div class="materials-grid">
+                  <div class="material-item" 
+                       *ngFor="let material of getPaginatedMaterials()"
+                       [class.selected]="selectedMaterials.has(material.id)"
+                       [class.disabled]="(material.currentStock || 0) <= 0">
+                    <div class="material-checkbox">
+                      <input type="checkbox" 
+                             [id]="'material-' + material.id" 
+                             [checked]="selectedMaterials.has(material.id)"
+                             [disabled]="(material.currentStock || 0) <= 0"
+                             (change)="toggleMaterialSelection(material.id, 1)">
+                    </div>
+                    <div class="material-info">
+                      <div class="material-name">{{ material.name }}</div>
+                      <div class="material-location hide-mobile">{{ material.ubicacion }} ({{ material.measurementUnit }})</div>
+                      <div class="material-stock-info">
+                        <span class="stock-min">Stock mínimo: {{ formatNumber(material.stockMin || 0) }}</span>
+                        <span class="material-stock">Disponible: {{ formatNumber(material.currentStock || 0) }}</span>
+                      </div>
+                    </div>
+                    <div class="material-quantity" *ngIf="selectedMaterials.has(material.id)">
+                      <input type="number" 
+                             class="form-control quantity-input" 
+                             [value]="selectedMaterials.get(material.id)" 
+                             (input)="updateQuantity(material.id, +($any($event.target)).value)"
+                             min="0.01" 
+                             step="0.01">
+                      <div class="stock-warning" *ngIf="checkStockWarning(material)">
+                        ⚠️ Deberá recargar el material
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination-controls" *ngIf="getTotalPages() > 1">
+                  <button class="btn btn-sm btn-outline-secondary" 
+                          (click)="previousPage()" 
+                          [disabled]="currentPage === 1">
+                    Anterior
+                  </button>
+                  <span class="page-info">{{ currentPage }} de {{ getTotalPages() }}</span>
+                  <button class="btn btn-sm btn-outline-secondary" 
+                          (click)="nextPage()" 
+                          [disabled]="currentPage === getTotalPages()">
+                    Siguiente
+                  </button>
+                </div>
+                
+                <!-- Add Selected Button -->
+                <div class="add-selected" *ngIf="selectedMaterials.size > 0">
+                  <button class="btn btn-success" (click)="addSelectedMaterials()">
+                    Agregar {{ selectedMaterials.size }} material(es)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ingredients List -->
+            <div class="ingredients-list" *ngIf="compositions.length > 0">
+              <h5>Materiales ({{ compositions.length }})</h5>
+              <table class="ingredients-table">
+                <thead>
+                  <tr>
+                    <th>Material</th>
+                    <th>Cantidad</th>
+                    <th>Costo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let comp of compositions">
+                    <td class="ingredient-name">{{ comp.componentMaterial?.name }}</td>
+                    <td class="ingredient-quantity">
+                      <span *ngIf="editingComposition !== comp.id">{{ formatNumber(comp.quantity) }} {{ comp.componentMaterial?.measurementUnit }}</span>
+                      <input *ngIf="editingComposition === comp.id" 
+                             type="number" 
+                             class="form-control edit-input" 
+                             [(ngModel)]="tempQuantity" 
+                             min="0.01" 
+                             step="0.01">
+                    </td>
+                    <td class="ingredient-cost">{{ formatCurrency((comp.componentMaterial?.price || 0) * comp.quantity) }}</td>
+                    <td>
+                      <div class="action-buttons">
+                        <button *ngIf="editingComposition !== comp.id" 
+                                class="btn btn-sm btn-outline-primary" 
+                                (click)="startEditing(comp.id)">
+                          <svg viewBox="0 0 16 16">
+                            <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                          </svg>
+                        </button>
+                        <button *ngIf="editingComposition === comp.id" 
+                                class="btn btn-sm btn-success" 
+                                (click)="saveEdit(comp)">
+                          <svg viewBox="0 0 16 16">
+                            <use xlink:href="./assets/icons/bootstrap-icons.svg#check" />
+                          </svg>
+                        </button>
+                        <button *ngIf="editingComposition === comp.id" 
+                                class="btn btn-sm btn-secondary" 
+                                (click)="cancelEdit()">
+                          <svg viewBox="0 0 16 16">
+                            <use xlink:href="./assets/icons/bootstrap-icons.svg#x" />
+                          </svg>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="removeIngredient(comp)">
+                          <svg viewBox="0 0 16 16">
+                            <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Step 3: Summary -->
+          <div class="step-content" *ngIf="currentStep === 3">
+            <h4>Resumen del Material Compuesto</h4>
+            <div class="summary-card">
+              <div class="summary-row">
+                <label>Nombre:</label>
+                <span>{{ newMaterial.name.toUpperCase() }}</span>
+              </div>
+              <div class="summary-row">
+                <label>Descripción:</label>
+                <span>{{ newMaterial.description }}</span>
+              </div>
+              <div class="summary-row">
+                <label>Costo Total de Materiales:</label>
+                <span class="cost-highlight">{{ formatCurrency(getTotalCost()) }}</span>
+              </div>
+              <div class="summary-row">
+                <label>Precio Unitario:</label>
+                <span class="unit-price">{{ formatCurrency(getUnitPrice()) }}</span>
+              </div>
+              <div class="summary-row">
+                <label>Cantidad a Generar:</label>
+                <span class="calculated-quantity">{{ formatNumber(getTotalQuantity()) }} {{ newMaterial.measurementUnit }}</span>
+              </div>
+              <div class="summary-row">
+                <label>Stock Mínimo:</label>
+                <input type="number" class="form-control summary-input" [(ngModel)]="newMaterial.stockMin" min="0">
+              </div>
+              <div class="summary-row">
+                <label>Stock Máximo:</label>
+                <input type="number" class="form-control summary-input" [(ngModel)]="newMaterial.stockMax" min="1">
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="item-cost">
-          ${{ (composition.componentMaterial?.price || 0) * composition.quantity | number:'1.2-2' }}
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" (click)="closeModal()">Cancelar</button>
+          <button class="btn btn-secondary" (click)="previousStep()" [disabled]="currentStep === 1">
+            <svg viewBox="0 0 16 16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
+            </svg>
+            <span class="btn-text">Anterior</span>
+          </button>
+          <button class="btn btn-primary" (click)="nextStep()" *ngIf="currentStep < 3" [disabled]="!canProceedToNextStep()">
+            <span class="btn-text">Siguiente</span>
+            <svg viewBox="0 0 16 16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
+            </svg>
+          </button>
+          <button class="btn btn-success" (click)="createTransformedMaterial()" *ngIf="currentStep === 3" [disabled]="saving || !isFormValid()">
+            <div class="btn-spinner" *ngIf="saving"></div>
+            <svg viewBox="0 0 16 16" *ngIf="!saving">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
+            </svg>
+            <span class="btn-text">{{ saving ? 'Creando...' : 'Crear Material' }}</span>
+          </button>
         </div>
-      </div>
-      
-      <div class="breakdown-total">
-        <div class="total-label">Total Material Cost</div>
-        <div class="total-amount">${{ getTotalCost() | number:'1.2-2' }}</div>
       </div>
     </div>
   </div>
+  <div class="modal-backdrop fade" [class.show]="showCreateModal" *ngIf="showCreateModal" (click)="closeModal()"></div>
 </div>

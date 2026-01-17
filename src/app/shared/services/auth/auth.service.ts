@@ -9,6 +9,7 @@ import { isPlatformBrowser } from '@angular/common';
 })
 export class AuthService {
   private apiUrl = 'http://localhost:3000/api/auth/login';
+  private completeLoginUrl = 'http://localhost:3000/api/auth/login/complete';
 
   constructor(
     private http: HttpClient,
@@ -16,28 +17,30 @@ export class AuthService {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  login(credentials: { email: string; password: string }): Observable<any> {
-    return this.http.post<{ access_token: string; email: string; name: string; rol: string; image: string }>(
-      this.apiUrl,
-      credentials      
-    ).pipe(
-      tap(response => {        
-        if (isPlatformBrowser(this.platformId)) {
-          this.setUserSession(response);
-        }
-      })
-    );
+  login(credentials: { email: string; password: string; applicationName?: string; contractId?: string }): Observable<any> {
+    return this.http.post<any>(this.apiUrl, credentials);
+  }
+
+  completeLogin(data: { email: string; applicationName: string; contractId: string }): Observable<any> {
+    return this.http.post<any>(this.completeLoginUrl, data);
   }
 
   setUserSession(userData: any): void {
     if (isPlatformBrowser(this.platformId)) {
-      sessionStorage.setItem('authToken', userData.access_token);
-      sessionStorage.setItem('user_id', userData.user.id);
-      sessionStorage.setItem('user_email', userData.user.email);
-      sessionStorage.setItem('user_name', userData.user.name);
-      sessionStorage.setItem('user_rol', userData.user.rol);
-      sessionStorage.setItem('user_rolDescription', userData.user.rolDescription);
-      sessionStorage.setItem('user_image', userData.user.image);
+      const token = userData.access_token || 'temp_token';
+      
+      sessionStorage.setItem('authToken', token);
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('user_id', userData.user?.id || '');
+      sessionStorage.setItem('user_email', userData.user?.email || '');
+      sessionStorage.setItem('user_name', userData.user?.name || '');
+      sessionStorage.setItem('user_rol', userData.user?.rol || '');
+      sessionStorage.setItem('user_rolDescription', userData.user?.rolDescription || '');
+      sessionStorage.setItem('user_image', userData.user?.image || '');
+      
+      if (userData.contracts) {
+        sessionStorage.setItem('user_contracts', JSON.stringify(userData.contracts));
+      }
     }
   }
 

@@ -57,14 +57,12 @@ export default class LayoutComponent implements OnInit {
   fetchApplicationForModule(name: string, module: ModuleType): void {
     const userRol = sessionStorage.getItem('user_rol');  
     if (!userRol) {
-      console.error('No se encontró el rol del usuario en la sesión');
       return;
     }
   
     this.applicationsService.getApplicationByNameAndRol(name, userRol).subscribe(
       (app) => {
         if (!app) {
-          console.error('Aplicación no encontrada');
           return;
         }
   
@@ -93,7 +91,6 @@ export default class LayoutComponent implements OnInit {
         this.optionsMenu.sort((a, b) => parseInt(a.order) - parseInt(b.order));
       },
       (error) => {
-        console.error('Error fetching application:', error);
       }
     );
   }

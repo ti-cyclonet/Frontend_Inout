@@ -36,7 +36,27 @@
       </div>
       <h3 class="text-center custom-welcome">Welcome</h3>
       <hr style="border: 2px solid rgb(231, 227, 227)">
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Selector de Cliente -->
+      <div *ngIf="showClientSelector" class="client-selector">
+        <h5 class="text-center mb-3">Seleccione el cliente con el que desea trabajar</h5>
+        <div class="form-group m-2">
+          <select class="form-control" [(ngModel)]="selectedContractId">
+            <option value="">-- Seleccione un cliente --</option>
+            <option *ngFor="let contract of availableContracts" [value]="contract.contractId">
+              {{ contract.clientName }}
+            </option>
+          </select>
+        </div>
+        <div class="d-flex justify-content-center mt-3">
+          <button type="button" class="custom-btn" (click)="selectClient()">
+            Continuar
+          </button>
+        </div>
+      </div>
+      
+      <!-- Formulario de Login -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" *ngIf="!showClientSelector">
         <!-- Campo email -->
         <div class="form-group m-2">
           <input type="email" class="form-control mt-2" placeholder="Email" formControlName="username" 

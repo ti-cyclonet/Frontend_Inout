@@ -27,7 +27,10 @@
       <img src="./assets/img/logo_inout_v4.png" alt="Logo" class="logo-img" />
     </a>
     
-    <div class="navbar-brand mx-auto">{{ nombreApp | uppercase }}</div>
+    <div class="navbar-brand mx-auto">
+      <div>{{ appDescription | uppercase }}</div>
+      <div *ngIf="clientName" class="client-name">{{ clientName }}</div>
+    </div>
 
     <!-- Notificaciones y Dropdown de usuario -->
     <div class="btn-group ms-lg-0" style="margin-right: 8px">

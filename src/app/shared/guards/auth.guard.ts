@@ -9,7 +9,7 @@ export const AuthGuard: CanActivateFn = (route, state): boolean | UrlTree => {
     return router.createUrlTree(['/login']);
   }
 
-  const token = sessionStorage.getItem('token');
+  const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('token');
   
   if (!token) {
     return router.createUrlTree(['/login']);

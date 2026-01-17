@@ -11,13 +11,13 @@
     </div>
     
     <div class="header-actions">
-      <button class="btn btn-outline-primary" (click)="navigateToMaterials()">
+      <button class="btn btn-outline-primary" (click)="navigateToComposition()">
         <svg viewBox="0 0 16 16">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#list-ul" />
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
         </svg>
-        Ver Todos los Materiales
+        Agregar Material Compuesto
       </button>
-      <button class="btn btn-primary" (click)="navigateToCreate()">
+      <button class="btn btn-outline-primary" (click)="navigateToCreate()">
         <svg viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
@@ -36,6 +36,13 @@
     </app-metric-card>
 
     <app-metric-card
+      [value]="transformedMaterialsCount"
+      label="Total de Materiales Compuestos"
+      icon="diagram-3"
+      cardClass="info">
+    </app-metric-card>
+
+    <app-metric-card
       [value]="metrics.lowStockCount"
       label="Alertas de Stock Bajo"
       icon="exclamation-triangle"
@@ -47,13 +54,6 @@
       label="Valor Total del Inventario"
       icon="currency-dollar"
       cardClass="success">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.activeCount"
-      label="Materiales Activos"
-      icon="check-circle"
-      cardClass="primary">
     </app-metric-card>
   </div>
 
@@ -72,30 +72,6 @@
   <div class="quick-actions-section">
     <h3 class="section-title">Acciones Rápidas</h3>
     <div class="actions-grid">
-      <div class="action-card" (click)="navigateToCreate()">
-        <div class="action-icon primary">
-          <svg viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
-          </svg>
-        </div>
-        <div class="action-content">
-          <h4>Agregar Nuevo Material</h4>
-          <p>Crear una nueva entrada de material</p>
-        </div>
-      </div>
-
-      <div class="action-card" (click)="navigateToMaterials()">
-        <div class="action-icon warning">
-          <svg viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle" />
-          </svg>
-        </div>
-        <div class="action-content">
-          <h4>Materiales con Stock Bajo</h4>
-          <p>Revisar materiales por debajo del stock mínimo</p>
-        </div>
-      </div>
-
       <div class="action-card">
         <div class="action-icon success">
           <svg viewBox="0 0 16 16">

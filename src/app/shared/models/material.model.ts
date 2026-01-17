@@ -9,9 +9,21 @@ export interface Material {
   currentStock?: number;
   status: 'active' | 'inactive';
   ubicacion: string;
+  location: string;
   createDate: Date;
   images?: MaterialImage[];
   compositions?: MaterialComposition[];
+  type?: 'regular' | 'transformed'; // Add type to distinguish material types
+  // Backend fields
+  strId?: string;
+  strName?: string;
+  strDescription?: string;
+  strUnitMeasure?: string;
+  fltPrice?: number;
+  ingQuantity?: number;
+  ingMinStock?: number;
+  ingMaxStock?: number;
+  strStatus?: string;
 }
 
 export interface MaterialImage {
