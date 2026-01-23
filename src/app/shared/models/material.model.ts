@@ -3,6 +3,7 @@ export interface Material {
   name: string;
   description: string;
   measurementUnit: string;
+  dischargeUnit: string;
   price: number;
   stockMax: number;
   stockMin: number;
@@ -16,9 +17,11 @@ export interface Material {
   type?: 'regular' | 'transformed'; // Add type to distinguish material types
   // Backend fields
   strId?: string;
+  strCode?: string;
   strName?: string;
   strDescription?: string;
   strUnitMeasure?: string;
+  strDischargeUnit?: string;
   fltPrice?: number;
   ingQuantity?: number;
   ingMinStock?: number;
@@ -49,6 +52,7 @@ export interface MaterialFilters {
   priceRange: [number, number];
   stockStatus: 'low' | 'normal' | 'high' | 'all';
   status: 'active' | 'inactive' | 'all';
+  categoryId?: string;
 }
 
 export interface MaterialMetrics {

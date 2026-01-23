@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 
 import { ROOT_CONFIGURATION, ROOT_HOME, ROOT_LOGIN, ROOT_REGISTER, ROOT_REQUIRES, ROOT_MATERIALS } from './config/config';
 import { AuthGuard } from './shared/guards/auth.guard';
+import { ActivePeriodGuard } from './shared/guards/active-period.guard';
+import { ActiveParametersGuard } from './core/guards/active-parameters.guard';
 
 import LayoutComponent from './shared/components/layout/layout.component';
 import { HomeComponent } from './feature/home/home.component';
@@ -10,6 +12,8 @@ import { SetupComponent } from './feature/setup/setup.component';
 import { LoginComponent } from './shared/components/login/login.component';
 import { RegisterComponent } from './shared/components/register/register.component';
 import { MaterialsComponent } from './feature/materials/materials.component';
+import { SettingComponent } from './feature/setting/setting.component';
+import { KardexComponent } from './feature/kardex/kardex.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 
 export const routes: Routes = [
@@ -21,9 +25,11 @@ export const routes: Routes = [
         component: LayoutComponent,
         canActivate: [AuthGuard],
         children: [
-            { path: ROOT_HOME, component: HomeComponent, canActivate: [AuthGuard] },
-            { path: ROOT_MATERIALS, component: MaterialsComponent, canActivate: [AuthGuard] },
-            { path: ROOT_CONFIGURATION, component: SetupComponent, canActivate: [AuthGuard] },
+            { path: ROOT_HOME, component: HomeComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: ROOT_MATERIALS, component: MaterialsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'kardex', component: KardexComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'setting', component: SettingComponent, canActivate: [AuthGuard] },
+            { path: ROOT_CONFIGURATION, component: SetupComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: '', redirectTo: ROOT_HOME, pathMatch: 'full' }
         ]
     },

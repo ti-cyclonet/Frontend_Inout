@@ -24,7 +24,7 @@
 
   <div class="d-flex align-items-center w-100">
     <a href="#" class="logo-container">
-      <img src="./assets/img/logo_inout_v4.png" alt="Logo" class="logo-img" />
+      <img src="./assets/img/logo_inout_v6.png" alt="Logo" class="logo-img mb-2" />
     </a>
     
     <div class="navbar-brand mx-auto">
@@ -115,6 +115,19 @@
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#key" />
               </svg>
               Change password
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="#" (click)="openSettings($event)">
+              <svg
+                class="dropdown-icon"
+                width="16"
+                height="16"
+                fill="currentColor"
+              >
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#gear" />
+              </svg>
+              Configuraciones
             </a>
           </li>
 

@@ -4,6 +4,8 @@ import { MaterialService } from '../../../shared/services/material.service';
 import { MaterialMetrics } from '../../../shared/models/material.model';
 import { MetricCardComponent } from '../../../shared/components/metric-card/metric-card.component';
 
+import { Router } from '@angular/router';
+
 @Component({
   selector: 'app-materials-dashboard',
   standalone: true,
@@ -21,7 +23,7 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   loading = true;
   transformedMaterialsCount = 0;
 
-  constructor(private materialService: MaterialService) {}
+  constructor(private materialService: MaterialService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadMetrics();

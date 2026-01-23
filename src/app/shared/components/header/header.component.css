@@ -27,11 +27,12 @@
 
 /* Estilo para el nombre del cliente */
 .client-name {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 500;
-    color: var(--header-icon-color);
-    opacity: 0.8;
+    color: #ffa500;
+    opacity: 1;
     margin-top: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Ocultar el título en pantallas medianas o menores */

@@ -254,5 +254,23 @@ export class HeaderComponent implements OnInit {
       }
     });
   }
+
+  openSettings(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Cerrar el dropdown de Bootstrap
+    const dropdownElement = document.querySelector('.dropdown-toggle');
+    if (dropdownElement) {
+      const dropdown = (window as any).bootstrap?.Dropdown?.getInstance(dropdownElement);
+      if (dropdown) {
+        dropdown.hide();
+      }
+    }
+    
+    this.router.navigate(['/setting']);
+  }
   // ----------------------------------------------
 }

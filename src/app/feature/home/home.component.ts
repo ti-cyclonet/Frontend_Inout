@@ -1,32 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ModuleService, ModuleType } from '../../shared/services/module/module.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css'
+  styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-  currentModule: ModuleType | null = null;
 
-  constructor(private moduleService: ModuleService) {}
+  constructor() {}
 
-  ngOnInit(): void {
-    this.moduleService.currentModule$.subscribe(module => {
-      this.currentModule = module;
-    });
-  }
+  ngOnInit(): void {}
 
-  getModuleDisplayName(): string {
-    if (!this.currentModule) return '';
-    return this.moduleService.getModuleConfig(this.currentModule).displayName;
-  }
-
-  getModuleIcon(): string {
-    if (!this.currentModule) return 'house-fill';
-    return this.moduleService.getModuleConfig(this.currentModule).icon;
-  }
 }

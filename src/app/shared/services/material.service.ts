@@ -24,9 +24,10 @@ export class MaterialService {
 
     if (filters) {
       if (filters.search) params = params.set('search', filters.search);
-      if (filters.status !== 'all') params = params.set('status', filters.status);
-      if (filters.stockStatus !== 'all') params = params.set('stockStatus', filters.stockStatus);
-      if (filters.ubicacion.length > 0) params = params.set('ubicacion', filters.ubicacion.join(','));
+      if (filters.status && filters.status !== 'all') params = params.set('status', filters.status);
+      if (filters.stockStatus && filters.stockStatus !== 'all') params = params.set('stockStatus', filters.stockStatus);
+      if (filters.ubicacion && filters.ubicacion.length > 0) params = params.set('ubicacion', filters.ubicacion.join(','));
+      if (filters.categoryId) params = params.set('category', filters.categoryId);
     }
 
     return this.http.get<any>(this.apiConfig.ENDPOINTS.MATERIALS, {
@@ -36,9 +37,11 @@ export class MaterialService {
         ...response,
         data: response.data.map((item: any) => ({
           id: item.strId,
+          strCode: item.strCode,
           name: item.strName,
           description: item.strDescription,
           measurementUnit: item.strUnitMeasure,
+          dischargeUnit: item.strDischargeUnit,
           price: item.fltPrice,
           stockMax: item.ingMaxStock,
           stockMin: item.ingMinStock,
@@ -82,6 +85,28 @@ export class MaterialService {
 
   createTransformedMaterial(materialData: any): Observable<Material> {
     return this.http.post<Material>(`${this.apiConfig.baseUrl}/materials-t`, materialData).pipe(
+      catchError(error => {
+        throw error;
+      })
+    );
+  }
+
+  updateTransformedMaterial(id: number, materialData: any): Observable<Material> {
+    return this.http.patch<Material>(`${this.apiConfig.baseUrl}/materials-t/${id}`, materialData).pipe(
+      catchError(error => {
+        throw error;
+      })
+    );
+  }
+
+  getTransformedMaterialById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiConfig.baseUrl}/materials-t/${id}`).pipe(
+      switchMap((material: any) => 
+        this.http.get<any[]>(`${this.apiConfig.baseUrl}/materials-t/${id}/compositions`).pipe(
+          catchError(() => of([])),
+          map(compositions => ({ ...material, compositions }))
+        )
+      ),
       catchError(error => {
         throw error;
       })
@@ -159,7 +184,11 @@ export class MaterialService {
         const materialRequests = materials.map((material: any) => 
           this.http.get<any[]>(`${this.apiConfig.baseUrl}/materials-t/${material.strId}/compositions`).pipe(
             catchError(() => of([])),
-            map(compositions => ({ ...material, compositions }))
+            map(compositions => ({ 
+              ...material, 
+              strCode: material.strCode,
+              compositions 
+            }))
           )
         );
         

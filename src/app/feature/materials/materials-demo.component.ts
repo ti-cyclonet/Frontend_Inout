@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { MaterialsDashboardComponent } from './dashboard/materials-dashboard.component';
 import { MaterialsListComponent } from './list/materials-list.component';
 import { MaterialFormComponent } from './form/material-form.component';
@@ -42,17 +43,13 @@ import { MaterialCompositionComponent } from './composition/material-composition
       <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Crear Material</h5>
-              <button type="button" class="btn-close" (click)="showCreateModal = false"></button>
-            </div>
             <div class="modal-body">
               <app-material-form [isModal]="true" (materialCreated)="onMaterialCreated()" (formCancelled)="showCreateModal = false"></app-material-form>
             </div>
           </div>
         </div>
       </div>
-      <div class="modal-backdrop fade" [class.show]="showCreateModal" *ngIf="showCreateModal" (click)="showCreateModal = false"></div>
+      <div class="modal-backdrop fade" [class.show]="showCreateModal" *ngIf="showCreateModal"></div>
     </div>
   `,
   styles: [`
@@ -108,6 +105,8 @@ export class MaterialsDemoComponent {
   showCreateModal = false;
   showCompositionModal = false;
   refreshTrigger = 0;
+  
+  constructor(private route: ActivatedRoute) {}
   
   onMaterialCreated() {
     this.showCreateModal = false;

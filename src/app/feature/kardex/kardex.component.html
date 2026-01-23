@@ -1,0 +1,646 @@
+<div class="container-fluid p-0">
+  <div class="card shadow-sm kardex-card" style="border: 1px solid white;">
+    <div
+      class="card-header bg-white d-flex justify-content-end align-items-center py-2"
+      style="border-bottom: 1px solid orange"
+    >
+      <h5 class="mb-0">
+        Materiales <span class="text-primary fw-bold">KARDEX</span>
+        <span style="color: #ff8000">●</span>
+      </h5>
+    </div>
+    <div class="card-body p-4">
+      <p class="text-dark mb-3">
+        Registra en detalle los movimientos de entrada y salida de materiales
+        dentro de un almacén o empresa. Proporciona un historial actualizado del
+        stock disponible, facilitando el control y gestión del inventario.
+      </p>
+
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="d-flex align-items-center gap-3">
+          <div class="search-radio-group">
+            <label class="search-label">Elija un campo para la consulta</label>
+            <div class="d-flex gap-3 align-items-center">
+              <label class="radio-option">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="searchType"
+                  [(ngModel)]="searchType"
+                  value="code"
+                  id="codeCheck"
+                  (change)="onSearchTypeChange()"
+                />
+                <span class="radio-label">Código</span>
+              </label>
+              <label class="radio-option">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="searchType"
+                  [(ngModel)]="searchType"
+                  value="name"
+                  id="nameCheck"
+                  (change)="onSearchTypeChange()"
+                />
+                <span class="radio-label">Nombre</span>
+              </label>
+            </div>
+          </div>
+          <div class="flex-grow-1">
+            <label class="search-label">Escriba los términos de búsqueda</label>
+            <div class="input-group">
+              <span class="input-group-text" *ngIf="searchType === 'code'"
+                >JMY-M-</span
+              >
+              <input
+                type="text"
+                class="form-control search-input"
+                [(ngModel)]="searchTerm"
+                [placeholder]="
+                  searchType === 'code' ? 'Código' : 'Términos de búsqueda'
+                "
+                (keyup.enter)="search()"
+              />
+              <button class="btn btn-primary search-button" (click)="search()">
+                <svg width="20" height="20" fill="currentColor">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#search" />
+                </svg>
+              </button>
+              <button class="btn btn-outline-secondary" (click)="clearSearch()">
+                <svg width="20" height="20" fill="currentColor">
+                  <use
+                    xlink:href="./assets/icons/bootstrap-icons.svg#x-circle"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Material Details -->
+      <div *ngIf="selectedMaterial" class="mb-3">
+        <h6 class="search-details-title">Detalles de búsqueda</h6>
+        <div class="search-details-container">
+          <table class="search-details-table">
+            <tbody>
+              <tr class="first-row">
+                <td class="stacked-cell" colspan="2">
+                  <div class="label-text">Código</div>
+                  <div class="value-text fw-bold">
+                    {{ selectedMaterial.code }}
+                  </div>
+                </td>
+                <td class="stacked-cell" colspan="6">
+                  <div class="label-text">Nombre</div>
+                  <div class="value-text fw-bold">
+                    {{ selectedMaterial.name }}
+                  </div>
+                </td>
+                <td class="stacked-cell" colspan="2">
+                  <div class="label-text text-center">Unidad de medida</div>
+                  <div class="value-text text-center">
+                    {{ selectedMaterial.measureUnit }}
+                  </div>
+                </td>
+                <td class="stacked-cell" colspan="2">
+                  <div class="label-text text-center">Unidad de descarga</div>
+                  <div class="value-text text-center">
+                    {{
+                      selectedMaterial.dischargeUnit ||
+                        selectedMaterial.measureUnit
+                    }}
+                  </div>
+                </td>
+              </tr>
+              <tr class="second-row">
+                <td class="stacked-cell" colspan="3">
+                  <div class="label-text">Ubicación</div>
+                  <div class="value-text">{{ selectedMaterial.location }}</div>
+                </td>
+                <td class="stacked-cell" colspan="2">
+                  <div class="label-text text-center">Stock Mínimo</div>
+                  <div class="value-text text-center">
+                    {{ formatNumber(selectedMaterial.stockMin) }}
+                  </div>
+                </td>
+                <td class="stacked-cell" colspan="2">
+                  <div class="label-text text-center">Stock Máximo</div>
+                  <div class="value-text text-center">
+                    {{ formatNumber(selectedMaterial.stockMax) }}
+                  </div>
+                </td>
+                <td class="stacked-cell" colspan="2">
+                  <div class="label-text text-center">Saldo</div>
+                  <div class="value-text text-center">
+                    <div class="balance-box">
+                      {{ formatNumber(selectedMaterial.balance) }}
+                    </div>
+                  </div>
+                </td>
+                <td class="stacked-cell" colspan="3">
+                  <div class="label-text text-center">Precio</div>
+                  <div class="value-text text-center">
+                    $ {{ formatNumber(selectedMaterial.price) }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-primary mb-0">Todos los registros</h6>
+        <div>
+          <button
+            class="btn btn-outline-primary btn-sm me-2"
+            (click)="newEntry()"
+          >
+            Nueva Entrada
+          </button>
+          <button class="btn btn-outline-danger btn-sm" (click)="newOutput()">
+            Nueva Salida
+          </button>
+        </div>
+      </div>
+
+      <!-- Movements Table -->
+      <div class="movements-table-container">
+        <table class="movements-table">
+          <thead>
+            <tr class="bg-primary text-white">
+              <th rowspan="2" class="align-middle text-center">Fecha</th>
+              <th colspan="4" class="text-center">ENTRADAS</th>
+              <th colspan="4" class="text-center">SALIDAS</th>
+              <th colspan="3" class="text-center">SALDOS</th>
+            </tr>
+            <tr class="bg-primary text-white">
+              <th class="text-center">Cantidad</th>
+              <th class="text-center">Valor unitario</th>
+              <th class="text-center">Precio</th>
+              <th class="text-center">Proveedor</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-center">Valor unitario</th>
+              <th class="text-center">Precio</th>
+              <th class="text-center">Concepto</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-center">Valor unitario</th>
+              <th class="text-center">Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mov of paginatedMovements" class="movement-row">
+              <td class="text-center align-middle">
+                {{ mov.date | date: "dd/MM/yyyy" }}
+              </td>
+              <td class="text-center align-middle entries-col">
+                {{ mov.type === "entry" ? formatNumber(mov.quantity) : "" }}
+              </td>
+              <td class="text-center align-middle entries-col">
+                {{
+                  mov.type === "entry" ? "$ " + formatNumber(mov.unitValue) : ""
+                }}
+              </td>
+              <td class="text-center align-middle entries-col">
+                {{
+                  mov.type === "entry"
+                    ? "$ " + formatNumber(mov.totalPrice)
+                    : ""
+                }}
+              </td>
+              <td class="text-center align-middle entries-col supplier-name">
+                {{ mov.type === "entry" ? mov.supplier : "" }}
+              </td>
+              <td class="text-center align-middle outputs-col">
+                {{ mov.type === "output" ? formatNumber(mov.quantity) : "" }}
+              </td>
+              <td class="text-center align-middle outputs-col">
+                {{
+                  mov.type === "output"
+                    ? "$ " + formatNumber(mov.unitValue)
+                    : ""
+                }}
+              </td>
+              <td class="text-center align-middle outputs-col">
+                {{
+                  mov.type === "output"
+                    ? "$ " + formatNumber(mov.totalPrice)
+                    : ""
+                }}
+              </td>
+              <td class="text-center align-middle outputs-col">
+                {{ mov.type === "output" ? mov.concept : "" }}
+              </td>
+              <td class="text-center align-middle balances-col">
+                {{ formatNumber(mov.balanceQuantity) }}
+              </td>
+              <td class="text-center align-middle balances-col">
+                $ {{ formatNumber(mov.balanceUnitValue) }}
+              </td>
+              <td class="text-center align-middle balances-col">
+                $ {{ formatNumber(mov.balancePrice) }}
+              </td>
+            </tr>
+            <tr *ngFor="let i of getEmptyRows()" class="movement-row empty-row">
+              <td>&nbsp;</td>
+              <td class="entries-col"></td>
+              <td class="entries-col"></td>
+              <td class="entries-col"></td>
+              <td class="entries-col"></td>
+              <td class="outputs-col"></td>
+              <td class="outputs-col"></td>
+              <td class="outputs-col"></td>
+              <td class="outputs-col"></td>
+              <td class="balances-col"></td>
+              <td class="balances-col"></td>
+              <td class="balances-col"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-container" style="border-top: 1px solid orange" *ngIf="movements.length > pageSize">
+        <div class="pagination-info">
+          Mostrando {{ page * pageSize + 1 }} a {{ getMaxRecord() }} de
+          {{ movements.length }} registros.
+        </div>
+        <div class="pagination-controls">
+          <button
+            class="btn btn-outline-primary btn-sm me-1"
+            (click)="prevPage()"
+            [disabled]="page === 0"
+          >
+            Anterior
+          </button>
+          <button
+            class="btn btn-sm me-1"
+            [class.btn-primary]="page === 0"
+            [class.btn-outline-primary]="page !== 0"
+            (click)="page = 0"
+            *ngIf="totalPages > 0"
+          >
+            1
+          </button>
+          <button
+            class="btn btn-sm me-1"
+            [class.btn-primary]="page === 1"
+            [class.btn-outline-primary]="page !== 1"
+            (click)="page = 1"
+            *ngIf="totalPages > 1"
+          >
+            2
+          </button>
+          <button
+            class="btn btn-sm me-1"
+            [class.btn-primary]="page === 2"
+            [class.btn-outline-primary]="page !== 2"
+            (click)="page = 2"
+            *ngIf="totalPages > 2"
+          >
+            3
+          </button>
+          <button
+            class="btn btn-outline-primary btn-sm"
+            (click)="nextPage()"
+            [disabled]="page >= totalPages - 1"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Entrada -->
+  <div
+    class="modal fade"
+    [class.show]="showEntryModal"
+    [style.display]="showEntryModal ? 'block' : 'none'"
+    tabindex="-1"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div style="border-bottom: 1px solid orange">
+          <div
+            class="card-header bg-white d-flex justify-content-end align-items-center py-2"
+          >
+            <h5 class="mb-0">
+              Nueva Entrada -
+              <span class="text-primary fw-bold">{{
+                selectedMaterial?.name
+              }}</span>
+              <span style="color: #ff8000"> ●</span>
+            </h5>
+          </div>
+        </div>
+        <div class="modal-body" style="background-color: #f5f5f5">
+          <!-- Step Indicator -->
+          <div class="step-indicator mb-4">
+            <div
+              class="step"
+              [class.active]="currentStep === 1"
+              [class.completed]="currentStep > 1"
+            >
+              <span class="step-number">1</span>
+              <span class="step-label">Proveedor</span>
+            </div>
+            <div
+              class="step-connector"
+              [class.completed]="currentStep > 1"
+            ></div>
+            <div
+              class="step"
+              [class.active]="currentStep === 2"
+              [class.completed]="currentStep > 2"
+            >
+              <span class="step-number">2</span>
+              <span class="step-label">Detalles</span>
+            </div>
+            <div
+              class="step-connector"
+              [class.completed]="currentStep > 2"
+            ></div>
+            <div class="step" [class.active]="currentStep === 3">
+              <span class="step-number">3</span>
+              <span class="step-label">Resumen</span>
+            </div>
+          </div>
+
+          <!-- Step 1: Proveedor -->
+          <div *ngIf="currentStep === 1">
+            <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 15px">
+              <h6>Seleccionar Proveedor</h6>
+              <div class="mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="supplierFilter"
+                  (input)="filterSuppliers()"
+                  placeholder="Buscar proveedor..."
+                />
+              </div>
+              <div
+                class="supplier-list"
+                style="max-height: 300px; overflow-y: auto"
+              >
+                <div
+                  class="form-check"
+                  *ngFor="let supplier of filteredSuppliers"
+                >
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    [id]="'supplier-' + supplier.id"
+                    [(ngModel)]="entryData.supplierId"
+                    [value]="supplier.id"
+                  />
+                  <label
+                    class="form-check-label"
+                    [for]="'supplier-' + supplier.id"
+                  >
+                    <strong>{{ supplier.name }}</strong
+                    ><br />
+                    <small class="text-muted"
+                      >{{ supplier.contactName }} - {{ supplier.contactPhone }} - {{ supplier.contactEmail }}</small
+                    >
+                  </label>
+                </div>
+              </div>
+              <hr />
+              <button
+                class="btn btn-outline-primary btn-sm"
+                (click)="toggleCreateSupplier()"
+              >
+                {{
+                  showCreateSupplier ? "Cancelar" : "+ Crear Nuevo Proveedor"
+                }}
+              </button>
+              <div
+                *ngIf="showCreateSupplier"
+                class="mt-3 p-3"
+                style="
+                  background-color: #ffe6cc;
+                  border: 1px solid #d79b00;
+                  border-radius: 5px;
+                "
+              >
+                <h6>Nuevo <strong>Proveedor</strong></h6>
+                <div class="row">
+                  <div class="col-md-12 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Nombre *</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="newSupplier.name"
+                    />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Tipo de Documento</label
+                    >
+                    <select
+                      class="form-control"
+                      [(ngModel)]="newSupplier.documentType"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="CC">Cédula de Ciudadanía</option>
+                      <option value="NIT">NIT</option>
+                      <option value="CE">Cédula de Extranjería</option>
+                      <option value="PAS">Pasaporte</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Número de Documento</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="newSupplier.documentNumber"
+                    />
+                  </div>
+                  <div class="col-md-12 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Dirección</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="newSupplier.address"
+                    />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Email</label
+                    >
+                    <input
+                      type="email"
+                      class="form-control"
+                      [(ngModel)]="newSupplier.contactEmail"
+                    />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Teléfono</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="newSupplier.contactPhone"
+                    />
+                  </div>
+                  <div class="col-md-12 mb-2">
+                    <label style="font-size: 0.875rem; color: #6c757d"
+                      >Contacto *</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="newSupplier.contactName"
+                    />
+                  </div>
+                </div>
+                <button
+                  class="btn btn-dark btn-sm mt-2"
+                  (click)="createSupplier()"
+                >
+                  Guardar Proveedor
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Detalles -->
+          <div *ngIf="currentStep === 2">
+            <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 15px">
+              <h6>Detalles de la Entrada</h6>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label>Fecha *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="entryData.date"
+                  />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label>Cantidad *</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="entryData.quantity"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label>Valor Unitario *</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="entryData.unitValue"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div class="col-md-12 mb-3">
+                  <label>Documento de Respaldo *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="entryData.document"
+                    placeholder="Ej: Factura #12345"
+                  />
+                  <small style="color: #6c9bd1;"
+                    >Número de factura, remisión u otro documento que respalde
+                    la compra</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Resumen -->
+          <div *ngIf="currentStep === 3">
+            <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 15px">
+              <h6>Resumen de la Entrada</h6>
+              <table class="table">
+                <tr>
+                  <th>Material:</th>
+                  <td>{{ selectedMaterial?.name }}</td>
+                </tr>
+                <tr>
+                  <th>Proveedor:</th>
+                  <td>{{ getSupplierName() }}</td>
+                </tr>
+                <tr>
+                  <th>Fecha:</th>
+                  <td>{{ entryData.date | date: "dd/MM/yyyy" }}</td>
+                </tr>
+                <tr>
+                  <th>Cantidad:</th>
+                  <td>{{ formatNumber(entryData.quantity) }}</td>
+                </tr>
+                <tr>
+                  <th>Valor Unitario:</th>
+                  <td>${{ formatNumber(entryData.unitValue) }}</td>
+                </tr>
+                <tr>
+                  <th>Documento:</th>
+                  <td>{{ entryData.document }}</td>
+                </tr>
+                <tr>
+                  <th>Precio Total:</th>
+                  <td class="fw-bold">
+                    ${{
+                      formatNumber(entryData.quantity * entryData.unitValue)
+                    }}
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid orange">
+          <button class="btn btn-outline-secondary" (click)="closeEntryModal()">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-secondary"
+            (click)="previousStep()"
+            [disabled]="currentStep === 1"
+          >
+            Anterior
+          </button>
+          <button
+            class="btn btn-primary"
+            (click)="nextStep()"
+            *ngIf="currentStep < 3"
+            [disabled]="!canProceedToNextStep()"
+          >
+            Siguiente
+          </button>
+          <button
+            class="btn btn-success"
+            (click)="saveEntry()"
+            *ngIf="currentStep === 3"
+          >
+            Guardar Entrada
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="modal-backdrop fade"
+    [class.show]="showEntryModal"
+    *ngIf="showEntryModal"
+  ></div>
+</div>

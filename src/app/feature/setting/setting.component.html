@@ -1,0 +1,450 @@
+<div class="floating-container">
+  <div class="outer-container">
+    <!-- Lista de Períodos -->
+    <div class="inner-container">
+      <h3 class="card-title mb-0">Gestión de Períodos</h3>
+    </div>
+    
+    <div class="inner-container">
+      <!-- Filtros -->
+      <div class="row mb-3">
+        <div class="col-md-4 mb-2 mb-md-0">
+          <input type="text" class="form-control" [(ngModel)]="filtroNombrePeriodo" 
+                 placeholder="Buscar por nombre..." (input)="aplicarFiltrosPeriodos()">
+        </div>
+        <div class="col-md-3 mb-2 mb-md-0">
+          <input type="date" class="form-control" [(ngModel)]="filtroFecha" 
+                 placeholder="Date within period" (change)="aplicarFiltrosPeriodos()">
+        </div>
+        <div class="col-md-2 mb-2 mb-md-0">
+          <button class="btn btn-outline-secondary w-100" (click)="limpiarFiltrosPeriodos()">
+            Limpiar
+          </button>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#createPeriodModal">
+            <svg width="16" height="16" fill="currentColor" class="me-2">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+            </svg>
+            Nuevo Período
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de períodos -->
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th class="d-none d-sm-table-cell">Código</th>
+              <th>Nombre</th>
+              <th class="d-none d-sm-table-cell">Fecha Inicio</th>
+              <th class="d-none d-sm-table-cell">Fecha Fin</th>
+              <th class="d-none d-sm-table-cell">Estado</th>
+              <th class="text-center" style="width: 45px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let periodo of periodosPaginados" [ngClass]="{
+              'periodo-activo': periodo.activo && !periodo.parentPeriodId,
+              'subperiodo-activo': periodo.activo && periodo.parentPeriodId,
+              'periodo-inactivo': !periodo.activo && !periodo.parentPeriodId,
+              'subperiodo-inactivo': !periodo.activo && periodo.parentPeriodId
+            }">
+              <td class="d-none d-sm-table-cell">{{ periodo.codigo || '-' }}</td>
+              <td>
+                <span *ngIf="periodo.parentPeriodId" class="badge bg-info me-2" title="Subperiod">SP</span>
+                {{ periodo.nombre }}
+                <small *ngIf="periodo.parentPeriodId" class="text-muted d-block">↳ Child of {{ getParentPeriodName(periodo.parentPeriodId) }}</small>
+              </td>
+              <td class="d-none d-sm-table-cell">{{ periodo.fechaInicio | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="d-none d-sm-table-cell">{{ periodo.fechaFin | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="d-none d-sm-table-cell">
+                <span class="badge" [ngClass]="{
+                  'bg-success': periodo.activo && !periodo.parentPeriodId,
+                  'bg-primary': periodo.activo && periodo.parentPeriodId,
+                  'bg-secondary': !periodo.activo
+                }">
+                  {{ periodo.activo ? 'ACTIVO' : 'INACTIVO' }}
+                </span>
+              </td>
+              <td>
+                <div class="d-flex align-items-center justify-content-center gap-1">
+                  <button type="button" class="btn-icon" *ngIf="!periodo.activo" (click)="activarPeriodo(periodo)" title="Activate">
+                    <svg width="18" height="18" fill="currentColor" class="text-warning">
+                      <use xlink:href="./assets/icons/bootstrap-icons.svg#play-circle" />
+                    </svg>
+                  </button>
+                  <button type="button" class="btn-icon" *ngIf="!periodo.parentPeriodId" data-bs-toggle="modal" data-bs-target="#createSubperiodModal" (click)="configurarSubperiodo(periodo)" title="Add Subperiod">
+                    <svg width="18" height="18" fill="currentColor" class="text-info">
+                      <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-square" />
+                    </svg>
+                  </button>
+                  <button type="button" class="btn-icon" data-bs-toggle="modal" data-bs-target="#parametersModal" (click)="configurarPeriodo(periodo)" title="Configure">
+                    <svg width="18" height="18" fill="currentColor" class="text-success">
+                      <use xlink:href="./assets/icons/bootstrap-icons.svg#gear" />
+                    </svg>
+                  </button>
+                  <button type="button" class="btn-icon" (click)="eliminarPeriodo(periodo)" title="Delete">
+                    <svg width="18" height="18" fill="currentColor" class="text-danger">
+                      <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="periodos.length === 0">
+              <td colspan="6" class="text-center d-none d-sm-table-cell">No hay períodos creados</td>
+              <td colspan="2" class="text-center d-table-cell d-sm-none">No hay períodos creados</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Paginación períodos -->
+      <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="periodosFiltrados.length > periodosPageSize">
+        <span class="text-muted">Página {{ periodosPage + 1 }} de {{ totalPeriodosPages }} ({{ periodosFiltrados.length }} períodos)</span>
+        <div>
+          <button class="btn btn-sm btn-outline-secondary me-2" (click)="prevPeriodosPage()" [disabled]="periodosPage === 0">
+            <svg width="16" height="16" fill="currentColor">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-left" />
+            </svg>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" (click)="nextPeriodosPage()" [disabled]="periodosPage >= totalPeriodosPages - 1">
+            <svg width="16" height="16" fill="currentColor">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para configurar parámetros del cliente -->
+<div class="modal fade" id="parametersModal" tabindex="-1" aria-labelledby="parametersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="parametersModalLabel">Configurar Parámetros - {{ periodoSeleccionado?.nombre }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Parámetro</th>
+                <th>Valor</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let param of parametrosPaginados" [ngClass]="{'table-warning': param.editando}">
+                <td>{{ param.nombre }}</td>
+                <td>
+                  <span *ngIf="!param.editando" class="badge bg-primary">{{ formatNumber(param.valor) }}</span>
+                  <input *ngIf="param.editando" type="text" class="form-control form-control-sm" 
+                         [(ngModel)]="param.valor"
+                         (input)="formatInputNumber($event, param)"
+                         (blur)="guardarValor(param)"
+                         (keyup.enter)="guardarValor(param)"
+                         style="min-width: 80px;">
+                </td>
+                <td>{{ param.descripcion }}</td>
+                <td>
+                  <button type="button" 
+                          class="btn" 
+                          style="border: none; background: none; padding: 0;"
+                          [style.color]="param.estado === 'ACTIVE' ? '#198754' : '#6c757d'"
+                          [style.font-weight]="'bold'"
+                          (click)="cambiarEstadoParametro(param)"
+                          title="Click para cambiar estado">
+                    {{ param.estado === 'ACTIVE' ? 'ACTIVO' : 'INACTIVO' }}
+                  </button>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center justify-content-center gap-2">
+                    <ng-container *ngIf="!param.editando">
+                      <button type="button" class="btn-icon" (click)="editarParametro(param)" title="Edit">
+                        <svg width="16" height="16" fill="currentColor" class="text-primary">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                        </svg>
+                      </button>
+                    </ng-container>
+                    <ng-container *ngIf="param.editando">
+                      <button type="button" class="btn-icon" (click)="guardarValor(param)" title="Save">
+                        <svg width="16" height="16" fill="currentColor" class="text-success">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#check" />
+                        </svg>
+                      </button>
+                      <button type="button" class="btn-icon" (click)="cancelarEdicion(param)" title="Cancel">
+                        <svg width="16" height="16" fill="currentColor" class="text-secondary">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#x" />
+                        </svg>
+                      </button>
+                    </ng-container>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="parametros.length === 0">
+                <td colspan="5" class="text-center">No hay parámetros disponibles para este período</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Paginación parámetros en modal -->
+        <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="parametros.length > parametrosPageSize">
+          <span class="text-muted">Página {{ parametrosPage + 1 }} de {{ totalParametrosPages }} ({{ parametros.length }} parámetros)</span>
+          <div>
+            <button class="btn btn-sm btn-outline-secondary me-2" (click)="prevParametrosPage()" [disabled]="parametrosPage === 0">
+              <svg width="16" height="16" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-left" />
+              </svg>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" (click)="nextParametrosPage()" [disabled]="parametrosPage >= totalParametrosPages - 1">
+              <svg width="16" height="16" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addParameterModal" (click)="loadAvailableParameters()">
+          <svg width="16" height="16" fill="currentColor" class="me-1">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+          </svg>
+          Asignar Parámetros
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear nuevo período -->
+<div class="modal fade" id="createPeriodModal" tabindex="-1" aria-labelledby="createPeriodModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createPeriodModalLabel">Crear Nuevo Período</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="nuevoPeriodoForm">
+          <div class="mb-3">
+            <label for="periodName" class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="periodName" formControlName="nombre" placeholder="Ej: 2025-Q1">
+            <div class="text-danger small mt-1" *ngIf="nuevoPeriodoForm.get('nombre')?.invalid && nuevoPeriodoForm.get('nombre')?.touched">
+              <div *ngIf="nuevoPeriodoForm.get('nombre')?.errors?.['required']">El nombre es requerido</div>
+              <div *ngIf="nuevoPeriodoForm.get('nombre')?.errors?.['minlength']">El nombre debe tener al menos 3 caracteres</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="periodStartDate" class="form-label">Fecha Inicio *</label>
+            <input type="date" class="form-control" id="periodStartDate" formControlName="fechaInicio">
+            <div class="text-danger small mt-1" *ngIf="nuevoPeriodoForm.get('fechaInicio')?.invalid && nuevoPeriodoForm.get('fechaInicio')?.touched">
+              <div *ngIf="nuevoPeriodoForm.get('fechaInicio')?.errors?.['required']">La fecha de inicio es requerida</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="periodEndDate" class="form-label">Fecha Fin *</label>
+            <input type="date" class="form-control" id="periodEndDate" formControlName="fechaFin">
+            <div class="text-danger small mt-1" *ngIf="nuevoPeriodoForm.get('fechaFin')?.invalid && nuevoPeriodoForm.get('fechaFin')?.touched">
+              <div *ngIf="nuevoPeriodoForm.get('fechaFin')?.errors?.['required']">La fecha de fin es requerida</div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" (click)="crearPeriodo()" [disabled]="loading || nuevoPeriodoForm.invalid">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Crear Período
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear subperiodo -->
+<div class="modal fade" id="createSubperiodModal" tabindex="-1" aria-labelledby="createSubperiodModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createSubperiodModalLabel">Crear Subperíodo - {{ periodoSeleccionado?.nombre }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <small>El subperíodo debe estar dentro de: {{ periodoSeleccionado?.fechaInicio | date:'dd/MM/yyyy' }} - {{ periodoSeleccionado?.fechaFin | date:'dd/MM/yyyy' }}</small>
+        </div>
+        <form [formGroup]="nuevoSubperiodoForm">
+          <div class="mb-3">
+            <label for="subperiodName" class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="subperiodName" formControlName="nombre" placeholder="Ej: Semana 1">
+            <div class="text-danger small mt-1" *ngIf="nuevoSubperiodoForm.get('nombre')?.invalid && nuevoSubperiodoForm.get('nombre')?.touched">
+              <div *ngIf="nuevoSubperiodoForm.get('nombre')?.errors?.['required']">El nombre es requerido</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="subperiodStartDate" class="form-label">Fecha Inicio *</label>
+            <input type="datetime-local" class="form-control" id="subperiodStartDate" formControlName="fechaInicio">
+            <div class="text-danger small mt-1" *ngIf="nuevoSubperiodoForm.get('fechaInicio')?.invalid && nuevoSubperiodoForm.get('fechaInicio')?.touched">
+              <div *ngIf="nuevoSubperiodoForm.get('fechaInicio')?.errors?.['required']">La fecha de inicio es requerida</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="subperiodEndDate" class="form-label">Fecha Fin *</label>
+            <input type="datetime-local" class="form-control" id="subperiodEndDate" formControlName="fechaFin">
+            <div class="text-danger small mt-1" *ngIf="nuevoSubperiodoForm.get('fechaFin')?.invalid && nuevoSubperiodoForm.get('fechaFin')?.touched">
+              <div *ngIf="nuevoSubperiodoForm.get('fechaFin')?.errors?.['required']">La fecha de fin es requerida</div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="crearSubperiodo()" [disabled]="loading || nuevoSubperiodoForm.invalid">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Crear Subperíodo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal para agregar parámetros disponibles -->
+<div class="modal fade" id="addParameterModal" tabindex="-1" aria-labelledby="addParameterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addParameterModalLabel">Asignar Parámetros - {{ periodoSeleccionado?.nombre }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Filtros -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <input type="text" class="form-control" [(ngModel)]="filtroNombre" placeholder="Buscar por nombre..." (input)="aplicarFiltros()">
+          </div>
+          <div class="col-md-4">
+            <select class="form-select" [(ngModel)]="filtroTipo" (change)="aplicarFiltros()">
+              <option value="">Todos los tipos</option>
+              <option value="number">Numérico</option>
+              <option value="string">Texto</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#createParameterModal">
+              <svg width="16" height="16" fill="currentColor" class="me-1">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+              </svg>
+              Crear Nuevo
+            </button>
+          </div>
+        </div>
+        
+        <!-- Tabla de parámetros disponibles -->
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Seleccionar</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let param of parametrosDisponiblesFiltrados">
+                <td>
+                  <input type="checkbox" class="form-check-input" 
+                         [(ngModel)]="param.selected" 
+                         id="param-{{ param.id }}">
+                </td>
+                <td>{{ param.name }}</td>
+                <td>{{ param.description }}</td>
+                <td>
+                  <span class="badge" [ngClass]="param.dataType === 'number' ? 'bg-info' : 'bg-secondary'">
+                    {{ param.dataType === 'number' ? 'NUMÉRICO' : 'TEXTO' }}
+                  </span>
+                </td>
+                <td>
+                  <input type="text" class="form-control form-control-sm" 
+                         [(ngModel)]="param.value" 
+                         [placeholder]="param.dataType === 'number' ? 'Ex: 19' : 'Ex: COP'"
+                         [disabled]="!param.selected">
+                </td>
+              </tr>
+              <tr *ngIf="parametrosDisponiblesFiltrados.length === 0">
+                <td colspan="5" class="text-center">No hay parámetros disponibles</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="agregarParametrosSeleccionados()">
+          Agregar Seleccionados
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal para crear nuevo parámetro -->
+<div class="modal fade" id="createParameterModal" tabindex="-1" aria-labelledby="createParameterModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createParameterModalLabel">Crear Nuevo Parámetro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="nuevoParametroForm">
+          <div class="mb-3">
+            <label for="paramName" class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="paramName" formControlName="name" placeholder="Ej: Tasa de Impuesto">
+            <div class="text-danger small mt-1" *ngIf="nuevoParametroForm.get('name')?.invalid && nuevoParametroForm.get('name')?.touched">
+              <div *ngIf="nuevoParametroForm.get('name')?.errors?.['required']">El nombre es requerido</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="paramDescription" class="form-label">Descripción *</label>
+            <input type="text" class="form-control" id="paramDescription" formControlName="description" placeholder="Ej: Porcentaje de impuesto aplicado">
+            <div class="text-danger small mt-1" *ngIf="nuevoParametroForm.get('description')?.invalid && nuevoParametroForm.get('description')?.touched">
+              <div *ngIf="nuevoParametroForm.get('description')?.errors?.['required']">La descripción es requerida</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="paramDataType" class="form-label">Tipo de Dato *</label>
+            <select class="form-select" id="paramDataType" formControlName="dataType">
+              <option value="">Seleccionar tipo</option>
+              <option value="string">Texto</option>
+              <option value="number">Numérico</option>
+            </select>
+            <div class="text-danger small mt-1" *ngIf="nuevoParametroForm.get('dataType')?.invalid && nuevoParametroForm.get('dataType')?.touched">
+              <div *ngIf="nuevoParametroForm.get('dataType')?.errors?.['required']">El tipo de dato es requerido</div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" (click)="crearParametro()" [disabled]="loading || nuevoParametroForm.invalid">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Crear Parámetro
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

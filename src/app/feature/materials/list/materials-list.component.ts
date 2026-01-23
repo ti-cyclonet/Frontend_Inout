@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { MaterialService } from '../../../shared/services/material.service';
+import { CategoryService, Category } from '../../../shared/services/category/category.service';
 import { Material, MaterialFilters, PaginatedResponse } from '../../../shared/models/material.model';
 
 @Component({
@@ -16,8 +17,11 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
   materials: Material[] = [];
+  categories: Category[] = [];
   loading = false;
   selectedMaterials: Set<number> = new Set();
+  categorySearch = '';
+  showCategoryDropdown = false;
   
   // Pagination
   currentPage = 1;
@@ -32,7 +36,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     ubicacion: [],
     priceRange: [0, 1000],
     stockStatus: 'all',
-    status: 'all'
+    status: 'all',
+    categoryId: ''
   };
 
   // Sorting
@@ -43,10 +48,40 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   showFilters = false;
   viewMode: 'table' | 'cards' = 'table';
 
-  constructor(private materialService: MaterialService) {}
+  private readonly VIEW_MODE_KEY = 'materials_view_mode';
+
+  constructor(
+    private materialService: MaterialService,
+    private categoryService: CategoryService
+  ) {}
 
   ngOnInit(): void {
+    this.loadViewMode();
+    this.loadCategories();
     this.loadMaterials();
+  }
+
+  loadViewMode(): void {
+    const savedMode = localStorage.getItem(this.VIEW_MODE_KEY);
+    if (savedMode === 'table' || savedMode === 'cards') {
+      this.viewMode = savedMode;
+    }
+  }
+
+  loadCategories(): void {
+    this.categoryService.getAll().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      }
+    });
+  }
+
+  setViewMode(mode: 'table' | 'cards'): void {
+    this.viewMode = mode;
+    localStorage.setItem(this.VIEW_MODE_KEY, mode);
   }
 
   ngOnChanges(): void {
@@ -136,7 +171,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
       ubicacion: [],
       priceRange: [0, 1000],
       stockStatus: 'all',
-      status: 'all'
+      status: 'all',
+      categoryId: ''
     };
     this.onFilterChange();
   }
@@ -167,5 +203,32 @@ export class MaterialsListComponent implements OnInit, OnChanges {
 
   get Math() {
     return Math;
+  }
+
+  getFilteredCategories(): Category[] {
+    if (!this.categorySearch) return this.categories;
+    return this.categories.filter(c => 
+      c.name.toLowerCase().includes(this.categorySearch.toLowerCase())
+    );
+  }
+
+  getSelectedCategoryName(): string {
+    if (!this.filters.categoryId) return '';
+    const category = this.categories.find(c => c.id.toString() === this.filters.categoryId);
+    return category ? category.name : '';
+  }
+
+  selectCategory(categoryId: string): void {
+    this.filters.categoryId = categoryId;
+    this.categorySearch = '';
+    this.showCategoryDropdown = false;
+    this.onFilterChange();
+  }
+
+  onCategoryBlur(): void {
+    setTimeout(() => {
+      this.showCategoryDropdown = false;
+      this.categorySearch = '';
+    }, 200);
   }
 }

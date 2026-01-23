@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { MaterialService } from '../../../shared/services/material.service';
+import { CategoryService, Category } from '../../../shared/services/category/category.service';
 import { Material, MaterialComposition, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 
@@ -17,6 +18,8 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       display: flex;
       flex-direction: column;
       background: #f8f9fa;
+      position: relative;
+      z-index: 0;
     }
     .list-header {
       display: flex;
@@ -78,6 +81,8 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       gap: 1rem;
       padding: 1rem 1.5rem;
       align-items: end;
+      position: relative;
+      z-index: 101;
     }
     .filter-group {
       display: flex;
@@ -103,6 +108,8 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       flex: 1;
       overflow: auto;
       background: white;
+      position: relative;
+      z-index: 1;
     }
     .materials-table {
       margin: 0;
@@ -287,63 +294,151 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
     .cards-container {
       flex: 1;
       overflow: auto;
-      padding: 1rem;
+      padding: 1.5rem;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      align-content: start;
     }
     .material-card {
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       border: 1px solid #e9ecef;
       overflow: hidden;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
     }
     .material-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      transform: translateY(-4px);
+      border-color: #007bff;
+    }
+    .card-image {
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      position: relative;
+    }
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-image-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .card-image-fallback svg {
+      width: 64px;
+      height: 64px;
+      fill: rgba(255, 255, 255, 0.8);
     }
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem;
+      padding: 1rem 1.25rem;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
       border-bottom: 1px solid #e9ecef;
     }
     .card-content {
-      padding: 1rem;
+      padding: 1.25rem;
+      flex: 1;
     }
     .material-stats {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
     }
     .stat {
-      text-align: center;
+      text-align: left;
+      padding: 0.5rem;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
     }
     .stat label {
       display: block;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: #6c757d;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.375rem;
       text-transform: uppercase;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
     .stat .value {
-      font-weight: 600;
-      font-size: 0.875rem;
-      color: #333;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #2c3e50;
+      display: block;
     }
     .card-actions {
       display: flex;
       gap: 0.5rem;
-      padding: 1rem;
+      padding: 1rem 1.25rem;
       border-top: 1px solid #e9ecef;
-      background: #f8f9fa;
+      background: #fafbfc;
     }
     .card-actions .btn {
       flex: 1;
+      font-size: 0.8125rem;
+      padding: 0.625rem 0.75rem;
+      justify-content: center;
+      font-weight: 600;
+    }
+    .material-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .material-description {
+      color: #6c757d;
       font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.6em;
+    }
+    @media (max-width: 768px) {
+      .list-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+      }
+      .header-actions {
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      .filters-content {
+        grid-template-columns: 1fr;
+      }
+      .cards-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+      .hide-mobile {
+        display: none !important;
+      }
     }
     .stock-low {
       color: #dc3545 !important;
@@ -757,6 +852,39 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       border-radius: 4px;
       font-size: 0.875rem;
     }
+    /* Category Select with Search */
+    .category-select-wrapper {
+      position: relative;
+      z-index: 1001;
+    }
+    .category-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1002;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .category-option {
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.15s;
+    }
+    .category-option:hover {
+      background: #f8f9fa;
+    }
+    .category-option.selected {
+      background: #e3f2fd;
+      color: #007bff;
+      font-weight: 500;
+    }
   `]
 })
 export class MaterialCompositionComponent implements OnInit, OnChanges {
@@ -764,25 +892,29 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   transformedMaterials: any[] = [];
   availableMaterials: Material[] = [];
   compositions: MaterialComposition[] = [];
-  loading = true; // Inicializar como true para mostrar loading al inicio
+  loading = true;
   saving = false;
   showCreateModal = false;
   currentStep = 1;
+  editingMaterialId: number | null = null;
   
   // New material form
   newMaterial = {
     name: '',
     description: '',
     measurementUnit: '',
+    dischargeUnit: '',
     ubicacion: '',
     stockMin: 0,
     stockMax: 100,
-    quantityToGenerate: 1
+    quantityToGenerate: 1,
+    categoryId: null as number | null
   };
   
   // Form state
   selectedMaterialId: number | null = null;
   quantity: number = 1;
+  useDifferentDischargeUnit = false;
   
   // Filters
   nameFilter: string = '';
@@ -799,21 +931,62 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   // Editing
   editingComposition: number | null = null;
   tempQuantity: number = 0;
+  additionalQuantities: Map<number, number> = new Map();
   
   // UI State
   showFilters = false;
   viewMode: 'table' | 'cards' = 'table';
   searchFilter = '';
   statusFilter = 'all';
+  categoryFilter = '';
+  categorySearch = '';
+  showCategoryDropdown = false;
+  
+  private readonly VIEW_MODE_KEY = 'materials_composition_view_mode';
   
   // Image handling
   materialImages: MaterialImage[] = [];
+  categories: Category[] = [];
+  showCategoryForm = false;
+  newCategory = {
+    name: '',
+    code: '',
+    description: ''
+  };
 
-  constructor(private materialService: MaterialService) {}
+  constructor(
+    private materialService: MaterialService,
+    private categoryService: CategoryService
+  ) {}
 
   ngOnInit(): void {
+    this.loadViewMode();
+    this.loadCategories();
     this.loadAvailableMaterials();
     this.loadTransformedMaterials();
+  }
+
+  loadCategories(): void {
+    this.categoryService.getAll().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      }
+    });
+  }
+
+  loadViewMode(): void {
+    const savedMode = localStorage.getItem(this.VIEW_MODE_KEY);
+    if (savedMode === 'table' || savedMode === 'cards') {
+      this.viewMode = savedMode;
+    }
+  }
+
+  setViewMode(mode: 'table' | 'cards'): void {
+    this.viewMode = mode;
+    localStorage.setItem(this.VIEW_MODE_KEY, mode);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -831,6 +1004,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       next: (response) => {
         this.transformedMaterials = response.map((item: any) => ({
           id: item.strId,
+          strCode: item.strCode,
           name: item.strName,
           description: item.strDescription,
           componentCount: item.compositions ? item.compositions.length : 0,
@@ -886,7 +1060,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   nextStep(): void {
-    if (this.currentStep < 3) {
+    if (this.currentStep < 4) {
       this.currentStep++;
     }
   }
@@ -903,7 +1077,9 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         return !!(this.newMaterial.name && this.newMaterial.description && 
                  this.newMaterial.measurementUnit && this.newMaterial.ubicacion);
       case 2:
-        return this.compositions.length > 0;
+        return true; // Images are optional
+      case 3:
+        return true; // Category is optional
       default:
         return false;
     }
@@ -912,8 +1088,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   closeModal(): void {
     this.showCreateModal = false;
     this.currentStep = 1;
+    this.editingMaterialId = null;
     this.resetAll();
-    // Reset external control
     if (this.externalModalControl) {
       this.externalModalControl = false;
     }
@@ -924,36 +1100,68 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     
     this.saving = true;
     
-    const materialData = {
+    const materialData: any = {
       strName: this.newMaterial.name,
       strDescription: this.newMaterial.description,
       strUnitMeasure: this.newMaterial.measurementUnit,
       fltPrice: this.getUnitPrice(),
-      ingMinStock: this.newMaterial.stockMin,
-      ingMaxStock: this.newMaterial.stockMax,
-      ingQuantity: this.getTotalQuantity(),
+      ingMinStock: Number(this.newMaterial.stockMin),
+      ingMaxStock: Number(this.newMaterial.stockMax),
       strLocation: this.newMaterial.ubicacion,
-      strStatus: 'Active',
-      composition: this.compositions.map(comp => ({
-        componentMaterialId: comp.componentMaterialId,
-        quantity: comp.quantity
-      })),
-      images: this.materialImages
+      strStatus: 'Active'
     };
 
-    this.materialService.createTransformedMaterial(materialData).subscribe({
-      next: (createdMaterial) => {
-        // Actualizar stock de materiales utilizados
-        this.updateMaterialsStock();
+    // Solo incluir categoryId si tiene valor
+    if (this.newMaterial.categoryId) {
+      materialData.categoryId = Number(this.newMaterial.categoryId);
+    }
+
+    // Calcular ingQuantity correctamente
+    if (this.editingMaterialId) {
+      const additionalQty = this.getTotalQuantity();
+      materialData.ingQuantity = Number(this.newMaterial.quantityToGenerate) + Number(additionalQty);
+      // En edición, enviar composiciones con cantidades base + adicionales
+      materialData.composition = this.compositions.map(comp => ({
+        componentMaterialId: comp.componentMaterialId,
+        quantity: Number(comp.quantity) + (this.additionalQuantities.get(comp.id) || 0)
+      }));
+    } else {
+      materialData.ingQuantity = Number(this.getTotalQuantity());
+      materialData.composition = this.compositions.map(comp => ({
+        componentMaterialId: comp.componentMaterialId,
+        quantity: Number(comp.quantity)
+      }));
+    }
+
+    // Solo incluir estos campos en creación
+    if (!this.editingMaterialId) {
+      materialData.strDischargeUnit = this.useDifferentDischargeUnit && this.newMaterial.dischargeUnit ? this.newMaterial.dischargeUnit : this.newMaterial.measurementUnit;
+      materialData.categoryId = this.newMaterial.categoryId;
+      materialData.images = this.materialImages;
+    }
+
+    const request = this.editingMaterialId 
+      ? this.materialService.updateTransformedMaterial(this.editingMaterialId, materialData)
+      : this.materialService.createTransformedMaterial(materialData);
+
+    request.subscribe({
+      next: () => {
+        if (this.editingMaterialId) {
+          this.updateMaterialsStockForEdit();
+        } else {
+          this.updateMaterialsStock();
+        }
         this.saving = false;
         this.closeModal();
         this.loadTransformedMaterials();
       },
       error: (error) => {
         console.error('Error completo:', error);
-        console.error('Error status:', error.status);
-        console.error('Error message:', error.error);
-        alert('Error del servidor: ' + (error.error?.message || 'Error interno del servidor'));
+        console.error('Error response:', error.error);
+        const errorMsg = Array.isArray(error.error?.message) 
+          ? error.error.message.join(', ') 
+          : error.error?.message || error.message || 'Error interno del servidor';
+        alert('Error del servidor: ' + errorMsg);
         this.saving = false;
       }
     });
@@ -969,17 +1177,39 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     });
   }
 
+  private updateMaterialsStockForEdit(): void {
+    this.compositions.forEach(comp => {
+      const additional = this.additionalQuantities.get(comp.id) || 0;
+      if (additional > 0) {
+        const material = this.availableMaterials.find(m => m.id === comp.componentMaterialId);
+        if (material) {
+          const newStock = (material.currentStock || 0) - additional;
+          material.currentStock = Math.max(0, newStock);
+        }
+      }
+    });
+  }
+
   getTotalCost(): number {
     return this.compositions.reduce((total, comp) => {
       const materialCost = comp.componentMaterial?.price || 0;
-      return total + (materialCost * comp.quantity);
+      const quantity = this.editingMaterialId 
+        ? (this.additionalQuantities.get(comp.id) || 0)
+        : comp.quantity;
+      return total + (materialCost * quantity);
     }, 0);
   }
 
   getTotalQuantity(): number {
-    return this.compositions.reduce((total, comp) => {
-      return total + comp.quantity;
-    }, 0);
+    if (this.editingMaterialId) {
+      let additionalTotal = 0;
+      this.compositions.forEach(comp => {
+        const additional = this.additionalQuantities.get(comp.id) || 0;
+        additionalTotal += additional;
+      });
+      return additionalTotal > 0 ? additionalTotal : 0;
+    }
+    return this.compositions.reduce((total, comp) => total + comp.quantity, 0);
   }
 
   getUnitPrice(): number {
@@ -1013,16 +1243,20 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       name: '',
       description: '',
       measurementUnit: '',
+      dischargeUnit: '',
       ubicacion: '',
       stockMin: 0,
       stockMax: 100,
-      quantityToGenerate: 1
+      quantityToGenerate: 1,
+      categoryId: null
     };
     this.compositions = [];
     this.selectedMaterials.clear();
+    this.additionalQuantities.clear();
     this.currentPage = 1;
     this.resetIngredientForm();
     this.materialImages = [];
+    this.useDifferentDischargeUnit = false;
   }
 
   trackByCompositionId(index: number, composition: MaterialComposition): number {
@@ -1125,7 +1359,10 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   formatNumber(value: number): string {
-    return new Intl.NumberFormat('es-ES').format(value);
+    return new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(value);
   }
 
   formatCurrency(value: number): string {
@@ -1186,5 +1423,121 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     const minStock = parseFloat(material.stockMin || material.ingMinStock || 0);
     const status = currentStock < minStock ? 'low' : 'normal';
     return status === 'low' ? 'stock-low' : 'stock-normal';
+  }
+
+  createCategory(): void {
+    if (!this.newCategory.name) return;
+    
+    const categoryData = {
+      name: this.newCategory.name,
+      description: this.newCategory.description || '',
+      status: 'active'
+    };
+    
+    this.categoryService.create(categoryData).subscribe({
+      next: (category) => {
+        this.categories.push(category);
+        this.newMaterial.categoryId = category.id;
+        this.cancelCategoryForm();
+      },
+      error: (error) => {
+        console.error('Error creating category:', error);
+        alert('No se pudo crear la categoría: ' + (error.error?.message || 'Error desconocido'));
+      }
+    });
+  }
+
+  cancelCategoryForm(): void {
+    this.showCategoryForm = false;
+    this.newCategory = {
+      name: '',
+      code: '',
+      description: ''
+    };
+  }
+
+  getFilteredCategories(): Category[] {
+    if (!this.categorySearch) return this.categories;
+    return this.categories.filter(c => 
+      c.name.toLowerCase().includes(this.categorySearch.toLowerCase())
+    );
+  }
+
+  getSelectedCategoryName(): string {
+    if (!this.categoryFilter) return '';
+    const category = this.categories.find(c => c.id.toString() === this.categoryFilter);
+    return category ? category.name : '';
+  }
+
+  selectCategory(categoryId: string): void {
+    this.categoryFilter = categoryId;
+    this.categorySearch = '';
+    this.showCategoryDropdown = false;
+    this.loadTransformedMaterials();
+  }
+
+  onCategoryBlur(): void {
+    setTimeout(() => {
+      this.showCategoryDropdown = false;
+      this.categorySearch = '';
+    }, 200);
+  }
+
+  editMaterial(material: any): void {
+    this.editingMaterialId = material.id;
+    this.additionalQuantities.clear();
+    this.materialService.getTransformedMaterialById(material.id).subscribe({
+      next: (data) => {
+        this.newMaterial = {
+          name: data.strName,
+          description: data.strDescription,
+          measurementUnit: data.strUnitMeasure,
+          dischargeUnit: data.strDischargeUnit,
+          ubicacion: data.strLocation,
+          stockMin: data.ingMinStock,
+          stockMax: data.ingMaxStock,
+          quantityToGenerate: data.ingQuantity,
+          categoryId: data.categoryId
+        };
+        this.useDifferentDischargeUnit = data.strDischargeUnit !== data.strUnitMeasure;
+        
+        // Map images to the correct format
+        this.materialImages = (data.images || []).map((img: any) => ({
+          id: img.strId,
+          url: img.strImageUrl,
+          strImageUrl: img.strImageUrl,
+          file: null
+        }));
+        
+        // Map compositions with component material data
+        this.compositions = (data.compositions || []).map((comp: any) => {
+          const componentMaterial = this.availableMaterials.find(m => m.id === comp.strComponentMaterialId);
+          const compId = comp.strId || Date.now() + Math.random();
+          this.additionalQuantities.set(compId, 0);
+          return {
+            id: compId,
+            materialId: material.id,
+            componentMaterialId: comp.strComponentMaterialId,
+            quantity: comp.fltQuantity,
+            componentMaterial: componentMaterial || {
+              id: comp.strComponentMaterialId,
+              name: 'Cargando...',
+              price: 0,
+              measurementUnit: '',
+              currentStock: 0,
+              stockMin: 0
+            }
+          };
+        });
+        
+        // Recargar materiales disponibles para actualizar stock
+        this.loadAvailableMaterials();
+        this.showCreateModal = true;
+      },
+      error: (error) => {
+        console.error('Error loading material:', error);
+        alert('No se pudo cargar el material');
+      }
+    });
   }
 }

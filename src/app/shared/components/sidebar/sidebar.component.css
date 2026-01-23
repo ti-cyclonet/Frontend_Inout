@@ -80,12 +80,14 @@
 .menu-item:hover .icon-container,
 .menu-item.active .icon-container {
     transform: scale(1.1);
-    border: 1px solid var(--header-background-color);
+    border: 1px solid #0057B8;
+    /* border: 1px solid var(--header-background-color); */
 }
 
 .menu-item:hover .icon-container svg,
 .menu-item.active .icon-container svg {
-    fill: var(--header-background-color);
+    fill: #0057B8;
+    /* fill: var(--header-background-color); */
 }
 
 .menu-item div {

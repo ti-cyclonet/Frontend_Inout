@@ -1,0 +1,404 @@
+.card {
+  border: 2px solid #000;
+}
+
+.kardex-card {
+  margin: 1rem;
+  margin-bottom: 3rem;
+}
+
+.card-header {
+  /* border-bottom: 4px solid #000; */
+  padding: 1.5rem 1rem;
+}
+
+.card-header h5 {
+  color: #6c757d;
+  font-size: 1.75rem;
+}
+
+.text-primary {
+  color: #0066cc !important;
+}
+
+.border {
+  border: 2px solid #000 !important;
+}
+
+.search-details-title {
+  color: #0066cc;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: none;
+}
+
+.search-details-container {
+  background-color: #DAE8FC;
+  padding: 0;
+  border: 2px solid #6C8EBF;
+}
+
+.search-details-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.search-details-table td {
+  padding: 0.5rem;
+  border: none;
+}
+
+.search-details-table .label-cell {
+  background-color: #DAE8FC;
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.search-details-table .value-cell {
+  background-color: white;
+  color: #000;
+}
+
+.search-details-table .stacked-cell {
+  background-color: #DAE8FC;
+  padding: 0;
+  vertical-align: top;
+}
+
+.search-details-table .stacked-cell .label-text {
+  background-color: #DAE8FC;
+  color: #6c757d;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: none;
+}
+
+.search-details-table .stacked-cell .value-text {
+  background-color: #DAE8FC;
+  color: #000;
+  padding: 0.5rem;
+  font-weight: bold;
+}
+
+.balance-box {
+  background-color: #000;
+  color: white;
+  padding: 0.5rem;
+  margin: 0;
+  font-weight: bold;
+  display: inline-block;
+  min-width: 120px;
+}
+
+.search-details-table .first-row {
+  border-bottom: 3px solid #ff9966;
+}
+
+.search-details-table .first-row td {
+  border-bottom: 3px solid #ff9966;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border: 1px solid #000;
+  vertical-align: middle;
+}
+
+.table-bordered {
+  border: 2px solid #000;
+}
+
+.table-light {
+  background-color: #d9e7f5 !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+.bg-primary {
+  background-color: #0066cc !important;
+}
+
+.form-check-input:checked {
+  background-color: #ff6600;
+  border-color: #ff6600;
+}
+
+.form-check-input[type="radio"]:checked {
+  background-color: #ff6600;
+  border-color: #ff6600;
+}
+
+.btn-primary {
+  background-color: #0066cc;
+  border-color: #0066cc;
+}
+
+.btn-outline-primary {
+  color: #0066cc;
+  border-color: #0066cc;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0066cc;
+  border-color: #0066cc;
+  color: white;
+}
+
+.btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #f0f8ff;
+}
+
+tbody tr:nth-child(even) {
+  background-color: white;
+}
+
+.search-section {
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  background-color: white;
+}
+
+.search-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.search-radio-group {
+  min-width: 200px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.radio-option .form-check-input {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.radio-option .radio-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+}
+
+.search-input {
+  border: 1px solid #ced4da;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.search-button {
+  background-color: #0066cc;
+  border-color: #0066cc;
+  padding: 0.5rem 1.5rem;
+}
+
+.search-button:hover {
+  background-color: #0052a3;
+  border-color: #0052a3;
+}
+
+.movements-table-container {
+  border: 2px solid #0066cc;
+  overflow: hidden;
+}
+
+.movements-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.movements-table thead th {
+  background-color: #0066cc;
+  color: white;
+  padding: 0.4rem;
+  border: 1px solid #0066cc;
+  font-weight: bold;
+}
+
+.movements-table tbody .movement-row {
+  height: 40px;
+}
+
+.movements-table tbody td {
+  padding: 0.5rem;
+  border: none;
+  border-bottom: 1px solid #ff9966;
+}
+
+.movements-table tbody tr:last-child td {
+  border-bottom: 2px solid #0066cc;
+}
+
+.movements-table tbody tr td:first-child {
+  border-right: 2px solid #0066cc;
+}
+
+.movements-table tbody tr td:nth-child(5) {
+  border-right: 2px solid #0066cc;
+}
+
+.movements-table tbody tr td:nth-child(9) {
+  border-right: 2px solid #0066cc;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1050;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1040;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  opacity: 0.5;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-connector {
+  width: 80px;
+  height: 2px;
+  background: #dee2e6;
+  margin: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.step-connector.completed {
+  background: #ff6600;
+}
+
+.step-number {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.step.active .step-number {
+  background: #0066cc;
+  color: white;
+}
+
+.step.completed .step-number {
+  background: #ff6600;
+  color: white;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.step.active .step-label {
+  color: #0066cc;
+  font-weight: 600;
+}
+
+.step.completed .step-label {
+  color: #ff6600;
+  font-weight: 600;
+}
+
+.supplier-list {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.supplier-list .form-check {
+  padding: 0.5rem;
+  padding-left: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.supplier-list .form-check:last-child {
+  border-bottom: none;
+}
+
+.supplier-list .form-check:hover {
+  background-color: #f8f9fa;
+}
+
+.supplier-list .form-check:has(input:checked) {
+  background-color: #ffe6cc;
+  border: 2px solid #FF8000;
+  border-radius: 4px;
+}
+
+.supplier-name {
+  color: #52be80 !important;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.movements-table tbody td.entries-col,
+.movements-table tbody td.outputs-col,
+.movements-table tbody td.balances-col {
+  text-align: right !important;
+  padding-right: 1rem;
+}
