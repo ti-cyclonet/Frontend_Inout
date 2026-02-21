@@ -1,0 +1,192 @@
+<div class="customer-form-container">
+  <div class="form-header" style="border-bottom: 1px solid orange;">
+    <h1 class="page-title">
+      <span class="title-normal">Nuevo</span>
+      <span class="title-bold">CLIENTE</span>
+      <span style="color: #ff8000">●</span>
+    </h1>
+  </div>
+
+  <div class="form-content">
+    <form [formGroup]="customerForm" (ngSubmit)="onSubmit()" class="customer-form">
+      <div class="form-group">
+        <label>Email *</label>
+        <input 
+          type="email" 
+          class="form-control" 
+          formControlName="email"
+          placeholder="correo@ejemplo.com" 
+          [class.is-invalid]="customerForm.get('email')?.invalid && customerForm.get('email')?.touched">
+        <div class="invalid-feedback" *ngIf="customerForm.get('email')?.touched && customerForm.get('email')?.errors?.['required']">
+          El email es requerido
+        </div>
+        <div class="invalid-feedback" *ngIf="customerForm.get('email')?.touched && customerForm.get('email')?.errors?.['email']">
+          Ingrese un email válido
+        </div>
+      </div>
+      
+      <!-- Tipo de Persona -->
+      <div class="form-group">
+        <label>Tipo de Persona *</label>
+        <div class="form-row">
+          <label class="radio-option">
+            <input type="radio" formControlName="personType" value="N"> Persona Natural
+          </label>
+          <label class="radio-option">
+            <input type="radio" formControlName="personType" value="J"> Persona Jurídica
+          </label>
+        </div>
+      </div>
+      
+      <!-- Fila de documento: Tipo, Número y DV -->
+      <div class="document-row" [class.natural-person]="isNaturalPerson">
+        <div class="form-group">
+          <label>Tipo de Documento</label>
+          <select class="form-control" formControlName="documentType">
+            <option *ngFor="let type of documentTypes" [value]="type.value" 
+                    [hidden]="isNaturalPerson && type.value === 'NIT'">
+              {{ type.label }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Número de Documento</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            formControlName="documentNumber"
+            [placeholder]="isNaturalPerson ? 'Máximo 10 caracteres' : 'Máximo 9 dígitos'"
+            [maxlength]="isNaturalPerson ? 10 : 9">
+        </div>
+        <div class="form-group" *ngIf="isLegalEntity">
+          <input 
+            type="text" 
+            class="form-control dv-input" 
+            formControlName="documentDv"
+            placeholder="DV"
+            maxlength="1">
+        </div>
+      </div>
+      
+      <!-- Campos de Persona Natural -->
+      <div *ngIf="isNaturalPerson">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Primer Nombre</label>
+            <input type="text" class="form-control" formControlName="firstName" placeholder="Primer nombre">
+          </div>
+          <div class="form-group">
+            <label>Segundo Nombre</label>
+            <input type="text" class="form-control" formControlName="secondName" placeholder="Segundo nombre">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Primer Apellido</label>
+            <input type="text" class="form-control" formControlName="firstSurname" placeholder="Primer apellido">
+          </div>
+          <div class="form-group">
+            <label>Segundo Apellido</label>
+            <input type="text" class="form-control" formControlName="secondSurname" placeholder="Segundo apellido">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Nacimiento</label>
+            <input type="date" class="form-control" formControlName="birthDate">
+          </div>
+          <div class="form-group">
+            <label>Estado Civil</label>
+            <select class="form-control" formControlName="maritalStatus">
+              <option value="">Seleccione</option>
+              <option value="SOLTERO">Soltero(a)</option>
+              <option value="CASADO">Casado(a)</option>
+              <option value="UNION_LIBRE">Unión Libre</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sexo</label>
+            <select class="form-control" formControlName="sex">
+              <option value="">Seleccione</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="O">Otro</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Teléfono y Dirección para persona natural -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input 
+              type="tel" 
+              class="form-control" 
+              formControlName="phone"
+              placeholder="Número de teléfono">
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="address"
+              placeholder="Dirección completa">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Campos de Persona Jurídica -->
+      <div *ngIf="isLegalEntity">
+        <div class="form-group">
+          <label>Nombre de la Empresa</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            formControlName="businessName"
+            placeholder="Nombre de la empresa">
+        </div>
+        
+        <div class="form-group">
+          <label>Dirección</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            formControlName="address"
+            placeholder="Dirección completa">
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Persona de Contacto</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="contactPerson"
+              placeholder="Nombre del contacto">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input 
+              type="tel" 
+              class="form-control" 
+              formControlName="phone"
+              placeholder="Número de teléfono">
+          </div>
+        </div>
+      </div>
+
+      
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="onCancel()" [disabled]="loading">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="customerForm.invalid || loading">
+          <span *ngIf="loading">Creando...</span>
+          <span *ngIf="!loading">Crear Cliente</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

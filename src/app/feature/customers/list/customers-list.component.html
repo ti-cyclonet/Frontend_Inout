@@ -1,0 +1,293 @@
+<div class="customers-list-container" style="border-top: 1px solid orange; border-bottom: 1px solid orange;">
+  <!-- Header -->
+  <div class="list-header">
+    <div class="title-container">
+      <a href="/sales" class="title-link">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#people" />
+        </svg>
+        /Lista de Clientes
+      </a>
+    </div>
+    
+    <div class="header-actions">
+      <button class="btn btn-outline-secondary" (click)="showFilters = !showFilters">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
+        </svg>
+        Filtros
+      </button>
+      
+      <div class="view-toggle">
+        <button 
+          class="btn btn-sm" 
+          [class.btn-primary]="viewMode === 'table'"
+          [class.btn-outline-primary]="viewMode !== 'table'"
+          (click)="setViewMode('table')">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#table" />
+          </svg>
+        </button>
+        <button 
+          class="btn btn-sm" 
+          [class.btn-primary]="viewMode === 'cards'"
+          [class.btn-outline-primary]="viewMode !== 'cards'"
+          (click)="setViewMode('cards')">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" />
+          </svg>
+        </button>
+      </div>
+      
+      <button class="btn btn-primary" (click)="openCreateModal.emit()">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Agregar Cliente
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" [class.show]="showFilters">
+    <div class="filters-content">
+      <div class="filter-group">
+        <label>Buscar</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="filters.search"
+          (input)="onFilterChange()"
+          placeholder="Buscar por nombre, email o documento...">
+      </div>
+      
+      <div class="filter-group">
+        <label>Estado</label>
+        <select class="form-select" [(ngModel)]="filters.status" (change)="onFilterChange()">
+          <option value="all">Todos</option>
+          <option value="ACTIVE">Activo</option>
+          <option value="INACTIVE">Inactivo</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Tipo de Documento</label>
+        <select class="form-select" [(ngModel)]="filters.documentType" (change)="onFilterChange()">
+          <option value="">Todos</option>
+          <option value="CC">Cédula de Ciudadanía</option>
+          <option value="CE">Cédula de Extranjería</option>
+          <option value="NIT">NIT</option>
+          <option value="PP">Pasaporte</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="bulk-actions" *ngIf="selectedCustomers.size > 0">
+    <div class="selected-count">
+      {{ selectedCustomers.size }} cliente(s) seleccionado(s)
+    </div>
+    <div class="bulk-buttons">
+      <button class="btn btn-outline-primary btn-sm" (click)="exportSelected()">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#download" />
+        </svg>
+        Exportar
+      </button>
+      <button class="btn btn-outline-danger btn-sm" (click)="deleteSelected()">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+        </svg>
+        Eliminar
+      </button>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-container" *ngIf="viewMode === 'table'">
+    <div class="table-responsive">
+      <table class="table customers-table">
+        <thead>
+          <tr>
+            <th class="checkbox-col">
+              <input 
+                type="checkbox" 
+                [checked]="selectedCustomers.size === customers.length && customers.length > 0"
+                [indeterminate]="selectedCustomers.size > 0 && selectedCustomers.size < customers.length"
+                (change)="selectAllCustomers()">
+            </th>
+            <th (click)="onSort('name')" class="sortable">
+              Nombre
+              <svg viewBox="0 0 16 16" class="sort-icon">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
+              </svg>
+            </th>
+            <th class="d-none d-md-table-cell">Tipo de Documento</th>
+            <th class="d-none d-md-table-cell">Número de Documento</th>
+            <th class="d-none d-lg-table-cell">Dirección</th>
+            <th class="d-none d-lg-table-cell">Teléfono</th>
+            <th class="text-center hide-mobile">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of customers; trackBy: trackById" 
+              [class.selected]="selectedCustomers.has(customer.id!)">
+            <td>
+              <input 
+                type="checkbox" 
+                [checked]="selectedCustomers.has(customer.id!)"
+                (change)="toggleCustomerSelection(customer.id!)">
+            </td>
+            <td>
+              <div class="customer-info">
+                <div class="customer-name">
+                  <strong>{{ getCustomerDisplayName(customer) }}</strong>
+                  <small class="text-muted d-block">{{ customer.customerCode }}</small>
+                </div>
+              </div>
+            </td>
+            <td class="d-none d-md-table-cell">
+              <span>{{ getDocumentTypeLabel(customer) }}</span>
+            </td>
+            <td class="d-none d-md-table-cell">
+              <span>{{ getDocumentNumber(customer) }}</span>
+            </td>
+            <td class="d-none d-lg-table-cell">
+              <span>{{ customer.address || 'N/A' }}</span>
+            </td>
+            <td class="d-none d-lg-table-cell">
+              <span>{{ customer.phone || 'N/A' }}</span>
+            </td>
+            <td class="text-center hide-mobile">
+              <span class="status-badge" [ngClass]="'status-' + (customer.status || 'active').toLowerCase()">
+                {{ customer.status === 'ACTIVE' ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-primary" (click)="viewCustomer(customer)" title="Ver">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" (click)="editCustomer(customer)" title="Editar">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deleteCustomer(customer)" title="Eliminar">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cards View -->
+  <div class="cards-container" *ngIf="viewMode === 'cards'">
+    <div class="customer-card" *ngFor="let customer of customers; trackBy: trackById"
+         [class.selected]="selectedCustomers.has(customer.id!)">
+      
+      <div class="card-header">
+        <input 
+          type="checkbox" 
+          [checked]="selectedCustomers.has(customer.id!)"
+          (change)="toggleCustomerSelection(customer.id!)">
+        <span class="status-badge" [ngClass]="'status-' + (customer.status || 'active').toLowerCase()">
+          {{ customer.status === 'ACTIVE' ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+      
+      <div class="card-content">
+        <h4 class="customer-name">{{ getCustomerDisplayName(customer) }}</h4>
+        
+        <div class="customer-stats">
+          <div class="stat">
+            <label>Código</label>
+            <span class="value">{{ customer.customerCode || 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-actions">
+        <button class="btn btn-sm btn-outline-primary" (click)="viewCustomer(customer)">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+          </svg>
+          Ver
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="editCustomer(customer)">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+          </svg>
+          Editar
+        </button>
+        <button class="btn btn-sm btn-outline-danger" (click)="deleteCustomer(customer)">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando clientes...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && customers.length === 0">
+    <svg viewBox="0 0 16 16" class="empty-icon">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#inbox" />
+    </svg>
+    <h3>No se encontraron clientes</h3>
+    <p>Intenta ajustar tus filtros o agregar un nuevo cliente.</p>
+    <button class="btn btn-primary" (click)="openCreateModal.emit()">Agregar Primer Cliente</button>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading && customers.length > 0">
+    <div class="pagination-info">
+      Mostrando {{ (currentPage - 1) * pageSize + 1 }} a {{ Math.min(currentPage * pageSize, totalItems) }} de {{ totalItems }} clientes
+    </div>
+    
+    <div class="pagination-controls">
+      <select class="form-select page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} por página</option>
+      </select>
+      
+      <div class="pagination-buttons">
+        <button 
+          class="btn btn-outline-secondary btn-sm" 
+          [disabled]="currentPage === 1"
+          (click)="onPageChange(currentPage - 1)">
+          Anterior
+        </button>
+        
+        <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+        
+        <button 
+          class="btn btn-outline-secondary btn-sm" 
+          [disabled]="currentPage === totalPages"
+          (click)="onPageChange(currentPage + 1)">
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

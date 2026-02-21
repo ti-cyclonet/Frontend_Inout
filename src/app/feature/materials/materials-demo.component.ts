@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MaterialsDashboardComponent } from './dashboard/materials-dashboard.component';
@@ -12,6 +12,9 @@ import { MaterialCompositionComponent } from './composition/material-composition
   imports: [CommonModule, MaterialsDashboardComponent, MaterialsListComponent, MaterialFormComponent, MaterialCompositionComponent],
   template: `
     <div class="demo-container">
+      <div class="demo-header">
+        <h5 class="mb-0">Gestión de <span class="text-primary fw-bold">MATERIALES</span> <span style="color: #ff8000">●</span></h5>
+      </div>
       <div class="demo-tabs">
         <button 
           class="tab-button" 
@@ -34,9 +37,9 @@ import { MaterialCompositionComponent } from './composition/material-composition
       </div>
       
       <div class="demo-content">
-        <app-materials-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openCompositionModal)="openCompositionModal()"></app-materials-dashboard>
-        <app-materials-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-materials-list>
-        <app-material-composition *ngIf="activeTab === 'composition'" [externalModalControl]="showCompositionModal"></app-material-composition>
+        <app-materials-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openCompositionModal)="openCompositionModal()" (refreshList)="onMaterialCreated()"></app-materials-dashboard>
+        <app-materials-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openEditModal)="openEditModal($event)"></app-materials-list>
+        <app-material-composition *ngIf="activeTab === 'composition'" [externalModalControl]="showCompositionModal" [editMaterialId]="editMaterialId" [initialStep]="initialStep"></app-material-composition>
       </div>
       
       <!-- Modal para crear material -->
@@ -44,7 +47,7 @@ import { MaterialCompositionComponent } from './composition/material-composition
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-body">
-              <app-material-form [isModal]="true" (materialCreated)="onMaterialCreated()" (formCancelled)="showCreateModal = false"></app-material-form>
+              <app-material-form [isModal]="true" [materialId]="editingMaterialId" (materialCreated)="onMaterialCreated()" (formCancelled)="closeModal()"></app-material-form>
             </div>
           </div>
         </div>
@@ -57,6 +60,13 @@ import { MaterialCompositionComponent } from './composition/material-composition
       height: 100%;
       display: flex;
       flex-direction: column;
+    }
+    
+    .demo-header {
+      background: white;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid orange;
+      text-align: right;
     }
     
     .demo-tabs {
@@ -88,7 +98,7 @@ import { MaterialCompositionComponent } from './composition/material-composition
     
     .demo-content {
       flex: 1;
-      overflow: hidden;
+      overflow: auto;
     }
     
     .modal {
@@ -100,17 +110,44 @@ import { MaterialCompositionComponent } from './composition/material-composition
     }
   `]
 })
-export class MaterialsDemoComponent {
+export class MaterialsDemoComponent implements OnInit {
   activeTab: 'dashboard' | 'list' | 'composition' = 'dashboard';
   showCreateModal = false;
   showCompositionModal = false;
   refreshTrigger = 0;
+  editMaterialId: string | null = null;
+  editingMaterialId: number | undefined = undefined;
+  initialStep: number = 1;
   
   constructor(private route: ActivatedRoute) {}
   
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['edit'] && params['step']) {
+        this.editMaterialId = params['edit'];
+        this.initialStep = parseInt(params['step']);
+        this.activeTab = 'composition';
+        setTimeout(() => {
+          this.showCompositionModal = true;
+        }, 100);
+      }
+    });
+  }
+  
   onMaterialCreated() {
     this.showCreateModal = false;
-    this.refreshTrigger++; // Trigger refresh
+    this.editingMaterialId = undefined;
+    this.refreshTrigger++;
+  }
+  
+  openEditModal(material: any) {
+    this.editingMaterialId = material.id;
+    this.showCreateModal = true;
+  }
+  
+  closeModal() {
+    this.showCreateModal = false;
+    this.editingMaterialId = undefined;
   }
   
   openCompositionModal() {

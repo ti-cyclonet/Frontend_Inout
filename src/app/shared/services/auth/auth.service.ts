@@ -38,6 +38,11 @@ export class AuthService {
       sessionStorage.setItem('user_rolDescription', userData.user?.rolDescription || '');
       sessionStorage.setItem('user_image', userData.user?.image || '');
       
+      // Guardar codePrefix del contrato
+      if (userData.contract?.codePrefix) {
+        sessionStorage.setItem('codePrefix', userData.contract.codePrefix);
+      }
+      
       if (userData.contracts) {
         sessionStorage.setItem('user_contracts', JSON.stringify(userData.contracts));
       }

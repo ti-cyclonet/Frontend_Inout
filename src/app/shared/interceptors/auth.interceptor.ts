@@ -8,14 +8,29 @@ export class AuthInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler) {
     const token = this.authService.getToken();
+    let tenantId: string | null = null;
 
-    if (token) {
-      const authReq = req.clone({
-        headers: req.headers.set('Authorization', `Bearer ${token}`)
-      });
-      return next.handle(authReq);
+    // No agregar x-tenant-id en las peticiones de login
+    const isLoginRequest = req.url.includes('/auth/login');
+
+    if (typeof window !== 'undefined' && !isLoginRequest) {
+      tenantId = sessionStorage.getItem('user_id');
     }
 
-    return next.handle(req);
+    let authReq = req;
+
+    if (token) {
+      authReq = authReq.clone({
+        headers: authReq.headers.set('Authorization', `Bearer ${token}`)
+      });
+    }
+
+    if (tenantId) {
+      authReq = authReq.clone({
+        headers: authReq.headers.set('x-tenant-id', tenantId)
+      });
+    }
+
+    return next.handle(authReq);
   }
 }

@@ -234,24 +234,27 @@ tbody tr:nth-child(even) {
   width: 100%;
   border-collapse: collapse;
   margin: 0;
+  font-size: 0.8rem;
 }
 
 .movements-table thead th {
   background-color: #0066cc;
   color: white;
-  padding: 0.4rem;
+  padding: 0.3rem;
   border: 1px solid #0066cc;
   font-weight: bold;
+  font-size: 0.75rem;
 }
 
 .movements-table tbody .movement-row {
-  height: 40px;
+  height: 35px;
 }
 
 .movements-table tbody td {
-  padding: 0.5rem;
+  padding: 0.3rem;
   border: none;
   border-bottom: 1px solid #ff9966;
+  font-size: 0.75rem;
 }
 
 .movements-table tbody tr:last-child td {

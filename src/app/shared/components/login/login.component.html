@@ -31,10 +31,10 @@
     <div class="card shadow-lg p-4 custom-card">
       <div class="row justify-content-center w-130">
         <a class="navbar-brand mb-2 mb-lg-0 d-flex justify-content-center" href="#">
-          <img src="./assets/img/logo_inout_v5.png" alt="Logo" class="logo-img">
+          <img [src]="logoPath" alt="Logo" class="logo-img">
         </a>
       </div>
-      <h3 class="text-center custom-welcome">Welcome</h3>
+      <h3 class="text-center custom-welcome">Bienvenido</h3>
       <hr style="border: 2px solid rgb(231, 227, 227)">
       
       <!-- Selector de Cliente -->
@@ -59,21 +59,21 @@
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" *ngIf="!showClientSelector">
         <!-- Campo email -->
         <div class="form-group m-2">
-          <input type="email" class="form-control mt-2" placeholder="Email" formControlName="username" 
+          <input type="email" class="form-control mt-2" placeholder="Correo electrónico" formControlName="username" 
                  [ngClass]="{'is-invalid': submitted && f['username'].invalid}">
           <div *ngIf="submitted && f['username'].errors" class="text-danger">
-            <div *ngIf="f['username'].errors?.['required']" class="custom-error-box" >This field is required.</div>
-            <div *ngIf="f['username'].errors?.['email']" class="custom-error-box">The email format is invalid.</div>
+            <div *ngIf="f['username'].errors?.['required']" class="custom-error-box" >Este campo es requerido.</div>
+            <div *ngIf="f['username'].errors?.['email']" class="custom-error-box">El formato del correo es inválido.</div>
           </div>
         </div>
         <!-- Campo Contraseña -->
         <div class="form-group m-2">
-          <input type="password" class="form-control mt-2" placeholder="Password"
+          <input type="password" class="form-control mt-2" placeholder="Contraseña"
                  formControlName="password"
                  [ngClass]="{'is-invalid': submitted && f['password'].invalid}">
           <div *ngIf="submitted && f['password'].errors" class="text-danger">
-            <small *ngIf="f['password'].errors?.['required']" class="custom-error" class="custom-error-box">Password is required.</small>
-            <small *ngIf="f['password'].errors?.['minlength']" class="custom-error" class="custom-error-box">Must be at least 6 characters long.</small>
+            <small *ngIf="f['password'].errors?.['required']" class="custom-error" class="custom-error-box">La contraseña es requerida.</small>
+            <small *ngIf="f['password'].errors?.['minlength']" class="custom-error" class="custom-error-box">Debe tener al menos 6 caracteres.</small>
           </div>
         </div>      
         <hr style="border: 2px solid rgb(255, 255, 255)">
@@ -84,11 +84,11 @@
               <path fill-rule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0z"/>
               <path fill-rule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
             </svg>
-            Sign in
+            Iniciar sesión
           </button>
         </div>
         <div class="text-center mt-3">
-          <a href="#" class="forgot-password-link">Forgot your password?</a>
+          <a href="#" class="forgot-password-link">¿Olvidaste tu contraseña?</a>
         </div>      
       </form>
     </div>

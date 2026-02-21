@@ -1,0 +1,67 @@
+<div class="dashboard-wrapper" style="height: 100%;">
+  <!-- Subtitle and buttons row -->
+  <div class="page-subtitle-row" style="border-top: 1px solid orange">
+    <div class="page-subtitle">
+      <svg viewBox="0 0 16 16">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#speedometer2" />
+      </svg>
+      /Panel Principal
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-outline-primary" (click)="navigateToCreate()">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Agregar Producto
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard-container" style="border-bottom: 1px solid orange;">
+  <div class="row g-4">
+    <div class="col-md-4">
+      <app-metric-card
+        [value]="metrics.totalProducts"
+        [label]="'Total Productos'"
+        [icon]="'box-seam'"
+        [cardClass]="'card-primary'"
+      >
+      </app-metric-card>
+    </div>
+
+    <div class="col-md-4">
+      <app-metric-card
+        [value]="metrics.lowStockCount"
+        [label]="'Alertas de Stock Bajo'"
+        [icon]="'exclamation-triangle'"
+        [cardClass]="'card-warning'"
+      >
+      </app-metric-card>
+    </div>
+
+    <div class="col-md-4">
+      <app-metric-card
+        [value]="metrics.totalValue"
+        [label]="'Valor Total Inventario'"
+        [icon]="'currency-dollar'"
+        [cardClass]="'card-success'"
+      >
+      </app-metric-card>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+          <h5 class="mb-3">Gestión de Productos</h5>
+          <p class="text-muted mb-4">
+            Crea y administra tus productos terminados
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>

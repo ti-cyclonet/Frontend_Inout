@@ -14,6 +14,7 @@ export class ImageManagerComponent implements OnInit {
   @Input() images: MaterialImage[] = [];
   @Input() maxImages = 5;
   @Input() allowMultiple = true;
+  @Input() folder = 'materials'; // Carpeta por defecto
   @Output() imagesChange = new EventEmitter<MaterialImage[]>();
   @Output() imageAdded = new EventEmitter<MaterialImage>();
   @Output() imageRemoved = new EventEmitter<MaterialImage>();
@@ -103,7 +104,7 @@ export class ImageManagerComponent implements OnInit {
       }
     }, 200);
 
-    this.cloudinaryService.uploadImage(file, 'materials').subscribe({
+    this.cloudinaryService.uploadImage(file, this.folder).subscribe({
       next: (response: CloudinaryUploadResponse) => {
         clearInterval(progressInterval);
         this.uploadProgress[fileId] = 100;

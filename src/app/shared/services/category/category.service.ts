@@ -52,4 +52,14 @@ export class CategoryService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  downloadTemplate(): void {
+    window.open(`${this.apiUrl}/template/download`, '_blank');
+  }
+
+  bulkUpload(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/bulk-upload`, formData);
+  }
 }

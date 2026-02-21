@@ -1,6 +1,7 @@
 import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
@@ -16,6 +17,7 @@ import { Material, MaterialFilters, PaginatedResponse } from '../../../shared/mo
 export class MaterialsListComponent implements OnInit, OnChanges {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
+  @Output() openEditModal = new EventEmitter<Material>();
   materials: Material[] = [];
   categories: Category[] = [];
   loading = false;
@@ -52,7 +54,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
 
   constructor(
     private materialService: MaterialService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -100,6 +103,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
           this.materials = response.data;
           this.totalItems = response.total;
           this.totalPages = response.totalPages;
+          console.log('Pagination:', { total: this.totalItems, pages: this.totalPages, current: this.currentPage, size: this.pageSize });
           this.loading = false;
         },
         error: (error) => {
@@ -186,7 +190,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   }
 
   editMaterial(material: Material): void {
-    console.log('Edit material:', material);
+    this.openEditModal.emit(material);
   }
 
   deleteMaterial(material: Material): void {
@@ -230,5 +234,14 @@ export class MaterialsListComponent implements OnInit, OnChanges {
       this.showCategoryDropdown = false;
       this.categorySearch = '';
     }, 200);
+  }
+
+  goToKardex(material: Material): void {
+    this.router.navigate(['/kardex'], {
+      queryParams: {
+        type: 'material',
+        code: material['strCode']?.replace('JMY-M-', '')
+      }
+    });
   }
 }

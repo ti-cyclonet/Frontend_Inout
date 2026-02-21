@@ -23,11 +23,21 @@ export class MaterialService {
       .set('limit', limit.toString());
 
     if (filters) {
-      if (filters.search) params = params.set('search', filters.search);
-      if (filters.status && filters.status !== 'all') params = params.set('status', filters.status);
-      if (filters.stockStatus && filters.stockStatus !== 'all') params = params.set('stockStatus', filters.stockStatus);
-      if (filters.ubicacion && filters.ubicacion.length > 0) params = params.set('ubicacion', filters.ubicacion.join(','));
-      if (filters.categoryId) params = params.set('category', filters.categoryId);
+      if (filters.search && filters.search.trim()) {
+        params = params.set('search', filters.search.trim());
+      }
+      if (filters.status && filters.status !== 'all') {
+        params = params.set('status', filters.status);
+      }
+      if (filters.stockStatus && filters.stockStatus !== 'all') {
+        params = params.set('stockStatus', filters.stockStatus);
+      }
+      if (filters.ubicacion && filters.ubicacion.length > 0) {
+        params = params.set('ubicacion', filters.ubicacion.join(','));
+      }
+      if (filters.categoryId && filters.categoryId !== '') {
+        params = params.set('category', filters.categoryId);
+      }
     }
 
     return this.http.get<any>(this.apiConfig.ENDPOINTS.MATERIALS, {
@@ -50,7 +60,9 @@ export class MaterialService {
           ubicacion: item.strLocation,
           location: item.strLocation,
           createDate: new Date(item.dtmCreationDate),
-          images: item.images || []
+          updateDate: new Date(item.dtmUpdateDate || item.dtmCreationDate),
+          images: item.images || [],
+          categoryId: item.categoryId || item.category?.id
         }))
       })),
       catchError(error => {
@@ -114,7 +126,7 @@ export class MaterialService {
   }
 
   updateMaterial(id: number, material: Partial<Material>): Observable<Material> {
-    return this.http.put<Material>(`${this.apiConfig.ENDPOINTS.MATERIALS}/${id}`, material).pipe(
+    return this.http.patch<Material>(`${this.apiConfig.ENDPOINTS.MATERIALS}/${id}`, material).pipe(
       catchError(error => {
         throw error;
       })
@@ -205,5 +217,24 @@ export class MaterialService {
         return of([]);
       })
     );
+  }
+
+  // Bulk Upload
+  downloadTemplate(): Observable<Blob> {
+    return this.http.get(`${this.apiConfig.ENDPOINTS.MATERIALS}/template/download`, {
+      responseType: 'blob'
+    });
+  }
+
+  bulkValidate(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiConfig.ENDPOINTS.MATERIALS}/bulk-validate`, formData);
+  }
+
+  bulkUpload(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiConfig.ENDPOINTS.MATERIALS}/bulk-upload`, formData);
   }
 }

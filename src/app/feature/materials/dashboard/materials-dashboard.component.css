@@ -1,20 +1,50 @@
-.dashboard-container {
-  height: 100%;
-  min-height: calc(100vh - 120px);
+.dashboard-wrapper {
   display: flex;
   flex-direction: column;
-  padding: 0;
-  margin: 0;
+  background-color: white;
+  overflow: hidden;
 }
 
-/* Header Section */
-.dashboard-header {
+.dashboard-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  min-height: 0;
+}
+
+.page-subtitle-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
   background: white;
-  border-bottom: 1px solid #e9ecef;
+  padding: 1.0rem 1.5rem 1.0rem 2rem;
+  flex-shrink: 0;
+}
+
+.page-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* padding: 1rem 0; */
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.page-subtitle svg {
+  width: 18px;
+  height: 18px;
+  fill: #6c757d;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* padding: 1rem 1.5rem; */
+  /* background: white; */
+  border-radius: 8px;
+  /* margin-bottom: 1.5rem; */
 }
 
 .title-container {
@@ -55,7 +85,6 @@
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
-  text-decoration: none;
   border: 1px solid transparent;
   transition: all 0.2s ease;
 }
@@ -63,17 +92,6 @@
 .btn svg {
   width: 16px;
   height: 16px;
-}
-
-.btn-primary {
-  background-color: #0066cc;
-  color: white;
-  border-color: #0066cc;
-}
-
-.btn-primary:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
 }
 
 .btn-outline-primary {
@@ -87,16 +105,13 @@
   color: white;
 }
 
-/* Metrics Grid */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  padding: 1.5rem;
   margin-bottom: 2rem;
 }
 
-/* Loading Skeletons */
 .metric-skeleton {
   background: white;
   border-radius: 12px;
@@ -138,16 +153,13 @@
   100% { opacity: 0.6; }
 }
 
-/* Sections */
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #333;
   margin-bottom: 1rem;
-  padding: 0 1.5rem;
 }
 
-/* Quick Actions */
 .quick-actions-section {
   margin-bottom: 2rem;
 }
@@ -156,7 +168,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
-  padding: 0 1.5rem;
 }
 
 .action-card {
@@ -188,14 +199,6 @@
   flex-shrink: 0;
 }
 
-.action-icon.primary {
-  background: rgba(0, 102, 204, 0.1);
-}
-
-.action-icon.warning {
-  background: rgba(255, 106, 0, 0.1);
-}
-
 .action-icon.success {
   background: rgba(40, 167, 69, 0.1);
 }
@@ -207,14 +210,6 @@
 .action-icon svg {
   width: 20px;
   height: 20px;
-}
-
-.action-icon.primary svg {
-  fill: #0066cc;
-}
-
-.action-icon.warning svg {
-  fill: #ff6a00;
 }
 
 .action-icon.success svg {
@@ -238,13 +233,8 @@
   margin: 0;
 }
 
-/* Recent Activity */
 .recent-activity-section {
   margin-bottom: 2rem;
-}
-
-.activity-list {
-  padding: 0 1.5rem;
 }
 
 .activity-item {
@@ -299,41 +289,9 @@
   color: #666;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .header-actions {
-    justify-content: center;
-  }
-
-  .metrics-grid {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
-
-  .actions-grid {
-    grid-template-columns: 1fr;
-    padding: 0 1rem;
-  }
-
-  .section-title {
-    padding: 0 1rem;
-  }
-
-  .activity-list {
-    padding: 0 1rem;
-  }
-}
-
-/* Empty State */
 .empty-state {
   text-align: center;
-  padding: 2rem 1.5rem;
+  padding: 2rem;
   color: #666;
 }
 
@@ -359,4 +317,41 @@
 .empty-state small {
   font-size: 0.875rem;
   color: #999;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal-backdrop.show {
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
 }

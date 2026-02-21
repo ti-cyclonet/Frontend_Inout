@@ -1,0 +1,435 @@
+<div class="product-form-container">
+  <!-- Header -->
+  <div class="form-header" style="border-bottom: 1px solid orange;">
+    <h1 class="page-title">
+      <span class="title-normal">{{ isEditMode ? 'Editar' : 'Nuevo' }}</span>
+      <span class="title-bold">PRODUCTO</span>
+      <span style="color: #ff8000">●</span>
+    </h1>
+  </div>
+
+  <div style="border-bottom: 1px solid orange" *ngIf="!loading">
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
+        <div class="step-number">1</div>
+        <div class="step-label">Info Básica</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 1"></div>
+      <div class="step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2">
+        <div class="step-number">2</div>
+        <div class="step-label">Imágenes</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 2"></div>
+      <div class="step" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3">
+        <div class="step-number">3</div>
+        <div class="step-label">Materiales</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 3"></div>
+      <div class="step" [class.active]="currentStep >= 4">
+        <div class="step-number">4</div>
+        <div class="step-label">Resumen</div>
+      </div>
+    </div>
+
+    <div class="form-content">
+      <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+        <!-- Step 1: Basic Information -->
+        <div class="form-step" *ngIf="currentStep === 1">
+          <div class="step-header">
+            <h3>Información Básica</h3>
+            <p>Ingresa los detalles básicos del producto</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Nombre del Producto *</label>
+              <input type="text" class="form-control" formControlName="strName" placeholder="Ingresa el nombre"
+                [class.is-invalid]="productForm.get('strName')?.invalid && productForm.get('strName')?.touched" />
+              <div class="invalid-feedback" *ngIf="productForm.get('strName')?.invalid && productForm.get('strName')?.touched">{{ getFieldError("strName") }}</div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Descripción *</label>
+              <textarea class="form-control" formControlName="strDescription" rows="3" placeholder="Ingresa la descripción"
+                [class.is-invalid]="productForm.get('strDescription')?.invalid && productForm.get('strDescription')?.touched"></textarea>
+              <div class="invalid-feedback" *ngIf="productForm.get('strDescription')?.invalid && productForm.get('strDescription')?.touched">{{ getFieldError("strDescription") }}</div>
+            </div>
+
+            <div class="form-group">
+              <label>Unidad de Medida *</label>
+              <select class="form-control" formControlName="strMeasurementUnit">
+                <option value="">Seleccionar unidad</option>
+                <option value="units">Unidades</option>
+                <option value="kg">Kilogramos</option>
+                <option value="liters">Litros</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Ubicación *</label>
+              <select class="form-control" formControlName="strLocation">
+                <option value="">Seleccionar ubicación</option>
+                <option value="Sitio 1">Sitio 1</option>
+                <option value="Sitio 2">Sitio 2</option>
+                <option value="Sitio 3">Sitio 3</option>
+                <option value="Sitio 4">Sitio 4</option>
+                <option value="Sitio 5">Sitio 5</option>
+                <option value="Sitio 6">Sitio 6</option>
+              </select>
+            </div>
+
+            <div class="form-group category-group">
+              <label>Categoría</label>
+              <select class="form-control" formControlName="categoryId">
+                <option [value]="null">Sin categoría</option>
+                <option *ngFor="let category of categories" [value]="category.id">
+                  {{ category.name }} ({{ category.code }})
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group category-button-group">
+              <button type="button" class="btn btn-outline-primary category-button" (click)="showCategoryForm = true">
+                <svg viewBox="0 0 16 16">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+                </svg>
+                Crear Nueva Categoría
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="showCategoryForm" style="margin-top: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+            <h5 style="margin-bottom: 1rem;">Nueva Categoría</h5>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label>Nombre *</label>
+                <input type="text" class="form-control" [(ngModel)]="newCategory.name" [ngModelOptions]="{standalone: true}" placeholder="Nombre de la categoría">
+              </div>
+              <div class="form-group full-width">
+                <label>Descripción</label>
+                <textarea class="form-control" [(ngModel)]="newCategory.description" [ngModelOptions]="{standalone: true}" rows="2" placeholder="Descripción de la categoría"></textarea>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <button type="button" class="btn btn-success" (click)="createCategory()" [disabled]="!newCategory.name">
+                Guardar Categoría
+              </button>
+              <button type="button" class="btn btn-outline-secondary" (click)="cancelCategoryForm()">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Images -->
+        <div class="form-step" *ngIf="currentStep === 2">
+          <div class="step-header">
+            <h3>Imágenes del Producto</h3>
+            <p>Sube imágenes para mostrar este producto</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Imágenes (Opcional - Máximo 5)</label>
+              <app-image-manager [images]="productImages" [maxImages]="5" [allowMultiple]="true"
+                (imagesChange)="onImagesChange($event)">
+              </app-image-manager>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Materials -->
+        <div class="form-step" *ngIf="currentStep === 3">
+          <div class="step-header">
+            <h3>Materiales y Materiales Compuestos</h3>
+            <p>Selecciona los materiales que componen este producto</p>
+          </div>
+
+          <!-- Materials Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; cursor: pointer; border-left: 4px solid #2196F3;" (click)="showAvailableMaterials = !showAvailableMaterials">
+            <h5 style="margin: 0; color: #495057; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg viewBox="0 0 16 16" style="width: 16px; height: 16px; transition: transform 0.3s;" [style.transform]="showAvailableMaterials ? 'rotate(90deg)' : 'rotate(0deg)'">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+              </svg>
+              Materiales Disponibles
+            </h5>
+            <a href="javascript:void(0)" (click)="$event.stopPropagation(); showFilters = !showFilters" style="color: #0066CC; font-size: 0.875rem; text-decoration: none;" *ngIf="showAvailableMaterials">
+              {{ showFilters ? 'Ocultar filtros' : 'Mostrar filtros' }}
+            </a>
+          </div>
+
+          <!-- Materials Content -->
+          <div *ngIf="showAvailableMaterials">
+          <!-- Filters -->
+          <div class="filters-section" *ngIf="showFilters">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Buscar por nombre</label>
+                <input type="text" class="form-control" [(ngModel)]="nameFilter" [ngModelOptions]="{standalone: true}"
+                  placeholder="Filtrar por nombre..." />
+              </div>
+              <div class="form-group">
+                <label>Filtrar por ubicación</label>
+                <select class="form-control" [(ngModel)]="locationFilter" [ngModelOptions]="{standalone: true}">
+                  <option value="">Todas las ubicaciones</option>
+                  <option *ngFor="let location of availableLocations" [value]="location">
+                    {{ location }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Filtrar por categoría</label>
+                <select class="form-control" [(ngModel)]="categoryFilter" [ngModelOptions]="{standalone: true}">
+                  <option value="">Todas las categorías</option>
+                  <option *ngFor="let category of categories" [value]="category.id">
+                    {{ category.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()" [disabled]="!nameFilter && !locationFilter && !categoryFilter">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Materials List -->
+          <div class="materials-list">
+            <div class="materials-grid">
+              <div class="material-item" *ngFor="let material of getPaginatedMaterials()"
+                [class.selected]="selectedMaterials.has(material.id)" [class.disabled]="(material.currentStock || 0) <= 0">
+                <div class="material-checkbox">
+                  <input type="checkbox" [id]="'material-' + material.id" [checked]="selectedMaterials.has(material.id)"
+                    [disabled]="(material.currentStock || 0) <= 0" (change)="toggleMaterialSelection(material.id, 1)" />
+                </div>
+                <div class="material-info">
+                  <div class="material-name">
+                    {{ material.name }}
+                    <span *ngIf="material.isComposite" style="margin-left: 0.5rem; padding: 0.125rem 0.5rem; background: #e3f2fd; color: #0066CC; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">COMPUESTO</span>
+                  </div>
+                  <div>
+                    <span class="material-location">{{ material.ubicacion }} ({{ material.measurementUnit }})</span>
+                    <span class="material-stock-info">
+                      <span class="stock-min">Stock mínimo: {{ formatNumber(material.stockMin || 0) }}</span>
+                      <span class="material-stock">Disponible: {{ formatNumber(material.currentStock || 0) }}</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="material-quantity" *ngIf="selectedMaterials.has(material.id)">
+                  <input type="number" class="form-control quantity-input" [value]="selectedMaterials.get(material.id)"
+                    (input)="updateQuantity(material.id, +$any($event.target).value)" min="0.01" step="0.01" />
+                  <div class="stock-warning" *ngIf="checkStockWarning(material)">
+                    ⚠️ Deberá recargar el material
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-controls" *ngIf="getTotalPages() > 1">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="previousPage()" [disabled]="currentPage === 1">
+                Anterior
+              </button>
+              <span class="page-info">{{ currentPage }} de {{ getTotalPages() }}</span>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="nextPage()" [disabled]="currentPage === getTotalPages()">
+                Siguiente
+              </button>
+            </div>
+
+            <!-- Add Selected Button -->
+            <div class="add-selected" *ngIf="selectedMaterials.size > 0">
+              <button type="button" class="btn btn-success" (click)="addSelectedMaterials()">
+                Agregar {{ selectedMaterials.size }} material(es)
+              </button>
+            </div>
+          </div>
+          </div>
+
+          <!-- Compositions List -->
+          <div *ngIf="compositions.length > 0" style="margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #e8f5e9; border-radius: 8px; cursor: pointer; border-left: 4px solid #4CAF50;" (click)="showSelectedMaterials = !showSelectedMaterials">
+              <h5 style="margin: 0; color: #495057; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 16 16" style="width: 16px; height: 16px; transition: transform 0.3s;" [style.transform]="showSelectedMaterials ? 'rotate(90deg)' : 'rotate(0deg)'">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+                </svg>
+                Materiales Seleccionados ({{ compositions.length }})
+              </h5>
+            </div>
+            
+            <div class="ingredients-list" *ngIf="showSelectedMaterials" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+            <h5>Materiales Seleccionados ({{ compositions.length }})</h5>
+            <table class="ingredients-table">
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Cantidad</th>
+                  <th>Costo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let comp of getPaginatedCompositions()">
+                  <td class="ingredient-name">
+                    {{ comp.componentMaterial?.name }}
+                    <div style="font-size: 0.75rem; color: #6c757d; margin-top: 0.25rem;">
+                      {{ comp.componentMaterial?.ubicacion }} ({{ comp.componentMaterial?.measurementUnit }})
+                    </div>
+                  </td>
+                  <td class="ingredient-quantity">
+                    <span *ngIf="editingComposition !== comp.id">
+                      {{ formatNumber(comp.quantity) }} {{ comp.componentMaterial?.measurementUnit }}
+                    </span>
+                    <input *ngIf="editingComposition === comp.id" type="number" class="form-control edit-input"
+                      [(ngModel)]="tempQuantity" [ngModelOptions]="{standalone: true}" min="0.01" step="0.01" />
+                  </td>
+                  <td class="ingredient-cost">
+                    {{ formatCurrency((comp.componentMaterial?.price || 0) * comp.quantity) }}
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button *ngIf="editingComposition !== comp.id" class="btn btn-sm btn-outline-primary"
+                        (click)="startEditing(comp.id)" type="button">
+                        <svg viewBox="0 0 16 16">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                        </svg>
+                      </button>
+                      <button *ngIf="editingComposition === comp.id" class="btn btn-sm btn-success"
+                        (click)="saveEdit(comp)" type="button">
+                        <svg viewBox="0 0 16 16">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#check" />
+                        </svg>
+                      </button>
+                      <button *ngIf="editingComposition === comp.id" class="btn btn-sm btn-secondary"
+                        (click)="cancelEdit()" type="button">
+                        <svg viewBox="0 0 16 16">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#x" />
+                        </svg>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" (click)="removeComposition(comp)" type="button">
+                        <svg viewBox="0 0 16 16">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <!-- Pagination for Compositions -->
+            <div class="pagination-controls" *ngIf="getTotalCompositionsPages() > 1" style="margin-top: 1rem;">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="compositionsPage = compositionsPage - 1" [disabled]="compositionsPage === 1">
+                Anterior
+              </button>
+              <span class="page-info">{{ compositionsPage }} de {{ getTotalCompositionsPages() }}</span>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="compositionsPage = compositionsPage + 1" [disabled]="compositionsPage === getTotalCompositionsPages()">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Step 4: Summary -->
+        <div class="form-step" *ngIf="currentStep >= 4">
+          <div class="step-header">
+            <h3>Resumen del Producto</h3>
+            <p>Revisa la información antes de crear el producto</p>
+          </div>
+
+          <div class="form-summary">
+            <h4>Revisión Final</h4>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <label>Nombre:</label>
+                <span style="text-transform: uppercase;">{{ productForm.get("strName")?.value || "No establecido" }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Descripción:</label>
+                <span>{{ productForm.get("strDescription")?.value || "No establecido" }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Precio:</label>
+                <span>${{ productForm.get("fltPrice")?.value || 0 | number: "1.2-2" }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Unidad:</label>
+                <span>{{ productForm.get("strMeasurementUnit")?.value || "No establecido" }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Ubicación:</label>
+                <span>{{ productForm.get("strLocation")?.value || "No establecido" }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Materiales:</label>
+                <span>{{ compositions.length }} material(es)</span>
+              </div>
+              <div class="summary-item">
+                <label>Costo Total Materiales:</label>
+                <span class="cost-highlight">{{ formatCurrency(getTotalCost()) }}</span>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 1.5rem;">
+              <div class="form-group">
+                <label>Precio *</label>
+                <input type="number" class="form-control" formControlName="fltPrice" min="0" placeholder="0.00" />
+              </div>
+              <div class="form-group">
+                <label>Stock Mínimo *</label>
+                <input type="number" class="form-control" formControlName="ingStockMin" min="0" />
+              </div>
+              <div class="form-group">
+                <label>Stock Máximo *</label>
+                <input type="number" class="form-control" formControlName="ingStockMax" min="1" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <div class="left-actions">
+            <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+              Cancelar
+            </button>
+
+            <button type="button" class="btn btn-outline-primary" *ngIf="currentStep > 1" (click)="previousStep()">
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
+              </svg>
+              Anterior
+            </button>
+
+            <button type="button" class="btn btn-primary" *ngIf="currentStep < totalSteps"
+              [disabled]="!isStepValid(currentStep)" (click)="nextStep()">
+              Siguiente
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="right-actions">
+            <button type="submit" class="btn btn-success" *ngIf="currentStep === totalSteps"
+              [disabled]="!isFormValid() || saving">
+              <div class="btn-spinner" *ngIf="saving"></div>
+              <svg viewBox="0 0 16 16" *ngIf="!saving">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
+              </svg>
+              {{ saving ? (isEditMode ? "Actualizando..." : "Guardando...") : (isEditMode ? "Guardar Cambios" : "Crear Producto") }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando producto...</p>
+  </div>
+</div>

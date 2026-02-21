@@ -1,0 +1,375 @@
+<div class="products-list-wrapper" style="height: 100%; border-top: 1px solid orange; border-bottom: 1px solid orange;">
+  <!-- Header -->
+  <div class="list-header">
+    <div class="title-container">
+      <svg viewBox="0 0 16 16">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+      </svg>
+      /Lista de Productos
+    </div>
+
+    <div class="header-actions">
+      <button
+        class="btn btn-outline-secondary"
+        (click)="showFilters = !showFilters"
+      >
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
+        </svg>
+        Filtros
+      </button>
+
+      <div class="view-toggle">
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="viewMode === 'table'"
+          [class.btn-outline-primary]="viewMode !== 'table'"
+          (click)="setViewMode('table')"
+          title="Vista de tabla"
+        >
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#table" />
+          </svg>
+        </button>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="viewMode === 'cards'"
+          [class.btn-outline-primary]="viewMode !== 'cards'"
+          (click)="setViewMode('cards')"
+          title="Vista de tarjetas"
+        >
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" />
+          </svg>
+        </button>
+      </div>
+
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Agregar Producto
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" [class.show]="showFilters">
+    <div class="filters-content">
+      <div class="filter-group">
+        <label>Buscar</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="searchFilter"
+          placeholder="Buscar por nombre o descripción..."
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          (click)="clearFilters()"
+        >
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando productos...</p>
+  </div>
+
+  <!-- Table View -->
+  <div
+    class="table-container"
+    *ngIf="viewMode === 'table' && products.length > 0 && !loading"
+  >
+    <div class="table-responsive">
+      <table class="table products-table">
+        <thead>
+          <tr>
+            <th class="checkbox-col">
+              <input type="checkbox" />
+            </th>
+            <th>Nombre</th>
+            <th class="d-none d-md-table-cell">Código</th>
+            <th class="d-none d-md-table-cell">Descripción</th>
+            <th class="text-center">Stock</th>
+            <th class="text-center">Precio</th>
+            <th class="text-center hide-mobile">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td>
+              <input type="checkbox" />
+            </td>
+            <td>
+              <div class="product-info">
+                <div
+                  class="product-fallback"
+                  *ngIf="!product.images || product.images.length === 0 || hasImageError(product.strId)"
+                >
+                  <svg viewBox="0 0 16 16">
+                    <use
+                      xlink:href="./assets/icons/bootstrap-icons.svg#box-seam"
+                    />
+                  </svg>
+                </div>
+                <img
+                  *ngIf="product.images && product.images.length > 0 && !hasImageError(product.strId)"
+                  [src]="product.images[0].strImageUrl"
+                  alt="{{ product.strName }}"
+                  (error)="onImageError($event, product.strId)"
+                  (load)="onImageLoad($event, product.strId)"
+                  style="
+                    width: 40px;
+                    height: 40px;
+                    object-fit: cover;
+                    border-radius: 6px;
+                    border: 1px solid #e9ecef;
+                  "
+                />
+                <div class="product-name">
+                  <strong>{{ product.strName }}</strong>
+                  <small class="text-muted d-block">{{
+                    product.strMeasurementUnit
+                  }}</small>
+                </div>
+              </div>
+            </td>
+            <td class="d-none d-md-table-cell">
+              <span class="text-muted">{{ product.strCode || "N/A" }}</span>
+            </td>
+            <td class="d-none d-md-table-cell">
+              <span class="description-text">{{ product.strDescription }}</span>
+            </td>
+            <td class="text-center">
+              <div class="stock-info">
+                <span
+                  class="stock-value"
+                  [ngClass]="getStockStatusClass(product)"
+                >
+                  {{ product.ingQuantity | numberFormat: 2 }}
+                </span>
+                <small class="text-muted d-block"
+                  >Min: {{ product.ingStockMin | numberFormat: 2 }} | Max:
+                  {{ product.ingStockMax | numberFormat: 2 }}</small
+                >
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="price-value"
+                >${{ product.fltPrice | numberFormat: 2 }}</span
+              >
+            </td>
+            <td class="text-center hide-mobile">
+              <span class="status-badge status-active">{{
+                product.strStatus
+              }}</span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-primary" title="Ver Kardex" (click)="goToKardex(product)">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" title="Ver">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+                  </svg>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  title="Editar"
+                  (click)="openEditModal(product)"
+                >
+                  <svg viewBox="0 0 16 16">
+                    <use
+                      xlink:href="./assets/icons/bootstrap-icons.svg#pencil"
+                    />
+                  </svg>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  title="Eliminar"
+                  (click)="deleteProduct(product.strId)"
+                >
+                  <svg viewBox="0 0 16 16">
+                    <use
+                      xlink:href="./assets/icons/bootstrap-icons.svg#trash"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cards View -->
+  <div
+    class="cards-container"
+    *ngIf="viewMode === 'cards' && products.length > 0 && !loading"
+  >
+    <div class="product-card" *ngFor="let product of products">
+      <div class="card-image">
+        <!-- Loading state -->
+        <div class="image-loading" *ngIf="isImageLoading(product.strId)">
+          <div class="loading-spinner"></div>
+        </div>
+        
+        <img
+          *ngIf="product.images && product.images.length > 0 && !hasImageError(product.strId)"
+          [src]="product.images[getCurrentImageIndex(product.strId)].strImageUrl"
+          [alt]="product.strName"
+          [style.display]="isImageLoading(product.strId) ? 'none' : 'block'"
+          (error)="onImageError($event, product.strId)"
+          (load)="onImageLoad($event, product.strId)"
+        />
+        <div
+          class="card-image-fallback"
+          *ngIf="!product.images || product.images.length === 0 || hasImageError(product.strId)"
+        >
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+          </svg>
+        </div>
+        
+        <!-- Image navigation arrows -->
+        <div class="image-nav" *ngIf="product.images && product.images.length > 1 && !hasImageError(product.strId)">
+          <button 
+            class="nav-btn prev-btn" 
+            (click)="prevImage(product.strId, product.images.length, $event)"
+            title="Imagen anterior"
+          >
+            <svg viewBox="0 0 16 16" width="20" height="20" fill="white">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-left" />
+            </svg>
+          </button>
+          <button 
+            class="nav-btn next-btn" 
+            (click)="nextImage(product.strId, product.images.length, $event)"
+            title="Siguiente imagen"
+          >
+            <svg viewBox="0 0 16 16" width="20" height="20" fill="white">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Image indicators -->
+        <div class="image-indicators" *ngIf="product.images && product.images.length > 1 && !hasImageError(product.strId)">
+          <span 
+            *ngFor="let img of product.images; let i = index" 
+            class="indicator"
+            [class.active]="i === getCurrentImageIndex(product.strId)"
+            (click)="setImageIndex(product.strId, i, $event)"
+          ></span>
+        </div>
+      </div>
+
+      <div class="card-header">
+        <input type="checkbox" />
+        <span class="code-badge">{{ product.strCode || "N/A" }}</span>
+      </div>
+
+      <div class="card-content">
+        <h4 class="product-name">{{ product.strName }}</h4>
+        <p class="product-description">{{ product.strDescription }}</p>
+
+        <div class="product-stats">
+          <div class="stat">
+            <label>Stock Actual</label>
+            <span class="value" [ngClass]="getStockStatusClass(product)">
+              {{ product.ingQuantity | numberFormat: 2 }}
+            </span>
+          </div>
+          <div class="stat">
+            <label>Unidad</label>
+            <span class="value">{{ product.strMeasurementUnit }}</span>
+          </div>
+          <div class="stat">
+            <label>Precio</label>
+            <span class="value">${{ product.fltPrice | numberFormat: 2 }}</span>
+          </div>
+          <div class="stat">
+            <label>Ubicación</label>
+            <span class="value">{{ product.strLocation || "N/A" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn btn-sm btn-outline-primary" (click)="goToKardex(product)">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
+          </svg>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
+          </svg>
+        </button>
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          (click)="openEditModal(product)"
+        >
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+          </svg>
+        </button>
+        <button
+          class="btn btn-sm btn-outline-danger"
+          (click)="deleteProduct(product.strId)"
+        >
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="products.length === 0 && !loading">
+    <svg viewBox="0 0 16 16" class="empty-icon">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+    </svg>
+    <h3>No se encontraron productos</h3>
+    <p>Crea tu primer producto para comenzar.</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div
+  class="modal fade"
+  [class.show]="showModal"
+  [style.display]="showModal ? 'block' : 'none'"
+  tabindex="-1"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <app-product-form
+        *ngIf="showModal"
+        [isModal]="true"
+        [productData]="editingProduct"
+        (productCreated)="onProductCreated()"
+        (formCancelled)="closeModal()"
+      ></app-product-form>
+    </div>
+  </div>
+</div>
+<div
+  class="modal-backdrop fade"
+  [class.show]="showModal"
+  *ngIf="showModal"
+></div>

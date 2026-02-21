@@ -1,0 +1,18 @@
+.sales-container {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.table-responsive {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.modal.show {
+  display: block !important;
+}
+
+.modal-backdrop.show {
+  opacity: 0.5;
+}

@@ -99,12 +99,18 @@ export default class LayoutComponent implements OnInit {
   private isMenuForModule(url: string, module: ModuleType): boolean {
     const moduleConfig = this.moduleService.getModuleConfig(module);
     
+    // Ocultar temporalmente el módulo de usuarios
+    if (url.includes('user')) {
+      return false;
+    }
+    
     if (module === 'inventory') {
       return url.includes('warehouse') || url.includes('location') || url.includes('movement') || 
              url.includes('inventory') || url === '/home';
     } else if (module === 'manufacturing') {
       return url.includes('material') || url.includes('product') || url.includes('menu') || 
-             url.includes('sale') || url.includes('cost') || url.includes('manufacturing') || url === '/home';
+             url.includes('sale') || url.includes('cost') || url.includes('manufacturing') || 
+             url === '/home'; // Clientes ahora están integrados en sales
     }
     
     return url === '/home' || url.includes('setup'); // Menús comunes

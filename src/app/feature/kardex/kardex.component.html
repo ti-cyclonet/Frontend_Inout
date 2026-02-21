@@ -1,66 +1,71 @@
 <div class="container-fluid p-0">
   <div class="card shadow-sm kardex-card" style="border: 1px solid white;">
-    <div
-      class="card-header bg-white d-flex justify-content-end align-items-center py-2"
+    <div class="card-header bg-white d-flex justify-content-end align-items-center py-2"
       style="border-bottom: 1px solid orange"
     >
       <h5 class="mb-0">
-        Materiales <span class="text-primary fw-bold">KARDEX</span>
+        Materials / MaterialsT / Products <span class="text-primary fw-bold">KARDEX</span>
         <span style="color: #ff8000">●</span>
       </h5>
     </div>
     <div class="card-body p-4">
       <p class="text-dark mb-3">
-        Registra en detalle los movimientos de entrada y salida de materiales
-        dentro de un almacén o empresa. Proporciona un historial actualizado del
+        Registra en detalle los movimientos de entrada y salida de materiales,
+        materiales compuestos y productos dentro de un almacén o empresa. Proporciona un historial actualizado del
         stock disponible, facilitando el control y gestión del inventario.
       </p>
 
       <!-- Search Section -->
       <div class="search-section">
-        <div class="d-flex align-items-center gap-3">
-          <div class="search-radio-group">
-            <label class="search-label">Elija un campo para la consulta</label>
-            <div class="d-flex gap-3 align-items-center">
-              <label class="radio-option">
+        <div class="d-flex align-items-end gap-3">
+          <div style="flex: 0 0 200px;">
+            <label class="search-label">Tipo de entidad</label>
+            <select class="form-select" [(ngModel)]="entityType" (change)="onEntityTypeChange()" style="height: 40px;">
+              <option value="material">Material</option>
+              <option value="composite">Material Compuesto</option>
+              <option value="product">Producto</option>
+            </select>
+          </div>
+          
+          <div style="flex: 0 0 auto;">
+            <label class="search-label">Campo de consulta</label>
+            <div class="d-flex gap-3 align-items-center" style="border: 1px solid #ced4da; border-radius: 6px; padding: 0.5rem 0.75rem; background: white; min-height: 40px;">
+              <label class="radio-option" style="margin-bottom: 0;">
                 <input
                   class="form-check-input"
                   type="radio"
                   name="searchType"
                   [(ngModel)]="searchType"
                   value="code"
-                  id="codeCheck"
                   (change)="onSearchTypeChange()"
                 />
                 <span class="radio-label">Código</span>
               </label>
-              <label class="radio-option">
+              <label class="radio-option" style="margin-bottom: 0;">
                 <input
                   class="form-check-input"
                   type="radio"
                   name="searchType"
                   [(ngModel)]="searchType"
                   value="name"
-                  id="nameCheck"
                   (change)="onSearchTypeChange()"
                 />
                 <span class="radio-label">Nombre</span>
               </label>
             </div>
           </div>
+          
           <div class="flex-grow-1">
-            <label class="search-label">Escriba los términos de búsqueda</label>
+            <label class="search-label">Términos de búsqueda</label>
             <div class="input-group">
-              <span class="input-group-text" *ngIf="searchType === 'code'"
-                >JMY-M-</span
-              >
+              <span class="input-group-text" *ngIf="searchType === 'code'">
+                {{ entityType === 'material' ? clientCode + '-M-' : entityType === 'composite' ? clientCode + '-T-' : clientCode + '-P-' }}
+              </span>
               <input
                 type="text"
                 class="form-control search-input"
                 [(ngModel)]="searchTerm"
-                [placeholder]="
-                  searchType === 'code' ? 'Código' : 'Términos de búsqueda'
-                "
+                [placeholder]="searchType === 'code' ? 'Código' : 'Términos de búsqueda'"
                 (keyup.enter)="search()"
               />
               <button class="btn btn-primary search-button" (click)="search()">
@@ -70,9 +75,7 @@
               </button>
               <button class="btn btn-outline-secondary" (click)="clearSearch()">
                 <svg width="20" height="20" fill="currentColor">
-                  <use
-                    xlink:href="./assets/icons/bootstrap-icons.svg#x-circle"
-                  />
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#x-circle" />
                 </svg>
               </button>
             </div>
@@ -155,9 +158,19 @@
       <!-- Action Buttons -->
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="text-primary mb-0">Todos los registros</h6>
-        <div>
+        <div class="d-flex gap-2">
           <button
-            class="btn btn-outline-primary btn-sm me-2"
+            class="btn btn-outline-success btn-sm"
+            (click)="exportToExcel()"
+            [disabled]="!selectedMaterial || movements.length === 0"
+          >
+            <svg width="16" height="16" fill="currentColor" class="me-1">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-excel" />
+            </svg>
+            Exportar Excel
+          </button>
+          <button
+            class="btn btn-outline-primary btn-sm"
             (click)="newEntry()"
           >
             Nueva Entrada
@@ -375,7 +388,7 @@
           <div *ngIf="currentStep === 1">
             <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 15px">
               <h6>Seleccionar Proveedor</h6>
-              <div class="mb-3">
+              <div class="mb-3 d-flex gap-2">
                 <input
                   type="text"
                   class="form-control"
@@ -383,6 +396,15 @@
                   (input)="filterSuppliers()"
                   placeholder="Buscar proveedor..."
                 />
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  (click)="toggleCreateSupplier()"
+                  style="white-space: nowrap;"
+                >
+                  {{
+                    showCreateSupplier ? "Cancelar" : "+ Crear Nuevo Proveedor"
+                  }}
+                </button>
               </div>
               <div
                 class="supplier-list"
@@ -411,15 +433,6 @@
                   </label>
                 </div>
               </div>
-              <hr />
-              <button
-                class="btn btn-outline-primary btn-sm"
-                (click)="toggleCreateSupplier()"
-              >
-                {{
-                  showCreateSupplier ? "Cancelar" : "+ Crear Nuevo Proveedor"
-                }}
-              </button>
               <div
                 *ngIf="showCreateSupplier"
                 class="mt-3 p-3"
@@ -642,5 +655,141 @@
     class="modal-backdrop fade"
     [class.show]="showEntryModal"
     *ngIf="showEntryModal"
+  ></div>
+
+  <!-- Modal Nueva Entrada Producto -->
+  <div
+    class="modal fade"
+    [class.show]="showProductEntryModal"
+    [style.display]="showProductEntryModal ? 'block' : 'none'"
+    tabindex="-1"
+  >
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div style="border-bottom: 1px solid orange">
+          <div class="card-header bg-white d-flex justify-content-end align-items-center py-2">
+            <h5 class="mb-0">
+              Nueva Entrada - <span class="text-primary fw-bold">{{ selectedMaterial?.name }}</span>
+              <span style="color: #ff8000"> ●</span>
+            </h5>
+          </div>
+        </div>
+        <div class="modal-body" style="background-color: #f5f5f5">
+          <!-- Step Indicator -->
+          <div class="step-indicator mb-4">
+            <div class="step" [class.active]="productStep === 1" [class.completed]="productStep > 1">
+              <span class="step-number">1</span>
+              <span class="step-label">Producción</span>
+            </div>
+            <div class="step-connector" [class.completed]="productStep > 1"></div>
+            <div class="step" [class.active]="productStep === 2">
+              <span class="step-number">2</span>
+              <span class="step-label">Resumen</span>
+            </div>
+          </div>
+
+          <!-- Step 1: Producción -->
+          <div *ngIf="productStep === 1">
+            <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 20px">
+              <h6>Datos de Producción</h6>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label>Fecha *</label>
+                  <input type="date" class="form-control" [(ngModel)]="productEntryData.date" />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label>Cantidad a Producir *</label>
+                  <input type="number" class="form-control" [(ngModel)]="productEntryData.quantity" min="1" step="1" (input)="calculateProductCost()" />
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label>Lote/Referencia</label>
+                  <input type="text" class="form-control" [(ngModel)]="productEntryData.batchReference" placeholder="Ej: Lote-001" />
+                </div>
+              </div>
+              
+              <div *ngIf="productIngredients.length > 0" class="mt-3">
+                <h6>✓ Verificar stock de ingredientes</h6>
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Ingrediente</th>
+                      <th class="text-center">Cantidad/Unidad</th>
+                      <th class="text-center">Stock Disponible</th>
+                      <th class="text-center">Total Necesario</th>
+                      <th class="text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let ing of productIngredients">
+                      <td>{{ ing.name }}</td>
+                      <td class="text-center">{{ formatNumber(ing.quantity) }}{{ ing.unit }}</td>
+                      <td class="text-center">{{ formatNumber(ing.stock) }}{{ ing.unit }}</td>
+                      <td class="text-center">{{ formatNumber(ing.quantity * productEntryData.quantity) }}{{ ing.unit }}</td>
+                      <td class="text-center">
+                        <span *ngIf="ing.stock >= (ing.quantity * productEntryData.quantity)" class="badge bg-success">✓ Disponible</span>
+                        <span *ngIf="ing.stock < (ing.quantity * productEntryData.quantity)" class="badge bg-danger">⚠ Insuficiente</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="mt-3 p-3" style="background-color: #e7f3ff; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong>Costo unitario calculado:</strong> ${{ formatNumber(productEntryData.unitCost) }}
+                </div>
+                <div>
+                  <strong>Precio de lista:</strong> ${{ formatNumber(selectedMaterial?.price || 0) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Resumen -->
+          <div *ngIf="productStep === 2">
+            <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 20px">
+              <h6>Resumen de Producción</h6>
+              <table class="table">
+                <tr>
+                  <th>Producto:</th>
+                  <td>{{ selectedMaterial?.name }}</td>
+                </tr>
+                <tr>
+                  <th>Fecha:</th>
+                  <td>{{ productEntryData.date | date: 'dd/MM/yyyy' }}</td>
+                </tr>
+                <tr>
+                  <th>Cantidad a Producir:</th>
+                  <td>{{ formatNumber(productEntryData.quantity) }} unidades</td>
+                </tr>
+                <tr *ngIf="productEntryData.batchReference">
+                  <th>Lote/Referencia:</th>
+                  <td>{{ productEntryData.batchReference }}</td>
+                </tr>
+                <tr>
+                  <th>Costo Unitario:</th>
+                  <td>${{ formatNumber(productEntryData.unitCost) }}</td>
+                </tr>
+                <tr>
+                  <th>Costo Total:</th>
+                  <td class="fw-bold">${{ formatNumber(productEntryData.quantity * productEntryData.unitCost) }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid orange">
+          <button class="btn btn-outline-secondary" (click)="closeProductEntryModal()">Cancelar</button>
+          <button class="btn btn-secondary" (click)="productPreviousStep()" *ngIf="productStep === 2">Anterior</button>
+          <button class="btn btn-primary" (click)="productNextStep()" *ngIf="productStep === 1" [disabled]="!canProceedProductStep()">Siguiente</button>
+          <button class="btn btn-success" (click)="saveProductEntry()" *ngIf="productStep === 2">Producir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="modal-backdrop fade"
+    [class.show]="showProductEntryModal"
+    *ngIf="showProductEntryModal"
   ></div>
 </div>

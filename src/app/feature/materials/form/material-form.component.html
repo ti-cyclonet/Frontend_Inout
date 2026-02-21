@@ -4,7 +4,7 @@
     <h1 class="page-title">
       <span class="title-normal">{{ isEditMode ? 'Editar' : 'Nuevo' }}</span>
       <span class="title-bold">MATERIAL</span>
-      <span class="title-dot"></span>
+      <span style="color: #ff8000">●</span>
     </h1>
   </div>
 
@@ -201,27 +201,48 @@
             <p>Selecciona o crea una categoría para organizar tu material</p>
           </div>
           
-          <div class="form-grid">
-            <div class="form-group full-width">
+          <div style="display: flex; gap: 0.75rem; align-items: end;">
+            <div style="flex: 1; position: relative;">
               <label for="categoryId">Categoría</label>
-              <select 
-                id="categoryId"
-                class="form-select"
-                formControlName="categoryId">
-                <option [value]="null">Sin categoría</option>
-                <option *ngFor="let category of categories" [value]="category.id">
-                  {{ category.name }} ({{ category.code }})
-                </option>
-              </select>
+              <div class="custom-select-wrapper">
+                <input 
+                  type="text" 
+                  class="form-control"
+                  [(ngModel)]="categorySearchText"
+                  [ngModelOptions]="{standalone: true}"
+                  (focus)="showCategoryDropdown = true"
+                  (blur)="onCategoryBlur()"
+                  placeholder="Buscar o seleccionar categoría..."
+                  autocomplete="off">
+                <div class="custom-dropdown" *ngIf="showCategoryDropdown" style="position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ced4da; border-radius: 0.375rem; z-index: 1000; margin-top: 2px;">
+                  <div 
+                    class="dropdown-item" 
+                    style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
+                    (mousedown)="selectCategory(null)"
+                    [style.background]="!materialForm.get('categoryId')?.value ? '#e9ecef' : 'white'">
+                    Sin categoría
+                  </div>
+                  <div 
+                    *ngFor="let category of filteredCategories" 
+                    class="dropdown-item" 
+                    style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
+                    (mousedown)="selectCategory(category)"
+                    [style.background]="materialForm.get('categoryId')?.value == category.id ? '#e9ecef' : 'white'">
+                    {{ category.name }} ({{ category.code }})
+                  </div>
+                  <div *ngIf="filteredCategories.length === 0" style="padding: 12px; text-align: center; color: #6c757d;">
+                    No se encontraron categorías
+                  </div>
+                </div>
+              </div>
             </div>
+            <button type="button" class="btn btn-outline-primary" (click)="showCategoryForm = true" style="white-space: nowrap;">
+              <svg viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+              </svg>
+              Nueva
+            </button>
           </div>
-          
-          <button type="button" class="btn btn-outline-primary" (click)="showCategoryForm = true" style="margin-top: 1rem;">
-            <svg viewBox="0 0 16 16">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
-            </svg>
-            Crear Nueva Categoría
-          </button>
           
           <!-- New Category Form -->
           <div *ngIf="showCategoryForm" style="margin-top: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">

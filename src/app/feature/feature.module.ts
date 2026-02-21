@@ -5,6 +5,7 @@ import { HomeComponent } from './home/home.component';
 import { SetupComponent } from './setup/setup.component';
 import { RouterModule } from '@angular/router';
 import { MaterialsComponent } from './materials/materials.component';
+import { CustomersComponent } from './customers/customers.component';
 
 @NgModule({
   declarations: [],
@@ -14,6 +15,7 @@ import { MaterialsComponent } from './materials/materials.component';
     SharedModule,
     HomeComponent,
     MaterialsComponent,
+    CustomersComponent,
     SetupComponent
   ]
 })

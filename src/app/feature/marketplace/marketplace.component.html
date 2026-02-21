@@ -1,0 +1,268 @@
+<div class="scroll-container">
+  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector">
+    <!-- Header -->
+    <header class="modern-header">
+      <div class="header-top">
+        <div class="brand">
+          <h1>CycloNet <span class="market">Market</span></h1>
+          <span class="business-name" *ngIf="tenantId !== 'home' && businessName">{{ businessName }}</span>
+        </div>
+        <div class="search-container">
+          <div class="search-box">
+            <input type="text" placeholder="¿Qué estás buscando?" [(ngModel)]="searchTerm" (input)="onSearch()">
+            <button class="search-btn">🔍</button>
+          </div>
+        </div>
+        <div class="user-actions">
+          <span class="user-greeting">¡Hola! Inicia sesión</span>
+          <div class="cart-icon">🛒 <span class="cart-count">0</span></div>
+        </div>
+      </div>
+      
+      <nav class="categories-nav">
+        <button class="category-btn" 
+                *ngFor="let category of getVisibleCategories()" 
+                [class.active]="selectedCategory === category.value" 
+                (click)="selectedCategory = category.value; onCategoryChange()">
+          {{ category.label }}
+        </button>
+      </nav>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-modern">
+      <div class="spinner-modern"></div>
+      <p>Cargando productos...</p>
+    </div>
+
+      <!-- Hero Carousel -->
+      <section class="hero-carousel">
+        <div class="carousel-container">
+          <div class="carousel-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'">
+            <div class="carousel-slide" *ngFor="let product of carouselProducts; let i = index">
+              <div class="slide-image">
+                <img *ngIf="product.image" [src]="product.image" [alt]="product.strName">
+                <div *ngIf="!product.image" class="slide-placeholder">📦</div>
+              </div>
+              <div class="slide-overlay">
+                <h3>{{ product.strName }}</h3>
+                <p>{{ formatCurrency(product.fltPrice) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Products -->
+      <section class="featured-section">
+        <div class="featured-container">
+          <h2 class="featured-title">⭐ Productos Destacados</h2>
+          <div class="featured-carousel">
+            <div class="featured-track" [style.transform]="'translateX(' + featuredTransform + 'px)'">
+              <div class="featured-card" *ngFor="let product of infiniteFeaturedProducts; let i = index" [style.left.px]="i * 200">
+                <div class="featured-image">
+                  <img *ngIf="product.image" [src]="product.image" [alt]="product.strName">
+                  <div *ngIf="!product.image" class="featured-placeholder">📦</div>
+                </div>
+                <div class="featured-info">
+                  <h4>{{ product.strName }}</h4>
+                  <div class="featured-rating">
+                    <span class="stars">⭐⭐⭐⭐⭐</span>
+                    <span class="rating-text">{{ product.rating }}/5</span>
+                  </div>
+                  <div class="featured-price">{{ formatCurrency(product.fltPrice) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    <!-- Content -->
+    <main *ngIf="!loading" class="main-modern">
+      <!-- Panel de Administrador -->
+      <div *ngIf="isAdminMode" class="admin-panel mb-4">
+        <div class="card border-primary">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="bi bi-gear-fill me-2"></i>
+              Modo Administrador - Configurar Marketplace
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">
+              Selecciona los productos que quieres mostrar en tu marketplace público.
+            </p>
+            <div class="d-flex gap-2 mb-3">
+              <button class="btn btn-outline-success btn-sm" (click)="selectAllProducts()">
+                <i class="bi bi-check-all"></i> Seleccionar Todos
+              </button>
+              <button class="btn btn-outline-danger btn-sm" (click)="clearAllProducts()">
+                <i class="bi bi-x-circle"></i> Limpiar Selección
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="saveSelectedProducts()">
+                <i class="bi bi-save"></i> Guardar Configuración ({{ selectedProductIds.size }})
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="products-section">
+        <div class="section-header">
+          <h2>Productos ({{ filteredProducts.length }})</h2>
+          <div class="sort-controls">
+            <select [(ngModel)]="sortBy" (change)="onSortChange()">
+              <option value="name">Ordenar por Relevancia</option>
+              <option value="price-low">Precio menor a mayor</option>
+              <option value="price-high">Precio mayor a menor</option>
+              <option value="rating">Mejor calificados</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="products-sections">
+          <!-- Mostrar todos los productos filtrados directamente -->
+          <div class="products-grid-modern">
+            <div class="product-card-modern" *ngFor="let product of filteredProducts" 
+                 [class.selected-product]="isAdminMode && isProductSelected(product.strId)">
+              <!-- Checkbox de selección en modo admin -->
+              <div *ngIf="isAdminMode" class="product-selection">
+                <input type="checkbox" 
+                       class="form-check-input" 
+                       [checked]="isProductSelected(product.strId)"
+                       (change)="toggleProductSelection(product.strId)">
+              </div>
+              
+              <div class="product-image-modern">
+                <img *ngIf="product.image && !hasImageError(product.strId)" [src]="product.image" [alt]="product.strName" (error)="onImageError($event, product)">
+                <div *ngIf="!product.image || hasImageError(product.strId)" class="placeholder-modern">📦</div>
+                <div class="product-badge" *ngIf="product.rating && product.rating >= 4.5">⭐ Destacado</div>
+              </div>
+              
+              <div class="product-info-modern">
+                <h3>{{ product.strName }}</h3>
+                <p class="description">{{ product.strDescription }}</p>
+                
+                <div class="product-meta-modern">
+                  <div class="rating">⭐ {{ product.rating }}/5</div>
+                  <div class="location">📍 {{ product.strLocation }}</div>
+                </div>
+                
+                <div class="price-section">
+                  <div class="current-price">{{ formatCurrency(product.fltPrice) }}</div>
+                </div>
+                
+                <div class="product-actions-modern">
+                  <button class="btn-add-cart">Agregar al carrito</button>
+                  <button class="btn-details" (click)="openProductDetails(product)">Ver detalles</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="filteredProducts.length === 0" class="no-products-modern">
+          <div class="empty-icon">🔍</div>
+          <h3>No se encontraron productos</h3>
+          <p>Intenta ajustar tus filtros de búsqueda</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Modal de Detalles del Producto -->
+<div class="product-modal-overlay" *ngIf="selectedProduct" (click)="closeProductDetails()">
+  <div class="product-modal-card" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeProductDetails()">&times;</button>
+    
+    <div class="modal-content-grid">
+      <!-- Imagen del Producto -->
+      <div class="modal-image-section">
+        <div class="modal-product-image">
+          <img *ngIf="selectedProduct.image" [src]="selectedProduct.image" [alt]="selectedProduct.strName">
+          <div *ngIf="!selectedProduct.image" class="modal-placeholder">📦</div>
+        </div>
+        <div class="modal-rating">
+          <span class="stars">⭐⭐⭐⭐⭐</span>
+          <span class="rating-value">{{ selectedProduct.rating }}/5</span>
+        </div>
+      </div>
+      
+      <!-- Información del Producto -->
+      <div class="modal-info-section">
+        <div class="modal-header-info">
+          <h2>{{ selectedProduct.strName }}</h2>
+          <div class="modal-price">{{ formatCurrency(selectedProduct.fltPrice) }}</div>
+        </div>
+        
+        <div class="modal-description">
+          <h3>📝 Descripción</h3>
+          <p>{{ selectedProduct.strDescription }}</p>
+        </div>
+        
+        <div class="modal-details">
+          <div class="detail-item">
+            <span class="detail-icon">📍</span>
+            <div>
+              <strong>Ubicación</strong>
+              <p>{{ selectedProduct.strLocation }}</p>
+            </div>
+          </div>
+          <div class="detail-item">
+            <span class="detail-icon">👁️</span>
+            <div>
+              <strong>Vistas</strong>
+              <p>{{ formatNumber(selectedProduct.views || 0) }}</p>
+            </div>
+          </div>
+          <div class="detail-item">
+            <span class="detail-icon">🛍️</span>
+            <div>
+              <strong>Ventas</strong>
+              <p>{{ formatNumber(selectedProduct.sales || 0) }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Información del Proveedor -->
+        <div class="modal-provider" *ngIf="providerInfo">
+          <h3>🏪 Información del Proveedor</h3>
+          <div class="provider-card">
+            <div class="provider-header">
+              <div class="provider-avatar">🏢</div>
+              <div>
+                <h4>{{ providerInfo.businessName || 'Proveedor' }}</h4>
+                <p class="provider-sector">{{ providerInfo.sector || 'General' }}</p>
+              </div>
+            </div>
+            <div class="provider-contacts">
+              <div class="contact-item" *ngIf="providerInfo.email">
+                <span class="contact-icon">✉️</span>
+                <a [href]="'mailto:' + providerInfo.email">{{ providerInfo.email }}</a>
+              </div>
+              <div class="contact-item" *ngIf="providerInfo.phone">
+                <span class="contact-icon">📞</span>
+                <a [href]="'tel:' + providerInfo.phone">{{ providerInfo.phone }}</a>
+              </div>
+              <div class="contact-item" *ngIf="providerInfo.address">
+                <span class="contact-icon">📍</span>
+                <span>{{ providerInfo.address }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="btn-modal-cart">Agregar al Carrito</button>
+          <button class="btn-modal-contact" *ngIf="providerInfo?.phone">
+            <a [href]="'https://wa.me/' + providerInfo.phone" target="_blank" style="color: inherit; text-decoration: none;">
+              Contactar por WhatsApp
+            </a>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

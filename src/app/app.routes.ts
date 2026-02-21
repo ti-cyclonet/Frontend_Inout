@@ -14,12 +14,20 @@ import { RegisterComponent } from './shared/components/register/register.compone
 import { MaterialsComponent } from './feature/materials/materials.component';
 import { SettingComponent } from './feature/setting/setting.component';
 import { KardexComponent } from './feature/kardex/kardex.component';
+import { ProductsComponent } from './feature/products/products.component';
+import { SalesComponent } from './feature/sales/sales.component';
+import { MarketplaceComponent } from './feature/marketplace/marketplace.component';
+// import { UsersComponent } from './feature/users/users.component';
+// import { UserFormComponent } from './feature/users/form/user-form.component';
+// import { CustomersComponent } from './feature/customers/customers.component';
+// import { CustomerFormComponent } from './feature/customers/form/customer-form.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
     { path: ROOT_REGISTER, component: RegisterComponent },
     { path: 'module-selector', component: ModuleSelectorComponent, canActivate: [AuthGuard] },
+    { path: 'marketplace/:tenantId', component: MarketplaceComponent },
     {
         path: '',
         component: LayoutComponent,
@@ -28,6 +36,13 @@ export const routes: Routes = [
             { path: ROOT_HOME, component: HomeComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: ROOT_MATERIALS, component: MaterialsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'kardex', component: KardexComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'products', component: ProductsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'sales', component: SalesComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'marketplace', component: MarketplaceComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            // { path: 'users', component: UsersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            // { path: 'users/form', component: UserFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            // { path: 'customers', component: CustomersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            // { path: 'customers/form', component: CustomerFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'setting', component: SettingComponent, canActivate: [AuthGuard] },
             { path: ROOT_CONFIGURATION, component: SetupComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: '', redirectTo: ROOT_HOME, pathMatch: 'full' }

@@ -404,6 +404,10 @@
   color: #374151;
 }
 
+.dropdown-item:hover {
+  background-color: #f8f9fa !important;
+}
+
 .mobile-layout {
   display: flex;
   flex: 1;

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,7 +15,7 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
   templateUrl: './material-form.component.html',
   styleUrls: ['./material-form.component.css']
 })
-export class MaterialFormComponent implements OnInit {
+export class MaterialFormComponent implements OnInit, OnChanges {
   @Input() materialId?: number;
   @Input() isModal = false;
   @Output() materialCreated = new EventEmitter<void>();
@@ -31,6 +31,8 @@ export class MaterialFormComponent implements OnInit {
   categories: Category[] = [];
   showCategoryForm = false;
   useDifferentDischargeUnit = false;
+  categorySearchText = '';
+  showCategoryDropdown = false;
   newCategory = {
     name: '',
     code: '',
@@ -52,6 +54,25 @@ export class MaterialFormComponent implements OnInit {
     if (this.materialId) {
       this.isEditMode = true;
       this.loadMaterial();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['materialId'] && !changes['materialId'].firstChange) {
+      if (this.materialId) {
+        this.isEditMode = true;
+        this.loadMaterial();
+      } else {
+        this.isEditMode = false;
+        this.materialForm.reset({
+          price: 0,
+          stockMin: 0,
+          stockMax: 0,
+          currentStock: 0,
+          status: 'active'
+        });
+        this.currentStep = 1;
+      }
     }
   }
 
@@ -87,14 +108,80 @@ export class MaterialFormComponent implements OnInit {
     });
   }
 
+  get filteredCategories() {
+    if (!this.categorySearchText) {
+      return this.categories;
+    }
+    const search = this.categorySearchText.toLowerCase();
+    return this.categories.filter(cat => 
+      cat.name.toLowerCase().includes(search) || 
+      cat.code.toLowerCase().includes(search)
+    );
+  }
+
+  selectCategory(category: any): void {
+    if (category) {
+      this.materialForm.patchValue({ categoryId: category.id });
+      this.categorySearchText = `${category.name} (${category.code})`;
+    } else {
+      this.materialForm.patchValue({ categoryId: null });
+      this.categorySearchText = 'Sin categoría';
+    }
+    this.showCategoryDropdown = false;
+  }
+
+  onCategoryBlur(): void {
+    setTimeout(() => {
+      this.showCategoryDropdown = false;
+    }, 200);
+  }
+
   loadMaterial(): void {
     if (!this.materialId) return;
     
     this.loading = true;
     this.materialService.getMaterialById(this.materialId).subscribe({
-      next: (material) => {
+      next: (material: any) => {
         if (material) {
-          this.materialForm.patchValue(material);
+          this.materialForm.patchValue({
+            name: material.strName || material.name,
+            description: material.strDescription || material.description,
+            measurementUnit: material.strUnitMeasure || material.measurementUnit,
+            dischargeUnit: material.strDischargeUnit || material.dischargeUnit,
+            categoryId: material.categoryId,
+            price: material.fltPrice || material.price,
+            stockMin: material.ingMinStock || material.stockMin,
+            stockMax: material.ingMaxStock || material.stockMax,
+            currentStock: material.ingQuantity || material.currentStock,
+            ubicacion: material.strLocation || material.ubicacion,
+            status: material.strStatus || material.status
+          });
+          
+          if (material.images) {
+            this.materialImages = material.images;
+          }
+          
+          if (material.strDischargeUnit && material.strDischargeUnit !== material.strUnitMeasure) {
+            this.useDifferentDischargeUnit = true;
+          }
+          
+          // Cargar el texto de la categoría seleccionada después de que las categorías estén cargadas
+          if (material.categoryId) {
+            if (this.categories.length > 0) {
+              const category = this.categories.find(c => c.id === material.categoryId);
+              if (category) {
+                this.categorySearchText = `${category.name} (${category.code})`;
+              }
+            } else {
+              // Si las categorías aún no están cargadas, esperar un momento
+              setTimeout(() => {
+                const category = this.categories.find(c => c.id === material.categoryId);
+                if (category) {
+                  this.categorySearchText = `${category.name} (${category.code})`;
+                }
+              }, 500);
+            }
+          }
         }
         this.loading = false;
       },
@@ -148,10 +235,10 @@ export class MaterialFormComponent implements OnInit {
         strDescription: formData.description,
         strUnitMeasure: formData.measurementUnit,
         strDischargeUnit: this.useDifferentDischargeUnit && formData.dischargeUnit ? formData.dischargeUnit : formData.measurementUnit,
-        fltPrice: formData.price,
-        ingMinStock: formData.stockMin,
-        ingMaxStock: formData.stockMax,
-        ingQuantity: formData.currentStock || 0,
+        fltPrice: parseFloat(formData.price) || 0,
+        ingMinStock: parseInt(formData.stockMin) || 0,
+        ingMaxStock: parseInt(formData.stockMax) || 0,
+        ingQuantity: parseInt(formData.currentStock) || 0,
         strLocation: formData.ubicacion,
         strStatus: formData.status,
         images: this.materialImages
@@ -169,6 +256,18 @@ export class MaterialFormComponent implements OnInit {
       operation.subscribe({
         next: (material) => {
           this.notificationService.success('¡Éxito!', 'Material guardado correctamente').then(() => {
+            // Limpiar formulario después de crear exitosamente
+            this.materialForm.reset({
+              price: 0,
+              stockMin: 0,
+              stockMax: 0,
+              currentStock: 0,
+              status: 'active'
+            });
+            this.materialImages = [];
+            this.currentStep = 1;
+            this.useDifferentDischargeUnit = false;
+            
             if (this.isModal) {
               this.materialCreated.emit();
             } else {

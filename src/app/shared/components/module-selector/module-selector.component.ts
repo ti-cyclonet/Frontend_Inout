@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ModuleService, ModuleType } from '../../services/module/module.service';
 import { trigger, state, style, transition, animate, query, stagger } from '@angular/animations';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-module-selector',
@@ -48,6 +49,7 @@ export class ModuleSelectorComponent {
   hoveredCard: string | null = null;
   isLoading = false;
   selectedModuleName = '';
+  logoPath: string = './assets/img/logo_inout_v11.png';
 
   constructor(
     private router: Router,
@@ -55,8 +57,24 @@ export class ModuleSelectorComponent {
   ) {}
 
   selectModule(moduleType: ModuleType) {
+    if (moduleType === 'inventory') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Función en Construcción',
+        html: `
+          <div style="text-align: center;">
+            <div style="font-size: 80px; margin: 20px 0;">🚧</div>
+            <p style="font-size: 16px; color: #666;">El módulo de Inventario está actualmente en desarrollo.</p>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#5b6dff'
+      });
+      return;
+    }
+    
     this.isLoading = true;
-    this.selectedModuleName = moduleType === 'inventory' ? 'Inventario' : 'Manufactura';
+    this.selectedModuleName = 'Manufactura';
     
     // Simular carga y transición suave
     setTimeout(() => {

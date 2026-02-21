@@ -1,19 +1,157 @@
-<div class="home-container">
-  <div class="home-header">
-    <h1>Bienvenido a InOut</h1>
-    <p>Sistema de Gestión de Inventario y Manufactura</p>
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2 class="mb-1">Dashboard Financiero</h2>
+    <p class="text-muted">Resumen general del inventario y operaciones</p>
   </div>
-  
-  <div class="home-content">
-    <div class="row g-4 justify-content-center">
-      <div class="col-md-10 col-lg-8">
-        <div class="card h-100 shadow-sm hover-card" style="cursor: pointer;" routerLink="/kardex">
-          <div class="card-body text-center p-4">
-            <svg width="64" height="64" fill="currentColor" class="text-primary mb-3">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
-            </svg>
-            <h5 class="card-title fw-bold">KARDEX</h5>
-            <p class="card-text text-muted">Gestión de movimientos de materiales</p>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Métricas Principales -->
+    <div class="metrics-grid">
+      <div class="metric-card primary">
+        <div class="metric-icon">
+          <svg width="32" height="32" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#cash-stack" />
+          </svg>
+        </div>
+        <div class="metric-content">
+          <h3>{{ formatCurrency(metrics.totalInventoryValue) }}</h3>
+          <p>Valor Total Inventario</p>
+        </div>
+      </div>
+
+      <div class="metric-card success">
+        <div class="metric-icon">
+          <svg width="32" height="32" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check" />
+          </svg>
+        </div>
+        <div class="metric-content">
+          <h3>{{ formatCurrency(metrics.totalSales) }}</h3>
+          <p>Ventas Totales</p>
+        </div>
+      </div>
+
+      <div class="metric-card warning">
+        <div class="metric-icon">
+          <svg width="32" height="32" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle" />
+          </svg>
+        </div>
+        <div class="metric-content">
+          <h3>{{ metrics.lowStockProducts }}</h3>
+          <p>Productos Stock Bajo</p>
+        </div>
+      </div>
+
+      <div class="metric-card info">
+        <div class="metric-icon">
+          <svg width="32" height="32" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#receipt" />
+          </svg>
+        </div>
+        <div class="metric-content">
+          <h3>{{ formatNumber(metrics.salesCount) }}</h3>
+          <p>Ventas Realizadas</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficas Principales -->
+    <div class="charts-full-width">
+      <div class="chart-card-full">
+        <h6>Análisis Financiero de Ventas</h6>
+        <div class="chart-wrapper-large">
+          <canvas #salesTrendChart></canvas>
+        </div>
+        <!-- Filtros de Agrupación -->
+        <div class="chart-filters mt-3">
+          <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="chartFilter" id="daily" value="daily" 
+                   [checked]="chartFilter === 'daily'" (change)="onFilterChange('daily')">
+            <label class="btn btn-outline-primary" for="daily">Por Día</label>
+            
+            <input type="radio" class="btn-check" name="chartFilter" id="weekly" value="weekly" 
+                   [checked]="chartFilter === 'weekly'" (change)="onFilterChange('weekly')">
+            <label class="btn btn-outline-primary" for="weekly">Por Semana</label>
+            
+            <input type="radio" class="btn-check" name="chartFilter" id="monthly" value="monthly" 
+                   [checked]="chartFilter === 'monthly'" (change)="onFilterChange('monthly')">
+            <label class="btn btn-outline-primary" for="monthly">Por Mes</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h6>Distribución de Inventario</h6>
+        <div class="chart-wrapper">
+          <canvas #inventoryChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h6>Top 5 Productos Más Vendidos</h6>
+        <div class="chart-wrapper">
+          <canvas #salesChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-full-width">
+      <div class="chart-card-full">
+        <h6>Evolución del Valor de Inventario</h6>
+        <div class="chart-wrapper-large">
+          <canvas #inventoryTrendChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h6>Estado de Stock</h6>
+        <div class="chart-wrapper">
+          <canvas #stockChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h6>Rentabilidad por Categoría</h6>
+        <div class="chart-wrapper">
+          <canvas #profitChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accesos Rápidos -->
+    <div class="quick-access">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <div class="card shadow-sm hover-card" routerLink="/kardex">
+            <div class="card-body text-center p-4">
+              <svg width="48" height="48" fill="currentColor" class="text-primary mb-3">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
+              </svg>
+              <h5 class="card-title fw-bold">KARDEX</h5>
+              <p class="card-text text-muted">Gestión detallada de movimientos de inventario</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="card shadow-sm hover-card" (click)="openMarketplace()" style="cursor: pointer;">
+            <div class="card-body text-center p-4">
+              <svg width="48" height="48" fill="currentColor" class="text-success mb-3">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#shop" />
+              </svg>
+              <h5 class="card-title fw-bold">CycloNet Market</h5>
+              <p class="card-text text-muted">Explora productos de otros negocios en la red</p>
+            </div>
           </div>
         </div>
       </div>

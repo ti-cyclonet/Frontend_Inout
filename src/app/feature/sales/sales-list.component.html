@@ -1,0 +1,108 @@
+<div class="sales-container">
+  <div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3" style="border-bottom: 1px solid orange">
+      <h5 class="mb-0">
+        <svg width="20" height="20" fill="currentColor" class="me-2">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check" />
+        </svg>
+        Gestión de <span class="text-primary fw-bold">VENTAS</span>
+        <span style="color: #ff8000">●</span>
+      </h5>
+      <button class="btn btn-primary" (click)="openModal()">
+        <svg width="16" height="16" fill="currentColor" class="me-1">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Nueva Venta
+      </button>
+    </div>
+
+    <div class="card-body p-4">
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && sales.length === 0" class="text-center py-5">
+        <svg width="64" height="64" fill="currentColor" class="text-muted mb-3">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#cart-x" />
+        </svg>
+        <p class="text-muted">No hay ventas registradas</p>
+      </div>
+
+      <div *ngIf="!loading && sales.length > 0" class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Fecha</th>
+              <th>Factura</th>
+              <th>Cliente</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sale of sales">
+              <td>{{ sale.dtmDate | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ sale.strId }}</td>
+              <td>{{ sale.strCustomerName || 'N/A' }}</td>
+              <td class="text-end fw-bold">${{ formatNumber(getTotalPrice(sale)) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Venta -->
+<div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="border-bottom: 1px solid orange;">
+        <h5 class="modal-title">Nueva Venta</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div >
+          <label class="form-label">Producto *</label>
+          <select class="form-select" [(ngModel)]="saleData.productId" (change)="onProductChange()">
+            <option value="">Seleccione un producto</option>
+            <option *ngFor="let product of products" [value]="product.strId">
+              {{ product.strName }} - Stock: {{ formatNumber(product.ingQuantity) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Cliente</label>
+          <input type="text" class="form-control" [(ngModel)]="saleData.customerName" placeholder="Nombre del cliente">
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Fecha *</label>
+            <input type="date" class="form-control" [(ngModel)]="saleData.date">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Cantidad *</label>
+            <input type="number" class="form-control" [(ngModel)]="saleData.quantity" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Precio Unitario *</label>
+          <input type="number" class="form-control" [(ngModel)]="saleData.unitPrice" min="0" step="0.01">
+        </div>
+
+        <div class="alert alert-info" *ngIf="saleData.quantity > 0 && saleData.unitPrice > 0">
+          <strong>Total:</strong> ${{ formatNumber(saleData.quantity * saleData.unitPrice) }}
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid orange">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="saveSale()">Guardar Venta</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showModal" *ngIf="showModal"></div>

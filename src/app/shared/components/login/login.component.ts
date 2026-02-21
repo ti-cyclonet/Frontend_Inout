@@ -34,6 +34,7 @@ export class LoginComponent {
   availableContracts: ClientContract[] = [];
   selectedContractId: string = '';
   pendingLoginResponse: any = null;
+  logoPath: string = './assets/img/logo_inout_v11.png';
 
   // configuración notificaciones tipo toast
     toastTitle: string = '';

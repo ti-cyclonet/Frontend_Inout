@@ -49,7 +49,7 @@
   </div>
 
   <!-- Filters Panel -->
-  <div class="filters-panel" [class.show]="showFilters">
+  <div class="filters-panel" [class.show]="showFilters" style="background-color: #fff3e0;">
     <div class="filters-content">
       <div class="filter-group">
         <label>Buscar</label>
@@ -217,6 +217,11 @@
             </td>
             <td class="text-center">
               <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-primary" (click)="goToKardex(material)" title="Ver Kardex">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
+                  </svg>
+                </button>
                 <button class="btn btn-sm btn-outline-primary" (click)="viewMaterial(material)" title="Ver">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
@@ -261,8 +266,8 @@
           type="checkbox" 
           [checked]="selectedMaterials.has(material.id)"
           (change)="toggleMaterialSelection(material.id)">
-        <span class="status-badge" [ngClass]="'status-' + material.status">
-          {{ material.status }}
+        <span class="code-badge">
+          {{ material['strCode'] || 'N/A' }}
         </span>
       </div>
       
@@ -271,10 +276,6 @@
         <p class="material-description">{{ material.description }}</p>
         
         <div class="material-stats">
-          <div class="stat" style="grid-column: 1 / -1;">
-            <label>Código</label>
-            <span class="value">{{ material['strCode'] || 'N/A' }}</span>
-          </div>
           <div class="stat">
             <label>Stock Actual</label>
             <span class="value" [ngClass]="getStockStatusClass(material)">
@@ -299,17 +300,20 @@
       </div>
       
       <div class="card-actions">
+        <button class="btn btn-sm btn-outline-primary" (click)="goToKardex(material)">
+          <svg viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
+          </svg>
+        </button>
         <button class="btn btn-sm btn-outline-primary" (click)="viewMaterial(material)">
           <svg viewBox="0 0 16 16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
           </svg>
-          Ver
         </button>
         <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(material)">
           <svg viewBox="0 0 16 16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
           </svg>
-          Editar
         </button>
         <button class="btn btn-sm btn-outline-danger" (click)="deleteMaterial(material)">
           <svg viewBox="0 0 16 16">
@@ -337,7 +341,7 @@
   </div>
 
   <!-- Pagination -->
-  <div class="pagination-container" *ngIf="!loading && materials.length > 0">
+  <div class="pagination-container" *ngIf="!loading && totalPages > 1">
     <div class="pagination-info">
       Mostrando {{ (currentPage - 1) * pageSize + 1 }} a {{ Math.min(currentPage * pageSize, totalItems) }} de {{ totalItems }} materiales
     </div>

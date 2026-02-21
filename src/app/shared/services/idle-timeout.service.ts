@@ -30,6 +30,11 @@ export class IdleTimeoutService {
 
   startWatching(): void {
     if (!this.isBrowser) return;
+    
+    // No activar timeout para rutas públicas del marketplace
+    if (this.router.url.includes('/marketplace/') && this.router.url.length > '/marketplace/'.length) {
+      return;
+    }
 
     this.ngZone.runOutsideAngular(() => {
       document.addEventListener('mousemove', this.resetTimer);
@@ -65,6 +70,6 @@ export class IdleTimeoutService {
   private handleLogout(): void {
     this.stopWatching();
     localStorage.removeItem('token');
-    this.ngZone.run(() => this.router.navigate(['/login']));
+    window.location.href = '/login';
   }
 }

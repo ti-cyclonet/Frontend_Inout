@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialsDemoComponent } from './materials-demo.component';
 
@@ -6,14 +6,7 @@ import { MaterialsDemoComponent } from './materials-demo.component';
   selector: 'app-materials',
   standalone: true,
   imports: [CommonModule, MaterialsDemoComponent],
-  templateUrl: './materials.component.html',
-  styleUrls: ['./materials.component.css']
+  template: `<app-materials-demo></app-materials-demo>`,
+  styles: []
 })
-export class MaterialsComponent implements OnInit {
-
-  constructor() {}
-
-  ngOnInit(): void {
-    // Initialization logic if needed
-  }
-}
+export class MaterialsComponent {}

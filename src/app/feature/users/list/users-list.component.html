@@ -1,0 +1,74 @@
+<div class="list-container">
+  <div class="list-header">
+    <div class="search-section">
+      <div class="search-box">
+        <svg fill="currentcolor" viewBox="0 0 16 16" class="search-icon">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#search"></use>
+        </svg>
+        <input type="text" placeholder="Buscar usuarios..." [(ngModel)]="searchTerm" (input)="filterUsers()">
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="showCreateModal = true">
+      <svg fill="currentcolor" viewBox="0 0 16 16">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#person-plus"></use>
+      </svg>
+      Agregar Usuario
+    </button>
+  </div>
+
+  <div class="table-container" *ngIf="!loading">
+    <table class="users-table" *ngIf="filteredUsers.length > 0; else noUsers">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th>ID Usuario</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of filteredUsers">
+          <td>{{ user.userDetails?.strFirstName }} {{ user.userDetails?.strLastName }}</td>
+          <td>{{ user.userDetails?.strEmail }}</td>
+          <td>{{ user.userDetails?.strPhone || 'N/A' }}</td>
+          <td>{{ user.userId }}</td>
+          <td>
+            <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+              {{ user.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <button 
+              class="btn btn-sm btn-danger" 
+              (click)="removeUser(user.id!)" 
+              *ngIf="user.isActive">
+              <svg fill="currentcolor" viewBox="0 0 16 16">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#person-dash"></use>
+              </svg>
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #noUsers>
+      <div class="no-data">
+        <svg fill="currentcolor" viewBox="0 0 16 16" class="no-data-icon">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use>
+        </svg>
+        <h4>No se encontraron usuarios</h4>
+        <p>Agrega tu primer usuario para comenzar</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando usuarios...</p>
+  </div>
+
+  <app-user-form *ngIf="showCreateModal" (userCreated)="onUserCreated()" (formCancelled)="showCreateModal = false"></app-user-form>
+</div>

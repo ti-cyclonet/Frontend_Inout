@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
@@ -14,7 +15,7 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
   templateUrl: './material-composition.component.html',
   styles: [`
     .materials-list-container {
-      height: 100%;
+      height: calc(100vh - 200px);
       display: flex;
       flex-direction: column;
       background: #f8f9fa;
@@ -293,8 +294,9 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
     }
     .cards-container {
       flex: 1;
-      overflow: auto;
-      padding: 1.5rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1.5rem 1.5rem 5rem 1.5rem;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.5rem;
@@ -309,6 +311,7 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       display: flex;
       flex-direction: column;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      min-height: 650px;
     }
     .material-card:hover {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -317,7 +320,7 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
     }
     .card-image {
       width: 100%;
-      height: 180px;
+      height: 200px;
       overflow: hidden;
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       position: relative;
@@ -325,7 +328,8 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
     .card-image img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      background: white;
     }
     .card-image-fallback {
       width: 100%;
@@ -684,6 +688,28 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       margin-bottom: 1rem;
       color: #495057;
     }
+    .filters-section .form-row {
+      display: flex;
+      gap: 1rem;
+      align-items: end;
+      justify-content: space-between;
+    }
+    .filters-section .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+    }
+    .filters-section .form-group label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #495057;
+    }
+    .filters-section .form-actions {
+      display: flex;
+      align-items: end;
+      flex: 0 0 auto;
+    }
     .materials-list {
       border: 1px solid #dee2e6;
       border-radius: 8px;
@@ -889,6 +915,8 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
 })
 export class MaterialCompositionComponent implements OnInit, OnChanges {
   @Input() externalModalControl = false;
+  @Input() editMaterialId: string | null = null;
+  @Input() initialStep: number = 1;
   transformedMaterials: any[] = [];
   availableMaterials: Material[] = [];
   compositions: MaterialComposition[] = [];
@@ -919,6 +947,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   // Filters
   nameFilter: string = '';
   locationFilter: string = '';
+  categoryFilterMaterials: string = '';
   availableLocations: string[] = [];
   
   // Pagination
@@ -935,6 +964,9 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   
   // UI State
   showFilters = false;
+  showModalFilters = false;
+  showAvailableMaterials = false;
+  showSelectedMaterials = false;
   viewMode: 'table' | 'cards' = 'table';
   searchFilter = '';
   statusFilter = 'all';
@@ -956,7 +988,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
 
   constructor(
     private materialService: MaterialService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -990,11 +1023,14 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Solo abrir modal si se controla externamente Y es diferente de false
     if (changes['externalModalControl'] && 
         changes['externalModalControl'].currentValue === true &&
         !changes['externalModalControl'].firstChange) {
-      this.showCreateModal = true;
+      if (this.editMaterialId) {
+        this.editMaterial(this.editMaterialId);
+      } else {
+        this.showCreateModal = true;
+      }
     }
   }
 
@@ -1332,7 +1368,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   getFilteredMaterials(): Material[] {
-    return this.availableMaterials.filter(material => {
+    const filtered = this.availableMaterials.filter(material => {
       // Exclude already selected materials
       if (this.compositions.some(comp => comp.componentMaterialId === material.id)) {
         return false;
@@ -1348,13 +1384,31 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         return false;
       }
       
+      // Apply category filter
+      if (this.categoryFilterMaterials) {
+        const materialCategoryId = (material as any).categoryId;
+        const filterCategoryId = Number(this.categoryFilterMaterials);
+        if (!materialCategoryId || materialCategoryId !== filterCategoryId) {
+          return false;
+        }
+      }
+      
+      // Only show materials with stock greater than or equal to minimum stock
+      const currentStock = Number(material.currentStock) || 0;
+      const minStock = Number(material.stockMin) || 0;
+      if (currentStock < minStock) {
+        return false;
+      }
+      
       return true;
     });
+    return filtered;
   }
 
   clearFilters(): void {
     this.nameFilter = '';
     this.locationFilter = '';
+    this.categoryFilterMaterials = '';
     this.currentPage = 1;
   }
 
@@ -1463,17 +1517,16 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     );
   }
 
-  getSelectedCategoryName(): string {
-    if (!this.categoryFilter) return '';
-    const category = this.categories.find(c => c.id.toString() === this.categoryFilter);
+  getCategoryName(): string {
+    if (!this.newMaterial.categoryId) return '';
+    const category = this.categories.find(c => c.id === this.newMaterial.categoryId);
     return category ? category.name : '';
   }
 
-  selectCategory(categoryId: string): void {
-    this.categoryFilter = categoryId;
+  selectCategoryOption(categoryId: number | null): void {
+    this.newMaterial.categoryId = categoryId;
     this.categorySearch = '';
     this.showCategoryDropdown = false;
-    this.loadTransformedMaterials();
   }
 
   onCategoryBlur(): void {
@@ -1483,10 +1536,20 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     }, 200);
   }
 
-  editMaterial(material: any): void {
-    this.editingMaterialId = material.id;
+  goToKardex(material: any): void {
+    this.router.navigate(['/kardex'], {
+      queryParams: {
+        type: 'composite',
+        code: material.strCode
+      }
+    });
+  }
+
+  editMaterial(materialIdOrObject: any): void {
+    const materialId = typeof materialIdOrObject === 'string' ? materialIdOrObject : materialIdOrObject.id;
+    this.editingMaterialId = materialId;
     this.additionalQuantities.clear();
-    this.materialService.getTransformedMaterialById(material.id).subscribe({
+    this.materialService.getTransformedMaterialById(materialId).subscribe({
       next: (data) => {
         this.newMaterial = {
           name: data.strName,
@@ -1516,7 +1579,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
           this.additionalQuantities.set(compId, 0);
           return {
             id: compId,
-            materialId: material.id,
+            materialId: materialId,
             componentMaterialId: comp.strComponentMaterialId,
             quantity: comp.fltQuantity,
             componentMaterial: componentMaterial || {
@@ -1532,6 +1595,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         
         // Recargar materiales disponibles para actualizar stock
         this.loadAvailableMaterials();
+        this.currentStep = this.initialStep;
+        this.showSelectedMaterials = true;
         this.showCreateModal = true;
       },
       error: (error) => {

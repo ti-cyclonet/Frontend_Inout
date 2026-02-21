@@ -1,0 +1,97 @@
+.dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+}
+
+.page-subtitle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 1.0rem 1.5rem 1.0rem 2rem;
+  flex-shrink: 0;
+}
+
+.page-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* padding: 1rem 0; */
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.page-subtitle svg {
+  width: 18px;
+  height: 18px;
+  fill: #6c757d;
+}
+
+.card {
+  border: 1px solid white;
+  border-radius: 8px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-outline-primary {
+  color: #0066cc;
+  border-color: #0066cc;
+  background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0066cc;
+  color: white;
+}
+
+.title-container {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: #6E6E6E;
+}
+
+.title-container svg {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.3rem;
+  fill: #6E6E6E;
+}
+
+.title-link {
+  display: flex;
+  align-items: center;
+  color: #6E6E6E;
+  text-decoration: none;
+}
