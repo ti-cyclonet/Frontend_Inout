@@ -1,12 +1,12 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.inout.com/api', // Production API URL
+  apiUrl: 'https://api.cyclonet.com.co/api/inventory',
   cloudinary: {
-    cloudName: 'inout-materials-prod',
+    cloudName: 'dn8ki4idz',
     uploadPreset: 'materials_preset_prod'
   },
   auth: {
     tokenKey: 'authToken',
-    authorizaUrl: 'https://auth.authoriza.com' // Production Authoriza URL
+    authorizaUrl: 'https://api.cyclonet.com.co/api/auth'
   }
 };
