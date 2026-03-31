@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
+import { environment } from '../../../environments/environment';
 
 Chart.register(...registerables);
 
@@ -45,7 +46,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   };
 
   loading = true;
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = environment.apiUrl;
   private charts: Chart[] = [];
 
   constructor(private http: HttpClient) {}
@@ -438,9 +439,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const tenantId = payload.tenantId || payload.basicDataId;
       
-      this.http.get<any>(`http://localhost:3000/api/contracts/tenant/${tenantId}`).toPromise()
+      this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
         .then(contract => {
-          window.open(`http://localhost:4201/marketplace/${contract.user.id}?admin=true`, '_blank');
+          window.open(`${environment.apiUrl.replace('/api/inventory', '')}/marketplace/${contract.user.id}?admin=true`, '_blank');
         })
         .catch(error => {
           console.error('Error al obtener contrato:', error);

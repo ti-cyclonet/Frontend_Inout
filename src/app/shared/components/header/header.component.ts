@@ -22,6 +22,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { NotificationsComponent } from '../notifications/notifications.component';
 import { ModuleService, ModuleType } from '../../services/module/module.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-header',
@@ -226,7 +227,7 @@ export class HeaderComponent implements OnInit {
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         // Hacer llamada al backend para obtener el nombre del cliente usando el tenantId
-        this.http.get(`http://localhost:3000/api/users/${payload.tenantId}`).subscribe({
+        this.http.get(`${environment.auth.authorizaUrl}/users/${payload.tenantId}`).subscribe({
           next: (user: any) => {
             if (user.basicData?.strPersonType === 'N') {
               this.clientName = `${user.basicData.naturalPersonData?.firstName || ''} ${user.basicData.naturalPersonData?.firstSurname || ''}`.trim();
@@ -245,7 +246,7 @@ export class HeaderComponent implements OnInit {
   }
 
   private getAppDescription(): void {
-    this.http.get('http://localhost:3000/api/applications/INOUT').subscribe({
+    this.http.get(`${environment.auth.authorizaUrl}/applications/INOUT`).subscribe({
       next: (application: any) => {
         this.appDescription = application.strDescription || 'INVENTORY MANAGEMENT';
       },

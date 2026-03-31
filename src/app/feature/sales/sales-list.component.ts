@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sales-list',
@@ -25,7 +26,7 @@ export class SalesListComponent implements OnInit {
     date: new Date().toISOString().split('T')[0]
   };
 
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

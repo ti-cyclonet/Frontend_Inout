@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface KardexMovement {
   entityId: string;
@@ -18,7 +19,7 @@ export interface KardexMovement {
   providedIn: 'root'
 })
 export class KardexService {
-  private apiUrl = 'http://localhost:3001/api/kardex';
+  private apiUrl = `${environment.apiUrl}/kardex`;
 
   constructor(private http: HttpClient) { }
 
