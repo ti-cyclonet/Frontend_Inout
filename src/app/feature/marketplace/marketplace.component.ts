@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import Swal from 'sweetalert2';
+import { environment } from '../../../environments/environment';
 
 interface Product {
   strId: string;
@@ -69,7 +70,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   selectedProduct: Product | null = null;
   providerInfo: any = null;
   
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(
     private route: ActivatedRoute,
@@ -194,7 +195,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   loadTenantData(tenantId: string): void {
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/products/tenant/${tenantId}`).toPromise(),
-      this.http.get<any>(`http://localhost:3000/api/contracts/tenant/${tenantId}`).toPromise().catch(() => ({ businessSector: 'general' })),
+      this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise().catch(() => ({ businessSector: 'general' })),
       this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}`).toPromise().catch(() => null)
     ]).then(([productsResponse, contractResponse, configResponse]) => {
       this.products = (productsResponse.data || []).map((product: any) => ({
@@ -727,7 +728,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         confirmButtonText: 'Entendido'
       }).then(() => {
         this.isAdminMode = false;
-        window.location.href = `http://localhost:4200/marketplace/${this.tenantId}`;
+        window.location.href = `/marketplace/${this.tenantId}`;
       });
       return;
     }
@@ -739,7 +740,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         // Si el usuario está autenticado pero está en el tenantId incorrecto, redirigir a su tenant
         if (response.tenantId !== this.tenantId) {
-          window.location.href = `http://localhost:4200/marketplace/${response.tenantId}?admin=true`;
+          window.location.href = `/marketplace/${response.tenantId}?admin=true`;
           return;
         }
       },
@@ -752,7 +753,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         }).then(() => {
           localStorage.removeItem('token');
           this.isAdminMode = false;
-          window.location.href = `http://localhost:4200/marketplace/${this.tenantId}`;
+          window.location.href = `/marketplace/${this.tenantId}`;
         });
       }
     });
@@ -835,7 +836,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.http.get<any>(`http://localhost:3000/api/contracts/tenant/${tenantId}`).toPromise()
+    this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
       .then((contract) => {
         this.providerInfo = {
           businessName: contract?.user?.basicData?.legalEntityData?.businessName || 

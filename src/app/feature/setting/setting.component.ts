@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-setting',
@@ -39,7 +40,7 @@ export class SettingComponent implements OnInit {
   parametrosPage = 0;
   parametrosPageSize = 5;
 
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(private fb: FormBuilder, private http: HttpClient) {
     this.nuevoPeriodoForm = this.fb.group({
@@ -388,7 +389,7 @@ export class SettingComponent implements OnInit {
   guardarValor(param: any): void {
     param.editando = false;
     const valorSinFormato = param.valorSinFormato || param.valor.replace(/,/g, '');
-    this.http.patch(`http://localhost:3000/api/customer-parameters-periods/${param.id}/value`, { value: valorSinFormato }).subscribe({
+    this.http.patch(`${environment.auth.authorizaUrl}/customer-parameters-periods/${param.id}/value`, { value: valorSinFormato }).subscribe({
       next: () => {
         param.valor = valorSinFormato;
         Swal.fire('¡Éxito!', 'Valor actualizado exitosamente', 'success');
@@ -408,7 +409,7 @@ export class SettingComponent implements OnInit {
     const nuevoEstado = param.estado === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     param.estado = nuevoEstado;
     
-    this.http.patch(`http://localhost:3000/api/customer-parameters-periods/${param.id}/status`, { status: nuevoEstado }).subscribe({
+    this.http.patch(`${environment.auth.authorizaUrl}/customer-parameters-periods/${param.id}/status`, { status: nuevoEstado }).subscribe({
       next: () => {
         Swal.fire('¡Éxito!', `Estado del parámetro actualizado a ${nuevoEstado}`, 'success');
       },
@@ -420,7 +421,7 @@ export class SettingComponent implements OnInit {
   }
 
   loadParametrosDisponibles(): void {
-    this.http.get<any[]>(`http://localhost:3000/api/customer-parameters`).subscribe({
+    this.http.get<any[]>(`${environment.auth.authorizaUrl}/customer-parameters`).subscribe({
       next: (params) => {
         this.parametrosDisponibles = params;
       },
@@ -429,7 +430,7 @@ export class SettingComponent implements OnInit {
   }
 
   loadAvailableParameters(): void {
-    this.http.get<any[]>(`http://localhost:3000/api/customer-parameters`).subscribe({
+    this.http.get<any[]>(`${environment.auth.authorizaUrl}/customer-parameters`).subscribe({
       next: (params) => {
         const assignedIds = this.parametros.map(p => p.customerParameterId);
         this.parametrosDisponibles = params
@@ -495,7 +496,7 @@ export class SettingComponent implements OnInit {
       dataType: this.nuevoParametroForm.value.dataType
     };
     
-    this.http.post(`http://localhost:3000/api/customer-parameters`, paramData).subscribe({
+    this.http.post(`${environment.auth.authorizaUrl}/customer-parameters`, paramData).subscribe({
       next: () => {
         this.loading = false;
         this.nuevoParametroForm.reset();

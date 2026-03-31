@@ -4,12 +4,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError, switchMap } from 'rxjs/operators';
 import Swal from 'sweetalert2';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ActiveParametersGuard implements CanActivate {
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient, private router: Router) {}
 

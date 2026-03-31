@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface CompositionTwo {
   strId: string;
@@ -20,7 +21,7 @@ export interface CompositionThree {
   providedIn: 'root'
 })
 export class CompositionService {
-  private apiUrl = 'http://localhost:3001/api';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 

@@ -9,6 +9,7 @@ import { Material } from '../../shared/models/material.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
 import * as ExcelJS from 'exceljs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-kardex',
@@ -66,7 +67,7 @@ export class KardexComponent implements OnInit {
     contactPhone: ''
   };
 
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
