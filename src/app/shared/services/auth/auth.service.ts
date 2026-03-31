@@ -9,8 +9,8 @@ import { environment } from '../../../../environments/environment';
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = `${environment.auth.authorizaUrl}/login`;
-  private completeLoginUrl = `${environment.auth.authorizaUrl}/login/complete`;
+  private apiUrl = `${environment.auth.authorizaUrl}/auth/login`;
+  private completeLoginUrl = `${environment.auth.authorizaUrl}/auth/login/complete`;
 
   constructor(
     private http: HttpClient,
