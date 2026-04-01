@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Application } from '../../model/application.model';
-import { environment } from '../../../../../environment/environment';
+import { environment } from '../../../../environments/environment';
 @Injectable({
   providedIn: 'root',
 })
@@ -10,7 +10,7 @@ export class ApplicationsService {
   private applicationsSubject = new BehaviorSubject<Application[]>([]);
   public applications$ = this.applicationsSubject.asObservable();
 
-  private AuthorizaApiUrl = `${environment.BASE_URL_AUTHORIZA}/api/applications`;  
+  private AuthorizaApiUrl = `${environment.auth.authorizaUrl}/applications`;  
  
   constructor(private http: HttpClient) {}
 
