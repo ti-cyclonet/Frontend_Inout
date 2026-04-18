@@ -15,6 +15,6 @@ export const environment = {
   },
   auth: {
     tokenKey: 'authToken',
-    authorizaUrl: 'http://localhost:3000/api/auth'
+    authorizaUrl: 'http://localhost:3000/api'
   }
 };
