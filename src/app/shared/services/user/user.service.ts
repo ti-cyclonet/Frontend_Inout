@@ -8,7 +8,7 @@ import { environment } from '../../../../environments/environment';
 })
 export class UserService {
   private apiUrl = '/api/users';
-  private authorizaUrl = environment.BASE_URL_AUTHORIZA;
+  private authorizaUrl = environment.auth.authorizaUrl;
 
   private usersSubject = new BehaviorSubject<any[]>([]);
   public users$ = this.usersSubject.asObservable();
