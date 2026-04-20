@@ -57,6 +57,9 @@ export class HeaderComponent implements OnInit {
   }
 
   @Output() sidebarToggle = new EventEmitter<void>();
+  @Output() sidebarStyleChange = new EventEmitter<'lateral' | 'list'>();
+
+  @Input() sidebarStyle: 'lateral' | 'list' = 'lateral';
 
   nombreApp = DESCRIPTION_APP;
 
@@ -110,6 +113,10 @@ export class HeaderComponent implements OnInit {
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
       repeatPassword: ['', Validators.required],
     });
+  }
+
+  changeSidebarStyle(style: 'lateral' | 'list'): void {
+    this.sidebarStyleChange.emit(style);
   }
 
   onToggleSidebar(): void {
