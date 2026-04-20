@@ -38,10 +38,20 @@
   border: 2px solid #FF6600;
   border-radius: 15px;
   padding: 0.8rem 0.2rem;
-  margin: 0.5rem 0;
+  padding-top: 3.2rem;
+  margin: 0.5rem 0.3rem;
   height: calc(100vh - 1rem);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+}
+
+@media (max-width: 991.98px) {
+  .menu-container {
+    margin-top: 0.3rem;
+    height: calc(100vh - 0.6rem);
+    padding-top: 3.2rem;
+  }
 }
 
 /* Estilo de los ítems del menú */
@@ -159,13 +169,13 @@
 /* Ajuste para pantallas pequeñas */
 @media (max-width: 991.98px) {
     .sidebar {
-        padding-top: 60px;
+        padding-top: 0;
         width: 120px;
         transform: translateX(0);
     }
 
     .menu-item {
-        margin-bottom: 1.0rem; /* Ajuste de margen para pantallas pequeñas */
+        margin-bottom: 1.0rem;
     }
 }
 
