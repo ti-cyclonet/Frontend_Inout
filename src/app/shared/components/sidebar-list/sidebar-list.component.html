@@ -1,0 +1,23 @@
+<div class="sidebar-list">
+  <div class="list-container">
+    <ng-container *ngFor="let option of optionsMenu">
+      <ng-container *ngIf="option.type === 'main_menu'">
+        <a
+          [routerLink]="option.url"
+          routerLinkActive="active"
+          class="list-item"
+          (click)="onItemClick()">
+          <div class="list-icon">
+            <svg fill="currentColor" viewBox="0 0 16 16">
+              <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
+            </svg>
+          </div>
+          <div class="list-text">
+            <span class="list-title">{{ option.description }}</span>
+            <span class="list-subtitle">{{ option.name }}</span>
+          </div>
+        </a>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>

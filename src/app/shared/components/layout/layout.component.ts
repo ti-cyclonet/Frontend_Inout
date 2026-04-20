@@ -3,6 +3,7 @@ import { OptionMenu } from '../../model/option_menu';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { SidebarListComponent } from '../sidebar-list/sidebar-list.component';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { Application } from '../../model/application.model';
@@ -18,6 +19,7 @@ import { NAME_APP_SHORT } from '../../../config/config';
     CommonModule,
     HeaderComponent,
     SidebarComponent,
+    SidebarListComponent,
     FooterComponent,
     RouterOutlet,
     RouterModule
@@ -29,6 +31,7 @@ export default class LayoutComponent implements OnInit {
   optionsMenu: OptionMenu[] = [];
   isSidebarVisible = true;
   isLargeScreen = false;
+  sidebarStyle: 'lateral' | 'list' = 'lateral';
   application: Application | undefined;
   currentModule: ModuleType | null = null;
 
@@ -124,13 +127,39 @@ export default class LayoutComponent implements OnInit {
       } else {
         this.isSidebarVisible = this.isLargeScreen;
       }
+      const storedStyle = localStorage.getItem('sidebarStyle');
+      this.sidebarStyle = (storedStyle === 'list') ? 'list' : 'lateral';
     }
   }
 
+  isListHiding = false;
+
   toggleSidebar() {
-    this.isSidebarVisible = !this.isSidebarVisible;
+    if (this.sidebarStyle === 'list' && this.isSidebarVisible) {
+      this.hideSidebarList();
+    } else {
+      this.isSidebarVisible = !this.isSidebarVisible;
+      if (typeof window !== 'undefined' && localStorage) {
+        localStorage.setItem('sidebarVisible', JSON.stringify(this.isSidebarVisible));
+      }
+    }
+  }
+
+  hideSidebarList() {
+    this.isListHiding = true;
+    setTimeout(() => {
+      this.isListHiding = false;
+      this.isSidebarVisible = false;
+      if (typeof window !== 'undefined' && localStorage) {
+        localStorage.setItem('sidebarVisible', JSON.stringify(false));
+      }
+    }, 250);
+  }
+
+  setSidebarStyle(style: 'lateral' | 'list') {
+    this.sidebarStyle = style;
     if (typeof window !== 'undefined' && localStorage) {
-      localStorage.setItem('sidebarVisible', JSON.stringify(this.isSidebarVisible));
+      localStorage.setItem('sidebarStyle', style);
     }
   }
 

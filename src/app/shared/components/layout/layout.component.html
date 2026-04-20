@@ -1,21 +1,33 @@
 <div class="container-fluid p-0">
   <div class="row m-0">
-    <!-- Sidebar -->
-    <div id="sidebar" class="" 
+    <!-- Sidebar lateral (estilo predeterminado) -->
+    <div *ngIf="sidebarStyle === 'lateral'" id="sidebar" class="" 
          [ngClass]="{'hidden': !isSidebarVisible}"  
          style="width: 120px; background-color: var(--sidebar-background-color); height: 100vh; border-right: 2px solid black; overflow: hidden;">     
       <app-sidebar [optionsMenu]="optionsMenu" (sidebarToggle)="toggleSidebar()"></app-sidebar>
     </div>
 
     <!-- Main Content -->
-    <div [ngClass]="{'full-width': !isSidebarVisible, 'reduced-width': isSidebarVisible}" 
+    <div [ngClass]="{'full-width': !isSidebarVisible || sidebarStyle === 'list', 'reduced-width': isSidebarVisible && sidebarStyle === 'lateral'}" 
          class="main-content d-flex flex-column p-0" style="height: 100vh; overflow: hidden;">
       
       <!-- Header with Toggle Button -->
-      <app-header (sidebarToggle)="toggleSidebar()"></app-header>
+      <app-header 
+        (sidebarToggle)="toggleSidebar()"
+        [sidebarStyle]="sidebarStyle"
+        (sidebarStyleChange)="setSidebarStyle($event)">
+      </app-header>
       
+      <!-- Sidebar lista entre header y footer -->
+      <div *ngIf="sidebarStyle === 'list' && (isSidebarVisible || isListHiding)"
+           class="sidebar-list-wrapper flex-grow-1"
+           [class.sidebar-list-hiding]="isListHiding">
+        <app-sidebar-list [optionsMenu]="optionsMenu" (sidebarToggle)="hideSidebarList()"></app-sidebar-list>
+      </div>
+
       <!-- Content -->
-      <div class="router-outlet-container flex-grow-1" style="overflow-y: auto; background-color: rgba(218, 218, 221, 0.8); height: calc(100vh - 120px);">
+      <div [style.display]="sidebarStyle === 'list' && (isSidebarVisible && !isListHiding) ? 'none' : 'flex'"
+           class="router-outlet-container flex-grow-1" style="overflow-y: auto; background-color: rgba(218, 218, 221, 0.8); height: calc(100vh - 120px); flex-direction: column;">
         <router-outlet></router-outlet>        
       </div>
       
