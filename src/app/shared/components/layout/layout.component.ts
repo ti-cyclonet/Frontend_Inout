@@ -167,6 +167,9 @@ export default class LayoutComponent implements OnInit {
   onResize(event: Event) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
+      if (this.isLargeScreen && this.sidebarStyle === 'list') {
+        this.setSidebarStyle('lateral');
+      }
     }
   }
 }

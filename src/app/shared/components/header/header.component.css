@@ -143,7 +143,7 @@
   .dropdown-item {
     display: flex;
     align-items: center;
-    color: #9b9696;
+    color: #3a3a3a;
     font-size: 14px;
     padding: 8px;
   }
@@ -173,5 +173,44 @@
   }
   
   .logout-btn svg {
-    fill: orange !important;
+    fill: #FF6600 !important;
+    margin-right: 10px;
   }
+
+/* Botones selector de estilo de menú */
+.menu-style-btn {
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.menu-style-btn.active-style {
+  background-color: #FF6600 !important;
+  border-color: #FF6600 !important;
+  color: #ffffff !important;
+}
+
+.menu-style-btn.active-style svg {
+  fill: #ffffff !important;
+}
+
+.menu-style-btn.inactive-style {
+  background-color: transparent !important;
+  border-color: #3a3a3a !important;
+  color: #3a3a3a !important;
+}
+
+.menu-style-btn.inactive-style svg {
+  fill: #FF6600 !important;
+}
+
+.menu-style-btn.inactive-style:hover {
+  background-color: rgba(255, 102, 0, 0.08) !important;
+  border-color: #FF6600 !important;
+  color: #FF6600 !important;
+}
