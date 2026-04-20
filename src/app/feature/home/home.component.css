@@ -363,3 +363,18 @@
     padding: 0;
   }
 }
+
+/* Accesos rápidos - divisor responsive */
+@media (min-width: 576px) {
+  .quick-access-left,
+  .quick-access-middle {
+    border-right: 1px solid #e9ecef;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .quick-access-left,
+  .quick-access-middle {
+    border-bottom: 1px solid #e9ecef;
+  }
+}
