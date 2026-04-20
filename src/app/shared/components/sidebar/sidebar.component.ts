@@ -41,8 +41,10 @@ export class SidebarComponent implements OnInit {
     return this.openSubmenuId === id;
   }
 
-  onToggleSidebar(): void {
-    this.sidebarToggle.emit();
+  onMenuItemClick(): void {
+    if (typeof window !== 'undefined' && window.innerWidth < 992) {
+      this.sidebarToggle.emit();
+    }
   }
 
   hasSubmenu(optionId: string): boolean {
