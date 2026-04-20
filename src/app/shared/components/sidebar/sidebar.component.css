@@ -2,6 +2,7 @@
 .sidebar {
     background-color: #F1F3F4;
     height: 100vh;
+    height: 100dvh;
     width: 120px;
     display: flex;
     flex-direction: column;
@@ -41,6 +42,7 @@
   padding-top: 3.2rem;
   margin: 0.5rem 0.3rem;
   height: calc(100vh - 1rem);
+  height: calc(100dvh - 1rem);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -50,6 +52,7 @@
   .menu-container {
     margin-top: 0.3rem;
     height: calc(100vh - 0.6rem);
+    height: calc(100dvh - 0.6rem);
     padding-top: 3.2rem;
   }
 }
