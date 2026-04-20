@@ -18,17 +18,18 @@
         (sidebarStyleChange)="setSidebarStyle($event)">
       </app-header>
       
-      <!-- Sidebar lista entre header y footer -->
-      <div *ngIf="sidebarStyle === 'list' && (isSidebarVisible || isListHiding)"
-           class="sidebar-list-wrapper flex-grow-1"
-           [class.sidebar-list-hiding]="isListHiding">
-        <app-sidebar-list [optionsMenu]="optionsMenu" (sidebarToggle)="hideSidebarList()"></app-sidebar-list>
-      </div>
-
-      <!-- Content -->
-      <div [style.display]="sidebarStyle === 'list' && (isSidebarVisible && !isListHiding) ? 'none' : 'flex'"
-           class="router-outlet-container flex-grow-1" style="overflow-y: auto; background-color: rgba(218, 218, 221, 0.8); height: calc(100vh - 120px); flex-direction: column;">
-        <router-outlet></router-outlet>        
+      <!-- Área de contenido con sidebar-list superpuesto -->
+      <div class="content-area flex-grow-1">
+        <!-- Sidebar lista superpuesto -->
+        <div *ngIf="sidebarStyle === 'list' && (isSidebarVisible || isListHiding)"
+             class="sidebar-list-wrapper"
+             [class.sidebar-list-hiding]="isListHiding">
+          <app-sidebar-list [optionsMenu]="optionsMenu" (sidebarToggle)="hideSidebarList()"></app-sidebar-list>
+        </div>
+        <!-- Content (siempre visible detrás) -->
+        <div class="router-outlet-container" style="overflow-y: auto; background-color: rgba(218, 218, 221, 0.8); flex-direction: column;">
+          <router-outlet></router-outlet>
+        </div>
       </div>
       
       <!-- Footer -->
