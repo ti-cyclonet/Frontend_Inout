@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
@@ -49,7 +49,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private baseUrl = environment.apiUrl;
   private charts: Chart[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   ngOnInit(): void {
     this.loadMetrics();
@@ -422,6 +422,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer);
     }
+  }
+
+  openSettings(): void {
+    this.router.navigate(['/setting']);
   }
 
   openMarketplace(): void {

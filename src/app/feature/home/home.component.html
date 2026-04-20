@@ -11,6 +11,36 @@
   </div>
 
   <div *ngIf="!loading">
+    <!-- Accesos Rápidos -->
+    <div class="chart-card-full mb-4">
+      <div class="row g-0">
+        <div class="col-12 col-sm-4 d-flex flex-column align-items-center justify-content-center p-3 hover-card quick-access-left"
+             routerLink="/kardex" style="cursor:pointer;">
+          <svg width="48" height="48" fill="currentColor" class="text-primary mb-2">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
+          </svg>
+          <h5 class="card-title fw-bold mb-1">KARDEX</h5>
+          <p class="card-text text-muted text-center small">Gestión detallada de movimientos de inventario</p>
+        </div>
+        <div class="col-12 col-sm-4 d-flex flex-column align-items-center justify-content-center p-3 hover-card quick-access-middle"
+             (click)="openMarketplace()" style="cursor:pointer;">
+          <svg width="48" height="48" fill="currentColor" class="text-success mb-2">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#shop" />
+          </svg>
+          <h5 class="card-title fw-bold mb-1">CycloNet Market</h5>
+          <p class="card-text text-muted text-center small">Explora productos de otros negocios en la red</p>
+        </div>
+        <div class="col-12 col-sm-4 d-flex flex-column align-items-center justify-content-center p-3 hover-card quick-access-right"
+             (click)="openSettings()" style="cursor:pointer;">
+          <svg width="48" height="48" fill="currentColor" class="text-warning mb-2">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#gear" />
+          </svg>
+          <h5 class="card-title fw-bold mb-1">Configuraciones</h5>
+          <p class="card-text text-muted text-center small">Parámetros y ajustes de la aplicación</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Métricas Principales -->
     <div class="metrics-grid">
       <div class="metric-card primary">
@@ -129,32 +159,5 @@
       </div>
     </div>
 
-    <!-- Accesos Rápidos -->
-    <div class="quick-access">
-      <div class="row g-3">
-        <div class="col-12 col-md-6">
-          <div class="card shadow-sm hover-card" routerLink="/kardex">
-            <div class="card-body text-center p-4">
-              <svg width="48" height="48" fill="currentColor" class="text-primary mb-3">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
-              </svg>
-              <h5 class="card-title fw-bold">KARDEX</h5>
-              <p class="card-text text-muted">Gestión detallada de movimientos de inventario</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-md-6">
-          <div class="card shadow-sm hover-card" (click)="openMarketplace()" style="cursor: pointer;">
-            <div class="card-body text-center p-4">
-              <svg width="48" height="48" fill="currentColor" class="text-success mb-3">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#shop" />
-              </svg>
-              <h5 class="card-title fw-bold">CycloNet Market</h5>
-              <p class="card-text text-muted">Explora productos de otros negocios en la red</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
