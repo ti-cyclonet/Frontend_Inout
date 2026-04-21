@@ -7,6 +7,7 @@ import { MetricCardComponent } from '../../../shared/components/metric-card/metr
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { CategoryService } from '../../../shared/services/category/category.service';
+import { PLANTILLA_MATERIALES_BASE64 } from './plantilla-materiales';
 
 @Component({
   selector: 'app-materials-dashboard',
@@ -115,27 +116,23 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   }
 
   downloadTemplate(): void {
-    fetch('assets/plantilla_materiales.xlsx')
-      .then(response => {
-        if (!response.ok) throw new Error('No se pudo obtener el archivo');
-        return response.arrayBuffer();
-      })
-      .then(buffer => {
-        const blob = new Blob([buffer], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'plantilla_materiales.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      })
-      .catch(() => {
-        alert('Error al descargar la plantilla');
-      });
+    const byteChars = atob(PLANTILLA_MATERIALES_BASE64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteNumbers[i] = byteChars.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'plantilla_materiales.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 
   onFileSelected(event: any): void {
