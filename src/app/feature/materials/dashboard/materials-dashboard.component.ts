@@ -115,19 +115,12 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   }
 
   downloadTemplate(): void {
-    // Genera la plantilla CSV como fallback universal
-    const headers = ['strName', 'strDescription', 'strUnitMeasure', 'fltPrice', 'ingQuantity', 'ingMinStock', 'ingMaxStock', 'strLocation', 'strCategoryCode'];
-    const example = ['Material Ejemplo', 'Descripción del material', 'kg', '1000', '50', '10', '200', 'Sitio 1', 'CAT001'];
-    const csvContent = [headers.join(','), example.join(',')].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.download = 'plantilla_materiales.csv';
+    link.href = 'assets/plantilla_materiales.xlsx';
+    link.download = 'plantilla_materiales.xlsx';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
   }
 
   onFileSelected(event: any): void {
