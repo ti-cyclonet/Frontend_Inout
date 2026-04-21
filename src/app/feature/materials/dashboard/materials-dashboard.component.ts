@@ -115,19 +115,10 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   }
 
   downloadTemplate(): void {
-    this.materialService.downloadTemplate().subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'plantilla_materiales.xlsx';
-        link.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (error) => {
-        alert('Error al descargar la plantilla');
-      }
-    });
+    const link = document.createElement('a');
+    link.href = '/assets/plantilla_materiales.xlsx';
+    link.download = 'plantilla_materiales.xlsx';
+    link.click();
   }
 
   onFileSelected(event: any): void {
