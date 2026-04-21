@@ -28,8 +28,23 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       align-items: center;
       padding: 1rem 1.5rem;
       background: white;
-      border-bottom: 1px solid #e9ecef;
-      flex-shrink: 0;
+    }
+    .comp-action-link { font-size: 0.78rem; }
+    .comp-title-link { font-size: 0.78rem; }
+    @media (min-width: 577px) {
+      .comp-title-link { font-size: 1rem; }
+      .comp-action-link { font-size: 0.875rem; }
+    }
+    @media (max-width: 768px) {
+      .list-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
     }
     .title-container {
       display: flex;
@@ -60,11 +75,23 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
       overflow: hidden;
     }
     .view-toggle .btn {
-      border-radius: 0;
+      border-radius: 0 !important;
       border-right: none;
     }
     .view-toggle .btn:last-child {
       border-right: 1px solid #dee2e6;
+      border-radius: 0 !important;
+    }
+    .view-toggle .btn.btn-primary,
+    .view-toggle .btn.btn-outline-primary,
+    .view-toggle .btn-sm {
+      border-radius: 0 !important;
+    }
+    ::ng-deep .view-toggle .btn,
+    ::ng-deep .view-toggle .btn-sm,
+    ::ng-deep .view-toggle .btn-primary,
+    ::ng-deep .view-toggle .btn-outline-primary {
+      border-radius: 0 !important;
     }
     .filters-panel {
       background: white;

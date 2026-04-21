@@ -11,7 +11,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1rem;
   background: white;
   border-bottom: 1px solid #e9ecef;
   flex-shrink: 0;
@@ -46,17 +46,17 @@
 
 .view-toggle {
   display: flex;
-  border-radius: 6px;
   overflow: hidden;
 }
 
 .view-toggle .btn {
-  border-radius: 0;
+  border-radius: 0 !important;
   border-right: none;
 }
 
 .view-toggle .btn:last-child {
   border-right: 1px solid #dee2e6;
+  border-radius: 0 !important;
 }
 
 /* Filters Panel */
@@ -712,3 +712,68 @@
 }
 .material-card { min-height: 650px; }
 
+
+/* Action links (reemplazo de botones en header) */
+.action-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  padding: 0.25rem 0;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.action-link svg {
+  width: 15px;
+  height: 15px;
+  fill: #6c757d;
+  flex-shrink: 0;
+}
+
+.action-link:hover {
+  color: #495057;
+  border-bottom-color: #495057;
+}
+
+.action-link.action-link-primary {
+  color: #0066cc;
+}
+
+.action-link.action-link-primary svg {
+  fill: #0066cc;
+}
+
+.action-link.action-link-primary:hover {
+  color: #004a99;
+  border-bottom-color: #004a99;
+}
+
+@media (max-width: 576px) {
+  .list-header {
+    padding: 0.6rem 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .title-container {
+    font-size: 0.78rem;
+  }
+
+  .header-actions {
+    gap: 0.5rem;
+  }
+
+  .action-link {
+    font-size: 0.78rem;
+  }
+
+  .action-link svg {
+    width: 13px;
+    height: 13px;
+  }
+}
