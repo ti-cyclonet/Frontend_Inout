@@ -115,12 +115,27 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   }
 
   downloadTemplate(): void {
-    const link = document.createElement('a');
-    link.href = 'assets/plantilla_materiales.xlsx';
-    link.download = 'plantilla_materiales.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    fetch('assets/plantilla_materiales.xlsx')
+      .then(response => {
+        if (!response.ok) throw new Error('No se pudo obtener el archivo');
+        return response.arrayBuffer();
+      })
+      .then(buffer => {
+        const blob = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'plantilla_materiales.xlsx';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(() => {
+        alert('Error al descargar la plantilla');
+      });
   }
 
   onFileSelected(event: any): void {
