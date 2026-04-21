@@ -9,18 +9,18 @@
     </div>
     
     <div class="header-actions">
-      <button class="btn btn-outline-primary" (click)="navigateToComposition()">
-        <svg viewBox="0 0 16 16">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
-        </svg>
-        Agregar Material Compuesto
-      </button>
-      <button class="btn btn-outline-primary" (click)="navigateToCreate()">
-        <svg viewBox="0 0 16 16">
+      <a class="action-link" (click)="navigateToCreate()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="15" height="15">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
         Agregar Material
-      </button>
+      </a>
+      <a class="action-link" (click)="navigateToComposition()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="15" height="15">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+        </svg>
+        Agregar Material Compuesto
+      </a>
     </div>
   </div>
 

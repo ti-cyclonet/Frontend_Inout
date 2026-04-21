@@ -85,6 +85,7 @@ import { MaterialCompositionComponent } from './composition/material-composition
       cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
     
     .tab-button:hover {
@@ -94,6 +95,16 @@ import { MaterialCompositionComponent } from './composition/material-composition
     .tab-button.active {
       color: #007bff;
       border-bottom-color: #007bff;
+    }
+
+    @media (max-width: 576px) {
+      .demo-tabs {
+        padding: 0 0.25rem;
+      }
+      .tab-button {
+        padding: 0.75rem 0.6rem;
+        font-size: 0.78rem;
+      }
     }
     
     .demo-content {

@@ -11,40 +11,42 @@
     </div>
     
     <div class="header-actions">
-      <button class="btn btn-outline-secondary" (click)="showFilters = !showFilters">
-        <svg viewBox="0 0 16 16">
+      <a class="action-link" (click)="showFilters = !showFilters" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
         </svg>
         Filtros
-      </button>
+      </a>
       
       <div class="view-toggle">
         <button 
-          class="btn btn-sm" 
+          class="btn btn-sm"
+          style="border-radius:0 !important;"
           [class.btn-primary]="viewMode === 'table'"
           [class.btn-outline-primary]="viewMode !== 'table'"
           (click)="setViewMode('table')">
-          <svg viewBox="0 0 16 16">
+          <svg viewBox="0 0 16 16" width="16" height="16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#table" />
           </svg>
         </button>
         <button 
-          class="btn btn-sm" 
+          class="btn btn-sm"
+          style="border-radius:0 !important;"
           [class.btn-primary]="viewMode === 'cards'"
           [class.btn-outline-primary]="viewMode !== 'cards'"
           (click)="setViewMode('cards')">
-          <svg viewBox="0 0 16 16">
+          <svg viewBox="0 0 16 16" width="16" height="16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" />
           </svg>
         </button>
       </div>
       
-      <button class="btn btn-primary" (click)="openCreateModal.emit()">
-        <svg viewBox="0 0 16 16">
+      <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
         Agregar Material
-      </button>
+      </a>
     </div>
   </div>
 
@@ -130,10 +132,10 @@
   </div>
 
   <!-- Table View -->
-  <div class="table-container" *ngIf="viewMode === 'table'">
+  <div class="table-container" *ngIf="viewMode === 'table' && materials.length > 0">
     <div class="table-responsive">
       <table class="table materials-table">
-        <thead>
+        <thead *ngIf="materials.length > 0">
           <tr>
             <th class="checkbox-col">
               <input 
@@ -337,7 +339,6 @@
     </svg>
     <h3>No se encontraron materiales</h3>
     <p>Intenta ajustar tus filtros o agregar un nuevo material.</p>
-    <button class="btn btn-primary" (click)="openCreateModal.emit()">Agregar Primer Material</button>
   </div>
 
   <!-- Pagination -->
