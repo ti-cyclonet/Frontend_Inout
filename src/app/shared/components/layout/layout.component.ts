@@ -90,6 +90,23 @@ export default class LayoutComponent implements OnInit {
           })) || []
         ) || [];
 
+        // Agregar enlace estático de Consumos (panel de uso de paquete)
+        const consumosEntry: OptionMenu = {
+          id: 'usage-panel',
+          name: 'Consumos',
+          description: 'Consumos',
+          url: '/consumos',
+          icon: 'bar-chart',
+          type: 'main_menu',
+          idMPather: null,
+          order: '90',
+          idApplication: this.application?.id ?? '',
+        };
+        // Evitar duplicados si ya existe
+        if (!this.optionsMenu.some(m => m.id === consumosEntry.id)) {
+          this.optionsMenu.push(consumosEntry);
+        }
+
         // Ordenar por ingOrder numérico
         this.optionsMenu.sort((a, b) => parseInt(a.order) - parseInt(b.order));
       },

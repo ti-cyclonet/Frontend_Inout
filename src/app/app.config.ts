@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './shared/interceptors/auth.interceptor';
+import { LimitErrorInterceptor } from './shared/interceptors/limit-error.interceptor';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
@@ -21,6 +22,11 @@ export const appConfig: ApplicationConfig = {
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: LimitErrorInterceptor,
       multi: true
     }
   ]
