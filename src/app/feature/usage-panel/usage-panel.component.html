@@ -1,0 +1,74 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h4 class="fw-bold text-dark mb-1">
+        <i class="bi bi-bar-chart-line me-2"></i>Estado de Consumos
+      </h4>
+      <p class="text-muted mb-0" *ngIf="usageStatus">
+        Paquete: <strong>{{ usageStatus.packageName }}</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="text-muted mt-3">Cargando estado de consumos...</p>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div class="flex-grow-1">{{ error }}</div>
+    <button class="btn btn-outline-danger btn-sm ms-3" (click)="loadUsageStatus()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+    </button>
+  </div>
+
+  <!-- Usage variables -->
+  <div *ngIf="usageStatus && !loading && !error" class="row g-3">
+    <div class="col-md-6 col-lg-4" *ngFor="let variable of usageStatus.variables">
+      <div class="card usage-card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="card-title mb-0 fw-semibold">{{ variable.displayName }}</h6>
+            <span [class]="getStatusBadgeClass(variable)">
+              {{ getStatusLabel(variable) }}
+            </span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <span class="text-muted small">{{ variable.currentCount }} / {{ variable.maxValue }}</span>
+            <span class="fw-bold" [ngClass]="{
+              'text-success': variable.usagePercentage < 80,
+              'text-warning': variable.usagePercentage >= 80 && variable.usagePercentage < 100,
+              'text-danger': variable.usagePercentage >= 100
+            }">
+              {{ formatPercentage(variable.usagePercentage) }}%
+            </span>
+          </div>
+
+          <div class="progress" style="height: 10px;" role="progressbar"
+               [attr.aria-valuenow]="variable.usagePercentage"
+               aria-valuemin="0" aria-valuemax="100"
+               [attr.aria-label]="variable.displayName + ': ' + formatPercentage(variable.usagePercentage) + '%'">
+            <div class="progress-bar"
+                 [ngClass]="getProgressBarClass(variable)"
+                 [style.width.%]="clampPercentage(variable.usagePercentage)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="usageStatus.variables.length === 0" class="col-12">
+      <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        No hay variables de consumo configuradas para su paquete.
+      </div>
+    </div>
+  </div>
+</div>

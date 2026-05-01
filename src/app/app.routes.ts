@@ -22,6 +22,7 @@ import { MarketplaceComponent } from './feature/marketplace/marketplace.componen
 // import { CustomersComponent } from './feature/customers/customers.component';
 // import { CustomerFormComponent } from './feature/customers/form/customer-form.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
+import { UsagePanelComponent } from './feature/usage-panel/usage-panel.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -43,6 +44,7 @@ export const routes: Routes = [
             // { path: 'users/form', component: UserFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             // { path: 'customers', component: CustomersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             // { path: 'customers/form', component: CustomerFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'consumos', component: UsagePanelComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'setting', component: SettingComponent, canActivate: [AuthGuard] },
             { path: ROOT_CONFIGURATION, component: SetupComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: '', redirectTo: ROOT_HOME, pathMatch: 'full' }
