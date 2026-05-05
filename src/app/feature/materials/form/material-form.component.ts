@@ -277,7 +277,14 @@ export class MaterialFormComponent implements OnInit, OnChanges {
           this.saving = false;
         },
         error: (error) => {
-          this.notificationService.error('Error', 'No se pudo guardar el material');
+          // Si es error de límite (403 LIMIT_REACHED o CONTRACT_INACTIVE),
+          // el LimitErrorInterceptor ya mostró el Swal — no mostrar mensaje genérico
+          const isLimitError = error?.status === 403 &&
+            (error?.error?.error === 'LIMIT_REACHED' || error?.error?.error === 'CONTRACT_INACTIVE');
+
+          if (!isLimitError) {
+            this.notificationService.error('Error', 'No se pudo guardar el material');
+          }
           console.error('Error saving material:', error);
           this.saving = false;
         }
