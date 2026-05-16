@@ -30,6 +30,12 @@
     <div class="navbar-brand mx-auto">
       <div>{{ appDescription | uppercase }}</div>
       <div *ngIf="clientName" class="client-name">{{ clientName }}</div>
+      <div *ngIf="packageName" class="package-badge">
+        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+        </svg>
+        {{ packageName }}
+      </div>
     </div>
 
     <!-- Notificaciones y Dropdown de usuario -->

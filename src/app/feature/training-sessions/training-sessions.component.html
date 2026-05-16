@@ -1,0 +1,145 @@
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h4 class="fw-bold text-dark mb-1">
+        <i class="bi bi-mortarboard me-2"></i>Sesiones de Capacitación
+      </h4>
+      <p class="text-muted mb-0">Gestiona las sesiones de capacitación de tu equipo</p>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+        <i class="bi bi-plus-lg me-1"></i>Nueva Sesión
+      </button>
+    </div>
+  </div>
+
+  <!-- Usage warning -->
+  <div *ngIf="usageWarning" class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {{ usageWarning.message }}
+    <button type="button" class="btn-close" (click)="usageWarning = null" aria-label="Cerrar"></button>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" (click)="error = null" aria-label="Cerrar"></button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Sessions table -->
+  <div *ngIf="!loading" class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Código</th>
+            <th>Título</th>
+            <th>Instructor</th>
+            <th>Fecha</th>
+            <th>Duración</th>
+            <th>Asistentes</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let session of sessions">
+            <td><code>{{ session.strCode }}</code></td>
+            <td>{{ session.strTitle }}</td>
+            <td>{{ session.strInstructor || '-' }}</td>
+            <td>{{ session.dtmDate }}</td>
+            <td>{{ session.intDurationMinutes }} min</td>
+            <td>{{ session.intAttendees }}</td>
+            <td><span [class]="getStatusClass(session.strStatus)">{{ getStatusLabel(session.strStatus) }}</span></td>
+            <td>
+              <button class="btn btn-outline-danger btn-sm" (click)="deleteSession(session.strId)" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="sessions.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">No hay sesiones de capacitación registradas</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer d-flex justify-content-between align-items-center" *ngIf="totalPages > 1">
+      <small class="text-muted">{{ total }} sesiones en total</small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <button class="page-link" (click)="onPageChange(currentPage - 1)">Anterior</button>
+          </li>
+          <li class="page-item active">
+            <span class="page-link">{{ currentPage }} / {{ totalPages }}</span>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <button class="page-link" (click)="onPageChange(currentPage + 1)">Siguiente</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Create Modal -->
+  <div *ngIf="showCreateModal" class="modal-backdrop" (click)="closeCreateModal()"></div>
+  <div *ngIf="showCreateModal" class="modal d-block" tabindex="-1">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nueva Sesión de Capacitación</h5>
+          <button type="button" class="btn-close" (click)="closeCreateModal()" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="sessionTitle" class="form-label">Título *</label>
+            <input type="text" class="form-control" id="sessionTitle" [(ngModel)]="newSession.strTitle" placeholder="Ej: Capacitación en seguridad industrial">
+          </div>
+          <div class="mb-3">
+            <label for="sessionDesc" class="form-label">Descripción</label>
+            <textarea class="form-control" id="sessionDesc" [(ngModel)]="newSession.strDescription" rows="2"></textarea>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="sessionInstructor" class="form-label">Instructor</label>
+              <input type="text" class="form-control" id="sessionInstructor" [(ngModel)]="newSession.strInstructor">
+            </div>
+            <div class="col-md-6">
+              <label for="sessionDate" class="form-label">Fecha *</label>
+              <input type="date" class="form-control" id="sessionDate" [(ngModel)]="newSession.dtmDate">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="sessionDuration" class="form-label">Duración (minutos)</label>
+              <input type="number" class="form-control" id="sessionDuration" [(ngModel)]="newSession.intDurationMinutes" min="1">
+            </div>
+            <div class="col-md-6">
+              <label for="sessionAttendees" class="form-label">Asistentes</label>
+              <input type="number" class="form-control" id="sessionAttendees" [(ngModel)]="newSession.intAttendees" min="0">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="sessionNotes" class="form-label">Notas</label>
+            <textarea class="form-control" id="sessionNotes" [(ngModel)]="newSession.strNotes" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="createSession()" [disabled]="creating || !newSession.strTitle || !newSession.dtmDate">
+            {{ creating ? 'Creando...' : 'Crear Sesión' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

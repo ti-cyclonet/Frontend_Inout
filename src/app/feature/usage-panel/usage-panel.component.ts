@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UsageStatusService } from '../../shared/services/usage-status.service';
-import { UsageStatusResponse, UsageVariable } from '../../shared/model/usage-status.model';
+import { UsageStatusResponse, UsageVariable, UsageWarning } from '../../shared/model/usage-status.model';
 
 @Component({
   selector: 'app-usage-panel',
@@ -14,11 +14,15 @@ export class UsagePanelComponent implements OnInit {
   usageStatus: UsageStatusResponse | null = null;
   loading = true;
   error: string | null = null;
+  warnings: UsageWarning[] = [];
+  recalibrating = false;
+  recalibrationResult: { recalibrated: { variableName: string; previousCount: number; actualCount: number }[] } | null = null;
 
   constructor(private usageStatusService: UsageStatusService) {}
 
   ngOnInit(): void {
     this.loadUsageStatus();
+    this.loadWarnings();
   }
 
   loadUsageStatus(): void {
@@ -33,6 +37,36 @@ export class UsagePanelComponent implements OnInit {
       error: (err) => {
         this.error = 'No se pudo cargar el estado de consumos. Intente nuevamente.';
         this.loading = false;
+      }
+    });
+  }
+
+  loadWarnings(): void {
+    this.usageStatusService.getUsageWarnings().subscribe({
+      next: (response) => {
+        this.warnings = response.warnings || [];
+      },
+      error: () => {
+        this.warnings = [];
+      }
+    });
+  }
+
+  recalibrate(): void {
+    this.recalibrating = true;
+    this.recalibrationResult = null;
+
+    this.usageStatusService.recalibrateCounters().subscribe({
+      next: (result) => {
+        this.recalibrating = false;
+        this.recalibrationResult = result;
+        // Reload usage status after recalibration
+        this.loadUsageStatus();
+        this.loadWarnings();
+      },
+      error: () => {
+        this.recalibrating = false;
+        this.error = 'Error al recalibrar los contadores.';
       }
     });
   }

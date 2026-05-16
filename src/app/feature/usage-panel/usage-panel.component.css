@@ -25,3 +25,13 @@
   padding: 0.35em 0.65em;
   border-radius: 6px;
 }
+
+/* Spin animation for recalibrate button */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
