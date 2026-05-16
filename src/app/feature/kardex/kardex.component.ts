@@ -312,8 +312,27 @@ export class KardexComponent implements OnInit {
         this.resetSupplierForm();
         Swal.fire('Éxito', 'Proveedor creado correctamente', 'success');
       },
-      error: () => {
-        Swal.fire('Error', 'No se pudo crear el proveedor', 'error');
+      error: (err) => {
+        if (err?.error?.error === 'LIMIT_REACHED') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Límite de paquete alcanzado',
+            html: `Has alcanzado el límite de <strong>${err.error.resource}</strong> permitidos en tu plan.<br><br>` +
+                  `<span style="font-size:0.9em;">Límite: <strong>${err.error.limit}</strong> | Actual: <strong>${err.error.currentCount}</strong></span><br><br>` +
+                  `Actualiza tu paquete para crear más proveedores.`,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#6600CC'
+          });
+        } else if (err?.error?.error === 'CONTRACT_INACTIVE') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Contrato inactivo',
+            text: 'No se encontró un contrato activo. Contacta al administrador.',
+            confirmButtonText: 'Entendido'
+          });
+        } else {
+          Swal.fire('Error', err?.error?.message || 'No se pudo crear el proveedor', 'error');
+        }
       }
     });
   }

@@ -11,3 +11,15 @@ export interface UsageStatusResponse {
   packageName: string;
   variables: UsageVariable[];
 }
+
+export interface UsageWarning {
+  variableName: string;
+  displayName: string;
+  currentCount: number;
+  maxValue: number;
+  percentage: number;
+}
+
+export interface UsageWarningsResponse {
+  warnings: UsageWarning[];
+}

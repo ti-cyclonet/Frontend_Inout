@@ -22,6 +22,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { NotificationsComponent } from '../notifications/notifications.component';
 import { ModuleService, ModuleType } from '../../services/module/module.service';
+import { UsageStatusService } from '../../services/usage-status.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -44,6 +45,7 @@ export class HeaderComponent implements OnInit {
   userRolDescription: string | null = null;
   userImage: string | null = null;
   clientName: string | null = null;
+  packageName: string | null = null;
   appDescription: string = 'INVENTORY MANAGEMENT';
   currentModule: ModuleType | null = null;
   private _isSidebarVisible: boolean = false;
@@ -85,7 +87,8 @@ export class HeaderComponent implements OnInit {
     private fb: FormBuilder,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
-    private moduleService: ModuleService
+    private moduleService: ModuleService,
+    private usageStatusService: UsageStatusService
   ) {}
 
   ngOnInit(): void {
@@ -101,6 +104,9 @@ export class HeaderComponent implements OnInit {
       
       // Obtener descripción de la aplicación
       this.getAppDescription();
+
+      // Obtener nombre del paquete contratado
+      this.loadPackageName();
     }
     
     // Suscribirse a cambios de módulo
@@ -259,6 +265,17 @@ export class HeaderComponent implements OnInit {
       },
       error: () => {
         this.appDescription = 'INVENTORY MANAGEMENT';
+      }
+    });
+  }
+
+  private loadPackageName(): void {
+    this.usageStatusService.getUsageStatus().subscribe({
+      next: (response) => {
+        this.packageName = response.packageName || null;
+      },
+      error: () => {
+        this.packageName = null;
       }
     });
   }
