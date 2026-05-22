@@ -9,6 +9,7 @@ export interface UsageVariable {
 export interface UsageStatusResponse {
   tenantId: string;
   packageName: string;
+  isBillable: boolean;
   variables: UsageVariable[];
 }
 
