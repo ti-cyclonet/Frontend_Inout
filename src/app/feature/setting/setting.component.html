@@ -6,27 +6,35 @@
     </div>
     
     <div class="inner-container">
+      <!-- Toggle filtros + Nuevo Período -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <a href="javascript:void(0)" class="text-decoration-none" (click)="showPeriodFilters = !showPeriodFilters">
+          <svg width="16" height="16" fill="currentColor" class="me-1">
+            <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showPeriodFilters ? 'eye-slash' : 'eye')" />
+          </svg>
+          Filtros
+        </a>
+        <a href="javascript:void(0)" class="text-decoration-none text-success" data-bs-toggle="modal" data-bs-target="#createPeriodModal">
+          <svg width="16" height="16" fill="currentColor" class="me-1">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+          </svg>
+          Nuevo Período
+        </a>
+      </div>
+
       <!-- Filtros -->
-      <div class="row mb-3">
-        <div class="col-md-4 mb-2 mb-md-0">
+      <div class="row mb-3" *ngIf="showPeriodFilters">
+        <div class="col-md-5 mb-2 mb-md-0">
           <input type="text" class="form-control" [(ngModel)]="filtroNombrePeriodo" 
                  placeholder="Buscar por nombre..." (input)="aplicarFiltrosPeriodos()">
         </div>
-        <div class="col-md-3 mb-2 mb-md-0">
+        <div class="col-md-4 mb-2 mb-md-0">
           <input type="date" class="form-control" [(ngModel)]="filtroFecha" 
                  placeholder="Date within period" (change)="aplicarFiltrosPeriodos()">
         </div>
-        <div class="col-md-2 mb-2 mb-md-0">
+        <div class="col-md-3 mb-2 mb-md-0">
           <button class="btn btn-outline-secondary w-100" (click)="limpiarFiltrosPeriodos()">
             Limpiar
-          </button>
-        </div>
-        <div class="col-md-3">
-          <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#createPeriodModal">
-            <svg width="16" height="16" fill="currentColor" class="me-2">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
-            </svg>
-            Nuevo Período
           </button>
         </div>
       </div>
