@@ -93,7 +93,7 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.userName = sessionStorage.getItem('user_name');
+      this.userName = sessionStorage.getItem('user_displayName') || sessionStorage.getItem('user_name');
       this.userEmail = sessionStorage.getItem('user_email');
       this.userRol = sessionStorage.getItem('user_rol');
       this.userRolDescription = sessionStorage.getItem('user_rolDescription');
