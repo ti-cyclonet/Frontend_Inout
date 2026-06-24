@@ -29,13 +29,6 @@
     
     <div class="navbar-brand mx-auto">
       <div>{{ appDescription | uppercase }}</div>
-      <div *ngIf="clientName" class="client-name">{{ clientName }}</div>
-      <div *ngIf="packageName" class="package-badge">
-        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
-        </svg>
-        {{ packageName }}
-      </div>
     </div>
 
     <!-- Notificaciones y Dropdown de usuario -->
@@ -74,8 +67,20 @@
               class="user-img me-2"
             />
             <div>
-              <strong>{{ userName }}</strong>
+              <strong style="font-size: 0.9rem;">{{ userName }}</strong>
               <p class="text-muted small mb-0">{{ userRolDescription }}</p>
+              <p *ngIf="clientName" class="text-muted small mb-0">
+                <svg width="12" height="12" fill="currentColor" class="me-1">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#building" />
+                </svg>
+                {{ clientName }}
+              </p>
+              <p *ngIf="packageName" class="small mb-0" style="color: #e67e22;">
+                <svg width="12" height="12" fill="currentColor" class="me-1">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+                </svg>
+                {{ packageName }}
+              </p>
             </div>
           </li>
           <li><hr class="dropdown-divider" /></li>

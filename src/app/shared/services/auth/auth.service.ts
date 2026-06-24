@@ -39,6 +39,12 @@ export class AuthService {
       sessionStorage.setItem('user_rolDescription', userData.user?.rolDescription || '');
       sessionStorage.setItem('user_image', userData.user?.image || '');
       
+      // Guardar nombre real del usuario (razón social o nombre + apellido)
+      const displayName = userData.user?.businessName 
+        || (userData.user?.firstName ? `${userData.user.firstName} ${userData.user.secondName || ''}`.trim() : '')
+        || '';
+      sessionStorage.setItem('user_displayName', displayName);
+      
       // Guardar codePrefix del contrato
       if (userData.contract?.codePrefix) {
         sessionStorage.setItem('codePrefix', userData.contract.codePrefix);
