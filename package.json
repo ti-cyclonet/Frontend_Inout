@@ -21,6 +21,7 @@
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/platform-server": "^18.2.0",
     "@angular/router": "^18.2.0",
+    "@angular/service-worker": "^18.2.0",
     "@angular/ssr": "^18.2.0",
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@popperjs/core": "^2.11.8",
@@ -56,6 +57,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "sharp": "^0.35.3",
     "typescript": "~5.5.2"
   }
 }
