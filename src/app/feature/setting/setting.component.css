@@ -155,3 +155,33 @@
   align-items: center;
   justify-content: center;
 }
+
+
+@media (max-width: 768px) {
+  .floating-container {
+    padding: 0;
+  }
+  .outer-container {
+    margin: 0;
+    padding: 0.5rem;
+    border-radius: 0;
+  }
+  .modal-dialog.modal-lg {
+    margin: 0.5rem;
+  }
+  .modal-body {
+    padding: 0.75rem;
+  }
+  .table td, .table th {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85rem;
+  }
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+  }
+  .inner-container {
+    padding: 12px;
+  }
+}

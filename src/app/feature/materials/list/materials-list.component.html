@@ -51,7 +51,8 @@
   </div>
 
   <!-- Filters Panel -->
-  <div class="filters-panel" [class.show]="showFilters" style="background-color: #fff3e0;">
+  <!-- Filters Panel -->
+  <div class="filters-panel" [class.show]="showFilters">
     <div class="filters-content">
       <div class="filter-group">
         <label>Buscar</label>
@@ -60,7 +61,7 @@
           class="form-control" 
           [(ngModel)]="filters.search"
           (input)="onFilterChange()"
-          placeholder="Buscar por nombre o descripción...">
+          placeholder="Nombre o descripción...">
       </div>
       
       <div class="filter-group">
@@ -82,7 +83,7 @@
             [(ngModel)]="categorySearch"
             (focus)="showCategoryDropdown = true"
             (blur)="onCategoryBlur()"
-            [placeholder]="getSelectedCategoryName() || 'Buscar categoría...'"
+            [placeholder]="getSelectedCategoryName() || 'Todas'"
             autocomplete="off">
           <div class="category-dropdown" *ngIf="showCategoryDropdown">
             <div 
@@ -101,10 +102,23 @@
           </div>
         </div>
       </div>
+
+      <div class="filter-group">
+        <label>Ubicación</label>
+        <select class="form-select" [(ngModel)]="filters.location" (change)="onFilterChange()">
+          <option value="">Todas</option>
+          <option value="Sitio 1">Sitio 1</option>
+          <option value="Sitio 2">Sitio 2</option>
+          <option value="Sitio 3">Sitio 3</option>
+          <option value="Sitio 4">Sitio 4</option>
+          <option value="Sitio 5">Sitio 5</option>
+          <option value="Sitio 6">Sitio 6</option>
+        </select>
+      </div>
       
       <div class="filter-actions">
         <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
-          Limpiar Filtros
+          Limpiar
         </button>
       </div>
     </div>

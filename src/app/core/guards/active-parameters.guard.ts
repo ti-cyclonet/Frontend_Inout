@@ -18,7 +18,7 @@ export class ActiveParametersGuard implements CanActivate {
     return this.http.get<any>(`${this.baseUrl}/periods/active/current`).pipe(
       switchMap(periodo => {
         if (!periodo) {
-          Swal.fire('Warning', 'No active period found. Please activate a period first.', 'warning');
+          Swal.fire('Advertencia', 'No se encontró un período activo. Por favor, activa un período primero.', 'warning');
           this.router.navigate(['/setting']);
           return of(false);
         }
@@ -27,7 +27,7 @@ export class ActiveParametersGuard implements CanActivate {
           map(params => {
             const hasActiveParams = params.some(p => p.status === 'active' || p.status === 'ACTIVE');
             if (!hasActiveParams) {
-              Swal.fire('Warning', 'The active period must have at least one active parameter. Please configure parameters.', 'warning');
+              Swal.fire('Advertencia', 'El período activo debe tener al menos un parámetro activo. Por favor, configura los parámetros.', 'warning');
               this.router.navigate(['/setting']);
               return false;
             }

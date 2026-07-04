@@ -20,21 +20,32 @@ import { KardexService } from '../../../shared/services/kardex.service';
         </div>
         
         <div class="header-actions">
-          <div class="search-section">
-            <div class="search-box">
-              <svg fill="currentcolor" viewBox="0 0 16 16" class="search-icon">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#search"></use>
-              </svg>
-              <input type="text" placeholder="Buscar ventas..." [(ngModel)]="searchTerm" (input)="filterSales()">
-            </div>
-          </div>
-          
-          <button class="btn btn-primary" (click)="openCreateModal.emit()">
-            <svg fill="currentcolor" viewBox="0 0 16 16">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use>
+          <a class="action-link" (click)="showFilters = !showFilters" style="cursor:pointer;">
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
+            </svg>
+            Filtros
+          </a>
+
+          <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
             </svg>
             Nueva Venta
-          </button>
+          </a>
+        </div>
+      </div>
+
+      <!-- Filters Panel -->
+      <div class="filters-panel" [class.show]="showFilters">
+        <div class="filters-content">
+          <div class="filter-group">
+            <label>Buscar</label>
+            <input type="text" class="form-control" placeholder="Cliente o factura..." [(ngModel)]="searchTerm" (input)="filterSales()">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-outline-secondary btn-sm" (click)="searchTerm = ''; filterSales()">Limpiar</button>
+          </div>
         </div>
       </div>
 
@@ -192,6 +203,8 @@ import { KardexService } from '../../../shared/services/kardex.service';
       display: flex;
       flex-direction: column;
       background: #f8f9fa;
+      border-top: 1px solid orange;
+      border-bottom: 1px solid orange;
     }
     
     .list-header {
@@ -202,6 +215,8 @@ import { KardexService } from '../../../shared/services/kardex.service';
       background: white;
       border-bottom: 1px solid #e9ecef;
       flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 0.75rem;
     }
     
     .title-container {
@@ -223,38 +238,78 @@ import { KardexService } from '../../../shared/services/kardex.service';
       align-items: center;
       gap: 0.75rem;
     }
-    
-    .search-section {
-      flex: 1;
-      max-width: 400px;
-    }
-    
-    .search-box {
-      position: relative;
-    }
-    
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 16px;
-      height: 16px;
+
+    .action-link {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
       color: #6c757d;
-    }
-    
-    .search-box input {
-      width: 100%;
-      padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-      border: 1px solid #ced4da;
-      border-radius: 6px;
+      font-weight: 500;
       font-size: 0.875rem;
+      text-decoration: none;
+      white-space: nowrap;
     }
-    
-    .search-box input:focus {
-      outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+
+    .action-link svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+
+    .action-link:hover {
+      color: #495057;
+    }
+
+    .action-link.action-link-primary {
+      color: #0066cc;
+    }
+
+    .action-link.action-link-primary svg {
+      fill: #0066cc;
+    }
+
+    .action-link.action-link-primary:hover {
+      color: #004a99;
+    }
+
+    .filters-panel {
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 1.5rem;
+    }
+
+    .filters-panel.show {
+      max-height: 500px;
+      overflow: visible;
+      padding: 1rem 1.5rem;
+    }
+
+    .filters-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .filter-group label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #495057;
+    }
+
+    .filter-actions {
+      display: flex;
+      align-items: flex-end;
+      margin-top: 1.25rem;
     }
     
     .table-container {
@@ -428,6 +483,40 @@ import { KardexService } from '../../../shared/services/kardex.service';
       height: 14px;
     }
 
+    @media (max-width: 768px) {
+      .list-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+        padding: 0.75rem 1rem;
+      }
+      
+      .header-actions {
+        justify-content: space-between;
+      }
+
+      .filters-content {
+        grid-template-columns: 1fr;
+      }
+
+      .filters-panel.show {
+        padding: 0.75rem 1rem 0.5rem 1rem;
+      }
+      
+      .sales-table th:nth-child(2),
+      .sales-table td:nth-child(2),
+      .sales-table th:nth-child(5),
+      .sales-table td:nth-child(5) {
+        display: none;
+      }
+      
+      .sales-table th,
+      .sales-table td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+    }
+
     /* Estilos del kardex para el modal */
     .search-details-title {
       color: #0066cc;
@@ -549,6 +638,7 @@ export class SalesListComponent implements OnInit {
   selectedSale: Sale | null = null;
   loading = false;
   searchTerm = '';
+  showFilters = false;
   showViewModal = false;
 
   constructor(private salesService: SalesService, private productsService: ProductsService, private kardexService: KardexService) {}

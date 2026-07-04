@@ -38,6 +38,9 @@ export class MaterialService {
       if (filters.categoryId && filters.categoryId !== '') {
         params = params.set('category', filters.categoryId);
       }
+      if (filters.location && filters.location !== '') {
+        params = params.set('ubicacion', filters.location);
+      }
     }
 
     return this.http.get<any>(this.apiConfig.ENDPOINTS.MATERIALS, {
