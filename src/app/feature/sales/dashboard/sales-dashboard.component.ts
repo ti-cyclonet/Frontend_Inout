@@ -8,7 +8,25 @@ import { SalesService } from '../../../shared/services/sales.service';
   imports: [CommonModule],
   template: `
     <div class="dashboard-container">
-      <div class="dashboard-header">
+      <!-- Header row like materials -->
+      <div class="list-header">
+        <div class="title-container">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="#6E6E6E">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#speedometer2"></use>
+          </svg>
+          /Panel de Ventas
+        </div>
+        <div class="header-actions">
+          <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use>
+            </svg>
+            Nueva Venta
+          </a>
+        </div>
+      </div>
+
+      <div class="dashboard-content">
         <div class="stats-cards">
           <div class="stat-card">
             <div class="stat-icon">
@@ -44,30 +62,75 @@ import { SalesService } from '../../../shared/services/sales.service';
             </div>
           </div>
         </div>
-        <div class="action-buttons">
-          <button class="btn btn-primary" (click)="openCreateModal.emit()">
-            <svg fill="currentcolor" viewBox="0 0 16 16">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use>
-            </svg>
-            Nueva Venta
-          </button>
-        </div>
       </div>
     </div>
   `,
   styles: [`
     .dashboard-container {
-      padding: 1.5rem;
       background: #f8f9fa;
       min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid orange;
+      border-bottom: 1px solid orange;
     }
-    
-    .dashboard-header {
+
+    .list-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: 2rem;
-      margin-bottom: 2rem;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-bottom: 1px solid #e9ecef;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .title-container {
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+      color: #6E6E6E;
+      gap: 0.3rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .action-link {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #6c757d;
+      font-weight: 500;
+      font-size: 0.875rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .action-link svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+
+    .action-link.action-link-primary {
+      color: #0066cc;
+    }
+
+    .action-link.action-link-primary svg {
+      fill: #0066cc;
+    }
+
+    .action-link.action-link-primary:hover {
+      color: #004a99;
+    }
+
+    .dashboard-content {
+      padding: 1.5rem;
     }
     
     .stats-cards {
@@ -125,36 +188,23 @@ import { SalesService } from '../../../shared/services/sales.service';
       color: #6c757d;
       font-size: 0.875rem;
     }
-    
-    .action-buttons {
-      display: flex;
-      gap: 1rem;
-    }
-    
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
-    }
-    
-    .btn-primary {
-      background: #007bff;
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background: #0056b3;
-    }
-    
-    .btn svg {
-      width: 16px;
-      height: 16px;
+
+    @media (max-width: 768px) {
+      .dashboard-content {
+        padding: 1rem;
+      }
+      
+      .stats-cards {
+        flex-direction: column;
+      }
+      
+      .stat-card {
+        padding: 1rem;
+      }
+      
+      .stat-content h3 {
+        font-size: 1.5rem;
+      }
     }
   `]
 })

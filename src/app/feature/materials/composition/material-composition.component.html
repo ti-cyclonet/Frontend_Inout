@@ -1,48 +1,48 @@
 <div class="materials-list-container" style="border-top: 1px solid orange; border-bottom: 1px solid orange;">
   <!-- Header -->
-  <div class="list-header" style="display:flex; align-items:center; padding:0.75rem 1rem; background:white; border-bottom:1px solid #e9ecef; gap:0.5rem; flex-wrap:wrap;">
-    <div class="title-container" style="align-self:flex-start;">
-      <a href="/materials" class="title-link comp-title-link">
-        <svg viewBox="0 0 16 16" width="16" height="16" style="fill:#6E6E6E; margin-right:0.3rem; flex-shrink:0;">
+  <div class="list-header">
+    <div class="title-container">
+      <a href="/materials" class="title-link">
+        <svg viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
         </svg>
         /Materiales Compuestos
       </a>
     </div>
 
-    <div class="header-actions" style="display:flex; flex-direction:row; align-items:center; gap:0.75rem;">
-      <a class="action-link comp-action-link" (click)="showFilters = !showFilters" style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; color:#6c757d; font-weight:500; text-decoration:none; white-space:nowrap;">
-        <svg viewBox="0 0 16 16" width="16" height="16" style="fill:#6c757d; flex-shrink:0;">
+    <div class="header-actions">
+      <a class="action-link" (click)="showFilters = !showFilters" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
         </svg>
         Filtros
       </a>
 
-      <div class="view-toggle" style="border-radius:0;display:flex; overflow:hidden;">
+      <div class="view-toggle">
         <button
           class="btn btn-sm"
+          style="border-radius:0 !important;"
           [class.btn-primary]="viewMode === 'table'"
           [class.btn-outline-primary]="viewMode !== 'table'"
-          (click)="setViewMode('table')"
-        >
+          (click)="setViewMode('table')">
           <svg viewBox="0 0 16 16" width="16" height="16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#table" />
           </svg>
         </button>
         <button
-          class="btn btn-sm"          
+          class="btn btn-sm"
+          style="border-radius:0 !important;"
           [class.btn-primary]="viewMode === 'cards'"
           [class.btn-outline-primary]="viewMode !== 'cards'"
-          (click)="setViewMode('cards')"
-        >
+          (click)="setViewMode('cards')">
           <svg viewBox="0 0 16 16" width="16" height="16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" />
           </svg>
         </button>
       </div>
 
-      <a class="comp-action-link" (click)="showCreateModal = true" style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; color:#0066cc; font-weight:500; text-decoration:none; white-space:nowrap;">
-        <svg viewBox="0 0 16 16" width="15" height="15" style="fill:#0066cc; flex-shrink:0;">
+      <a class="action-link action-link-primary" (click)="showCreateModal = true" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
         Agregar Material
@@ -59,17 +59,30 @@
           type="text"
           class="form-control"
           [(ngModel)]="searchFilter"
-          placeholder="Buscar por nombre o descripción..."
+          placeholder="Nombre o descripción..."
         />
       </div>
 
       <div class="filter-group">
         <label>Categoría</label>
-        <select class="form-control" [(ngModel)]="categoryFilter">
+        <select class="form-select" [(ngModel)]="categoryFilter">
           <option value="">Todas</option>
           <option *ngFor="let category of categories" [value]="category.id.toString()">
             {{ category.name }}
           </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Ubicación</label>
+        <select class="form-select" [(ngModel)]="locationFilter" (change)="applyFilters()">
+          <option value="">Todas</option>
+          <option value="Sitio 1">Sitio 1</option>
+          <option value="Sitio 2">Sitio 2</option>
+          <option value="Sitio 3">Sitio 3</option>
+          <option value="Sitio 4">Sitio 4</option>
+          <option value="Sitio 5">Sitio 5</option>
+          <option value="Sitio 6">Sitio 6</option>
         </select>
       </div>
 
@@ -78,7 +91,7 @@
           class="btn btn-outline-secondary btn-sm"
           (click)="clearFilters()"
         >
-          Limpiar Filtros
+          Limpiar
         </button>
       </div>
     </div>
@@ -323,38 +336,11 @@
       <div class="modal-content">
         <div class="modal-body">
           <!-- Header -->
-          <div
-            style="
-              background: white;
-              border-bottom: 1px solid orange;
-              padding: 1.5rem 2rem;
-              display: flex;
-              justify-content: flex-end;              
-            "
-          >
-            <h1
-              style="
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 1.5rem;
-                margin: 0;
-                font-weight: 400;
-              "
-            >
-              <span style="color: #1f2937; font-weight: 400">{{ editingMaterialId ? 'Editar' : 'Nuevo' }} </span>
-              <span style="color: #0066cc; font-weight: 700"
-                >MATERIAL COMPUESTO</span
-              >
-              <span
-                style="
-                  width: 8px;
-                  height: 8px;
-                  background-color: #ff6b35;
-                  border-radius: 50%;
-                  display: inline-block;
-                "
-              ></span>
+          <div class="form-header">
+            <h1 class="page-title">
+              <span class="title-normal">{{ editingMaterialId ? 'Editar' : 'Nuevo' }} </span>
+              <span class="title-bold">MATERIAL COMPUESTO</span>
+              <span class="title-dot"></span>
             </h1>
           </div>
 
@@ -368,180 +354,33 @@
               scrollbar-width: none !important;
             }
           </style>
-          <div
-            class="hide-scrollbar"
-            style="
-              flex: 1;
-              overflow: auto;
-              padding: 1rem 2rem 1rem 2rem;
-              background: #f5f5f5;
-              border-bottom: 1px solid orange;
-            "
-          >
+          <div class="hide-scrollbar mobile-layout">
             <!-- Step Indicator -->
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                max-width: 800px;
-                margin: 1.5rem auto;
-                padding: 0 2rem;
-              "
-            >
-              <div
-                style="
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  position: relative;
-                "
-              >
-                <div
-                  [style]="
-                    currentStep >= 1
-                      ? currentStep > 1
-                        ? 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #ff6b35; color: white; border: 2px solid #ff6b35; transition: all 0.3s ease;'
-                        : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #0066CC; color: white; border: 2px solid #0066CC; transition: all 0.3s ease;'
-                      : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #e5e7eb; color: #9ca3af; border: 2px solid #e5e7eb; transition: all 0.3s ease;'
-                  "
-                >
-                  1
-                </div>
-                <div
-                  [style]="
-                    currentStep >= 1
-                      ? currentStep > 1
-                        ? 'font-size: 0.75rem; color: #ff6b35; margin-top: 0.5rem; font-weight: 500;'
-                        : 'font-size: 0.75rem; color: #0066CC; margin-top: 0.5rem; font-weight: 600;'
-                      : 'font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; font-weight: 500;'
-                  "
-                >
-                  Info Básica
-                </div>
+            <div class="step-indicator">
+              <div class="step" [class.active]="currentStep >= 1" [class.current]="currentStep === 1" [class.completed]="currentStep > 1">
+                <div class="step-number">1</div>
+                <div class="step-label">Info Básica</div>
               </div>
-              <div
-                [style]="
-                  currentStep > 1
-                    ? 'width: 80px; height: 2px; background: #ff6b35; margin: 0 1rem; transition: all 0.3s ease;'
-                    : 'width: 80px; height: 2px; background: #e5e7eb; margin: 0 1rem; transition: all 0.3s ease;'
-                "
-              ></div>
-              <div
-                style="
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  position: relative;
-                "
-              >
-                <div
-                  [style]="
-                    currentStep >= 2
-                      ? currentStep > 2
-                        ? 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #ff6b35; color: white; border: 2px solid #ff6b35; transition: all 0.3s ease;'
-                        : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #0066CC; color: white; border: 2px solid #0066CC; transition: all 0.3s ease;'
-                      : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #e5e7eb; color: #9ca3af; border: 2px solid #e5e7eb; transition: all 0.3s ease;'
-                  "
-                >
-                  2
-                </div>
-                <div
-                  [style]="
-                    currentStep >= 2
-                      ? currentStep > 2
-                        ? 'font-size: 0.75rem; color: #ff6b35; margin-top: 0.5rem; font-weight: 500;'
-                        : 'font-size: 0.75rem; color: #0066CC; margin-top: 0.5rem; font-weight: 600;'
-                      : 'font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; font-weight: 500;'
-                  "
-                >
-                  Imágenes
-                </div>
+              <div class="step-connector" [class.completed]="currentStep > 1"></div>
+              <div class="step" [class.active]="currentStep >= 2" [class.current]="currentStep === 2" [class.completed]="currentStep > 2">
+                <div class="step-number">2</div>
+                <div class="step-label">Imágenes</div>
               </div>
-              <div
-                [style]="
-                  currentStep > 2
-                    ? 'width: 80px; height: 2px; background: #ff6b35; margin: 0 1rem; transition: all 0.3s ease;'
-                    : 'width: 80px; height: 2px; background: #e5e7eb; margin: 0 1rem; transition: all 0.3s ease;'
-                "
-              ></div>
-              <div
-                style="
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  position: relative;
-                "
-              >
-                <div
-                  [style]="
-                    currentStep >= 3
-                      ? currentStep > 3
-                        ? 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #ff6b35; color: white; border: 2px solid #ff6b35; transition: all 0.3s ease;'
-                        : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #0066CC; color: white; border: 2px solid #0066CC; transition: all 0.3s ease;'
-                      : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #e5e7eb; color: #9ca3af; border: 2px solid #e5e7eb; transition: all 0.3s ease;'
-                  "
-                >
-                  3
-                </div>
-                <div
-                  [style]="
-                    currentStep >= 3
-                      ? currentStep > 3
-                        ? 'font-size: 0.75rem; color: #ff6b35; margin-top: 0.5rem; font-weight: 500;'
-                        : 'font-size: 0.75rem; color: #0066CC; margin-top: 0.5rem; font-weight: 600;'
-                      : 'font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; font-weight: 500;'
-                  "
-                >
-                  Materiales
-                </div>
+              <div class="step-connector" [class.completed]="currentStep > 2"></div>
+              <div class="step" [class.active]="currentStep >= 3" [class.current]="currentStep === 3" [class.completed]="currentStep > 3">
+                <div class="step-number">3</div>
+                <div class="step-label">Materiales</div>
               </div>
-              <div
-                [style]="
-                  currentStep > 3
-                    ? 'width: 80px; height: 2px; background: #ff6b35; margin: 0 1rem; transition: all 0.3s ease;'
-                    : 'width: 80px; height: 2px; background: #e5e7eb; margin: 0 1rem; transition: all 0.3s ease;'
-                "
-              ></div>
-              <div
-                style="
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  position: relative;
-                "
-              >
-                <div
-                  [style]="
-                    currentStep >= 4
-                      ? 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #0066CC; color: white; border: 2px solid #0066CC; transition: all 0.3s ease;'
-                      : 'width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; background: #e5e7eb; color: #9ca3af; border: 2px solid #e5e7eb; transition: all 0.3s ease;'
-                  "
-                >
-                  4
-                </div>
-                <div
-                  [style]="
-                    currentStep >= 4
-                      ? 'font-size: 0.75rem; color: #0066CC; margin-top: 0.5rem; font-weight: 600;'
-                      : 'font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem; font-weight: 500;'
-                  "
-                >
-                  Resumen
-                </div>
+              <div class="step-connector" [class.completed]="currentStep > 3"></div>
+              <div class="step" [class.active]="currentStep >= 4" [class.current]="currentStep === 4">
+                <div class="step-number">4</div>
+                <div class="step-label">Resumen</div>
               </div>
             </div>
 
             <!-- Step 1: Basic Information -->
             <div class="step-content" *ngIf="currentStep === 1">
-              <div
-                style="
-                  background: white;
-                  border-radius: 12px;
-                  padding: 2rem;
-                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                "
-              >
+              <div class="form-step">
                 <h4>Información del Material</h4>
                 <div class="form-row">
                   <div class="form-group">
@@ -714,14 +553,7 @@
 
             <!-- Step 2: Images -->
             <div class="step-content" *ngIf="currentStep === 2">
-              <div
-                style="
-                  background: white;
-                  border-radius: 12px;
-                  padding: 2rem;
-                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                "
-              >
+              <div class="form-step">
                 <h4>Imágenes del Material</h4>
                 <div class="form-row">
                   <div class="form-group full-width">
@@ -740,14 +572,7 @@
 
             <!-- Step 3: Materials -->
             <div class="step-content" *ngIf="currentStep === 3">
-              <div
-                style="
-                  background: white;
-                  border-radius: 12px;
-                  padding: 2rem;
-                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                "
-              >
+              <div class="form-step">
                 <h4>Materiales</h4>
 
                 <!-- Materials Header -->
@@ -1044,14 +869,7 @@
 
             <!-- Step 4: Materials & Summary -->
             <div class="step-content" *ngIf="currentStep === 4">
-              <div
-                style="
-                  background: white;
-                  border-radius: 12px;
-                  padding: 2rem;
-                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                "
-              >
+              <div class="form-step">
                 <h4>Resumen del Material Compuesto</h4>
                 <div class="summary-card">
                   <div class="summary-row">

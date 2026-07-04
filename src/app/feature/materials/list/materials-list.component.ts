@@ -39,7 +39,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     priceRange: [0, 1000],
     stockStatus: 'all',
     status: 'all',
-    categoryId: ''
+    categoryId: '',
+    location: ''
   };
 
   // Sorting
@@ -176,7 +177,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
       priceRange: [0, 1000],
       stockStatus: 'all',
       status: 'all',
-      categoryId: ''
+      categoryId: '',
+      location: ''
     };
     this.onFilterChange();
   }

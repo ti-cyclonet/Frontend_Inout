@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProductService } from '../../shared/services/product.service';
+import { CategoryService, Category } from '../../shared/services/category/category.service';
 import { ProductFormComponent } from './form/product-form.component';
 import { NumberFormatPipe } from '../../shared/pipes/number-format.pipe';
 import Swal from 'sweetalert2';
@@ -16,6 +17,7 @@ import Swal from 'sweetalert2';
 })
 export class ProductsListComponent implements OnInit {
   products: any[] = [];
+  categories: Category[] = [];
   showModal = false;
   editingProduct: any = null;
   Math = Math;
@@ -29,6 +31,8 @@ export class ProductsListComponent implements OnInit {
   viewMode: 'table' | 'cards' = 'table';
   searchFilter = '';
   statusFilter = 'all';
+  categoryFilter = '';
+  locationFilter = '';
 
   currentImageIndex: Map<string, number> = new Map();
   imageErrors: Set<string> = new Set();
@@ -39,12 +43,14 @@ export class ProductsListComponent implements OnInit {
 
   constructor(
     private productService: ProductService,
+    private categoryService: CategoryService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.loadViewMode();
     this.loadProducts();
+    this.loadCategories();
   }
 
   loadViewMode(): void {
@@ -147,6 +153,16 @@ export class ProductsListComponent implements OnInit {
   clearFilters(): void {
     this.searchFilter = '';
     this.statusFilter = 'all';
+    this.categoryFilter = '';
+    this.locationFilter = '';
+    this.loadProducts();
+  }
+
+  loadCategories(): void {
+    this.categoryService.getAll().subscribe({
+      next: (categories: Category[]) => this.categories = categories,
+      error: () => this.categories = []
+    });
   }
 
   getStockStatusClass(product: any): string {

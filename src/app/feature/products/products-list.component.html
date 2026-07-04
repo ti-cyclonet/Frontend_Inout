@@ -9,19 +9,17 @@
     </div>
 
     <div class="header-actions">
-      <button
-        class="btn btn-outline-secondary"
-        (click)="showFilters = !showFilters"
-      >
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+      <a class="action-link" (click)="showFilters = !showFilters" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
         </svg>
         Filtros
-      </button>
+      </a>
 
       <div class="view-toggle">
         <button
           class="btn btn-sm"
+          style="border-radius:0 !important;"
           [class.btn-primary]="viewMode === 'table'"
           [class.btn-outline-primary]="viewMode !== 'table'"
           (click)="setViewMode('table')"
@@ -33,6 +31,7 @@
         </button>
         <button
           class="btn btn-sm"
+          style="border-radius:0 !important;"
           [class.btn-primary]="viewMode === 'cards'"
           [class.btn-outline-primary]="viewMode !== 'cards'"
           (click)="setViewMode('cards')"
@@ -44,12 +43,12 @@
         </button>
       </div>
 
-      <button class="btn btn-primary" (click)="openCreateModal()">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+      <a class="action-link action-link-primary" (click)="openCreateModal()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
         </svg>
         Agregar Producto
-      </button>
+      </a>
     </div>
   </div>
 
@@ -62,8 +61,31 @@
           type="text"
           class="form-control"
           [(ngModel)]="searchFilter"
-          placeholder="Buscar por nombre o descripción..."
+          placeholder="Nombre o descripción..."
         />
+      </div>
+
+      <div class="filter-group">
+        <label>Categoría</label>
+        <select class="form-select" [(ngModel)]="categoryFilter" (change)="loadProducts()">
+          <option value="">Todas</option>
+          <option *ngFor="let category of categories" [value]="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Ubicación</label>
+        <select class="form-select" [(ngModel)]="locationFilter" (change)="loadProducts()">
+          <option value="">Todas</option>
+          <option value="Sitio 1">Sitio 1</option>
+          <option value="Sitio 2">Sitio 2</option>
+          <option value="Sitio 3">Sitio 3</option>
+          <option value="Sitio 4">Sitio 4</option>
+          <option value="Sitio 5">Sitio 5</option>
+          <option value="Sitio 6">Sitio 6</option>
+        </select>
       </div>
 
       <div class="filter-actions">
@@ -71,7 +93,7 @@
           class="btn btn-outline-secondary btn-sm"
           (click)="clearFilters()"
         >
-          Limpiar Filtros
+          Limpiar
         </button>
       </div>
     </div>

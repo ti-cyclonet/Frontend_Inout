@@ -143,16 +143,33 @@
             <thead>
               <tr>
                 <th>Parámetro</th>
-                <th>Valor</th>
-                <th>Descripción</th>
-                <th>Estado</th>
+                <th class="d-none d-md-table-cell">Valor</th>
+                <th class="d-none d-lg-table-cell">Descripción</th>
+                <th class="d-none d-md-table-cell">Estado</th>
                 <th class="text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let param of parametrosPaginados" [ngClass]="{'table-warning': param.editando}">
-                <td>{{ param.nombre }}</td>
                 <td>
+                  {{ param.nombre }}
+                  <!-- Móvil: mostrar valor y estado inline -->
+                  <div class="d-md-none" *ngIf="!param.editando">
+                    <span class="badge bg-primary me-1">{{ formatNumber(param.valor) }}</span>
+                    <span class="badge" [ngClass]="param.estado === 'ACTIVE' ? 'bg-success' : 'bg-secondary'">
+                      {{ param.estado === 'ACTIVE' ? 'ACTIVO' : 'INACTIVO' }}
+                    </span>
+                  </div>
+                  <!-- Móvil: input de edición inline -->
+                  <div class="d-md-none mt-1" *ngIf="param.editando">
+                    <input type="text" class="form-control form-control-sm" 
+                           [(ngModel)]="param.valor"
+                           (input)="formatInputNumber($event, param)"
+                           (keyup.enter)="guardarValor(param)"
+                           placeholder="Valor">
+                  </div>
+                </td>
+                <td class="d-none d-md-table-cell">
                   <span *ngIf="!param.editando" class="badge bg-primary">{{ formatNumber(param.valor) }}</span>
                   <input *ngIf="param.editando" type="text" class="form-control form-control-sm" 
                          [(ngModel)]="param.valor"
@@ -161,8 +178,8 @@
                          (keyup.enter)="guardarValor(param)"
                          style="min-width: 80px;">
                 </td>
-                <td>{{ param.descripcion }}</td>
-                <td>
+                <td class="d-none d-lg-table-cell">{{ param.descripcion }}</td>
+                <td class="d-none d-md-table-cell">
                   <button type="button" 
                           class="btn" 
                           style="border: none; background: none; padding: 0;"
@@ -176,24 +193,36 @@
                 <td>
                   <div class="d-flex align-items-center justify-content-center gap-2">
                     <ng-container *ngIf="!param.editando">
-                      <button type="button" class="btn-icon" (click)="editarParametro(param)" title="Edit">
+                      <button type="button" class="btn-icon d-none d-md-inline-flex" (click)="editarParametro(param)" title="Editar">
+                        <svg width="16" height="16" fill="currentColor" class="text-primary">
+                          <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                        </svg>
+                      </button>
+                      <!-- Mobile: editar + toggle estado -->
+                      <button type="button" class="btn-icon d-md-none" (click)="editarParametro(param)" title="Editar">
                         <svg width="16" height="16" fill="currentColor" class="text-primary">
                           <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
                         </svg>
                       </button>
                     </ng-container>
                     <ng-container *ngIf="param.editando">
-                      <button type="button" class="btn-icon" (click)="guardarValor(param)" title="Save">
+                      <button type="button" class="btn-icon" (click)="guardarValor(param)" title="Guardar">
                         <svg width="16" height="16" fill="currentColor" class="text-success">
                           <use xlink:href="./assets/icons/bootstrap-icons.svg#check" />
                         </svg>
                       </button>
-                      <button type="button" class="btn-icon" (click)="cancelarEdicion(param)" title="Cancel">
+                      <button type="button" class="btn-icon" (click)="cancelarEdicion(param)" title="Cancelar">
                         <svg width="16" height="16" fill="currentColor" class="text-secondary">
                           <use xlink:href="./assets/icons/bootstrap-icons.svg#x" />
                         </svg>
                       </button>
                     </ng-container>
+                    <!-- Mobile: toggle estado siempre visible -->
+                    <button type="button" class="btn-icon d-md-none ms-2" (click)="cambiarEstadoParametro(param)" title="Cambiar estado">
+                      <svg width="16" height="16" fill="currentColor" [class.text-success]="param.estado === 'ACTIVE'" [class.text-secondary]="param.estado !== 'ACTIVE'">
+                        <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (param.estado === 'ACTIVE' ? 'toggle-on' : 'toggle-off')" />
+                      </svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -337,33 +366,30 @@
       </div>
       <div class="modal-body">
         <!-- Filtros -->
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <input type="text" class="form-control" [(ngModel)]="filtroNombre" placeholder="Buscar por nombre..." (input)="aplicarFiltros()">
-          </div>
-          <div class="col-md-4">
+        <div class="mb-3">
+          <input type="text" class="form-control mb-2" [(ngModel)]="filtroNombre" placeholder="Buscar por nombre..." (input)="aplicarFiltros()">
+          <div class="d-flex gap-2">
             <select class="form-select" [(ngModel)]="filtroTipo" (change)="aplicarFiltros()">
               <option value="">Todos los tipos</option>
               <option value="number">Numérico</option>
               <option value="string">Texto</option>
             </select>
-          </div>
-          <div class="col-md-4">
-            <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#createParameterModal">
+            <button class="btn btn-primary flex-shrink-0" data-bs-toggle="modal" data-bs-target="#createParameterModal">
               <svg width="16" height="16" fill="currentColor" class="me-1">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
               </svg>
-              Crear Nuevo
+              <span class="d-none d-sm-inline">Crear Nuevo</span>
+              <span class="d-sm-none">Nuevo</span>
             </button>
           </div>
         </div>
         
-        <!-- Tabla de parámetros disponibles -->
-        <div class="table-responsive">
+        <!-- Tabla de parámetros disponibles (desktop) -->
+        <div class="table-responsive d-none d-md-block">
           <table class="table table-hover">
             <thead>
               <tr>
-                <th>Seleccionar</th>
+                <th style="width:40px;"></th>
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Tipo</th>
@@ -381,14 +407,15 @@
                 <td>{{ param.description }}</td>
                 <td>
                   <span class="badge" [ngClass]="param.dataType === 'number' ? 'bg-info' : 'bg-secondary'">
-                    {{ param.dataType === 'number' ? 'NUMÉRICO' : 'TEXTO' }}
+                    {{ param.dataType === 'number' ? 'NUM' : 'TXT' }}
                   </span>
                 </td>
                 <td>
                   <input type="text" class="form-control form-control-sm" 
                          [(ngModel)]="param.value" 
-                         [placeholder]="param.dataType === 'number' ? 'Ex: 19' : 'Ex: COP'"
-                         [disabled]="!param.selected">
+                         [placeholder]="param.dataType === 'number' ? 'Ej: 19' : 'Ej: COP'"
+                         [disabled]="!param.selected"
+                         style="width: 90px;">
                 </td>
               </tr>
               <tr *ngIf="parametrosDisponiblesFiltrados.length === 0">
@@ -396,6 +423,28 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Lista de parámetros (móvil) -->
+        <div class="d-md-none">
+          <div *ngFor="let param of parametrosDisponiblesFiltrados"
+               class="border rounded p-2 mb-2" [class.border-primary]="param.selected" [class.bg-light]="param.selected">
+            <div class="d-flex align-items-center mb-1">
+              <input type="checkbox" class="form-check-input me-2" 
+                     [(ngModel)]="param.selected">
+              <strong class="flex-grow-1">{{ param.name }}</strong>
+              <span class="badge ms-2" [ngClass]="param.dataType === 'number' ? 'bg-info' : 'bg-secondary'">
+                {{ param.dataType === 'number' ? 'NUM' : 'TXT' }}
+              </span>
+            </div>
+            <small class="text-muted d-block mb-1" *ngIf="param.description">{{ param.description }}</small>
+            <div *ngIf="param.selected">
+              <input type="text" class="form-control form-control-sm" 
+                     [(ngModel)]="param.value" 
+                     [placeholder]="param.dataType === 'number' ? 'Ej: 19' : 'Ej: COP'">
+            </div>
+          </div>
+          <p *ngIf="parametrosDisponiblesFiltrados.length === 0" class="text-center text-muted">No hay parámetros disponibles</p>
         </div>
       </div>
       <div class="modal-footer">

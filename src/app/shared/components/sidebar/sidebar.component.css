@@ -71,6 +71,10 @@
     position: relative; /* Para posicionar el badge */
 }
 
+.menu-item:first-child {
+    margin-top: 1rem;
+}
+
 .icon-container {
     width: 45px;
     height: 45px;

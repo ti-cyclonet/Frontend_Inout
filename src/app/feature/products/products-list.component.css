@@ -36,6 +36,40 @@
   gap: 0.75rem;
 }
 
+.action-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #6c757d;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.action-link svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+.action-link:hover {
+  color: #495057;
+}
+
+.action-link.action-link-primary {
+  color: #0066cc;
+}
+
+.action-link.action-link-primary svg {
+  fill: #0066cc;
+}
+
+.action-link.action-link-primary:hover {
+  color: #004a99;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -113,7 +147,7 @@
 
 .view-toggle {
   display: flex;
-  border-radius: 6px;
+  border-radius: 0;
   overflow: hidden;
   border: 1px solid #dee2e6;
 }
@@ -129,22 +163,26 @@
 }
 
 .filters-panel {
-  background: white;
+  background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  position: relative;
+  z-index: 100;
+  padding: 0 1.5rem;
 }
 
 .filters-panel.show {
-  max-height: 200px;
+  max-height: 500px;
+  overflow: visible;
+  padding: 1rem 1.5rem;
 }
 
 .filters-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  padding: 1rem 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
   align-items: end;
 }
 
@@ -162,7 +200,8 @@
 
 .filter-actions {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
+  margin-top: 1.25rem;
 }
 
 .table-container {
@@ -622,6 +661,20 @@
 
   .filters-content {
     grid-template-columns: 1fr;
+  }
+
+  .filters-panel.show {
+    padding: 0.75rem 1rem 0.5rem 1rem;
+  }
+
+  .products-list-wrapper {
+    height: auto;
+    min-height: calc(100vh - 200px);
+  }
+
+  .empty-state {
+    padding: 1rem;
+    flex: none;
   }
 
   .cards-container {

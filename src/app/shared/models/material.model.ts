@@ -53,6 +53,7 @@ export interface MaterialFilters {
   stockStatus: 'low' | 'normal' | 'high' | 'all';
   status: 'active' | 'inactive' | 'all';
   categoryId?: string;
+  location?: string;
 }
 
 export interface MaterialMetrics {
