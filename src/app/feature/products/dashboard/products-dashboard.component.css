@@ -20,20 +20,34 @@
   background: white;
   padding: 1.0rem 1.5rem 1.0rem 2rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .page-subtitle-row {
+    padding: 0.75rem 1rem;
+  }
+  .page-subtitle-row .page-subtitle {
+    width: 100%;
+  }
+  .page-subtitle-row .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 
 .page-subtitle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  /* padding: 1rem 0; */
+  gap: 0.3rem;
   color: #6c757d;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
 }
 
 .page-subtitle svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   fill: #6c757d;
 }
 

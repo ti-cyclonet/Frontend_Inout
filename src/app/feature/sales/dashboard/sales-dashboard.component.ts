@@ -21,7 +21,7 @@ import { SalesService } from '../../../shared/services/sales.service';
             <svg viewBox="0 0 16 16" width="16" height="16">
               <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use>
             </svg>
-            Nueva Venta
+            Venta
           </a>
         </div>
       </div>
@@ -83,13 +83,13 @@ import { SalesService } from '../../../shared/services/sales.service';
       background: white;
       border-bottom: 1px solid #e9ecef;
       flex-wrap: wrap;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     .title-container {
       display: flex;
       align-items: center;
-      font-size: 1rem;
+      font-size: 0.78rem;
       color: #6E6E6E;
       gap: 0.3rem;
     }
@@ -98,6 +98,19 @@ import { SalesService } from '../../../shared/services/sales.service';
       display: flex;
       align-items: center;
       gap: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .list-header {
+        padding: 0.75rem 1rem;
+      }
+      .list-header .title-container {
+        width: 100%;
+      }
+      .list-header .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
     }
 
     .action-link {

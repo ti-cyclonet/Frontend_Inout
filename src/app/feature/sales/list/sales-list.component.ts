@@ -27,11 +27,26 @@ import { KardexService } from '../../../shared/services/kardex.service';
             Filtros
           </a>
 
+          <div class="view-toggle">
+            <button class="btn btn-sm" style="border-radius:0 !important;"
+              [class.btn-primary]="viewMode === 'table'"
+              [class.btn-outline-primary]="viewMode !== 'table'"
+              (click)="viewMode = 'table'">
+              <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#table" /></svg>
+            </button>
+            <button class="btn btn-sm" style="border-radius:0 !important;"
+              [class.btn-primary]="viewMode === 'cards'"
+              [class.btn-outline-primary]="viewMode !== 'cards'"
+              (click)="viewMode = 'cards'">
+              <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" /></svg>
+            </button>
+          </div>
+
           <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
             <svg viewBox="0 0 16 16" width="16" height="16">
               <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
             </svg>
-            Nueva Venta
+            Venta
           </a>
         </div>
       </div>
@@ -222,13 +237,13 @@ import { KardexService } from '../../../shared/services/kardex.service';
     .title-container {
       display: flex;
       align-items: center;
-      font-size: 1rem;
+      font-size: 0.78rem;
       color: #6E6E6E;
     }
     
     .title-container svg {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
       margin-right: 0.3rem;
       fill: #6E6E6E;
     }
@@ -237,6 +252,23 @@ import { KardexService } from '../../../shared/services/kardex.service';
       display: flex;
       align-items: center;
       gap: 0.75rem;
+    }
+
+    .view-toggle {
+      display: flex;
+      border-radius: 0;
+      overflow: hidden;
+      border: 1px solid #dee2e6;
+    }
+
+    .view-toggle .btn {
+      border-radius: 0;
+      border: none;
+      border-right: 1px solid #dee2e6;
+    }
+
+    .view-toggle .btn:last-child {
+      border-right: none;
     }
 
     .action-link {
@@ -639,6 +671,7 @@ export class SalesListComponent implements OnInit {
   loading = false;
   searchTerm = '';
   showFilters = false;
+  viewMode: 'table' | 'cards' = 'table';
   showViewModal = false;
 
   constructor(private salesService: SalesService, private productsService: ProductsService, private kardexService: KardexService) {}
