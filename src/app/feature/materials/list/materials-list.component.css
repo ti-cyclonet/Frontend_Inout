@@ -738,7 +738,7 @@
   align-items: center;
   gap: 0.4rem;
   color: #6c757d;
-  font-size: 0.875rem;
+  font-size: 15px;
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
@@ -788,11 +788,11 @@
   }
 
   .action-link {
-    font-size: 0.78rem;
+    font-size: 14px;
   }
 
   .action-link svg {
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
   }
 }

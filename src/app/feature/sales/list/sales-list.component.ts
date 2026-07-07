@@ -245,7 +245,7 @@ import { KardexService } from '../../../shared/services/kardex.service';
       gap: 0.4rem;
       color: #6c757d;
       font-weight: 500;
-      font-size: 0.875rem;
+      font-size: 15px;
       text-decoration: none;
       white-space: nowrap;
     }
