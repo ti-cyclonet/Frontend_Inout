@@ -20,13 +20,13 @@
 .title-container {
   display: flex;
   align-items: center;
-  font-size: 1rem;
+  font-size: 0.78rem;
   color: #6E6E6E;
 }
 
 .title-container svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   margin-right: 0.3rem;
   fill: #6E6E6E;
 }
