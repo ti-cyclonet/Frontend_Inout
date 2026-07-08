@@ -75,6 +75,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   categoryFilter = '';
   categorySearch = '';
   showCategoryDropdown = false;
+  selectedViewMaterial: any = null;
   
   private readonly VIEW_MODE_KEY = 'materials_composition_view_mode';
   
@@ -651,6 +652,10 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         code: material.strCode
       }
     });
+  }
+
+  viewCompositeMaterial(material: any): void {
+    this.selectedViewMaterial = material;
   }
 
   editMaterial(materialIdOrObject: any): void {

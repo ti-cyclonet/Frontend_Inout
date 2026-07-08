@@ -151,7 +151,7 @@
       <table class="table materials-table">
         <thead *ngIf="materials.length > 0">
           <tr>
-            <th class="checkbox-col">
+            <th class="checkbox-col hide-mobile">
               <input 
                 type="checkbox" 
                 [checked]="selectedMaterials.size === materials.length && materials.length > 0"
@@ -164,28 +164,29 @@
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
               </svg>
             </th>
-            <th class="d-none d-md-table-cell">Código</th>
-            <th class="d-none d-md-table-cell">Descripción</th>
-            <th (click)="onSort('currentStock')" class="sortable text-center">
+            <th class="col-code">Código</th>
+            <th class="col-description">Descripción</th>
+            <th (click)="onSort('currentStock')" class="sortable text-center d-none d-md-table-cell">
               Stock
               <svg viewBox="0 0 16 16" class="sort-icon">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
               </svg>
             </th>
-            <th (click)="onSort('price')" class="sortable text-center">
+            <th (click)="onSort('price')" class="sortable text-center d-none d-md-table-cell">
               Precio
               <svg viewBox="0 0 16 16" class="sort-icon">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
               </svg>
             </th>
-            <th class="text-center hide-mobile">Estado</th>
+            <th class="text-center col-status">Estado</th>
+            <th class="text-center hide-mobile">Vencimiento</th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let material of materials; trackBy: trackById" 
               [class.selected]="selectedMaterials.has(material.id)">
-            <td>
+            <td class="hide-mobile">
               <input 
                 type="checkbox" 
                 [checked]="selectedMaterials.has(material.id)"
@@ -209,13 +210,13 @@
                 </div>
               </div>
             </td>
-            <td class="d-none d-md-table-cell">
+            <td class="col-code">
               <span class="text-muted">{{ material['strCode'] || 'N/A' }}</span>
             </td>
-            <td class="d-none d-md-table-cell">
+            <td class="col-description">
               <span class="description-text">{{ material.description }}</span>
             </td>
-            <td class="text-center">
+            <td class="text-center d-none d-md-table-cell">
               <div class="stock-info">
                 <span class="stock-value" [ngClass]="getStockStatusClass(material)">
                   {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}
@@ -223,17 +224,25 @@
                 <small class="text-muted d-block">Min: {{ (material.ingMinStock || material.stockMin || 0) | numberFormat:2 }} | Max: {{ (material.ingMaxStock || material.stockMax || 0) | numberFormat:2 }}</small>
               </div>
             </td>
-            <td class="text-center">
+            <td class="text-center d-none d-md-table-cell">
               <span class="price-value">${{ material.price | numberFormat:2 }}</span>
             </td>
-            <td class="text-center hide-mobile">
+            <td class="text-center col-status">
               <span class="status-badge" [ngClass]="'status-' + material.status">
                 {{ material.status }}
               </span>
             </td>
+            <td class="text-center hide-mobile">
+              <ng-container *ngIf="getExpirationStatus(material.expirationDate) !== 'none'">
+                <span class="expiration-badge" [ngClass]="getExpirationStatus(material.expirationDate)">
+                  {{ getExpirationLabel(getExpirationStatus(material.expirationDate)) }}
+                </span>
+                <small class="text-muted d-block">{{ material.expirationDate | date:'dd/MM/yyyy' }}</small>
+              </ng-container>
+            </td>
             <td class="text-center">
               <div class="action-buttons">
-                <button class="btn btn-sm btn-outline-primary" (click)="goToKardex(material)" title="Ver Kardex">
+                <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" (click)="goToKardex(material)" title="Ver Kardex">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
                   </svg>
@@ -243,12 +252,12 @@
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(material)" title="Editar">
+                <button class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex" (click)="editMaterial(material)" title="Editar">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" (click)="deleteMaterial(material)" title="Eliminar">
+                <button class="btn btn-sm btn-outline-danger d-none d-md-inline-flex" (click)="deleteMaterial(material)" title="Eliminar">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
                   </svg>
@@ -258,6 +267,29 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Mobile List View -->
+  <div class="mobile-list" *ngIf="materials.length > 0">
+    <div class="mobile-list-item" *ngFor="let material of materials; trackBy: trackById" (click)="viewMaterial(material)">
+      <div class="mobile-list-info">
+        <div class="mobile-list-image">
+          <img *ngIf="material.images && material.images.length > 0" 
+               [src]="material.images[0].strImageUrl || material.images[0].url" 
+               [alt]="material.name">
+          <svg *ngIf="!material.images || material.images.length === 0" viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#image" />
+          </svg>
+        </div>
+        <div class="mobile-list-text">
+          <strong>{{ material.name }}</strong>
+          <small class="text-muted">{{ material['strCode'] || '' }} · {{ material.measurementUnit }}</small>
+        </div>
+      </div>
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="#6c757d">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+      </svg>
     </div>
   </div>
 
@@ -312,6 +344,13 @@
             <label>Precio</label>
             <span class="value">${{ material.price | numberFormat:2 }}</span>
           </div>
+        </div>
+        
+        <div class="card-expiration" *ngIf="getExpirationStatus(material.expirationDate) !== 'none'">
+          <span class="expiration-badge" [ngClass]="getExpirationStatus(material.expirationDate)">
+            {{ getExpirationLabel(getExpirationStatus(material.expirationDate)) }}
+          </span>
+          <small class="text-muted">Vence: {{ material.expirationDate | date:'dd/MM/yyyy' }}</small>
         </div>
       </div>
       
@@ -386,3 +425,81 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Ver Material -->
+<div class="modal fade" [class.show]="selectedViewMaterial" [style.display]="selectedViewMaterial ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" *ngIf="selectedViewMaterial">
+      <div class="modal-header py-2" style="border-bottom: 1px solid orange;">
+        <h6 class="modal-title mb-0">
+          <span class="text-primary fw-bold">{{ selectedViewMaterial.name }}</span>
+          <span style="color: #ff8000"> ●</span>
+        </h6>
+        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="view-detail-grid">
+          <div class="view-detail-item">
+            <span class="view-label">Código</span>
+            <span class="view-value fw-bold">{{ selectedViewMaterial['strCode'] || 'N/A' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Unidad de Medida</span>
+            <span class="view-value">{{ selectedViewMaterial.measurementUnit }}</span>
+          </div>
+          <div class="view-detail-item full">
+            <span class="view-label">Descripción</span>
+            <span class="view-value">{{ selectedViewMaterial.description || 'Sin descripción' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock Actual</span>
+            <span class="view-value fw-bold" [ngClass]="getStockStatusClass(selectedViewMaterial)">
+              {{ (selectedViewMaterial.ingQuantity || selectedViewMaterial.currentStock || 0) | numberFormat:2 }}
+            </span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Precio</span>
+            <span class="view-value">${{ selectedViewMaterial.price | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock Mín.</span>
+            <span class="view-value">{{ (selectedViewMaterial.ingMinStock || selectedViewMaterial.stockMin || 0) | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock Máx.</span>
+            <span class="view-value">{{ (selectedViewMaterial.ingMaxStock || selectedViewMaterial.stockMax || 0) | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Ubicación</span>
+            <span class="view-value">{{ selectedViewMaterial.ubicacion || selectedViewMaterial.location || 'N/A' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Estado</span>
+            <span class="status-badge" [ngClass]="'status-' + selectedViewMaterial.status">{{ selectedViewMaterial.status }}</span>
+          </div>
+          <div class="view-detail-item full" *ngIf="selectedViewMaterial.expirationDate">
+            <span class="view-label">Vencimiento</span>
+            <span class="view-value">
+              {{ selectedViewMaterial.expirationDate | date:'dd/MM/yyyy' }}
+              <span class="expiration-badge ms-2" [ngClass]="getExpirationStatus(selectedViewMaterial.expirationDate)">
+                {{ getExpirationLabel(getExpirationStatus(selectedViewMaterial.expirationDate)) }}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2" style="border-top: 1px solid orange;">
+        <button class="btn btn-sm btn-outline-primary" (click)="goToKardex(selectedViewMaterial)">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" /></svg>
+          Kardex
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(selectedViewMaterial)">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg>
+          Editar
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="closeViewModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="selectedViewMaterial" *ngIf="selectedViewMaterial"></div>

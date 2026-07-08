@@ -1,4 +1,4 @@
-<div class="container-fluid p-0">
+﻿﻿<div class="container-fluid p-0">
   <div class="card shadow-sm kardex-card" style="border: 1px solid white;">
     <div class="card-header bg-white d-flex justify-content-end align-items-center py-2"
       style="border-bottom: 1px solid orange"
@@ -9,7 +9,14 @@
       </h5>
     </div>
     <div class="card-body p-4">
-      <p class="text-dark mb-3">
+      <!-- Description toggle for mobile -->
+      <a class="d-md-none description-toggle mb-2" (click)="showDescription = !showDescription" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+          <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showDescription ? 'eye-slash' : 'eye')" />
+        </svg>
+        Descripción
+      </a>
+      <p class="text-dark mb-3 kardex-description" [class.d-none]="!showDescription" [class.d-md-block]="true">
         Registra en detalle los movimientos de entrada y salida de materiales,
         materiales compuestos y productos dentro de un almacén o empresa. Proporciona un historial actualizado del
         stock disponible, facilitando el control y gestión del inventario.
@@ -17,8 +24,8 @@
 
       <!-- Search Section -->
       <div class="search-section">
-        <div class="d-flex align-items-end gap-3">
-          <div style="flex: 0 0 200px;">
+        <div class="search-row">
+          <div class="search-field entity-type-field">
             <label class="search-label">Tipo de entidad</label>
             <select class="form-select" [(ngModel)]="entityType" (change)="onEntityTypeChange()" style="height: 40px;">
               <option value="material">Material</option>
@@ -27,7 +34,7 @@
             </select>
           </div>
           
-          <div style="flex: 0 0 auto;">
+          <div class="search-field search-type-field">
             <label class="search-label">Campo de consulta</label>
             <div class="d-flex gap-3 align-items-center" style="border: 1px solid #ced4da; border-radius: 6px; padding: 0.5rem 0.75rem; background: white; min-height: 40px;">
               <label class="radio-option" style="margin-bottom: 0;">
@@ -55,7 +62,7 @@
             </div>
           </div>
           
-          <div class="flex-grow-1">
+          <div class="search-field search-input-field">
             <label class="search-label">Términos de búsqueda</label>
             <div class="input-group">
               <span class="input-group-text" *ngIf="searchType === 'code'">
@@ -86,7 +93,9 @@
       <!-- Material Details -->
       <div *ngIf="selectedMaterial" class="mb-3">
         <h6 class="search-details-title">Detalles de búsqueda</h6>
-        <div class="search-details-container">
+        
+        <!-- Desktop table -->
+        <div class="search-details-container d-none d-md-block">
           <table class="search-details-table">
             <tbody>
               <tr class="first-row">
@@ -145,44 +154,102 @@
                 </td>
                 <td class="stacked-cell" colspan="3">
                   <div class="label-text text-center">Precio</div>
-                  <div class="value-text text-center">
-                    $ {{ formatNumber(selectedMaterial.price) }}
-                  </div>
+                  <div class="value-text text-center" style="white-space:nowrap;">${{ formatNumber(selectedMaterial.price) }}</div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Mobile details -->
+        <div class="d-md-none mobile-details">
+          <div class="mobile-detail-row">
+            <div class="mobile-detail-item full-width">
+              <span class="mobile-detail-label">Código</span>
+              <span class="mobile-detail-value fw-bold">{{ selectedMaterial.code }}</span>
+            </div>
+          </div>
+          <div class="mobile-detail-row">
+            <div class="mobile-detail-item full-width">
+              <span class="mobile-detail-label">Nombre</span>
+              <span class="mobile-detail-value fw-bold">{{ selectedMaterial.name }}</span>
+            </div>
+          </div>
+          <div class="mobile-detail-row">
+            <div class="mobile-detail-item">
+              <span class="mobile-detail-label">U. Medida</span>
+              <span class="mobile-detail-value">{{ selectedMaterial.measureUnit }}</span>
+            </div>
+            <div class="mobile-detail-item">
+              <span class="mobile-detail-label">U. Descarga</span>
+              <span class="mobile-detail-value">{{ selectedMaterial.dischargeUnit || selectedMaterial.measureUnit }}</span>
+            </div>
+          </div>
+          <div class="mobile-detail-row">
+            <div class="mobile-detail-item">
+              <span class="mobile-detail-label">Ubicación</span>
+              <span class="mobile-detail-value">{{ selectedMaterial.location }}</span>
+            </div>
+            <div class="mobile-detail-item">
+              <span class="mobile-detail-label">Precio</span>
+              <span class="mobile-detail-value">${{ formatNumber(selectedMaterial.price) }}</span>
+            </div>
+          </div>
+          <div class="mobile-detail-row">
+            <div class="mobile-detail-item">
+              <span class="mobile-detail-label">Stock Mín.</span>
+              <span class="mobile-detail-value">{{ formatNumber(selectedMaterial.stockMin) }}</span>
+            </div>
+            <div class="mobile-detail-item">
+              <span class="mobile-detail-label">Stock Máx.</span>
+              <span class="mobile-detail-value">{{ formatNumber(selectedMaterial.stockMax) }}</span>
+            </div>
+          </div>
+          <div class="mobile-detail-row">
+            <div class="mobile-detail-item full-width">
+              <span class="mobile-detail-label">Saldo</span>
+              <span class="mobile-detail-value balance-box">{{ formatNumber(selectedMaterial.balance) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="text-primary mb-0">Todos los registros</h6>
+      <div class="kardex-actions-row mb-3">
+        <h6 class="text-primary mb-0 kardex-actions-title">Todos los registros</h6>
         <div class="d-flex gap-2">
           <button
             class="btn btn-outline-success btn-sm"
             (click)="exportToExcel()"
             [disabled]="!selectedMaterial || movements.length === 0"
+            title="Exportar Excel"
           >
-            <svg width="16" height="16" fill="currentColor" class="me-1">
+            <svg width="16" height="16" fill="currentColor">
               <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-excel" />
             </svg>
-            Exportar Excel
+            <span class="btn-label">Exportar Excel</span>
           </button>
           <button
             class="btn btn-outline-primary btn-sm"
             (click)="newEntry()"
+            title="Nueva Entrada"
           >
-            Nueva Entrada
+            <svg width="16" height="16" fill="currentColor">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-in-down" />
+            </svg>
+            <span class="btn-label">Entrada</span>
           </button>
-          <button class="btn btn-outline-danger btn-sm" (click)="newOutput()">
-            Nueva Salida
+          <button class="btn btn-outline-danger btn-sm" (click)="newOutput()" title="Nueva Salida">
+            <svg width="16" height="16" fill="currentColor">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-up" />
+            </svg>
+            <span class="btn-label">Salida</span>
           </button>
         </div>
       </div>
 
-      <!-- Movements Table -->
-      <div class="movements-table-container">
+      <!-- Movements Table (Desktop) -->
+      <div class="movements-table-container d-none d-md-block">
         <table class="movements-table">
           <thead>
             <tr class="bg-primary text-white">
@@ -215,13 +282,13 @@
               </td>
               <td class="text-center align-middle entries-col">
                 {{
-                  mov.type === "entry" ? "$ " + formatNumber(mov.unitValue) : ""
+                  mov.type === "entry" ? "$" + formatNumber(mov.unitValue) : ""
                 }}
               </td>
               <td class="text-center align-middle entries-col">
                 {{
                   mov.type === "entry"
-                    ? "$ " + formatNumber(mov.totalPrice)
+                    ? "$" + formatNumber(mov.totalPrice)
                     : ""
                 }}
               </td>
@@ -234,14 +301,14 @@
               <td class="text-center align-middle outputs-col">
                 {{
                   mov.type === "output"
-                    ? "$ " + formatNumber(mov.unitValue)
+                    ? "$" + formatNumber(mov.unitValue)
                     : ""
                 }}
               </td>
               <td class="text-center align-middle outputs-col">
                 {{
                   mov.type === "output"
-                    ? "$ " + formatNumber(mov.totalPrice)
+                    ? "$" + formatNumber(mov.totalPrice)
                     : ""
                 }}
               </td>
@@ -252,10 +319,10 @@
                 {{ formatNumber(mov.balanceQuantity) }}
               </td>
               <td class="text-center align-middle balances-col">
-                $ {{ formatNumber(mov.balanceUnitValue) }}
+                ${{ formatNumber(mov.balanceUnitValue) }}
               </td>
               <td class="text-center align-middle balances-col">
-                $ {{ formatNumber(mov.balancePrice) }}
+                ${{ formatNumber(mov.balancePrice) }}
               </td>
             </tr>
             <tr *ngFor="let i of getEmptyRows()" class="movement-row empty-row">
@@ -274,6 +341,101 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Movements Mobile (Tabs) -->
+      <div class="d-md-none movements-mobile">
+        <div class="mobile-tabs">
+          <button class="mobile-tab" [class.active]="mobileTab === 'entries'" (click)="mobileTab = 'entries'">Entradas</button>
+          <button class="mobile-tab" [class.active]="mobileTab === 'outputs'" (click)="mobileTab = 'outputs'">Salidas</button>
+          <button class="mobile-tab" [class.active]="mobileTab === 'balances'" (click)="mobileTab = 'balances'">Saldos</button>
+        </div>
+
+        <!-- Entries Tab -->
+        <div class="mobile-table-wrap" *ngIf="mobileTab === 'entries'">
+          <table class="table table-sm mobile-mov-table">
+            <thead>
+              <tr class="bg-primary text-white">
+                <th>Fecha</th>
+                <th>Cant.</th>
+                <th>V. Unit.</th>
+                <th>Precio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mov of getFilteredMovements('entry')" (click)="mov._expanded = !mov._expanded">
+                <td>{{ mov.date | date: "dd/MM" }}</td>
+                <td>{{ formatNumber(mov.quantity) }}</td>
+                <td>{{ formatNumber(mov.unitValue) }}</td>
+                <td>{{ formatNumber(mov.totalPrice) }}</td>
+              </tr>
+              <tr *ngFor="let mov of getFilteredMovements('entry')" [class.d-none]="!mov._expanded">
+                <td colspan="4" class="expanded-detail">
+                  <small><strong>Proveedor:</strong> {{ mov.supplier || 'N/A' }}</small>
+                  <small *ngIf="mov.expirationDate" class="d-block"><strong>Vencimiento:</strong> {{ mov.expirationDate | date:'dd/MM/yyyy' }}</small>
+                </td>
+              </tr>
+              <tr *ngIf="getFilteredMovements('entry').length === 0">
+                <td colspan="4" class="text-center text-muted">Sin entradas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Outputs Tab -->
+        <div class="mobile-table-wrap" *ngIf="mobileTab === 'outputs'">
+          <table class="table table-sm mobile-mov-table">
+            <thead>
+              <tr class="bg-primary text-white">
+                <th>Fecha</th>
+                <th>Cant.</th>
+                <th>V. Unit.</th>
+                <th>Precio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mov of getFilteredMovements('output')" (click)="mov._expanded = !mov._expanded">
+                <td>{{ mov.date | date: "dd/MM" }}</td>
+                <td>{{ formatNumber(mov.quantity) }}</td>
+                <td>{{ formatNumber(mov.unitValue) }}</td>
+                <td>{{ formatNumber(mov.totalPrice) }}</td>
+              </tr>
+              <tr *ngFor="let mov of getFilteredMovements('output')" [class.d-none]="!mov._expanded">
+                <td colspan="4" class="expanded-detail">
+                  <small><strong>Concepto:</strong> {{ mov.concept || 'N/A' }}</small>
+                </td>
+              </tr>
+              <tr *ngIf="getFilteredMovements('output').length === 0">
+                <td colspan="4" class="text-center text-muted">Sin salidas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Balances Tab -->
+        <div class="mobile-table-wrap" *ngIf="mobileTab === 'balances'">
+          <table class="table table-sm mobile-mov-table">
+            <thead>
+              <tr class="bg-primary text-white">
+                <th>Fecha</th>
+                <th>Cant.</th>
+                <th>V. Unit.</th>
+                <th>Precio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mov of paginatedMovements">
+                <td>{{ mov.date | date: "dd/MM" }}</td>
+                <td>{{ formatNumber(mov.balanceQuantity) }}</td>
+                <td>{{ formatNumber(mov.balanceUnitValue) }}</td>
+                <td>{{ formatNumber(mov.balancePrice) }}</td>
+              </tr>
+              <tr *ngIf="paginatedMovements.length === 0">
+                <td colspan="4" class="text-center text-muted">Sin movimientos</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Pagination -->
@@ -402,7 +564,7 @@
                   style="white-space: nowrap;"
                 >
                   {{
-                    showCreateSupplier ? "Cancelar" : "+ Crear Nuevo Proveedor"
+                    showCreateSupplier ? "Cancelar" : "+ Proveedor"
                   }}
                 </button>
               </div>
@@ -435,96 +597,47 @@
               </div>
               <div
                 *ngIf="showCreateSupplier"
-                class="mt-3 p-3"
-                style="
-                  background-color: #ffe6cc;
-                  border: 1px solid #d79b00;
-                  border-radius: 5px;
-                "
+                class="mt-2 p-2 supplier-form"
               >
-                <h6>Nuevo <strong>Proveedor</strong></h6>
-                <div class="row">
-                  <div class="col-md-12 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Nombre *</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="newSupplier.name"
-                    />
+                <h6 class="supplier-form-title">Nuevo <strong>Proveedor</strong></h6>
+                <div class="supplier-form-grid">
+                  <div class="supplier-field full">
+                    <label>Nombre *</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="newSupplier.name" placeholder="Nombre del proveedor"/>
                   </div>
-                  <div class="col-md-6 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Tipo de Documento</label
-                    >
-                    <select
-                      class="form-control"
-                      [(ngModel)]="newSupplier.documentType"
-                    >
+                  <div class="supplier-field">
+                    <label>Tipo Doc.</label>
+                    <select class="form-control form-control-sm" [(ngModel)]="newSupplier.documentType">
                       <option value="">Seleccionar</option>
-                      <option value="CC">Cédula de Ciudadanía</option>
+                      <option value="CC">CC</option>
                       <option value="NIT">NIT</option>
-                      <option value="CE">Cédula de Extranjería</option>
+                      <option value="CE">CE</option>
                       <option value="PAS">Pasaporte</option>
                     </select>
                   </div>
-                  <div class="col-md-6 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Número de Documento</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="newSupplier.documentNumber"
-                    />
+                  <div class="supplier-field">
+                    <label>NÂº Documento</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="newSupplier.documentNumber" placeholder="Número"/>
                   </div>
-                  <div class="col-md-12 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Dirección</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="newSupplier.address"
-                    />
+                  <div class="supplier-field full">
+                    <label>Dirección</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="newSupplier.address" placeholder="Dirección"/>
                   </div>
-                  <div class="col-md-6 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Email</label
-                    >
-                    <input
-                      type="email"
-                      class="form-control"
-                      [(ngModel)]="newSupplier.contactEmail"
-                    />
+                  <div class="supplier-field">
+                    <label>Email</label>
+                    <input type="email" class="form-control form-control-sm" [(ngModel)]="newSupplier.contactEmail" placeholder="correo@ejemplo.com"/>
                   </div>
-                  <div class="col-md-6 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Teléfono</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="newSupplier.contactPhone"
-                    />
+                  <div class="supplier-field">
+                    <label>Teléfono</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="newSupplier.contactPhone" placeholder="300..."/>
                   </div>
-                  <div class="col-md-12 mb-2">
-                    <label style="font-size: 0.875rem; color: #6c757d"
-                      >Contacto *</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      [(ngModel)]="newSupplier.contactName"
-                    />
+                  <div class="supplier-field full">
+                    <label>Contacto *</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="newSupplier.contactName" placeholder="Nombre de contacto"/>
                   </div>
                 </div>
-                <button
-                  class="btn btn-dark btn-sm mt-2"
-                  (click)="createSupplier()"
-                >
-                  Guardar Proveedor
+                <button class="btn btn-primary btn-sm mt-2" (click)="createSupplier()">
+                  Guardar
                 </button>
               </div>
             </div>
@@ -534,47 +647,26 @@
           <div *ngIf="currentStep === 2">
             <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 15px">
               <h6>Detalles de la Entrada</h6>
-              <div class="row">
-                <div class="col-md-4 mb-3">
+              <div class="entry-details-grid">
+                <div class="entry-field">
                   <label>Fecha *</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    [(ngModel)]="entryData.date"
-                  />
+                  <input type="date" class="form-control form-control-sm" [(ngModel)]="entryData.date"/>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="entry-field">
                   <label>Cantidad *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="entryData.quantity"
-                    min="0"
-                    step="0.01"
-                  />
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.quantity" min="0" step="0.01"/>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="entry-field">
                   <label>Valor Unitario *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="entryData.unitValue"
-                    min="0"
-                    step="0.01"
-                  />
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.unitValue" min="0" step="0.01"/>
                 </div>
-                <div class="col-md-12 mb-3">
-                  <label>Documento de Respaldo *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="entryData.document"
-                    placeholder="Ej: Factura #12345"
-                  />
-                  <small style="color: #6c9bd1;"
-                    >Número de factura, remisión u otro documento que respalde
-                    la compra</small
-                  >
+                <div class="entry-field">
+                  <label>Vencimiento</label>
+                  <input type="date" class="form-control form-control-sm" [(ngModel)]="entryData.expirationDate"/>
+                </div>
+                <div class="entry-field full">
+                  <label>Documento *</label>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="entryData.document" placeholder="Factura, remisión..."/>
                 </div>
               </div>
             </div>
@@ -584,40 +676,40 @@
           <div *ngIf="currentStep === 3">
             <div class="bg-white card shadow-sm" style="border: 1px solid white; border-radius: 5px; padding: 15px">
               <h6>Resumen de la Entrada</h6>
-              <table class="table">
-                <tr>
-                  <th>Material:</th>
-                  <td>{{ selectedMaterial?.name }}</td>
-                </tr>
-                <tr>
-                  <th>Proveedor:</th>
-                  <td>{{ getSupplierName() }}</td>
-                </tr>
-                <tr>
-                  <th>Fecha:</th>
-                  <td>{{ entryData.date | date: "dd/MM/yyyy" }}</td>
-                </tr>
-                <tr>
-                  <th>Cantidad:</th>
-                  <td>{{ formatNumber(entryData.quantity) }}</td>
-                </tr>
-                <tr>
-                  <th>Valor Unitario:</th>
-                  <td>${{ formatNumber(entryData.unitValue) }}</td>
-                </tr>
-                <tr>
-                  <th>Documento:</th>
-                  <td>{{ entryData.document }}</td>
-                </tr>
-                <tr>
-                  <th>Precio Total:</th>
-                  <td class="fw-bold">
-                    ${{
-                      formatNumber(entryData.quantity * entryData.unitValue)
-                    }}
-                  </td>
-                </tr>
-              </table>
+              <div class="entry-summary">
+                <div class="summary-row">
+                  <span class="summary-label">Material</span>
+                  <span class="summary-value fw-bold">{{ selectedMaterial?.name }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Proveedor</span>
+                  <span class="summary-value">{{ getSupplierName() }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Fecha</span>
+                  <span class="summary-value">{{ entryData.date | date: "dd/MM/yyyy" }}</span>
+                </div>
+                <div class="summary-row" *ngIf="entryData.expirationDate">
+                  <span class="summary-label">Vencimiento</span>
+                  <span class="summary-value">{{ entryData.expirationDate | date: "dd/MM/yyyy" }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Cantidad</span>
+                  <span class="summary-value">{{ formatNumber(entryData.quantity) }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Valor Unitario</span>
+                  <span class="summary-value">${{ formatNumber(entryData.unitValue) }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Documento</span>
+                  <span class="summary-value">{{ entryData.document }}</span>
+                </div>
+                <div class="summary-row summary-total">
+                  <span class="summary-label">Precio Total</span>
+                  <span class="summary-value fw-bold">${{ formatNumber(entryData.quantity * entryData.unitValue) }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -708,7 +800,7 @@
               </div>
               
               <div *ngIf="productIngredients.length > 0" class="mt-3">
-                <h6>✓ Verificar stock de ingredientes</h6>
+                <h6>âœ“ Verificar stock de ingredientes</h6>
                 <table class="table table-sm">
                   <thead>
                     <tr>
@@ -726,8 +818,8 @@
                       <td class="text-center">{{ formatNumber(ing.stock) }}{{ ing.unit }}</td>
                       <td class="text-center">{{ formatNumber(ing.quantity * productEntryData.quantity) }}{{ ing.unit }}</td>
                       <td class="text-center">
-                        <span *ngIf="ing.stock >= (ing.quantity * productEntryData.quantity)" class="badge bg-success">✓ Disponible</span>
-                        <span *ngIf="ing.stock < (ing.quantity * productEntryData.quantity)" class="badge bg-danger">⚠ Insuficiente</span>
+                        <span *ngIf="ing.stock >= (ing.quantity * productEntryData.quantity)" class="badge bg-success">âœ“ Disponible</span>
+                        <span *ngIf="ing.stock < (ing.quantity * productEntryData.quantity)" class="badge bg-danger">âš  Insuficiente</span>
                       </td>
                     </tr>
                   </tbody>
