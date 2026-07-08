@@ -199,8 +199,14 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     console.log('Delete material:', material);
   }
 
+  selectedViewMaterial: Material | null = null;
+
   viewMaterial(material: Material): void {
-    console.log('View material:', material);
+    this.selectedViewMaterial = material;
+  }
+
+  closeViewModal(): void {
+    this.selectedViewMaterial = null;
   }
 
   trackById(index: number, material: Material): number {
@@ -236,6 +242,29 @@ export class MaterialsListComponent implements OnInit, OnChanges {
       this.showCategoryDropdown = false;
       this.categorySearch = '';
     }, 200);
+  }
+
+  getExpirationStatus(expirationDate: string | null | undefined): 'expired' | 'warning' | 'ok' | 'none' {
+    if (!expirationDate) return 'none';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = new Date(expirationDate);
+    expDate.setHours(0, 0, 0, 0);
+
+    if (expDate < today) return 'expired';
+
+    const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 15) return 'warning';
+    return 'ok';
+  }
+
+  getExpirationLabel(status: string): string {
+    switch (status) {
+      case 'expired': return 'Vencido';
+      case 'warning': return 'Próximo';
+      case 'ok': return 'Vigente';
+      default: return '';
+    }
   }
 
   goToKardex(material: Material): void {

@@ -112,22 +112,22 @@
       <table class="table materials-table">
         <thead>
           <tr>
-            <th class="checkbox-col" style="width: 3%;">
+            <th class="checkbox-col hide-mobile" style="width: 3%;">
               <input type="checkbox" />
             </th>
             <th style="width: 16%;">Nombre</th>
-            <th class="d-none d-md-table-cell" style="width: 8%;">Código</th>
-            <th class="d-none d-md-table-cell" style="width: 18% !important;">Descripción</th>
+            <th class="col-code" style="width: 8%;">Código</th>
+            <th class="col-description" style="width: 18% !important;">Descripción</th>
             <th class="text-center hide-mobile" style="width: 10%;">Componentes</th>
             <th class="text-center" style="width: 12%;">Stock</th>
             <th class="text-center" style="width: 10%;">Costo Total</th>
-            <th class="text-center hide-mobile" style="width: 6%;">Estado</th>
+            <th class="text-center col-status" style="width: 6%;">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let material of transformedMaterials">
-            <td>
+            <td class="hide-mobile">
               <input type="checkbox" />
             </td>
             <td>
@@ -162,10 +162,10 @@
                 </div>
               </div>
             </td>
-            <td class="d-none d-md-table-cell">
+            <td class="col-code">
               <span class="text-muted">{{ material["strCode"] || "N/A" }}</span>
             </td>
-            <td class="d-none d-md-table-cell">
+            <td class="col-description">
               <span class="description-text">{{ material.description.length > 85 ? (material.description | slice:0:85) + '...' : material.description }}</span>
             </td>
             <td class="text-center hide-mobile">
@@ -192,31 +192,31 @@
                 >${{ material.totalCost | numberFormat: 2 }}</span
               >
             </td>
-            <td class="text-center hide-mobile">
+            <td class="text-center col-status">
               <span class="status-badge status-active">{{
                 material.status
               }}</span>
             </td>
             <td class="text-center">
               <div class="action-buttons">
-                <button class="btn btn-sm btn-outline-primary" title="Ver Kardex" (click)="goToKardex(material)">
+                <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" title="Ver Kardex" (click)="goToKardex(material)">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-primary" title="Ver">
+                <button class="btn btn-sm btn-outline-primary" title="Ver" (click)="viewCompositeMaterial(material)">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" title="Editar" (click)="editMaterial(material)">
+                <button class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex" title="Editar" (click)="editMaterial(material)">
                   <svg viewBox="0 0 16 16">
                     <use
                       xlink:href="./assets/icons/bootstrap-icons.svg#pencil"
                     />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                <button class="btn btn-sm btn-outline-danger d-none d-md-inline-flex" title="Eliminar">
                   <svg viewBox="0 0 16 16">
                     <use
                       xlink:href="./assets/icons/bootstrap-icons.svg#trash"
@@ -228,6 +228,29 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Mobile List View -->
+  <div class="mobile-list" *ngIf="transformedMaterials.length > 0">
+    <div class="mobile-list-item" *ngFor="let material of transformedMaterials" (click)="viewCompositeMaterial(material)">
+      <div class="mobile-list-info">
+        <div class="mobile-list-image">
+          <img *ngIf="material.images && material.images.length > 0" 
+               [src]="material.images[0]?.strImageUrl || material.images[0]?.url" 
+               [alt]="material.name">
+          <svg *ngIf="!material.images || material.images.length === 0" viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
+          </svg>
+        </div>
+        <div class="mobile-list-text">
+          <strong>{{ material.name }}</strong>
+          <small class="text-muted">{{ material.code || '' }} · {{ material.measurementUnit }}</small>
+        </div>
+      </div>
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="#6c757d">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+      </svg>
     </div>
   </div>
 
@@ -665,11 +688,11 @@
                         </div>
                         <div class="material-info">
                           <div class="material-name">{{ material.name }}</div>
-                          <div>
+                          <div class="material-meta">
                             <span class="material-location">{{ material.ubicacion }} ({{ material.measurementUnit }})</span>
                             <span class="material-stock-info">
-                              <span class="stock-min">Stock mínimo: {{ formatNumber(material.stockMin || 0) }}</span>
-                              <span class="material-stock">Disponible: {{ formatNumber(material.currentStock || 0) }}</span>
+                              <span class="stock-min">Mín: {{ formatNumber(material.stockMin || 0) }}</span>
+                              <span class="material-stock">Disp: {{ formatNumber(material.currentStock || 0) }}</span>
                             </span>
                           </div>
                         </div>
@@ -988,4 +1011,55 @@
     [class.show]="showCreateModal"
     *ngIf="showCreateModal"
   ></div>
+
+<!-- Modal Ver Material Compuesto -->
+<div class="modal fade" [class.show]="selectedViewMaterial" [style.display]="selectedViewMaterial ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" *ngIf="selectedViewMaterial">
+      <div class="modal-header py-2" style="border-bottom: 1px solid orange;">
+        <h6 class="modal-title mb-0">
+          <span class="text-primary fw-bold">{{ selectedViewMaterial.name }}</span>
+          <span style="color: #ff8000"> ●</span>
+        </h6>
+        <button type="button" class="btn-close" (click)="selectedViewMaterial = null"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="view-detail-grid">
+          <div class="view-detail-item">
+            <span class="view-label">Código</span>
+            <span class="view-value fw-bold">{{ selectedViewMaterial.code || selectedViewMaterial.strCode || 'N/A' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Unidad de Medida</span>
+            <span class="view-value">{{ selectedViewMaterial.measurementUnit }}</span>
+          </div>
+          <div class="view-detail-item full">
+            <span class="view-label">Descripción</span>
+            <span class="view-value">{{ selectedViewMaterial.description || 'Sin descripción' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Componentes</span>
+            <span class="view-value fw-bold">{{ selectedViewMaterial.componentCount || 0 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Precio</span>
+            <span class="view-value">$ {{ selectedViewMaterial.price }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock</span>
+            <span class="view-value">{{ selectedViewMaterial.currentStock || 0 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Estado</span>
+            <span class="view-value">{{ selectedViewMaterial.status }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2" style="border-top: 1px solid orange;">
+        <button class="btn btn-sm btn-secondary" (click)="selectedViewMaterial = null">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="selectedViewMaterial" *ngIf="selectedViewMaterial"></div>
 </div>

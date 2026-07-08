@@ -25,6 +25,8 @@ export class KardexComponent implements OnInit {
   searchType = 'code';
   searchTerm = '';
   entityType: 'material' | 'composite' | 'product' = 'material';
+  showDescription = false;
+  mobileTab: 'entries' | 'outputs' | 'balances' = 'entries';
   clientCode = 'CYN';
   
   page = 0;
@@ -45,7 +47,8 @@ export class KardexComponent implements OnInit {
     quantity: 0,
     unitValue: 0,
     supplierId: '',
-    document: ''
+    document: '',
+    expirationDate: ''
   };
   
   productEntryData = {
@@ -357,7 +360,8 @@ export class KardexComponent implements OnInit {
       quantity: 0,
       unitValue: 0,
       supplierId: '',
-      document: ''
+      document: '',
+      expirationDate: ''
     };
     this.showCreateSupplier = false;
     this.resetSupplierForm();
@@ -399,7 +403,8 @@ export class KardexComponent implements OnInit {
       date: this.entryData.date,
       quantity: this.entryData.quantity,
       unitPrice: this.entryData.unitValue,
-      document: this.entryData.document
+      document: this.entryData.document,
+      expirationDate: this.entryData.expirationDate || null
     };
 
     this.http.post(`${this.baseUrl}/purchases`, purchaseData).subscribe({
@@ -540,6 +545,7 @@ export class KardexComponent implements OnInit {
           totalPrice: (entry.fltQuantity || entry.ingQuantity) * (entry.fltUnitPrice || entry.fltPrice),
           supplier: entry.supplier?.strName || 'Producción Interna',
           concept: entry.strNotes || 'Entrada por producción',
+          expirationDate: entry.dtmExpirationDate || null,
           balanceQuantity: 0,
           balanceUnitValue: 0,
           balancePrice: 0
@@ -766,6 +772,10 @@ export class KardexComponent implements OnInit {
     const currentPageSize = this.paginatedMovements.length;
     const emptyCount = this.pageSize - currentPageSize;
     return emptyCount > 0 ? Array(emptyCount).fill(0) : [];
+  }
+
+  getFilteredMovements(type: string): any[] {
+    return this.paginatedMovements.filter(m => m.type === type);
   }
 
   async exportToExcel(): Promise<void> {

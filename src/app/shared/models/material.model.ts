@@ -15,6 +15,7 @@ export interface Material {
   images?: MaterialImage[];
   compositions?: MaterialComposition[];
   type?: 'regular' | 'transformed'; // Add type to distinguish material types
+  expirationDate?: string;
   // Backend fields
   strId?: string;
   strCode?: string;
