@@ -135,7 +135,7 @@
 /* Table View */
 .table-container {
   flex: 1;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: auto;
   background: white;
 }
@@ -143,7 +143,6 @@
 .materials-table {
   margin: 0;
   width: 100%;
-  min-width: 1200px;
   table-layout: fixed;
 }
 
@@ -156,15 +155,41 @@
   white-space: nowrap;
 }
 
-.materials-table th:nth-child(1) { width: 3%; }
-.materials-table th:nth-child(2) { width: 16%; }
-.materials-table th:nth-child(3) { width: 7%; }
-.materials-table th:nth-child(4) { width: 24%; }
-.materials-table th:nth-child(5) { width: 12%; }
-.materials-table th:nth-child(6) { width: 9%; }
-.materials-table th:nth-child(7) { width: 7%; }
-.materials-table th:nth-child(8) { width: 11%; }
-.materials-table th:nth-child(9) { width: 11%; }
+.materials-table .checkbox-col {
+  width: 40px;
+}
+
+.materials-table .col-name {
+  width: 15%;
+}
+
+.materials-table .col-code {
+  width: 7%;
+}
+
+.materials-table .col-description {
+  width: auto;
+}
+
+.materials-table .col-stock {
+  width: 200px;
+}
+
+.materials-table .col-price {
+  width: 70px;
+}
+
+.materials-table .col-status {
+  width: 70px;
+}
+
+.materials-table .col-expiration {
+  width: 100px;
+}
+
+.materials-table .col-actions {
+  width: 120px;
+}
 
 .materials-table td {
   padding: 0.75rem 0.5rem;
@@ -588,16 +613,16 @@
     display: none !important;
   }
 
-  .view-toggle {
-    display: none !important;
-  }
-
   .table-container {
     display: none !important;
   }
 
   .mobile-list {
     display: block !important;
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -967,6 +992,24 @@
 @media (max-width: 1300px) {
   .col-code,
   .col-status {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .col-expiration {
+    display: none;
+  }
+}
+
+@media (max-width: 992px) {
+  .col-price {
+    display: none;
+  }
+}
+
+@media (max-width: 850px) {
+  .col-stock {
     display: none;
   }
 }

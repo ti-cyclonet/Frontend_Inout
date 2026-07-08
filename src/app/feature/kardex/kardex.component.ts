@@ -26,6 +26,7 @@ export class KardexComponent implements OnInit {
   searchTerm = '';
   entityType: 'material' | 'composite' | 'product' = 'material';
   showDescription = false;
+  showFilters = false;
   mobileTab: 'entries' | 'outputs' | 'balances' = 'entries';
   clientCode = 'CYN';
   

@@ -23,7 +23,13 @@
       </p>
 
       <!-- Search Section -->
-      <div class="search-section">
+      <a class="d-md-none description-toggle mb-2" (click)="showFilters = !showFilters" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+          <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#funnel'" />
+        </svg>
+        Filtros
+      </a>
+      <div class="search-section" [class.d-none]="!showFilters" [class.d-md-block]="true">
         <div class="search-row">
           <div class="search-field entity-type-field">
             <label class="search-label">Tipo de entidad</label>
