@@ -158,7 +158,7 @@
                 [indeterminate]="selectedMaterials.size > 0 && selectedMaterials.size < materials.length"
                 (change)="selectAllMaterials()">
             </th>
-            <th (click)="onSort('name')" class="sortable">
+            <th (click)="onSort('name')" class="sortable col-name">
               Nombre
               <svg viewBox="0 0 16 16" class="sort-icon">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
@@ -166,21 +166,21 @@
             </th>
             <th class="col-code">Código</th>
             <th class="col-description">Descripción</th>
-            <th (click)="onSort('currentStock')" class="sortable text-center d-none d-md-table-cell">
+            <th (click)="onSort('currentStock')" class="sortable text-center col-stock">
               Stock
               <svg viewBox="0 0 16 16" class="sort-icon">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
               </svg>
             </th>
-            <th (click)="onSort('price')" class="sortable text-center d-none d-md-table-cell">
+            <th (click)="onSort('price')" class="sortable text-center col-price">
               Precio
               <svg viewBox="0 0 16 16" class="sort-icon">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
               </svg>
             </th>
             <th class="text-center col-status">Estado</th>
-            <th class="text-center hide-mobile">Vencimiento</th>
-            <th class="text-center">Acciones</th>
+            <th class="text-center col-expiration">Vencimiento</th>
+            <th class="text-center col-actions">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -216,7 +216,7 @@
             <td class="col-description">
               <span class="description-text">{{ material.description }}</span>
             </td>
-            <td class="text-center d-none d-md-table-cell">
+            <td class="text-center col-stock">
               <div class="stock-info">
                 <span class="stock-value" [ngClass]="getStockStatusClass(material)">
                   {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}
@@ -224,7 +224,7 @@
                 <small class="text-muted d-block">Min: {{ (material.ingMinStock || material.stockMin || 0) | numberFormat:2 }} | Max: {{ (material.ingMaxStock || material.stockMax || 0) | numberFormat:2 }}</small>
               </div>
             </td>
-            <td class="text-center d-none d-md-table-cell">
+            <td class="text-center col-price">
               <span class="price-value">${{ material.price | numberFormat:2 }}</span>
             </td>
             <td class="text-center col-status">
@@ -232,7 +232,7 @@
                 {{ material.status }}
               </span>
             </td>
-            <td class="text-center hide-mobile">
+            <td class="text-center col-expiration">
               <ng-container *ngIf="getExpirationStatus(material.expirationDate) !== 'none'">
                 <span class="expiration-badge" [ngClass]="getExpirationStatus(material.expirationDate)">
                   {{ getExpirationLabel(getExpirationStatus(material.expirationDate)) }}
@@ -247,7 +247,7 @@
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-primary" (click)="viewMaterial(material)" title="Ver">
+                <button class="btn btn-sm btn-outline-primary d-md-none" (click)="viewMaterial(material)" title="Ver">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
@@ -271,7 +271,7 @@
   </div>
 
   <!-- Mobile List View -->
-  <div class="mobile-list" *ngIf="materials.length > 0">
+  <div class="mobile-list" *ngIf="viewMode === 'table' && materials.length > 0">
     <div class="mobile-list-item" *ngFor="let material of materials; trackBy: trackById" (click)="viewMaterial(material)">
       <div class="mobile-list-info">
         <div class="mobile-list-image">
