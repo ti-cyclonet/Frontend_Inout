@@ -234,6 +234,11 @@ export class MaterialFormComponent implements OnInit, OnChanges {
       this.saving = true;
       const formData = this.materialForm.value;
 
+      // Preparar imágenes: solo enviar url (base64 para nuevas, URL para existentes)
+      const imagesToSend = this.materialImages.map(img => ({
+        url: img.url || img.strImageUrl
+      }));
+
       // Mapear campos del frontend al backend
       const materialData: any = {
         strName: formData.name,
@@ -246,7 +251,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         ingQuantity: parseInt(formData.currentStock) || 0,
         strLocation: formData.ubicacion,
         strStatus: formData.status,
-        images: this.materialImages
+        images: imagesToSend
       };
 
       // Solo agregar categoryId si hay una categoría seleccionada
