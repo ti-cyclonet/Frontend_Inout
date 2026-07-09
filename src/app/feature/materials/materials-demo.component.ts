@@ -113,11 +113,11 @@ import { MaterialCompositionComponent } from './composition/material-composition
     }
     
     .modal {
-      z-index: 1050;
+      z-index: 1060;
     }
     
     .modal-backdrop {
-      z-index: 1040;
+      z-index: 1055;
     }
   `]
 })
