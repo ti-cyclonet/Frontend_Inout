@@ -27,9 +27,14 @@
         <div class="step-label">Categoría</div>
       </div>
       <div class="step-connector" [class.completed]="currentStep > 3"></div>
-      <div class="step" [class.active]="currentStep >= 4" [class.current]="currentStep === 4">
+      <div class="step" [class.active]="currentStep >= 4" [class.current]="currentStep === 4" [class.completed]="currentStep > 4">
         <div class="step-number">4</div>
         <div class="step-label">Imágenes</div>
+      </div>
+      <div class="step-connector" [class.completed]="currentStep > 4"></div>
+      <div class="step" [class.active]="currentStep >= 5" [class.current]="currentStep === 5">
+        <div class="step-number">5</div>
+        <div class="step-label">Revisión</div>
       </div>
     </div>
 
@@ -281,90 +286,136 @@
             [allowMultiple]="true"
             (imagesChange)="onImagesChange($event)">
           </app-image-manager>
-          
-          <!-- Final Summary -->
-          <div class="form-summary">
-            <h4>Revisión Final</h4>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <label>Nombre:</label>
-                <span>{{ materialForm.get('name')?.value || 'No establecido' }}</span>
+        </div>
+
+        <!-- Step 5: Final Review -->
+        <div class="form-step" *ngIf="currentStep === 5">
+          <div class="step-header">
+            <h3>Revisión Final</h3>
+            <p>Verifica que toda la información sea correcta antes de enviar</p>
+          </div>
+
+          <div class="review-card">
+            <div class="review-section">
+              <div class="review-section-header">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="#0066CC">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#info-circle" />
+                </svg>
+                <span>Información Básica</span>
               </div>
-              <div class="summary-item">
-                <label>Descripción:</label>
-                <span>{{ materialForm.get('description')?.value || 'No establecido' }}</span>
+              <div class="review-fields">
+                <div class="review-field">
+                  <span class="review-label">Nombre</span>
+                  <span class="review-value">{{ materialForm.get('name')?.value || '—' }}</span>
+                </div>
+                <div class="review-field full">
+                  <span class="review-label">Descripción</span>
+                  <span class="review-value">{{ materialForm.get('description')?.value || '—' }}</span>
+                </div>
+                <div class="review-field">
+                  <span class="review-label">Unidad de Medida</span>
+                  <span class="review-value">{{ materialForm.get('measurementUnit')?.value || '—' }}</span>
+                </div>
+                <div class="review-field" *ngIf="useDifferentDischargeUnit">
+                  <span class="review-label">Unidad de Descarga</span>
+                  <span class="review-value">{{ materialForm.get('dischargeUnit')?.value || '—' }}</span>
+                </div>
               </div>
-              <div class="summary-item">
-                <label>Unidad:</label>
-                <span>{{ materialForm.get('measurementUnit')?.value || 'No establecido' }}</span>
+            </div>
+
+            <div class="review-divider"></div>
+
+            <div class="review-section">
+              <div class="review-section-header">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="#0066CC">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+                </svg>
+                <span>Inventario</span>
               </div>
-              <div class="summary-item">
-                <label>Precio:</label>
-                <span>${{ materialForm.get('price')?.value || 0 | number:'1.2-2' }}</span>
+              <div class="review-fields">
+                <div class="review-field">
+                  <span class="review-label">Ubicación</span>
+                  <span class="review-value">{{ materialForm.get('ubicacion')?.value || '—' }}</span>
+                </div>
+                <div class="review-field">
+                  <span class="review-label">Precio</span>
+                  <span class="review-value review-highlight">${{ materialForm.get('price')?.value || 0 | number:'1.2-2' }}</span>
+                </div>
+                <div class="review-field">
+                  <span class="review-label">Stock Mínimo</span>
+                  <span class="review-value">{{ materialForm.get('stockMin')?.value || 0 }}</span>
+                </div>
+                <div class="review-field">
+                  <span class="review-label">Stock Máximo</span>
+                  <span class="review-value">{{ materialForm.get('stockMax')?.value || 0 }}</span>
+                </div>
               </div>
-              <div class="summary-item">
-                <label>Ubicación:</label>
-                <span>{{ materialForm.get('ubicacion')?.value || 'No establecido' }}</span>
+            </div>
+
+            <div class="review-divider"></div>
+
+            <div class="review-section">
+              <div class="review-section-header">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="#0066CC">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#image" />
+                </svg>
+                <span>Imágenes</span>
               </div>
-              <div class="summary-item">
-                <label>Rango de Stock:</label>
-                <span>{{ materialForm.get('stockMin')?.value || 0 }} - {{ materialForm.get('stockMax')?.value || 0 }}</span>
+              <div class="review-images" *ngIf="materialImages.length > 0">
+                <img 
+                  *ngFor="let img of materialImages" 
+                  [src]="img.url || img.strImageUrl" 
+                  [alt]="'Imagen de ' + (materialForm.get('name')?.value || 'material')"
+                  class="review-image-thumb">
               </div>
-              <div class="summary-item">
-                <label>Imágenes:</label>
-                <span>{{ materialImages.length }} subidas</span>
-              </div>
+              <p class="review-no-images" *ngIf="materialImages.length === 0">Sin imágenes adjuntas</p>
             </div>
           </div>
         </div>
 
         <!-- Form Actions -->
         <div class="form-actions">
-          <div class="left-actions">
-            <button 
-              type="button" 
-              class="btn btn-outline-secondary"
-              (click)="cancel()">
-              Cancelar
-            </button>
-            
-            <button 
-              type="button" 
-              class="btn btn-outline-primary"
-              *ngIf="currentStep > 1"
-              (click)="previousStep()">
-              <svg viewBox="0 0 16 16">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
-              </svg>
-              <span class="btn-text">Anterior</span>
-            </button>
-            
-            <button 
-              type="button" 
-              class="btn btn-primary"
-              *ngIf="currentStep < totalSteps"
-              [disabled]="!isStepValid(currentStep)"
-              (click)="nextStep()">
-              <span class="btn-text">Siguiente</span>
-              <svg viewBox="0 0 16 16">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
-              </svg>
-            </button>
-          </div>
+          <button 
+            type="button" 
+            class="btn btn-outline-primary btn-nav"
+            [disabled]="currentStep === 1"
+            (click)="previousStep()">
+            <svg viewBox="0 0 16 16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" />
+            </svg>
+            <span class="btn-text">Anterior</span>
+          </button>
           
-          <div class="right-actions">
-            <button 
-              type="submit" 
-              class="btn btn-success"
-              *ngIf="currentStep === totalSteps"
-              [disabled]="materialForm.invalid || saving">
-              <div class="btn-spinner" *ngIf="saving"></div>
-              <svg viewBox="0 0 16 16" *ngIf="!saving">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
-              </svg>
-              <span class="btn-text">{{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar Material' : 'Crear Material') }}</span>
-            </button>
-          </div>
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary btn-nav"
+            (click)="cancel()">
+            Cancelar
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-primary btn-nav"
+            *ngIf="currentStep < totalSteps"
+            [disabled]="!isStepValid(currentStep)"
+            (click)="nextStep()">
+            <span class="btn-text">Siguiente</span>
+            <svg viewBox="0 0 16 16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
+            </svg>
+          </button>
+          
+          <button 
+            type="submit" 
+            class="btn btn-success btn-nav"
+            *ngIf="currentStep === totalSteps"
+            [disabled]="materialForm.invalid || saving">
+            <div class="btn-spinner" *ngIf="saving"></div>
+            <svg viewBox="0 0 16 16" *ngIf="!saving">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
+            </svg>
+            <span class="btn-text">{{ saving ? 'Guardando...' : 'Enviar' }}</span>
+          </button>
         </div>
       </form>
     </div>

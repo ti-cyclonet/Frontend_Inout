@@ -438,6 +438,16 @@
         <button type="button" class="btn-close" (click)="closeViewModal()"></button>
       </div>
       <div class="modal-body p-3">
+        <!-- Material Images -->
+        <div class="view-images mb-3" *ngIf="selectedViewMaterial.images && selectedViewMaterial.images.length > 0">
+          <div class="view-images-scroll">
+            <img 
+              *ngFor="let img of selectedViewMaterial.images" 
+              [src]="img.strImageUrl || img.url" 
+              [alt]="selectedViewMaterial.name"
+              class="view-image-thumb">
+          </div>
+        </div>
         <div class="view-detail-grid">
           <div class="view-detail-item">
             <span class="view-label">Código</span>
