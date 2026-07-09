@@ -192,6 +192,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   }
 
   editMaterial(material: Material): void {
+    this.selectedViewMaterial = null;
     this.openEditModal.emit(material);
   }
 
