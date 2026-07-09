@@ -298,11 +298,37 @@
     <div class="material-card" *ngFor="let material of materials; trackBy: trackById"
          [class.selected]="selectedMaterials.has(material.id)">
       
-      <div class="card-image">
-        <img *ngIf="material.images && material.images.length > 0" 
-             [src]="material.images[0].strImageUrl || material.images[0].url" 
-             [alt]="material.name">
-        <div class="card-image-fallback" *ngIf="!material.images || material.images.length === 0">
+      <div class="card-image" *ngIf="material.images && material.images.length > 0">
+        <div class="card-slider">
+          <img 
+            [src]="material.images[getSlideIndex(material)]?.strImageUrl || material.images[getSlideIndex(material)]?.url" 
+            [alt]="material.name">
+          <button class="slider-btn slider-prev" 
+                  *ngIf="material.images.length > 1"
+                  title="Imagen anterior"
+                  (click)="prevSlide(material); $event.stopPropagation()">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="white">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-left" />
+            </svg>
+          </button>
+          <button class="slider-btn slider-next" 
+                  *ngIf="material.images.length > 1"
+                  title="Imagen siguiente"
+                  (click)="nextSlide(material); $event.stopPropagation()">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="white">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" />
+            </svg>
+          </button>
+          <div class="slider-dots" *ngIf="material.images.length > 1">
+            <span class="slider-dot" 
+                  *ngFor="let img of material.images; let i = index"
+                  [class.active]="i === getSlideIndex(material)"
+                  (click)="setSlide(material, i); $event.stopPropagation()"></span>
+          </div>
+        </div>
+      </div>
+      <div class="card-image" *ngIf="!material.images || material.images.length === 0">
+        <div class="card-image-fallback">
           <svg viewBox="0 0 16 16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
           </svg>

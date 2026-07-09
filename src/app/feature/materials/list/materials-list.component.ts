@@ -214,6 +214,27 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     return material.id;
   }
 
+  // Slider methods for card view
+  slideIndexMap: Map<number, number> = new Map();
+
+  getSlideIndex(material: Material): number {
+    return this.slideIndexMap.get(material.id) || 0;
+  }
+
+  prevSlide(material: any): void {
+    const current = this.getSlideIndex(material);
+    this.slideIndexMap.set(material.id, current > 0 ? current - 1 : material.images.length - 1);
+  }
+
+  nextSlide(material: any): void {
+    const current = this.getSlideIndex(material);
+    this.slideIndexMap.set(material.id, current < material.images.length - 1 ? current + 1 : 0);
+  }
+
+  setSlide(material: any, index: number): void {
+    this.slideIndexMap.set(material.id, index);
+  }
+
   get Math() {
     return Math;
   }
