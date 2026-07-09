@@ -659,12 +659,16 @@
                   <input type="date" class="form-control form-control-sm" [(ngModel)]="entryData.date"/>
                 </div>
                 <div class="entry-field">
-                  <label>Cantidad *</label>
-                  <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.quantity" min="0" step="0.01"/>
+                  <label>Cantidad * ({{ selectedMaterial?.measureUnit }})</label>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.quantity" min="0" step="0.01" (input)="calculateUnitValue()"/>
                 </div>
                 <div class="entry-field">
-                  <label>Valor Unitario *</label>
-                  <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.unitValue" min="0" step="0.01"/>
+                  <label>Precio Total de Compra *</label>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.totalPurchaseValue" min="0" step="0.01" (input)="calculateUnitValue()"/>
+                </div>
+                <div class="entry-field">
+                  <label>Valor Unitario (por {{ selectedMaterial?.measureUnit }})</label>
+                  <input type="text" class="form-control form-control-sm" [value]="'$' + formatNumber(entryData.unitValue)" readonly style="background-color: #e9ecef;"/>
                 </div>
                 <div class="entry-field">
                   <label>Vencimiento</label>
@@ -705,15 +709,15 @@
                 </div>
                 <div class="summary-row">
                   <span class="summary-label">Valor Unitario</span>
-                  <span class="summary-value">${{ formatNumber(entryData.unitValue) }}</span>
+                  <span class="summary-value">${{ formatNumber(entryData.unitValue) }} / {{ selectedMaterial?.measureUnit }}</span>
                 </div>
                 <div class="summary-row">
                   <span class="summary-label">Documento</span>
                   <span class="summary-value">{{ entryData.document }}</span>
                 </div>
                 <div class="summary-row summary-total">
-                  <span class="summary-label">Precio Total</span>
-                  <span class="summary-value fw-bold">${{ formatNumber(entryData.quantity * entryData.unitValue) }}</span>
+                  <span class="summary-label">Precio Total de Compra</span>
+                  <span class="summary-value fw-bold">${{ formatNumber(entryData.totalPurchaseValue) }}</span>
                 </div>
               </div>
             </div>

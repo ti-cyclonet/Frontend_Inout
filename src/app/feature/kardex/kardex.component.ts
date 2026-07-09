@@ -47,6 +47,7 @@ export class KardexComponent implements OnInit {
     date: new Date().toISOString().split('T')[0],
     quantity: 0,
     unitValue: 0,
+    totalPurchaseValue: 0,
     supplierId: '',
     document: '',
     expirationDate: ''
@@ -360,6 +361,7 @@ export class KardexComponent implements OnInit {
       date: new Date().toISOString().split('T')[0],
       quantity: 0,
       unitValue: 0,
+      totalPurchaseValue: 0,
       supplierId: '',
       document: '',
       expirationDate: ''
@@ -600,6 +602,14 @@ export class KardexComponent implements OnInit {
 
     this.movements = allMovements;
     this.page = 0;
+  }
+
+  calculateUnitValue(): void {
+    if (this.entryData.quantity > 0 && this.entryData.totalPurchaseValue > 0) {
+      this.entryData.unitValue = this.entryData.totalPurchaseValue / this.entryData.quantity;
+    } else {
+      this.entryData.unitValue = 0;
+    }
   }
 
   newEntry(): void {
