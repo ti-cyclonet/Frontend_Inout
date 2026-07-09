@@ -58,6 +58,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   
   // Selection
   selectedMaterials: Map<number, number> = new Map();
+  selectedListItems: Set<string> = new Set();
   
   // Editing
   editingComposition: number | null = null;
@@ -99,7 +100,6 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     this.loadViewMode();
     this.loadCategories();
     this.loadAvailableMaterials();
-    this.loadTransformedMaterials();
   }
 
   loadCategories(): void {
@@ -141,23 +141,31 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     this.loading = true;
     this.materialService.getTransformedMaterials().subscribe({
       next: (response) => {
-        this.transformedMaterials = response.map((item: any) => ({
-          id: item.strId,
-          strCode: item.strCode,
-          name: item.strName,
-          description: item.strDescription,
-          componentCount: item.compositions ? item.compositions.length : 0,
-          totalCost: item.fltPrice * item.ingQuantity,
-          currentStock: item.ingQuantity,
-          stockMax: item.ingMaxStock,
-          stockMin: item.ingMinStock,
-          status: item.strStatus,
-          measurementUnit: item.strUnitMeasure,
-          price: item.fltPrice,
-          location: item.strLocation,
-          createDate: new Date(item.dtmCreationDate),
-          images: item.images || []
-        }));
+        this.transformedMaterials = response.map((item: any) => {
+          const componentNames = (item.compositions || []).map((comp: any) => {
+            const material = this.availableMaterials.find(m => m.id === comp.strComponentMaterialId);
+            const name = material ? material.name : 'Desconocido';
+            return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+          });
+          return {
+            id: item.strId,
+            strCode: item.strCode,
+            name: item.strName,
+            description: item.strDescription,
+            componentCount: item.compositions ? item.compositions.length : 0,
+            componentNames: componentNames.join(' - '),
+            totalCost: item.fltPrice * item.ingQuantity,
+            currentStock: item.ingQuantity,
+            stockMax: item.ingMaxStock,
+            stockMin: item.ingMinStock,
+            status: item.strStatus,
+            measurementUnit: item.strUnitMeasure,
+            price: item.fltPrice,
+            location: item.strLocation,
+            createDate: new Date(item.dtmCreationDate),
+            images: item.images || []
+          };
+        });
         
         this.loading = false;
       },
@@ -199,7 +207,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   nextStep(): void {
-    if (this.currentStep < 4) {
+    if (this.currentStep < 5) {
       this.currentStep++;
     }
   }
@@ -218,7 +226,9 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       case 2:
         return true; // Images are optional
       case 3:
-        return true; // Category is optional
+        return true; // Materials selection
+      case 4:
+        return true; // Stock config
       default:
         return false;
     }
@@ -272,12 +282,17 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       }));
     }
 
-    // Solo incluir estos campos en creaciÃ³n
+    // Solo incluir estos campos en creación
     if (!this.editingMaterialId) {
       materialData.strDischargeUnit = this.useDifferentDischargeUnit && this.newMaterial.dischargeUnit ? this.newMaterial.dischargeUnit : this.newMaterial.measurementUnit;
       materialData.categoryId = this.newMaterial.categoryId;
-      materialData.images = this.materialImages;
     }
+
+    // Preparar imágenes: solo enviar url (base64 para nuevas, URL para existentes)
+    const imagesToSend = this.materialImages.map(img => ({
+      url: img.url || img.strImageUrl
+    }));
+    materialData.images = imagesToSend;
 
     const request = this.editingMaterialId 
       ? this.materialService.updateTransformedMaterial(this.editingMaterialId, materialData)
@@ -362,9 +377,11 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       next: (response) => {
         this.availableMaterials = response.data;
         this.extractAvailableLocations();
+        this.loadTransformedMaterials();
       },
       error: (error) => {
         console.error('Error loading materials:', error);
+        this.loadTransformedMaterials();
       }
     });
   }
@@ -654,12 +671,59 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     });
   }
 
+  // Slider methods for card view
+  slideIndexMap: Map<number, number> = new Map();
+
+  getSlideIndex(material: any): number {
+    return this.slideIndexMap.get(material.id) || 0;
+  }
+
+  prevSlide(material: any): void {
+    const current = this.getSlideIndex(material);
+    this.slideIndexMap.set(material.id, current > 0 ? current - 1 : material.images.length - 1);
+  }
+
+  nextSlide(material: any): void {
+    const current = this.getSlideIndex(material);
+    this.slideIndexMap.set(material.id, current < material.images.length - 1 ? current + 1 : 0);
+  }
+
+  setSlide(material: any, index: number): void {
+    this.slideIndexMap.set(material.id, index);
+  }
+
+  // List selection methods
+  toggleListSelection(materialId: string): void {
+    if (this.selectedListItems.has(materialId)) {
+      this.selectedListItems.delete(materialId);
+    } else {
+      this.selectedListItems.add(materialId);
+    }
+  }
+
+  selectAllList(): void {
+    if (this.selectedListItems.size === this.transformedMaterials.length) {
+      this.selectedListItems.clear();
+    } else {
+      this.transformedMaterials.forEach(m => this.selectedListItems.add(m.id));
+    }
+  }
+
+  exportSelected(): void {
+    console.log('Export selected:', Array.from(this.selectedListItems));
+  }
+
+  deleteSelected(): void {
+    console.log('Delete selected:', Array.from(this.selectedListItems));
+  }
+
   viewCompositeMaterial(material: any): void {
     this.selectedViewMaterial = material;
   }
 
   editMaterial(materialIdOrObject: any): void {
     const materialId = typeof materialIdOrObject === 'string' ? materialIdOrObject : materialIdOrObject.id;
+    this.selectedViewMaterial = null;
     this.editingMaterialId = materialId;
     this.additionalQuantities.clear();
     this.materialService.getTransformedMaterialById(materialId).subscribe({
@@ -679,10 +743,11 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         
         // Map images to the correct format
         this.materialImages = (data.images || []).map((img: any) => ({
-          id: img.strId,
-          url: img.strImageUrl,
-          strImageUrl: img.strImageUrl,
-          file: null
+          id: img.strId || Date.now(),
+          materialId: 0,
+          url: img.strImageUrl || img.url,
+          strImageUrl: img.strImageUrl || img.url,
+          status: 'active' as const
         }));
         
         // Map compositions with component material data
