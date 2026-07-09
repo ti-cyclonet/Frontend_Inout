@@ -25,7 +25,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   loading = false;
   saving = false;
   currentStep = 1;
-  totalSteps = 4; // Increased to include images step
+  totalSteps = 5;
   isEditMode = false;
   materialImages: MaterialImage[] = [];
   categories: Category[] = [];
@@ -158,7 +158,10 @@ export class MaterialFormComponent implements OnInit, OnChanges {
           });
           
           if (material.images) {
-            this.materialImages = material.images;
+            this.materialImages = material.images.map((img: any) => ({
+              ...img,
+              url: img.url || img.strImageUrl
+            }));
           }
           
           if (material.strDischargeUnit && material.strDischargeUnit !== material.strUnitMeasure) {
@@ -219,6 +222,8 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         return true; // Category is optional
       case 4:
         return true; // Images are optional
+      case 5:
+        return true; // Review step, always valid
       default:
         return false;
     }
