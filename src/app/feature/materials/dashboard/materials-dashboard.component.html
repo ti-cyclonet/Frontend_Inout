@@ -142,64 +142,91 @@
 <!-- Modal de Carga -->
 <div class="modal fade" [class.show]="showUploadModal" [style.display]="showUploadModal ? 'block' : 'none'" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content import-modal">
       <div class="modal-header">
-        <h5 class="modal-title">Importar Materiales</h5>
+        <h5 class="modal-title">
+          <svg viewBox="0 0 16 16" width="20" height="20" style="margin-right: 8px; fill: #0d6efd;">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#cloud-arrow-up" />
+          </svg>
+          Importar Materiales
+        </h5>
         <button type="button" class="btn-close" (click)="closeUploadModal()" [disabled]="uploadingFile"></button>
       </div>
       <div class="modal-body">
-        <div class="text-center mb-3">
-          <button class="btn btn-primary" (click)="fileInput.click()" [disabled]="uploadingFile">
-            <svg viewBox="0 0 16 16" width="16" height="16" style="margin-right: 8px;">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-arrow-up" />
-            </svg>
-            {{ uploadingFile ? 'Validando...' : 'Seleccionar Archivo' }}
-          </button>
-          <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" style="display: none;" />
-          <div *ngIf="selectedFile" style="margin-top: 8px; font-size: 14px; color: #6c757d;">
-            <svg viewBox="0 0 16 16" width="16" height="16" style="margin-right: 4px;">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-excel" />
-            </svg>
-            {{ selectedFile.name }}
-          </div>
-          <div *ngIf="uploadingFile" style="margin-top: 12px;">
-            <div class="progress" style="height: 8px;">
-              <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%; background-color: #0d6efd;"></div>
+        <!-- Zona de carga tipo dropzone -->
+        <div class="upload-dropzone" [class.has-file]="selectedFile" [class.uploading]="uploadingFile">
+          <div class="dropzone-content">
+            <div class="dropzone-icon" [class.bounce]="!selectedFile && !uploadingFile">
+              <svg viewBox="0 0 16 16" width="40" height="40">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-arrow-up" />
+              </svg>
             </div>
-            <small style="color: #6c757d; margin-top: 4px; display: block;">{{ uploadingFile ? 'Procesando archivo...' : '' }}</small>
+            <button class="btn btn-primary btn-upload" (click)="fileInput.click()" [disabled]="uploadingFile">
+              {{ uploadingFile ? 'Validando...' : 'Seleccionar Archivo' }}
+            </button>
+            <p class="dropzone-hint">Formatos aceptados: .xlsx, .xls</p>
           </div>
+          <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" style="display: none;" />
+        </div>
+
+        <!-- Archivo seleccionado -->
+        <div *ngIf="selectedFile" class="selected-file fade-in">
+          <svg viewBox="0 0 16 16" width="18" height="18" style="fill: #198754;">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-excel" />
+          </svg>
+          <span>{{ selectedFile.name }}</span>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div *ngIf="uploadingFile" class="upload-progress fade-in">
+          <div class="progress" style="height: 6px; border-radius: 3px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%; background: linear-gradient(90deg, #0d6efd, #6610f2);"></div>
+          </div>
+          <small>Procesando archivo...</small>
         </div>
         
+        <!-- Resultado de validación -->
         <ng-container *ngIf="validationResult">
-          <div *ngIf="validationResult.valid" class="alert alert-success">
-            <svg viewBox="0 0 16 16" width="20" height="20" style="margin-right: 8px;">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle-fill" />
-            </svg>
-            <strong>{{ validationResult.message }}</strong>
-            <p class="mb-0 mt-2">Total de filas: {{ validationResult.totalRows }}</p>
+          <div *ngIf="validationResult.valid" class="validation-success fade-in">
+            <div class="validation-icon success-pulse">
+              <svg viewBox="0 0 16 16" width="24" height="24">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle-fill" />
+              </svg>
+            </div>
+            <div class="validation-info">
+              <strong>{{ validationResult.message }}</strong>
+              <span>Total de filas: {{ validationResult.totalRows }}</span>
+            </div>
           </div>
           
-          <div *ngIf="!validationResult.valid" class="alert alert-danger">
-            <svg viewBox="0 0 16 16" width="20" height="20" style="margin-right: 8px;">
-              <use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" />
-            </svg>
-            <strong>{{ validationResult.message }}</strong>
-            <p class="mb-0 mt-2" *ngIf="validationResult.totalRows > 0">Filas válidas: {{ validationResult.validRows }} / {{ validationResult.totalRows }}</p>
-            
-            <div class="mt-3" style="max-height: 300px; overflow-y: auto;" *ngIf="validationResult.errors && validationResult.errors.length > 0">
-              <div *ngFor="let error of validationResult.errors" class="mb-2 p-2" style="background: #fff3cd; border-radius: 4px;">
-                <strong>Fila {{ error.row }}: {{ error.name }}</strong>
-                <ul class="mb-0 mt-1">
-                  <li *ngFor="let err of error.errors">{{ err }}</li>
-                </ul>
-              </div>
+          <div *ngIf="!validationResult.valid" class="validation-error fade-in">
+            <div class="validation-icon">
+              <svg viewBox="0 0 16 16" width="24" height="24">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" />
+              </svg>
+            </div>
+            <div class="validation-info">
+              <strong>{{ validationResult.message }}</strong>
+              <span *ngIf="validationResult.totalRows > 0">Filas válidas: {{ validationResult.validRows }} / {{ validationResult.totalRows }}</span>
+            </div>
+          </div>
+
+          <div class="validation-errors-list" *ngIf="!validationResult.valid && validationResult.errors && validationResult.errors.length > 0">
+            <div *ngFor="let error of validationResult.errors" class="error-item">
+              <strong>Fila {{ error.row }}: {{ error.name }}</strong>
+              <ul>
+                <li *ngFor="let err of error.errors">{{ err }}</li>
+              </ul>
             </div>
           </div>
         </ng-container>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeUploadModal()" [disabled]="uploadingFile">Cancelar</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeUploadModal()" [disabled]="uploadingFile">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="confirmUpload()" [disabled]="!validationResult?.valid || uploadingFile">
+          <svg viewBox="0 0 16 16" width="14" height="14" style="margin-right: 6px;">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#cloud-check" />
+          </svg>
           {{ uploadingFile ? 'Cargando...' : 'Cargar Materiales' }}
         </button>
       </div>
@@ -218,7 +245,7 @@
       </div>
       <div class="modal-body">
         <p style="font-size: 12px; color: #6c757d; margin-bottom: 12px; line-height: 1.4;">
-          Las categorías permiten clasificar y organizar tus materiales y productos. Puedes crear categorías una a una o usar la <strong>carga masiva</strong> descargando la plantilla Excel, completándola con tus datos y subiéndola con el botón "Cargar".
+          Las categorías permiten clasificar y organizar los materiales y productos. Se pueden crear categorías una a una o usar la <strong>carga masiva</strong> descargando la plantilla Excel, completándola con los datos y subiéndola con el botón "Cargar".
         </p>
         <div style="background: #f8f9fa; border-radius: 6px; overflow: hidden;">
           <div class="category-modal-header">
@@ -234,13 +261,22 @@
                 <svg viewBox="0 0 16 16" width="12" height="12" style="margin-right: 4px;">
                   <use xlink:href="./assets/icons/bootstrap-icons.svg#upload" />
                 </svg>
-                {{ uploadingCategories ? 'Cargando...' : 'Cargar' }}
+                Cargar
               </button>
               <input #categoryFileInput type="file" accept=".xlsx,.xls" (change)="onCategoryFileSelected($event)" style="display: none;" />
               <button class="btn btn-sm btn-outline-success" (click)="toggleAddCategory()" style="padding: 4px 10px; font-size: 12px;">
-                {{ showAddCategory ? 'Cancelar' : '+ Nueva' }}
+                <svg viewBox="0 0 16 16" width="12" height="12" style="margin-right: 4px;">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+                </svg>
+                {{ showAddCategory ? 'Cancelar' : 'Nueva' }}
               </button>
             </div>
+          </div>
+
+          <!-- Spinner de carga separado -->
+          <div *ngIf="uploadingCategories" class="category-upload-spinner">
+            <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+            <span>Cargando categorías...</span>
           </div>
           
           <div style="padding: 12px;">
