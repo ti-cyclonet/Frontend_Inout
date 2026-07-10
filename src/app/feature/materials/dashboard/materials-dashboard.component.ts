@@ -184,17 +184,29 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
         this.uploadingFile = false;
         this.showUploadModal = false;
         
+        const hasErrors = response.errors.length > 0;
         Swal.fire({
-          icon: 'success',
-          title: 'Carga Completada',
+          icon: hasErrors ? 'warning' : 'success',
+          title: hasErrors ? 'Carga con advertencias' : '¡Carga Exitosa!',
           html: `
-            <strong>${response.message}</strong><br><br>
-            Éxitos: ${response.success}<br>
-            Errores: ${response.errors.length}
-            ${response.errors.length > 0 ? '<br><br><div style="text-align: left; max-height: 200px; overflow-y: auto; padding: 10px; background: #f8f9fa; border-radius: 5px;">' + response.errors.map((e: any) => `<strong>${e.row}:</strong> ${e.error}`).join('<br>') + '</div>' : ''}
+            <div style="text-align: center; padding: 8px 0;">
+              <div style="display: inline-flex; gap: 24px; margin-bottom: 16px;">
+                <div style="text-align: center; padding: 12px 20px; background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0;">
+                  <div style="font-size: 28px; font-weight: 700; color: #16a34a;">${response.success}</div>
+                  <div style="font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Creados</div>
+                </div>
+                <div style="text-align: center; padding: 12px 20px; background: ${hasErrors ? '#fef2f2' : '#f8f9fa'}; border-radius: 10px; border: 1px solid ${hasErrors ? '#fecaca' : '#e9ecef'};">
+                  <div style="font-size: 28px; font-weight: 700; color: ${hasErrors ? '#dc2626' : '#6c757d'};">${response.errors.length}</div>
+                  <div style="font-size: 11px; color: ${hasErrors ? '#991b1b' : '#6c757d'}; text-transform: uppercase; letter-spacing: 0.5px;">Errores</div>
+                </div>
+              </div>
+              ${hasErrors ? '<div style="text-align: left; max-height: 180px; overflow-y: auto; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 13px;">' + response.errors.map((e: any) => `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #fee2e2;"><strong style="color: #991b1b;">${e.row}:</strong> <span style="color: #7f1d1d;">${e.error}</span></div>`).join('') + '</div>' : ''}
+            </div>
           `,
           confirmButtonText: 'Aceptar',
-          width: '600px'
+          confirmButtonColor: '#0d6efd',
+          width: '420px',
+          customClass: { popup: 'swal-rounded' }
         });
         
         this.loadMetrics();
@@ -207,8 +219,11 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
         this.uploadingFile = false;
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: error.error?.message || 'Error al cargar el archivo'
+          title: 'Error al cargar',
+          text: error.error?.message || 'Error al cargar el archivo',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#0d6efd',
+          customClass: { popup: 'swal-rounded' }
         });
       }
     });
@@ -280,17 +295,34 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
         this.newCategoryDescription = '';
         Swal.fire({
           icon: 'success',
-          title: 'Categoría creada',
-          html: `<strong>ID:</strong> ${category.id}<br><strong>Código:</strong> ${category.code}`,
+          title: '¡Categoría creada!',
+          html: `
+            <div style="display: flex; flex-direction: column; gap: 8px; padding: 8px 0;">
+              <div style="display: flex; justify-content: center; gap: 16px;">
+                <div style="padding: 8px 16px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
+                  <span style="font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">ID</span>
+                  <div style="font-size: 18px; font-weight: 700; color: #16a34a;">${category.id}</div>
+                </div>
+                <div style="padding: 8px 16px; background: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe;">
+                  <span style="font-size: 11px; color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.5px;">Código</span>
+                  <div style="font-size: 18px; font-weight: 700; color: #1d4ed8;">${category.code}</div>
+                </div>
+              </div>
+            </div>
+          `,
           timer: 3000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          customClass: { popup: 'swal-rounded' }
         });
       },
       error: () => {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'No se pudo crear la categoría'
+          text: 'No se pudo crear la categoría',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#0d6efd',
+          customClass: { popup: 'swal-rounded' }
         });
       }
     });
@@ -326,14 +358,26 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
           this.uploadingCategories = false;
           Swal.fire({
             icon: 'success',
-            title: 'Carga Completada',
+            title: '¡Carga Completada!',
             html: `
-              <strong>${result.message}</strong><br><br>
-              Éxitos: ${result.success}<br>
-              Errores: ${result.errors.length}
-              ${result.errors.length > 0 ? '<br><br><div style="text-align: left; max-height: 200px; overflow-y: auto; padding: 10px; background: #f8f9fa; border-radius: 5px;">' + result.errors.map((e: any) => `<strong>${e.row}:</strong> ${e.error}`).join('<br>') + '</div>' : ''}
+              <div style="text-align: center; padding: 8px 0;">
+                <div style="display: inline-flex; gap: 24px; margin-bottom: 16px;">
+                  <div style="text-align: center; padding: 12px 20px; background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 28px; font-weight: 700; color: #16a34a;">${result.success}</div>
+                    <div style="font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Éxitos</div>
+                  </div>
+                  <div style="text-align: center; padding: 12px 20px; background: ${result.errors.length > 0 ? '#fef2f2' : '#f8f9fa'}; border-radius: 10px; border: 1px solid ${result.errors.length > 0 ? '#fecaca' : '#e9ecef'};">
+                    <div style="font-size: 28px; font-weight: 700; color: ${result.errors.length > 0 ? '#dc2626' : '#6c757d'};">${result.errors.length}</div>
+                    <div style="font-size: 11px; color: ${result.errors.length > 0 ? '#991b1b' : '#6c757d'}; text-transform: uppercase; letter-spacing: 0.5px;">Errores</div>
+                  </div>
+                </div>
+                ${result.errors.length > 0 ? '<div style="text-align: left; max-height: 180px; overflow-y: auto; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 13px;">' + result.errors.map((e: any) => `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #fee2e2;"><strong style="color: #991b1b;">${e.row}:</strong> <span style="color: #7f1d1d;">${e.error}</span></div>`).join('') + '</div>' : ''}
+              </div>
             `,
-            confirmButtonText: 'Aceptar'
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#0d6efd',
+            width: '420px',
+            customClass: { popup: 'swal-rounded' }
           });
           this.loadCategories();
           event.target.value = '';
@@ -343,7 +387,10 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: error.error?.message || 'No se pudo cargar el archivo'
+            text: error.error?.message || 'No se pudo cargar el archivo',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#0d6efd',
+            customClass: { popup: 'swal-rounded' }
           });
           event.target.value = '';
         }
