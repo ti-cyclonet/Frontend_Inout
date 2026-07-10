@@ -420,3 +420,39 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Category Modal Header */
+.category-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #e9ecef;
+  gap: 8px;
+}
+
+.category-modal-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.category-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 576px) {
+  .category-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .category-modal-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
