@@ -1,9 +1,8 @@
 .products-list-wrapper {
-  height: calc(100vh - 200px);
+  min-height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;
   background: #f8f9fa;
-  overflow-y: auto;
 }
 
 .list-header {
@@ -395,7 +394,6 @@
 
 .cards-container {
   flex: 1;
-  overflow: auto;
   padding: 1.5rem 1.5rem 5rem 1.5rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));

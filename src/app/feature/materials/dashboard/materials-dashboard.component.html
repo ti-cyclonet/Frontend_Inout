@@ -217,24 +217,27 @@
         <button type="button" class="btn-close" (click)="closeCategoryModal()"></button>
       </div>
       <div class="modal-body">
+        <p style="font-size: 12px; color: #6c757d; margin-bottom: 12px; line-height: 1.4;">
+          Las categorías permiten clasificar y organizar tus materiales y productos. Puedes crear categorías una a una o usar la <strong>carga masiva</strong> descargando la plantilla Excel, completándola con tus datos y subiéndola con el botón "Cargar".
+        </p>
         <div style="background: #f8f9fa; border-radius: 6px; overflow: hidden;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #e9ecef;">
-            <h6 style="margin: 0; font-size: 14px; font-weight: 600;">Categorías Disponibles ({{ filteredCategories.length }})</h6>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-sm btn-outline-primary" (click)="downloadCategoryTemplate()" style="padding: 2px 8px; font-size: 12px;">
+          <div class="category-modal-header">
+            <h6 class="category-modal-title">Categorías Disponibles ({{ filteredCategories.length }})</h6>
+            <div class="category-modal-actions">
+              <button class="btn btn-sm btn-outline-success" (click)="downloadCategoryTemplate()" style="padding: 4px 10px; font-size: 12px;">
                 <svg viewBox="0 0 16 16" width="12" height="12" style="margin-right: 4px;">
                   <use xlink:href="./assets/icons/bootstrap-icons.svg#download" />
                 </svg>
                 Plantilla
               </button>
-              <button class="btn btn-sm btn-outline-success" (click)="categoryFileInput.click()" [disabled]="uploadingCategories" style="padding: 2px 8px; font-size: 12px;">
+              <button class="btn btn-sm btn-outline-success" (click)="categoryFileInput.click()" [disabled]="uploadingCategories" style="padding: 4px 10px; font-size: 12px;">
                 <svg viewBox="0 0 16 16" width="12" height="12" style="margin-right: 4px;">
                   <use xlink:href="./assets/icons/bootstrap-icons.svg#upload" />
                 </svg>
                 {{ uploadingCategories ? 'Cargando...' : 'Cargar' }}
               </button>
               <input #categoryFileInput type="file" accept=".xlsx,.xls" (change)="onCategoryFileSelected($event)" style="display: none;" />
-              <button class="btn btn-sm btn-success" (click)="toggleAddCategory()" style="padding: 2px 8px; font-size: 12px;">
+              <button class="btn btn-sm btn-outline-success" (click)="toggleAddCategory()" style="padding: 4px 10px; font-size: 12px;">
                 {{ showAddCategory ? 'Cancelar' : '+ Nueva' }}
               </button>
             </div>
