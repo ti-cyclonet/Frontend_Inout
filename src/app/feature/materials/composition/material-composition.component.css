@@ -1958,3 +1958,9 @@
 .card-low-stock:hover {
   border-color: #fca5a5 !important;
 }
+
+
+/* Mobile Low Stock */
+.mobile-list-item.mobile-low-stock {
+  background-color: #fff5f5 !important;
+}

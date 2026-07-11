@@ -590,7 +590,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  margin-bottom: 3rem;
+  margin-bottom: 5rem;
   background: white;
   border-top: 1px solid #e9ecef;
   flex-shrink: 0;
@@ -1143,4 +1143,10 @@
 
 .card-low-stock:hover {
   border-color: #fca5a5 !important;
+}
+
+
+/* Mobile Low Stock */
+.mobile-list-item.mobile-low-stock {
+  background-color: #fff5f5 !important;
 }
