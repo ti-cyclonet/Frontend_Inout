@@ -1937,3 +1937,24 @@
   padding: 0.3rem 0.4rem;
   font-size: 0.75rem;
 }
+
+
+/* Low Stock Highlight */
+.materials-table tr.row-low-stock,
+.materials-table tr.row-low-stock td {
+  background-color: #fff5f5 !important;
+}
+
+.materials-table tr.row-low-stock:hover,
+.materials-table tr.row-low-stock:hover td {
+  background-color: #fee2e2 !important;
+}
+
+.card-low-stock {
+  background: #fef8f8 !important;
+  border-color: #fecaca !important;
+}
+
+.card-low-stock:hover {
+  border-color: #fca5a5 !important;
+}

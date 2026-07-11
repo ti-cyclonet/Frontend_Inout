@@ -48,7 +48,44 @@
   </div>
 
   <!-- Usage variables -->
-  <div *ngIf="usageStatus && !loading && !error" class="row g-3">
+  <div *ngIf="usageStatus && !loading && !error">
+
+    <!-- Plan Timeline -->
+    <div *ngIf="usageStatus.planTimeline" class="plan-timeline-card mb-4" [class.expired]="planExpired">
+      <div class="timeline-header">
+        <div class="timeline-title">
+          <i class="bi bi-calendar-range me-2"></i>
+          <span>Vigencia del Plan</span>
+        </div>
+        <div class="timeline-badge" [ngClass]="{
+          'badge-success': timelinePercentage < 70,
+          'badge-warning': timelinePercentage >= 70 && !planExpired,
+          'badge-danger': planExpired
+        }">
+          {{ planExpired ? 'Vencido' : daysRemaining + ' días restantes' }}
+        </div>
+      </div>
+
+      <div class="timeline-bar-container">
+        <div class="timeline-bar">
+          <div class="timeline-progress" [style.width.%]="timelinePercentage" [ngClass]="{
+            'progress-green': timelinePercentage < 70,
+            'progress-yellow': timelinePercentage >= 70 && timelinePercentage < 90,
+            'progress-red': timelinePercentage >= 90
+          }">
+            <div class="timeline-pulse" *ngIf="!planExpired"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-labels">
+        <span class="timeline-date">{{ usageStatus.planTimeline.startDate | date:'dd MMM yyyy' }}</span>
+        <span class="timeline-elapsed">{{ daysElapsed }} de {{ totalDays }} días</span>
+        <span class="timeline-date">{{ usageStatus.planTimeline.endDate | date:'dd MMM yyyy' }}</span>
+      </div>
+    </div>
+
+    <div class="row g-3">
     <div class="col-md-6 col-lg-4" *ngFor="let variable of usageStatus.variables">
       <div class="card usage-card h-100 shadow-sm">
         <div class="card-body">
@@ -79,6 +116,13 @@
                  [style.width.%]="clampPercentage(variable.usagePercentage)">
             </div>
           </div>
+
+          <!-- Indicador de reset automático mensual -->
+          <div *ngIf="isMonthlyResettable(variable)" class="mt-2">
+            <small class="text-muted">
+              <i class="bi bi-clock-history me-1"></i>Reset automático el 1 de cada mes
+            </small>
+          </div>
         </div>
       </div>
     </div>
@@ -90,6 +134,7 @@
         No hay variables de consumo configuradas para su paquete.
       </div>
     </div>
+  </div>
   </div>
 
   <!-- Recalibration result -->
