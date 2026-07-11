@@ -273,7 +273,9 @@
 
   <!-- Mobile List View -->
   <div class="mobile-list" *ngIf="viewMode === 'table' && materials.length > 0">
-    <div class="mobile-list-item" *ngFor="let material of materials; trackBy: trackById" (click)="viewMaterial(material)">
+    <div class="mobile-list-item" *ngFor="let material of materials; trackBy: trackById" 
+         (click)="viewMaterial(material)"
+         [class.mobile-low-stock]="getStockStatusClass(material) === 'stock-low'">
       <div class="mobile-list-info">
         <div class="mobile-list-image">
           <img *ngIf="material.images && material.images.length > 0" 
@@ -286,6 +288,7 @@
         <div class="mobile-list-text">
           <strong>{{ material.name }}</strong>
           <small class="text-muted">{{ material['strCode'] || '' }} · {{ material.measurementUnit }}</small>
+          <small [ngClass]="getStockStatusClass(material)">Stock: {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}</small>
         </div>
       </div>
       <svg viewBox="0 0 16 16" width="16" height="16" fill="#6c757d">
