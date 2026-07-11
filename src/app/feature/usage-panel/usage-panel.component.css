@@ -35,3 +35,143 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Plan Timeline */
+.plan-timeline-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  animation: fadeSlideDown 0.5s ease-out;
+}
+
+.plan-timeline-card.expired {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.timeline-title {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.timeline-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.timeline-badge.badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.timeline-badge.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.timeline-badge.badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.timeline-bar-container {
+  padding: 4px 0;
+}
+
+.timeline-bar {
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.timeline-progress {
+  height: 100%;
+  border-radius: 4px;
+  position: relative;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timeline-progress.progress-green {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.timeline-progress.progress-yellow {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.timeline-progress.progress-red {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.timeline-pulse {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  border-radius: 0 4px 4px 0;
+  background: rgba(255, 255, 255, 0.6);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.timeline-date {
+  font-size: 0.7rem;
+  color: #6c757d;
+}
+
+.timeline-elapsed {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 576px) {
+  .timeline-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .plan-timeline-card {
+    padding: 1rem;
+  }
+}

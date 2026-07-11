@@ -146,7 +146,8 @@
         </thead>
         <tbody>
           <tr *ngFor="let material of transformedMaterials"
-              [class.selected]="selectedListItems.has(material.id)">
+              [class.selected]="selectedListItems.has(material.id)"
+              [class.row-low-stock]="getStockStatusClass(material) === 'stock-low'">
             <td class="hide-mobile">
               <input type="checkbox"
                 [checked]="selectedListItems.has(material.id)"
@@ -197,11 +198,8 @@
                 <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" title="Ver Kardex" (click)="goToKardex(material)">
                   <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" /></svg>
                 </button>
-                <button class="btn btn-sm btn-outline-primary d-md-none" title="Ver" (click)="viewCompositeMaterial(material)">
+                <button class="btn btn-sm btn-outline-primary" title="Ver" (click)="viewCompositeMaterial(material)">
                   <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#eye" /></svg>
-                </button>
-                <button class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex" title="Editar" (click)="editMaterial(material)">
-                  <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg>
                 </button>
                 <button class="btn btn-sm btn-outline-danger d-none d-md-inline-flex" title="Eliminar">
                   <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#trash" /></svg>
@@ -242,7 +240,8 @@
     class="cards-container"
     *ngIf="viewMode === 'cards' && transformedMaterials.length > 0 && !loading"
   >
-    <div class="material-card" *ngFor="let material of transformedMaterials">
+    <div class="material-card" *ngFor="let material of transformedMaterials"
+         [class.card-low-stock]="getStockStatusClass(material) === 'stock-low'">
       <div class="card-image" *ngIf="material.images && material.images.length > 0">
         <div class="card-slider">
           <img 
@@ -321,9 +320,9 @@
             <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
           </svg>
         </button>
-        <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(material)">
+        <button class="btn btn-sm btn-outline-primary" (click)="viewCompositeMaterial(material)">
           <svg viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
           </svg>
         </button>
         <button class="btn btn-sm btn-outline-danger">

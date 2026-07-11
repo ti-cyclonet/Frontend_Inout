@@ -23,4 +23,8 @@ export class UsageStatusService {
   recalibrateCounters(): Observable<{ tenantId: string; recalibrated: { variableName: string; previousCount: number; actualCount: number }[] }> {
     return this.http.post<any>(`${this.apiUrl}/recalibrate`, {});
   }
+
+  resetCounter(variableName: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/reset-counter`, { variableName });
+  }
 }

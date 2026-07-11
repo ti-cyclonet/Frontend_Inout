@@ -185,7 +185,8 @@
         </thead>
         <tbody>
           <tr *ngFor="let material of materials; trackBy: trackById" 
-              [class.selected]="selectedMaterials.has(material.id)">
+              [class.selected]="selectedMaterials.has(material.id)"
+              [class.row-low-stock]="getStockStatusClass(material) === 'stock-low'">
             <td class="hide-mobile">
               <input 
                 type="checkbox" 
@@ -247,14 +248,14 @@
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-primary d-md-none" (click)="viewMaterial(material)" title="Ver">
+                <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" (click)="viewMaterial(material)" title="Ver">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex" (click)="editMaterial(material)" title="Editar">
+                <button class="btn btn-sm btn-outline-primary d-md-none" (click)="viewMaterial(material)" title="Ver">
                   <svg viewBox="0 0 16 16">
-                    <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
                 <button class="btn btn-sm btn-outline-danger d-none d-md-inline-flex" (click)="deleteMaterial(material)" title="Eliminar">
@@ -296,7 +297,8 @@
   <!-- Cards View -->
   <div class="cards-container" *ngIf="viewMode === 'cards'">
     <div class="material-card" *ngFor="let material of materials; trackBy: trackById"
-         [class.selected]="selectedMaterials.has(material.id)">
+         [class.selected]="selectedMaterials.has(material.id)"
+         [class.card-low-stock]="getStockStatusClass(material) === 'stock-low'">
       
       <div class="card-image" *ngIf="material.images && material.images.length > 0">
         <div class="card-slider">
@@ -386,14 +388,9 @@
             <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
           </svg>
         </button>
-        <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" (click)="viewMaterial(material)">
+        <button class="btn btn-sm btn-outline-primary" (click)="viewMaterial(material)">
           <svg viewBox="0 0 16 16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
-          </svg>
-        </button>
-        <button class="btn btn-sm btn-outline-secondary" (click)="editMaterial(material)">
-          <svg viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
           </svg>
         </button>
         <button class="btn btn-sm btn-outline-danger" (click)="deleteMaterial(material)">

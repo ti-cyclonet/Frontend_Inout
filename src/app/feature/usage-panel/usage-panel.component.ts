@@ -18,6 +18,18 @@ export class UsagePanelComponent implements OnInit {
   recalibrating = false;
   recalibrationResult: { recalibrated: { variableName: string; previousCount: number; actualCount: number }[] } | null = null;
 
+  // Variables visibles en el panel (en orden específico)
+  private visibleVariables = ['nMateriales', 'nMaterialesT', 'nProductos', 'nLotes', 'nClientes', 'nVentas'];
+  // Variables que se resetean mensualmente
+  private monthlyResetVariables = ['nLotes', 'nVentas'];
+
+  // Timeline del plan
+  daysElapsed = 0;
+  daysRemaining = 0;
+  totalDays = 0;
+  timelinePercentage = 0;
+  planExpired = false;
+
   constructor(private usageStatusService: UsageStatusService) {}
 
   ngOnInit(): void {
@@ -31,7 +43,13 @@ export class UsagePanelComponent implements OnInit {
 
     this.usageStatusService.getUsageStatus().subscribe({
       next: (response) => {
-        this.usageStatus = response;
+        this.usageStatus = {
+          ...response,
+          variables: this.visibleVariables
+            .map(name => response.variables.find(v => v.variableName === name))
+            .filter((v): v is UsageVariable => !!v)
+        };
+        this.calculateTimeline(response);
         this.loading = false;
       },
       error: (err) => {
@@ -44,12 +62,30 @@ export class UsagePanelComponent implements OnInit {
   loadWarnings(): void {
     this.usageStatusService.getUsageWarnings().subscribe({
       next: (response) => {
-        this.warnings = response.warnings || [];
+        this.warnings = (response.warnings || []).filter(w => this.visibleVariables.includes(w.variableName));
       },
       error: () => {
         this.warnings = [];
       }
     });
+  }
+
+  isMonthlyResettable(variable: UsageVariable): boolean {
+    return this.monthlyResetVariables.includes(variable.variableName);
+  }
+
+  private calculateTimeline(response: UsageStatusResponse): void {
+    if (!response.planTimeline) return;
+
+    const start = new Date(response.planTimeline.startDate);
+    const end = new Date(response.planTimeline.endDate);
+    const now = new Date();
+
+    this.totalDays = response.planTimeline.totalDays;
+    this.daysElapsed = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    this.daysRemaining = Math.max(0, Math.floor((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    this.timelinePercentage = Math.min(100, Math.round((this.daysElapsed / this.totalDays) * 100));
+    this.planExpired = now > end;
   }
 
   recalibrate(): void {

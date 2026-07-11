@@ -10,7 +10,14 @@ export interface UsageStatusResponse {
   tenantId: string;
   packageName: string;
   isBillable: boolean;
+  planTimeline: PlanTimeline | null;
   variables: UsageVariable[];
+}
+
+export interface PlanTimeline {
+  startDate: string;
+  endDate: string;
+  totalDays: number;
 }
 
 export interface UsageWarning {
