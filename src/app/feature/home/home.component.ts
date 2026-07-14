@@ -445,7 +445,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       
       this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
         .then(contract => {
-          window.open(`${environment.apiUrl.replace('/api/inventory', '')}/marketplace/${contract.user.id}?admin=true`, '_blank');
+          window.open(`/marketplace/${contract.user.id}?admin=true`, '_blank');
         })
         .catch(error => {
           console.error('Error al obtener contrato:', error);
