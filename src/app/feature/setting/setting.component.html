@@ -93,7 +93,12 @@
                       <use xlink:href="./assets/icons/bootstrap-icons.svg#gear" />
                     </svg>
                   </button>
-                  <button type="button" class="btn-icon" (click)="eliminarPeriodo(periodo)" title="Delete">
+                  <button type="button" class="btn-icon" 
+                    (click)="eliminarPeriodo(periodo)" 
+                    [disabled]="periodo.activo"
+                    [title]="periodo.activo ? 'No se puede eliminar un período activo' : 'Eliminar'"
+                    [style.opacity]="periodo.activo ? '0.3' : '1'"
+                    [style.cursor]="periodo.activo ? 'not-allowed' : 'pointer'">
                     <svg width="18" height="18" fill="currentColor" class="text-danger">
                       <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
                     </svg>
@@ -126,10 +131,64 @@
         </div>
       </div>
     </div>
+
+    <!-- Parámetros del Período Seleccionado -->
+    <div class="inner-container" *ngIf="periodoActivo || periodoVistaParametros">
+      <div class="params-header">
+        <div>
+          <h5 class="card-title mb-1" style="font-size: 1rem;">
+            <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" style="margin-right: 6px; color: #0066CC;">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#sliders" />
+            </svg>
+            Parámetros del Período
+          </h5>
+          <small class="text-muted">
+            {{ (periodoVistaParametros || periodoActivo)?.nombre }}
+            <span class="badge bg-success ms-1" *ngIf="(periodoVistaParametros || periodoActivo)?.activo">ACTIVO</span>
+          </small>
+        </div>
+        <select class="form-select form-select-sm params-select"
+                [(ngModel)]="periodoVistaParametrosId" (change)="onPeriodoVistaChange()">
+          <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }} {{ p.activo ? '(Activo)' : '' }}</option>
+        </select>
+      </div>
+
+      <div *ngIf="parametrosVista.length > 0" class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead style="background: #f8f9fa;">
+            <tr>
+              <th>Parámetro</th>
+              <th>Valor</th>
+              <th class="d-none d-md-table-cell">Descripción</th>
+              <th class="text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let param of parametrosVista">
+              <td><strong>{{ param.nombre }}</strong></td>
+              <td>
+                <span class="badge bg-primary" style="font-size: 0.8rem;">{{ param.valor | number:'1.0-0' }}</span>
+              </td>
+              <td class="d-none d-md-table-cell text-muted" style="font-size: 0.8rem;">{{ param.descripcion }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="param.estado === 'ACTIVE' || param.estado === 'active' ? 'bg-success' : 'bg-secondary'">
+                  {{ param.estado === 'ACTIVE' || param.estado === 'active' ? 'ACTIVO' : 'INACTIVO' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="parametrosVista.length === 0" class="text-center py-4 text-muted">
+        <svg viewBox="0 0 16 16" width="32" height="32" fill="currentColor" style="opacity: 0.3; margin-bottom: 8px;">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#sliders" />
+        </svg>
+        <p class="mb-0" style="font-size: 0.85rem;">No hay parámetros configurados para este período</p>
+      </div>
+    </div>
   </div>
 </div>
-
-<!-- Modal para configurar parámetros del cliente -->
 <div class="modal fade" id="parametersModal" tabindex="-1" aria-labelledby="parametersModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">

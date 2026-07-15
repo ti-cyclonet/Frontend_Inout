@@ -41,6 +41,11 @@ export class SettingComponent implements OnInit {
   parametrosPage = 0;
   parametrosPageSize = 5;
 
+  // Vista de parámetros por período
+  periodoVistaParametros: any = null;
+  periodoVistaParametrosId: string = '';
+  parametrosVista: any[] = [];
+
   private baseUrl = environment.apiUrl;
 
   constructor(private fb: FormBuilder, private http: HttpClient) {
@@ -91,6 +96,13 @@ export class SettingComponent implements OnInit {
         
         this.periodoActivo = this.periodos.find(p => p.activo);
         this.aplicarFiltrosPeriodos();
+
+        // Auto-select active period for parameters view
+        if (this.periodoActivo && !this.periodoVistaParametrosId) {
+          this.periodoVistaParametrosId = this.periodoActivo.id;
+          this.periodoVistaParametros = this.periodoActivo;
+          this.loadParametrosVista(this.periodoActivo.id);
+        }
       },
       error: () => {
         Swal.fire('Error', 'No se pudieron cargar los períodos', 'error');
@@ -524,5 +536,29 @@ export class SettingComponent implements OnInit {
     if (value && !isNaN(parseFloat(value))) {
       param.valorSinFormato = value;
     }
+  }
+
+  onPeriodoVistaChange(): void {
+    const periodo = this.periodos.find(p => p.id === this.periodoVistaParametrosId);
+    this.periodoVistaParametros = periodo || null;
+    if (periodo) {
+      this.loadParametrosVista(periodo.id);
+    }
+  }
+
+  loadParametrosVista(periodoId: string): void {
+    this.http.get<any[]>(`${this.baseUrl}/periods/${periodoId}/customer-parameters`).subscribe({
+      next: (parametros) => {
+        this.parametrosVista = parametros.map(p => ({
+          nombre: p.name || p.customerParameter?.name || 'Sin nombre',
+          valor: p.value || 0,
+          descripcion: p.customerParameter?.description || p.description || '',
+          estado: p.status || 'ACTIVE',
+        }));
+      },
+      error: () => {
+        this.parametrosVista = [];
+      }
+    });
   }
 }

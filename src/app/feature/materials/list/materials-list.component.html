@@ -306,7 +306,7 @@
       <div class="card-image" *ngIf="material.images && material.images.length > 0">
         <div class="card-slider">
           <img 
-            [src]="material.images[getSlideIndex(material)]?.strImageUrl || material.images[getSlideIndex(material)]?.url" 
+            [src]="material.images[getSlideIndex(material)].strImageUrl || material.images[getSlideIndex(material)].url" 
             [alt]="material.name">
           <button class="slider-btn slider-prev" 
                   *ngIf="material.images.length > 1"
