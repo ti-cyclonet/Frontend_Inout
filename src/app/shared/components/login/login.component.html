@@ -72,22 +72,43 @@
       <!-- Formulario de Login -->
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" *ngIf="!showClientSelector">
         <!-- Campo email -->
-        <div class="form-group m-2">
-          <input type="email" class="form-control mt-2" placeholder="Correo electrónico" formControlName="username" 
-                 [ngClass]="{'is-invalid': submitted && f['username'].invalid}">
+        <div class="form-group m-2 fieldsForm">
+          <div class="input-group mt-2">
+            <span class="input-group-text">
+              <svg fill="currentColor" viewBox="0 0 16 16" style="width: 1rem; height: 1rem; color: #444444;">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#envelope" />
+              </svg>
+            </span>
+            <input type="email" class="form-control" placeholder="Correo electrónico"
+                   formControlName="username"
+                   [ngClass]="{'is-invalid': submitted && f['username'].invalid}">
+          </div>
           <div *ngIf="submitted && f['username'].errors" class="text-danger">
-            <div *ngIf="f['username'].errors?.['required']" class="custom-error-box" >Este campo es requerido.</div>
+            <div *ngIf="f['username'].errors?.['required']" class="custom-error-box">Este campo es requerido.</div>
             <div *ngIf="f['username'].errors?.['email']" class="custom-error-box">El formato del correo es inválido.</div>
           </div>
         </div>
         <!-- Campo Contraseña -->
-        <div class="form-group m-2">
-          <input type="password" class="form-control mt-2" placeholder="Contraseña"
-                 formControlName="password"
-                 [ngClass]="{'is-invalid': submitted && f['password'].invalid}">
+        <div class="form-group m-2 fieldsForm">
+          <div class="input-group mt-2">
+            <span class="input-group-text">
+              <svg fill="currentColor" viewBox="0 0 16 16" style="width: 1rem; height: 1rem; color: #444444;">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#lock" />
+              </svg>
+            </span>
+            <input [type]="showPassword ? 'text' : 'password'" class="form-control"
+                   placeholder="Contraseña" formControlName="password"
+                   [ngClass]="{'is-invalid': submitted && f['password'].invalid}">
+            <button type="button" class="input-group-text"
+                    (click)="showPassword = !showPassword" tabindex="-1" title="Toggle password visibility">
+              <svg fill="currentColor" viewBox="0 0 16 16" style="width: 1rem; height: 1rem; color: #444444;">
+                <use [attr.xlink:href]="showPassword ? './assets/icons/bootstrap-icons.svg#eye-slash' : './assets/icons/bootstrap-icons.svg#eye'" />
+              </svg>
+            </button>
+          </div>
           <div *ngIf="submitted && f['password'].errors" class="text-danger">
-            <small *ngIf="f['password'].errors?.['required']" class="custom-error" class="custom-error-box">La contraseña es requerida.</small>
-            <small *ngIf="f['password'].errors?.['minlength']" class="custom-error" class="custom-error-box">Debe tener al menos 6 caracteres.</small>
+            <small *ngIf="f['password'].errors?.['required']" class="custom-error-box">La contraseña es requerida.</small>
+            <small *ngIf="f['password'].errors?.['minlength']" class="custom-error-box">Debe tener al menos 6 caracteres.</small>
           </div>
         </div>      
         <hr style="border: 2px solid rgb(255, 255, 255)">
