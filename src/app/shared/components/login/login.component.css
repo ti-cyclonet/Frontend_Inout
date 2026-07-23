@@ -79,16 +79,11 @@
 }
 
   
-  /* Redondear los campos de entrada */
-input.form-control {
-  border-radius: 30px; /* Cambiar este valor para ajustar el nivel de redondez */
-}
-
 /* Redondear el botón de "Sign in" */
 .custom-btn {
   border-radius: 30px;
     width: 50%;
-    max-width: 250px; /* Asegúrate de que el botón también sea redondeado */
+    max-width: 250px;
 }
 .custom-card {
     border-radius: 18px !important;
@@ -182,6 +177,44 @@ input.form-control {
         font-size: 1.3rem;
         padding-top: 0.5%;
     }
+}
+
+/* Input group con iconos */
+.fieldsForm {
+  overflow: hidden;
+}
+.fieldsForm .input-group {
+  border: 2px solid #e65100;
+  border-radius: 25px;
+  background-color: rgba(255, 255, 255, 0.85);
+  align-items: center;
+  overflow: hidden;
+  flex-wrap: nowrap !important;
+}
+.fieldsForm .input-group .input-group-text {
+  background-color: transparent;
+  border: none;
+  padding: 8px 14px;
+  flex: 0 0 auto;
+}
+.fieldsForm .input-group .form-control {
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  padding: 10px 15px 10px 8px;
+  box-shadow: none !important;
+  color: #333333;
+  font-weight: 500;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.fieldsForm .input-group .form-control:focus {
+  box-shadow: none !important;
+  outline: none;
+}
+.fieldsForm .input-group .form-control::placeholder {
+  color: #555555;
+  opacity: 0.8;
 }
 
 .notification-container {

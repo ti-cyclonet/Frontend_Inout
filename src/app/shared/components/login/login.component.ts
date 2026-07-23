@@ -26,6 +26,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   loginDTO: LoginDTO | undefined;
   submitted = false;
+  showPassword = false;
   isVisible: boolean = true;
   errorMessage = '';
   
