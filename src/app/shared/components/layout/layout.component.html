@@ -17,6 +17,26 @@
         [sidebarStyle]="sidebarStyle"
         (sidebarStyleChange)="setSidebarStyle($event)">
       </app-header>
+
+      <!-- Usage Limit Warning Banner -->
+      <div class="usage-warning-banner" *ngIf="showUsageBanner">
+        <div class="usage-warning-content">
+          <svg viewBox="0 0 16 16" width="18" height="18" fill="#856404">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" />
+          </svg>
+          <span class="usage-warning-text">
+            <span *ngFor="let w of usageWarnings; let last = last">
+              <strong>{{ w.displayName }}</strong>: {{ w.currentCount }}/{{ w.maxValue }} ({{ w.percentage }}%)<span *ngIf="!last"> · </span>
+            </span>
+            — Te estás acercando a los límites de tu plan.
+          </span>
+        </div>
+        <button class="usage-warning-close" (click)="dismissUsageBanner()" type="button" aria-label="Cerrar">
+          <svg viewBox="0 0 16 16" width="18" height="18">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#x" />
+          </svg>
+        </button>
+      </div>
       
       <!-- Área de contenido con sidebar-list superpuesto -->
       <div class="content-area flex-grow-1">

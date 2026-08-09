@@ -1,0 +1,184 @@
+<div class="order-form-container">
+  <div class="form-header">
+    <h1 class="page-title">
+      <span class="title-normal">Nuevo</span>
+      <span class="title-bold">PEDIDO</span>
+      <span style="color: #0066CC">●</span>
+    </h1>
+  </div>
+
+  <div class="form-content">
+    <form (ngSubmit)="onSubmit()" class="order-form">
+      <!-- Cliente -->
+      <div class="form-row">
+        <div class="form-group" style="flex: 2">
+          <label for="customerSelect">Cliente *</label>
+          <div class="select-container">
+            <input
+              type="text"
+              class="form-control select-input"
+              [(ngModel)]="customerSearchTerm"
+              name="customerSearch"
+              placeholder="Buscar cliente por nombre o email..."
+              (input)="filterCustomers()"
+              (focus)="showCustomerDropdown = true"
+              (blur)="showCustomerDropdown = false"
+              autocomplete="off"
+              [ngModelOptions]="{standalone: true}">
+            <div class="select-dropdown" *ngIf="showCustomerDropdown">
+              <div class="select-option" *ngFor="let customer of filteredCustomers" (mousedown)="selectCustomer(customer)">
+                <strong>{{ getCustomerDisplayName(customer) }}</strong>
+                <small>{{ customer.email }}</small>
+              </div>
+              <div class="select-option no-results" *ngIf="filteredCustomers.length === 0">
+                No se encontraron clientes
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="flex: 1">
+          <label for="deliveryDate">Fecha de Entrega</label>
+          <input
+            type="date"
+            id="deliveryDate"
+            class="form-control"
+            [(ngModel)]="orderData.deliveryDate"
+            name="deliveryDate"
+            [ngModelOptions]="{standalone: true}">
+        </div>
+      </div>
+
+      <!-- Notas -->
+      <div class="form-group">
+        <label for="notes">Notas / Observaciones</label>
+        <textarea
+          id="notes"
+          class="form-control"
+          [(ngModel)]="orderData.notes"
+          name="notes"
+          rows="2"
+          placeholder="Instrucciones especiales, comentarios..."
+          [ngModelOptions]="{standalone: true}"></textarea>
+      </div>
+
+      <!-- Agregar Producto -->
+      <div class="add-product-section">
+        <h3>Agregar Productos</h3>
+        <div class="add-product-row">
+          <div class="form-group product-field">
+            <label for="productSelect">Producto</label>
+            <div class="select-container">
+              <input
+                type="text"
+                class="form-control select-input"
+                [(ngModel)]="productSearchTerm"
+                name="productSearch"
+                placeholder="Buscar producto..."
+                (input)="filterProducts()"
+                (focus)="showProductDropdown = true"
+                (blur)="showProductDropdown = false"
+                autocomplete="off"
+                [ngModelOptions]="{standalone: true}">
+              <div class="select-dropdown" *ngIf="showProductDropdown">
+                <div class="select-option" *ngFor="let product of filteredProducts" (mousedown)="selectProduct(product)">
+                  <strong>{{ product.name }}</strong>
+                  <small>{{ formatCurrency(product.price) }} — Stock: {{ product.stock }}</small>
+                </div>
+                <div class="select-option no-results" *ngIf="filteredProducts.length === 0">
+                  No se encontraron productos
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group quantity-field">
+            <label for="quantity">Cantidad</label>
+            <input
+              type="number"
+              id="quantity"
+              class="form-control"
+              [(ngModel)]="currentItem.quantity"
+              name="quantity"
+              placeholder="1"
+              min="1"
+              [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="form-group price-field">
+            <label for="unitPrice">Precio Unitario</label>
+            <input
+              type="number"
+              id="unitPrice"
+              class="form-control"
+              [(ngModel)]="currentItem.unitPrice"
+              name="unitPrice"
+              placeholder="0"
+              step="100"
+              min="0"
+              [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="form-group add-button-field">
+            <button type="button" class="btn btn-outline-primary add-btn" (click)="addItem()" [disabled]="!canAddItem()">
+              + Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Items -->
+      <div class="items-section" *ngIf="orderData.items.length > 0">
+        <h3>Items del Pedido ({{ orderData.items.length }})</h3>
+        <div class="items-table">
+          <div class="table-header">
+            <div>Producto</div>
+            <div>Cantidad</div>
+            <div>Precio Unit.</div>
+            <div>Subtotal</div>
+            <div></div>
+          </div>
+          <div class="table-row" *ngFor="let item of orderData.items; let i = index">
+            <div>{{ item.productName }}</div>
+            <div>{{ item.quantity }}</div>
+            <div>{{ formatCurrency(item.unitPrice) }}</div>
+            <div class="subtotal-cell">{{ formatCurrency(item.subtotal) }}</div>
+            <div>
+              <button type="button" class="btn-remove" (click)="removeItem(i)" title="Eliminar item">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen de Totales -->
+      <div class="summary-section" *ngIf="orderData.items.length > 0">
+        <h3>Resumen</h3>
+        <div class="summary-details">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span>{{ formatCurrency(orderData.subtotal) }}</span>
+          </div>
+          <div class="summary-row">
+            <span>IVA (19%):</span>
+            <span>{{ formatCurrency(orderData.tax) }}</span>
+          </div>
+          <div class="summary-row" *ngIf="orderData.discount > 0">
+            <span>Descuento:</span>
+            <span>-{{ formatCurrency(orderData.discount) }}</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>TOTAL:</span>
+            <span>{{ formatCurrency(orderData.total) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="onCancel()" [disabled]="loading">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading || !canSubmit()">
+          <span class="btn-spinner" *ngIf="loading"></span>
+          {{ loading ? 'Creando...' : 'Crear Pedido' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

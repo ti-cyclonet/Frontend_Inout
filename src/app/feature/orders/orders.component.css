@@ -1,0 +1,96 @@
+.orders-container { height: 100%; display: flex; flex-direction: column; padding: 0.5rem; }
+
+/* Tabs */
+.module-tabs { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 2px solid #e5e7eb; }
+.tab { padding: 0.6rem 1.5rem; border: none; background: transparent; font-size: 0.85rem; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab.active { color: #0066CC; border-bottom-color: #0066CC; font-weight: 600; }
+.tab:hover:not(.active) { color: #374151; }
+
+/* Metrics */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+.metric-card { display: flex; align-items: center; gap: 0.75rem; background: white; border-radius: 10px; padding: 0.85rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.metric-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.metric-icon svg { width: 18px; height: 18px; }
+.metric-icon.blue { background: #dbeafe; color: #2563eb; }
+.metric-icon.gray { background: #f3f4f6; color: #6b7280; }
+.metric-icon.orange { background: #ffedd5; color: #ea580c; }
+.metric-icon.green { background: #dcfce7; color: #16a34a; }
+.metric-info { display: flex; flex-direction: column; }
+.metric-value { font-size: 1.3rem; font-weight: 700; color: #1f2937; }
+.metric-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; }
+
+/* Section Card */
+.section-card { background: white; border-radius: 10px; padding: 1rem 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.section-title { font-size: 0.85rem; font-weight: 600; color: #374151; margin: 0 0 0.75rem; }
+
+/* Recent list */
+.recent-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.recent-item { display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+.recent-item:hover { background: #f9fafb; }
+.recent-code { font-weight: 600; color: #0066CC; }
+.recent-customer { color: #374151; }
+.recent-total { font-weight: 600; text-align: right; }
+
+/* Status Badge */
+.status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.65rem; font-weight: 600; color: white; text-transform: uppercase; letter-spacing: 0.02em; }
+
+/* List */
+.list-header { margin-bottom: 0.75rem; }
+.filter-row { display: flex; gap: 0.75rem; align-items: center; }
+.filter-select { padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.8rem; }
+
+.orders-table-wrapper { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.orders-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.orders-table th { padding: 0.6rem 0.75rem; background: #f9fafb; color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 0.7rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+.orders-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f3f4f6; color: #374151; }
+.orders-table tbody tr:hover { background: #f9fafb; }
+.code-cell { font-weight: 600; color: #0066CC; }
+.total-cell { font-weight: 600; }
+.actions-cell { white-space: nowrap; }
+
+.btn-action { border: none; background: transparent; cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.4rem; border-radius: 4px; }
+.btn-action.advance:hover { background: #dbeafe; }
+.btn-action.cancel:hover { background: #fee2e2; }
+.btn-action.delete:hover { background: #fee2e2; }
+
+/* Kanban */
+.kanban-content { flex: 1; overflow-x: auto; }
+.kanban-board { display: flex; gap: 0.75rem; min-height: 400px; padding-bottom: 1rem; }
+.kanban-column { min-width: 200px; flex: 1; display: flex; flex-direction: column; background: #f9fafb; border-radius: 10px; overflow: hidden; }
+.kanban-header { padding: 0.6rem 0.75rem; background: white; border-top: 3px solid; display: flex; justify-content: space-between; align-items: center; }
+.kanban-title { font-size: 0.75rem; font-weight: 600; color: #374151; text-transform: uppercase; }
+.kanban-count { font-size: 0.7rem; font-weight: 700; background: #e5e7eb; color: #374151; padding: 0.1rem 0.5rem; border-radius: 10px; }
+.kanban-cards { padding: 0.5rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; }
+.kanban-card { background: white; border-radius: 8px; padding: 0.65rem 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer; transition: transform 0.1s; }
+.kanban-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+.card-code { font-size: 0.7rem; font-weight: 600; color: #0066CC; }
+.card-customer { font-size: 0.75rem; color: #374151; margin-top: 0.2rem; }
+.card-total { font-size: 0.8rem; font-weight: 700; color: #1f2937; margin-top: 0.3rem; }
+.card-actions { margin-top: 0.4rem; }
+.btn-sm-advance { font-size: 0.65rem; padding: 0.2rem 0.5rem; border: 1px solid #2563eb; color: #2563eb; background: transparent; border-radius: 4px; cursor: pointer; }
+.btn-sm-advance:hover { background: #2563eb; color: white; }
+.kanban-empty { text-align: center; color: #9ca3af; font-size: 0.75rem; padding: 1.5rem 0; }
+
+/* Empty text */
+.empty-text { text-align: center; color: #9ca3af; font-size: 0.82rem; padding: 2rem 0; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .recent-item { grid-template-columns: 1fr 1fr; }
+  .kanban-board { min-width: 900px; }
+}
+
+/* Create Button */
+.tabs-spacer { flex: 1; }
+.btn-create { padding: 0.5rem 1.2rem; background: #0066CC; color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; align-self: center; margin-bottom: 2px; }
+.btn-create:hover { background: #0052a3; }
+
+/* Invoice action button */
+.btn-action.invoice:hover { background: #dbeafe; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+.modal-content { width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; border-radius: 12px; background: white; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: slideUp 0.3s ease; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }

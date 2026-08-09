@@ -5,11 +5,12 @@ import { MaterialsDashboardComponent } from './dashboard/materials-dashboard.com
 import { MaterialsListComponent } from './list/materials-list.component';
 import { MaterialFormComponent } from './form/material-form.component';
 import { MaterialCompositionComponent } from './composition/material-composition.component';
+import { BulkEntryComponent } from '../kardex/bulk-entry/bulk-entry.component';
 
 @Component({
   selector: 'app-materials-demo',
   standalone: true,
-  imports: [CommonModule, MaterialsDashboardComponent, MaterialsListComponent, MaterialFormComponent, MaterialCompositionComponent],
+  imports: [CommonModule, MaterialsDashboardComponent, MaterialsListComponent, MaterialFormComponent, MaterialCompositionComponent, BulkEntryComponent],
   template: `
     <div class="demo-container">
       <div class="demo-header">
@@ -34,12 +35,19 @@ import { MaterialCompositionComponent } from './composition/material-composition
           (click)="activeTab = 'composition'">
           Materiales Compuestos
         </button>
+        <button 
+          class="tab-button" 
+          [class.active]="activeTab === 'bulk-entry'"
+          (click)="activeTab = 'bulk-entry'">
+          Registro de Compras
+        </button>
       </div>
       
       <div class="demo-content">
         <app-materials-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openCompositionModal)="openCompositionModal()" (refreshList)="onMaterialCreated()"></app-materials-dashboard>
         <app-materials-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openEditModal)="openEditModal($event)"></app-materials-list>
         <app-material-composition *ngIf="activeTab === 'composition'" [externalModalControl]="showCompositionModal" [editMaterialId]="editMaterialId" [initialStep]="initialStep"></app-material-composition>
+        <app-bulk-entry *ngIf="activeTab === 'bulk-entry'"></app-bulk-entry>
       </div>
       
       <!-- Modal para crear material -->
@@ -122,7 +130,7 @@ import { MaterialCompositionComponent } from './composition/material-composition
   `]
 })
 export class MaterialsDemoComponent implements OnInit {
-  activeTab: 'dashboard' | 'list' | 'composition' = 'dashboard';
+  activeTab: 'dashboard' | 'list' | 'composition' | 'bulk-entry' = 'dashboard';
   showCreateModal = false;
   showCompositionModal = false;
   refreshTrigger = 0;
