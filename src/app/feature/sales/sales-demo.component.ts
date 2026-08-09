@@ -113,7 +113,7 @@ import { SaleFormComponent } from './form/sale-form.component';
   `]
 })
 export class SalesDemoComponent {
-  activeTab: 'dashboard' | 'list' | 'customers' = 'dashboard';
+  activeTab: 'dashboard' | 'list' = 'dashboard';
   showCreateModal = false;
   refreshTrigger = 0;
   

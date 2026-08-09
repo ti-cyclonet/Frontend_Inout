@@ -19,9 +19,9 @@ export class UsagePanelComponent implements OnInit {
   recalibrationResult: { recalibrated: { variableName: string; previousCount: number; actualCount: number }[] } | null = null;
 
   // Variables visibles en el panel (en orden específico)
-  private visibleVariables = ['nMateriales', 'nMaterialesT', 'nProductos', 'nLotes', 'nClientes', 'nVentas'];
+  private visibleVariables = ['nMateriales', 'nMaterialesT', 'nProductos', 'nLotes', 'nClientes', 'nVentas', 'nPedidos'];
   // Variables que se resetean mensualmente
-  private monthlyResetVariables = ['nLotes', 'nVentas'];
+  private monthlyResetVariables = ['nLotes', 'nVentas', 'nPedidos'];
 
   // Timeline del plan
   daysElapsed = 0;
