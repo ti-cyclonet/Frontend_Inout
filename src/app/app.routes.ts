@@ -19,11 +19,11 @@ import { SalesComponent } from './feature/sales/sales.component';
 import { MarketplaceComponent } from './feature/marketplace/marketplace.component';
 // import { UsersComponent } from './feature/users/users.component';
 // import { UserFormComponent } from './feature/users/form/user-form.component';
-// import { CustomersComponent } from './feature/customers/customers.component';
-// import { CustomerFormComponent } from './feature/customers/form/customer-form.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 import { UsagePanelComponent } from './feature/usage-panel/usage-panel.component';
 import { TrainingSessionsComponent } from './feature/training-sessions/training-sessions.component';
+import { CustomersComponent } from './feature/customers/customers.component';
+import { OrdersComponent } from './feature/orders/orders.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -43,8 +43,8 @@ export const routes: Routes = [
             { path: 'marketplace', component: MarketplaceComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             // { path: 'users', component: UsersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             // { path: 'users/form', component: UserFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
-            // { path: 'customers', component: CustomersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
-            // { path: 'customers/form', component: CustomerFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'customers', component: CustomersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'orders', component: OrdersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'consumos', component: UsagePanelComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'training-sessions', component: TrainingSessionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'setting', component: SettingComponent, canActivate: [AuthGuard] },

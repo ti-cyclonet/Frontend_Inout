@@ -1,0 +1,202 @@
+<div class="container-fluid p-0">
+  <div class="card shadow-sm bulk-card" style="border: 1px solid white;">
+    <div class="card-body p-3 p-md-4">
+      <p class="text-dark mb-3 description-text">
+        Registra en una sola operación todos los materiales adquiridos de un mismo proveedor y documento factura de soporte. 
+        Selecciona el proveedor, ingresa el documento, agrega los materiales y confirma la entrada.
+      </p>
+
+      <!-- Sección Proveedor y Documento (estilo Kardex search-section) -->
+      <div class="search-section">
+        <div class="search-row">
+          <!-- Proveedor -->
+          <div class="search-field supplier-field">
+            <label class="search-label">Proveedor</label>
+            <div class="select-container">
+              <input
+                type="text"
+                class="form-control search-input"
+                [(ngModel)]="supplierSearch"
+                (input)="filterSuppliers()"
+                (focus)="showSupplierDropdown = true"
+                (blur)="showSupplierDropdown = false"
+                placeholder="Buscar proveedor..."
+                autocomplete="off">
+              <div class="select-dropdown" *ngIf="showSupplierDropdown && filteredSuppliers.length > 0">
+                <div class="select-option" *ngFor="let s of filteredSuppliers" (mousedown)="selectSupplier(s)">
+                  <strong>{{ s.name }}</strong>
+                  <small>{{ s.contactName }}</small>
+                </div>
+              </div>
+              <div class="select-dropdown" *ngIf="showSupplierDropdown && filteredSuppliers.length === 0 && supplierSearch">
+                <div class="select-option no-results">Sin resultados</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documento -->
+          <div class="search-field document-field">
+            <label class="search-label">N° Documento / Factura</label>
+            <input type="text" class="form-control search-input" [(ngModel)]="documentNumber" placeholder="FAC-001234">
+          </div>
+
+          <!-- Fecha -->
+          <div class="search-field date-field">
+            <label class="search-label">Fecha Compra</label>
+            <input type="date" class="form-control search-input" [(ngModel)]="purchaseDate" title="Fecha de compra">
+          </div>
+
+          <!-- Nuevo proveedor -->
+          <div class="search-field btn-new-supplier-field">
+            <button class="btn btn-outline-primary btn-sm btn-new-supplier" (click)="toggleCreateSupplier()" type="button">
+              + Proveedor
+            </button>
+          </div>
+        </div>
+
+        <!-- Proveedor seleccionado badge -->
+        <div class="supplier-badge" *ngIf="selectedSupplier">
+          <span class="badge-icon">✓</span> {{ selectedSupplier.name }}
+          <button class="badge-remove" (click)="clearSupplier()" type="button">✕</button>
+        </div>
+
+        <!-- Mini form crear proveedor -->
+        <div class="create-supplier-form" *ngIf="showCreateSupplier">
+          <h6>Nuevo Proveedor</h6>
+          <div class="supplier-grid">
+            <input class="form-control form-control-sm" [(ngModel)]="newSupplier.name" placeholder="Nombre *">
+            <input class="form-control form-control-sm" [(ngModel)]="newSupplier.contactName" placeholder="Contacto *">
+            <input class="form-control form-control-sm" [(ngModel)]="newSupplier.contactEmail" placeholder="Email">
+            <input class="form-control form-control-sm" [(ngModel)]="newSupplier.contactPhone" placeholder="Teléfono">
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-primary btn-sm" (click)="createSupplier()" type="button">Guardar</button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="toggleCreateSupplier()" type="button">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Agregar Material -->
+      <div class="add-material-section" style="border-top: 1px solid orange;">
+        <div class="section-subtitle">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="#0066cc">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
+          </svg>
+          Agregar Material
+        </div>
+        <div class="add-material-row">
+          <div class="add-field material-search-field">
+            <label class="search-label">Material (código o nombre)</label>
+            <div class="select-container">
+              <input
+                type="text"
+                class="form-control search-input"
+                [(ngModel)]="materialSearch"
+                (input)="filterMaterials()"
+                (focus)="showMaterialDropdown = true"
+                (blur)="showMaterialDropdown = false"
+                placeholder="Buscar material..."
+                autocomplete="off">
+              <div class="select-dropdown material-dropdown" *ngIf="showMaterialDropdown && filteredMaterials.length > 0">
+                <div class="select-option" *ngFor="let m of filteredMaterials" (mousedown)="selectMaterial(m)">
+                  <strong>{{ m.code }} — {{ m.name }}</strong>
+                  <small>Stock: {{ formatNumber(m.currentStock) }} {{ m.unit }} | Precio: {{ formatCurrency(m.price) }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="add-field qty-field">
+            <label class="search-label">Cantidad</label>
+            <input type="number" class="form-control search-input" [(ngModel)]="currentItem.quantity" (ngModelChange)="recalcUnitPrice()" min="0.01" step="0.01" placeholder="0">
+          </div>
+          <div class="add-field price-field">
+            <label class="search-label">Costo Total</label>
+            <input type="number" class="form-control search-input" [(ngModel)]="currentItem.totalCost" (ngModelChange)="recalcUnitPrice()" min="0" step="100" placeholder="$0">
+          </div>
+          <div class="add-field unit-price-field">
+            <label class="search-label">Valor Unitario</label>
+            <input type="text" class="form-control search-input readonly-field" [value]="formatCurrency(currentItem.unitPrice)" readonly title="Calculado automáticamente">
+          </div>
+          <div class="add-field exp-field">
+            <label class="search-label">Vencimiento</label>
+            <input type="date" class="form-control search-input" [(ngModel)]="currentItem.expirationDate" title="Fecha de vencimiento">
+          </div>
+          <div class="add-field add-btn-field">
+            <button class="btn btn-primary btn-sm add-item-btn" (click)="addItem()" [disabled]="!canAddItem()" type="button">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="white">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-lg" />
+              </svg>
+              Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Items (estilo Kardex) -->
+      <div class="movements-section" *ngIf="items.length > 0">
+        <div class="kardex-actions-row" style="border-top: 1px solid orange">
+          <div class="section-subtitle text-primary">
+            Materiales en este documento ({{ items.length }})
+          </div>
+        </div>
+
+        <div class="movements-table-container">
+          <table class="movements-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Material</th>
+                <th>Cantidad</th>
+                <th>Valor Unitario</th>
+                <th>Total</th>
+                <th>Vencimiento</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of items; let i = index" class="movement-row">
+                <td class="code-cell">{{ item.materialCode }}</td>
+                <td>{{ item.materialName }}</td>
+                <td class="text-center">{{ formatNumber(item.quantity) }}</td>
+                <td class="text-right">{{ formatCurrency(item.unitPrice) }}</td>
+                <td class="text-right fw-bold">{{ formatCurrency(item.total) }}</td>
+                <td class="text-center">{{ item.expirationDate || '-' }}</td>
+                <td class="text-center">
+                  <button class="btn btn-outline-danger btn-sm btn-remove-item" (click)="removeItem(i)" type="button">✕</button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="totals-row">
+                <td colspan="2" class="fw-bold">TOTALES</td>
+                <td class="text-center fw-bold">{{ formatNumber(totalQuantity) }}</td>
+                <td></td>
+                <td class="text-right fw-bold total-cell">{{ formatCurrency(grandTotal) }}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="items.length === 0">
+        <svg viewBox="0 0 16 16" width="40" height="40" fill="#9ca3af">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#inbox" />
+        </svg>
+        <p>Seleccione proveedor, documento y agregue materiales</p>
+      </div>
+
+      <!-- Botones de acción (estilo Kardex) -->
+      <div class="actions-row" style="border-top: 1px solid orange" *ngIf="items.length > 0">
+        <button class="btn btn-outline-secondary btn-sm" (click)="resetForm()" [disabled]="submitting" type="button">
+          Limpiar
+        </button>
+        <button class="btn btn-primary" (click)="onSubmit()" [disabled]="!canSubmit() || submitting" type="button">
+          <span class="spinner-border spinner-border-sm me-1" *ngIf="submitting"></span>
+          {{ submitting ? 'Registrando...' : 'Registrar Entrada (' + items.length + ' materiales)' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

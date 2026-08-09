@@ -1,0 +1,129 @@
+<div class="orders-container">
+  <!-- Tabs -->
+  <div class="module-tabs">
+    <button class="tab" [class.active]="activeTab === 'panel'" (click)="activeTab = 'panel'">Panel</button>
+    <button class="tab" [class.active]="activeTab === 'list'" (click)="activeTab = 'list'">Lista</button>
+    <button class="tab" [class.active]="activeTab === 'kanban'" (click)="activeTab = 'kanban'">Kanban</button>
+    <div class="tabs-spacer"></div>
+    <button class="btn-create" (click)="openCreateModal()">+ Nuevo Pedido</button>
+  </div>
+
+  <!-- PANEL TAB -->
+  <div *ngIf="activeTab === 'panel'" class="panel-content">
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon blue"><svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#clipboard-data"/></svg></div>
+        <div class="metric-info"><span class="metric-value">{{ stats.total }}</span><span class="metric-label">Total Pedidos</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon gray"><svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#pencil-square"/></svg></div>
+        <div class="metric-info"><span class="metric-value">{{ stats.DRAFT }}</span><span class="metric-label">Borradores</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon orange"><svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#gear-wide-connected"/></svg></div>
+        <div class="metric-info"><span class="metric-value">{{ stats.IN_PRODUCTION }}</span><span class="metric-label">En Producción</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon green"><svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#check-circle"/></svg></div>
+        <div class="metric-info"><span class="metric-value">{{ stats.READY + stats.DELIVERED }}</span><span class="metric-label">Listos / Entregados</span></div>
+      </div>
+    </div>
+
+    <!-- Recent orders -->
+    <div class="section-card">
+      <h4 class="section-title">Pedidos recientes</h4>
+      <div class="recent-list" *ngIf="orders.length > 0">
+        <div class="recent-item" *ngFor="let order of orders.slice(0, 5)" (click)="selectOrder(order)">
+          <div class="recent-code">{{ order.orderCode }}</div>
+          <div class="recent-customer">{{ order.customerName || 'Sin cliente' }}</div>
+          <div class="recent-total">{{ formatCurrency(order.total) }}</div>
+          <span class="status-badge" [style.background]="getStatusColor(order.status)">{{ getStatusLabel(order.status) }}</span>
+        </div>
+      </div>
+      <p class="empty-text" *ngIf="orders.length === 0">No hay pedidos registrados.</p>
+    </div>
+  </div>
+
+  <!-- LIST TAB -->
+  <div *ngIf="activeTab === 'list'" class="list-content">
+    <div class="list-header">
+      <div class="filter-row">
+        <select [(ngModel)]="filterStatus" class="filter-select" title="Filtrar por estado">
+          <option value="all">Todos los estados</option>
+          <option value="DRAFT">Borrador</option>
+          <option value="CONFIRMED">Confirmado</option>
+          <option value="IN_PRODUCTION">En Producción</option>
+          <option value="READY">Listo</option>
+          <option value="DELIVERED">Entregado</option>
+          <option value="INVOICED">Facturado</option>
+          <option value="CANCELLED">Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="orders-table-wrapper">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of filteredOrders">
+            <td class="code-cell">{{ order.orderCode }}</td>
+            <td>{{ order.customerName || '-' }}</td>
+            <td class="total-cell">{{ formatCurrency(order.total) }}</td>
+            <td>{{ formatDate(order.createdAt) }}</td>
+            <td><span class="status-badge" [style.background]="getStatusColor(order.status)">{{ getStatusLabel(order.status) }}</span></td>
+            <td class="actions-cell">
+              <button class="btn-action invoice" *ngIf="order.status !== 'DRAFT' && order.status !== 'CANCELLED'" (click)="generateInvoicePdf(order)" title="Generar Factura PDF">📄</button>
+              <button class="btn-action advance" *ngIf="getNextStatus(order.status)" (click)="advanceStatus(order)" title="Avanzar estado">▶</button>
+              <button class="btn-action cancel" *ngIf="order.status !== 'INVOICED' && order.status !== 'CANCELLED'" (click)="cancelOrder(order)" title="Cancelar">✕</button>
+              <button class="btn-action delete" *ngIf="order.status === 'DRAFT'" (click)="deleteOrder(order)" title="Eliminar">🗑</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty-text" *ngIf="filteredOrders.length === 0">No hay pedidos con este filtro.</p>
+    </div>
+  </div>
+
+  <!-- KANBAN TAB -->
+  <div *ngIf="activeTab === 'kanban'" class="kanban-content">
+    <div class="kanban-board">
+      <div class="kanban-column" *ngFor="let status of kanbanStatuses">
+        <div class="kanban-header" [style.border-top-color]="getStatusColor(status)">
+          <span class="kanban-title">{{ getStatusLabel(status) }}</span>
+          <span class="kanban-count">{{ getOrdersByStatus(status).length }}</span>
+        </div>
+        <div class="kanban-cards">
+          <div class="kanban-card" *ngFor="let order of getOrdersByStatus(status)" (click)="selectOrder(order)">
+            <div class="card-code">{{ order.orderCode }}</div>
+            <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
+            <div class="card-total">{{ formatCurrency(order.total) }}</div>
+            <div class="card-actions">
+              <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)">Avanzar →</button>
+            </div>
+          </div>
+          <div class="kanban-empty" *ngIf="getOrdersByStatus(status).length === 0">Sin pedidos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Order Modal -->
+  <div class="modal-overlay" *ngIf="showCreateModal" (click)="onFormCancelled()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <app-order-form
+        [isModal]="true"
+        (orderCreated)="onOrderCreated()"
+        (formCancelled)="onFormCancelled()">
+      </app-order-form>
+    </div>
+  </div>
+</div>

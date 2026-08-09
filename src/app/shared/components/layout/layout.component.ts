@@ -9,6 +9,8 @@ import { FooterComponent } from '../footer/footer.component';
 import { Application } from '../../model/application.model';
 import { ApplicationsService } from '../../services/applications/applications.service';
 import { ModuleService, ModuleType } from '../../services/module/module.service';
+import { UsageStatusService } from '../../services/usage-status.service';
+import { UsageWarning } from '../../model/usage-status.model';
 import { NAME_APP_SHORT } from '../../../config/config';
 
 
@@ -35,9 +37,14 @@ export default class LayoutComponent implements OnInit {
   application: Application | undefined;
   currentModule: ModuleType | null = null;
 
+  // Usage limit warnings
+  usageWarnings: UsageWarning[] = [];
+  showUsageBanner = false;
+
   constructor(
     private applicationsService: ApplicationsService,
-    private moduleService: ModuleService
+    private moduleService: ModuleService,
+    private usageStatusService: UsageStatusService
   ) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
@@ -46,6 +53,7 @@ export default class LayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSidebarPreference();
+    this.loadUsageWarnings();
     
     // Suscribirse a cambios de módulo
     this.moduleService.currentModule$.subscribe(module => {
@@ -90,6 +98,38 @@ export default class LayoutComponent implements OnInit {
           })) || []
         ) || [];
 
+        // Agregar enlace estático de Clientes
+        const customersEntry: OptionMenu = {
+          id: 'customers',
+          name: 'Clientes',
+          description: 'Clientes',
+          url: '/customers',
+          icon: 'people',
+          type: 'main_menu',
+          idMPather: null,
+          order: '50',
+          idApplication: this.application?.id ?? '',
+        };
+        if (!this.optionsMenu.some(m => m.id === customersEntry.id)) {
+          this.optionsMenu.push(customersEntry);
+        }
+
+        // Agregar enlace estático de Pedidos
+        const ordersEntry: OptionMenu = {
+          id: 'orders',
+          name: 'Pedidos',
+          description: 'Pedidos',
+          url: '/orders',
+          icon: 'clipboard-check',
+          type: 'main_menu',
+          idMPather: null,
+          order: '55',
+          idApplication: this.application?.id ?? '',
+        };
+        if (!this.optionsMenu.some(m => m.id === ordersEntry.id)) {
+          this.optionsMenu.push(ordersEntry);
+        }
+
         // Agregar enlace estático de Consumos (panel de uso de paquete)
         const consumosEntry: OptionMenu = {
           id: 'usage-panel',
@@ -102,7 +142,6 @@ export default class LayoutComponent implements OnInit {
           order: '90',
           idApplication: this.application?.id ?? '',
         };
-        // Evitar duplicados si ya existe
         if (!this.optionsMenu.some(m => m.id === consumosEntry.id)) {
           this.optionsMenu.push(consumosEntry);
         }
@@ -147,6 +186,24 @@ export default class LayoutComponent implements OnInit {
       const storedStyle = localStorage.getItem('sidebarStyle');
       this.sidebarStyle = (storedStyle === 'list') ? 'list' : 'lateral';
     }
+  }
+
+  // Usage warnings
+  loadUsageWarnings(): void {
+    this.usageStatusService.getUsageWarnings().subscribe({
+      next: (response) => {
+        this.usageWarnings = response.warnings || [];
+        this.showUsageBanner = this.usageWarnings.length > 0;
+      },
+      error: () => {
+        this.usageWarnings = [];
+        this.showUsageBanner = false;
+      }
+    });
+  }
+
+  dismissUsageBanner(): void {
+    this.showUsageBanner = false;
   }
 
   isListHiding = false;

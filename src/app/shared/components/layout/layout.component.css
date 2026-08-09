@@ -107,3 +107,58 @@
     opacity: 0;
   }
 }
+
+/* Usage Warning Banner */
+.usage-warning-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-left: none;
+  border-right: none;
+  flex-shrink: 0;
+  gap: 0.75rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.usage-warning-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.usage-warning-text {
+  font-size: 0.8rem;
+  color: #856404;
+  line-height: 1.4;
+}
+
+.usage-warning-text strong {
+  color: #664d03;
+}
+
+.usage-warning-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #856404;
+  flex-shrink: 0;
+}
+
+.usage-warning-close:hover {
+  background: rgba(133, 100, 4, 0.1);
+}

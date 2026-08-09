@@ -4,12 +4,11 @@ import { ActivatedRoute } from '@angular/router';
 import { SalesDashboardComponent } from './dashboard/sales-dashboard.component';
 import { SalesListComponent } from './list/sales-list.component';
 import { SaleFormComponent } from './form/sale-form.component';
-import { CustomersComponent } from '../customers/customers.component';
 
 @Component({
   selector: 'app-sales-demo',
   standalone: true,
-  imports: [CommonModule, SalesDashboardComponent, SalesListComponent, SaleFormComponent, CustomersComponent],
+  imports: [CommonModule, SalesDashboardComponent, SalesListComponent, SaleFormComponent],
   template: `
     <div class="demo-container">
       <div class="demo-header">
@@ -28,18 +27,11 @@ import { CustomersComponent } from '../customers/customers.component';
           (click)="activeTab = 'list'">
           Ventas
         </button>
-        <button 
-          class="tab-button" 
-          [class.active]="activeTab === 'customers'"
-          (click)="activeTab = 'customers'">
-          Clientes
-        </button>
       </div>
       
       <div class="demo-content">
         <app-sales-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-sales-dashboard>
         <app-sales-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-sales-list>
-        <app-customers *ngIf="activeTab === 'customers'"></app-customers>
       </div>
       
       <!-- Modal para crear venta -->
