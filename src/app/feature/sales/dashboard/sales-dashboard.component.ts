@@ -23,6 +23,18 @@ import { SalesService } from '../../../shared/services/sales.service';
             </svg>
             Venta
           </a>
+          <a class="action-link action-link-primary" (click)="openOrderModal.emit()" style="cursor:pointer;">
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use>
+            </svg>
+            Pedido
+          </a>
+          <a class="action-link action-link-primary" (click)="openCustomerTab.emit()" style="cursor:pointer;">
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use>
+            </svg>
+            Cliente
+          </a>
         </div>
       </div>
 
@@ -224,6 +236,8 @@ import { SalesService } from '../../../shared/services/sales.service';
 export class SalesDashboardComponent implements OnInit, OnChanges {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
+  @Output() openOrderModal = new EventEmitter<void>();
+  @Output() openCustomerTab = new EventEmitter<void>();
   
   totalSales = 0;
   totalRevenue = 0;

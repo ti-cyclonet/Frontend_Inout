@@ -94,3 +94,227 @@
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Clickable row */
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #e7f3ff !important; }
+
+/* Order Detail Modal (Comanda) */
+.order-detail-modal {
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  border-left: 4px solid;
+}
+
+.detail-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.detail-code {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0066CC;
+  margin: 0;
+}
+
+.detail-close {
+  border: none;
+  background: #f3f4f6;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-close:hover { background: #e5e7eb; }
+
+.detail-body {
+  padding: 1.25rem;
+}
+
+.detail-info-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.detail-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.detail-value {
+  font-size: 0.85rem;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.detail-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Comanda Items */
+.comanda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.comanda-item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 0.75rem;
+}
+
+.comanda-item:last-child { border-bottom: none; }
+.comanda-item:nth-child(odd) { background: #f9fafb; }
+
+.comanda-number {
+  width: 24px;
+  height: 24px;
+  background: #0066CC;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.comanda-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comanda-product {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.comanda-qty {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0066CC;
+  background: #dbeafe;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.comanda-price {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+/* Notes */
+.detail-notes {
+  margin-bottom: 1.25rem;
+}
+
+.notes-text {
+  font-size: 0.82rem;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid #d97706;
+  margin: 0;
+}
+
+/* Totals */
+.detail-totals {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.total-final {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0066CC;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+/* Detail Actions */
+.detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-end;
+}
+
+.btn-detail-action {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-detail-action:hover { background: #f3f4f6; }
+.btn-detail-action.advance { border-color: #16a34a; color: #16a34a; }
+.btn-detail-action.advance:hover { background: #16a34a; color: white; }
+.btn-detail-action.cancel { border-color: #dc2626; color: #dc2626; }
+.btn-detail-action.cancel:hover { background: #dc2626; color: white; }

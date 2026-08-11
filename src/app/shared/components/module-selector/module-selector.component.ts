@@ -57,26 +57,10 @@ export class ModuleSelectorComponent {
   ) {}
 
   selectModule(moduleType: ModuleType) {
-    if (moduleType === 'inventory') {
-      Swal.fire({
-        icon: 'info',
-        title: 'Función en Construcción',
-        html: `
-          <div style="text-align: center;">
-            <div style="font-size: 80px; margin: 20px 0;">🚧</div>
-            <p style="font-size: 16px; color: #666;">El módulo de Inventario está actualmente en desarrollo.</p>
-          </div>
-        `,
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#5b6dff'
-      });
-      return;
-    }
-    
     this.isLoading = true;
-    this.selectedModuleName = 'Manufactura';
+    this.selectedModuleName = moduleType === 'inventory' ? 'Inventario' : 'Manufactura';
     
-    // Simular carga y transición suave
+    // Transición suave
     setTimeout(() => {
       this.moduleService.setCurrentModule(moduleType);
       this.router.navigate(['/home']);

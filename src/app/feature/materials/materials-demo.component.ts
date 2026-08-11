@@ -30,6 +30,7 @@ import { BulkEntryComponent } from '../kardex/bulk-entry/bulk-entry.component';
           Materiales
         </button>
         <button 
+          *ngIf="isManufacturing"
           class="tab-button" 
           [class.active]="activeTab === 'composition'"
           (click)="activeTab = 'composition'">
@@ -46,7 +47,7 @@ import { BulkEntryComponent } from '../kardex/bulk-entry/bulk-entry.component';
       <div class="demo-content">
         <app-materials-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openCompositionModal)="openCompositionModal()" (refreshList)="onMaterialCreated()"></app-materials-dashboard>
         <app-materials-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true" (openEditModal)="openEditModal($event)"></app-materials-list>
-        <app-material-composition *ngIf="activeTab === 'composition'" [externalModalControl]="showCompositionModal" [editMaterialId]="editMaterialId" [initialStep]="initialStep"></app-material-composition>
+        <app-material-composition *ngIf="activeTab === 'composition' && isManufacturing" [externalModalControl]="showCompositionModal" [editMaterialId]="editMaterialId" [initialStep]="initialStep"></app-material-composition>
         <app-bulk-entry *ngIf="activeTab === 'bulk-entry'"></app-bulk-entry>
       </div>
       
@@ -137,6 +138,10 @@ export class MaterialsDemoComponent implements OnInit {
   editMaterialId: string | null = null;
   editingMaterialId: number | undefined = undefined;
   initialStep: number = 1;
+
+  get isManufacturing(): boolean {
+    return sessionStorage.getItem('selectedModule') === 'manufacturing';
+  }
   
   constructor(private route: ActivatedRoute) {}
   

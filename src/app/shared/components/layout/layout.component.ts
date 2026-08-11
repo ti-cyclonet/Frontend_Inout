@@ -88,7 +88,7 @@ export default class LayoutComponent implements OnInit {
           ).map(menu => ({
             id: menu?.id ?? '',
             name: menu?.strName ?? 'Unnamed Menu',
-            description: menu?.strDescription ?? '',
+            description: this.translateMenuDescription(menu?.strDescription ?? ''),
             url: menu?.strUrl ?? '#',
             icon: menu?.strIcon ?? 'default-icon',
             type: menu?.strType ?? 'main_menu',
@@ -98,36 +98,20 @@ export default class LayoutComponent implements OnInit {
           })) || []
         ) || [];
 
-        // Agregar enlace estático de Clientes
-        const customersEntry: OptionMenu = {
-          id: 'customers',
-          name: 'Clientes',
-          description: 'Clientes',
-          url: '/customers',
-          icon: 'people',
+        // Agregar enlace estático de Módulo Comercial (Ventas + Pedidos + Clientes unificado)
+        const commercialEntry: OptionMenu = {
+          id: 'commercial',
+          name: 'Comercial',
+          description: 'Ventas, Pedidos y Clientes',
+          url: '/commercial',
+          icon: 'shop',
           type: 'main_menu',
           idMPather: null,
-          order: '50',
+          order: '45',
           idApplication: this.application?.id ?? '',
         };
-        if (!this.optionsMenu.some(m => m.id === customersEntry.id)) {
-          this.optionsMenu.push(customersEntry);
-        }
-
-        // Agregar enlace estático de Pedidos
-        const ordersEntry: OptionMenu = {
-          id: 'orders',
-          name: 'Pedidos',
-          description: 'Pedidos',
-          url: '/orders',
-          icon: 'clipboard-check',
-          type: 'main_menu',
-          idMPather: null,
-          order: '55',
-          idApplication: this.application?.id ?? '',
-        };
-        if (!this.optionsMenu.some(m => m.id === ordersEntry.id)) {
-          this.optionsMenu.push(ordersEntry);
+        if (!this.optionsMenu.some(m => m.id === commercialEntry.id)) {
+          this.optionsMenu.push(commercialEntry);
         }
 
         // Agregar enlace estático de Consumos (panel de uso de paquete)
@@ -154,22 +138,39 @@ export default class LayoutComponent implements OnInit {
     );
   }
 
+  // Traducir nombres de menú que vienen en inglés desde Authoriza
+  private translateMenuDescription(description: string): string {
+    const translations: Record<string, string> = {
+      'Dashboard': 'Inicio',
+      'Materials': 'Materiales',
+      'Products': 'Productos',
+      'Sales': 'Ventas',
+      'Settings': 'Configuración',
+      'Warehouses': 'Almacenes',
+      'Locations': 'Ubicaciones',
+      'Movements': 'Movimientos',
+      'Commercial': 'Comercial',
+    };
+    return translations[description] || description;
+  }
+
   // Determinar si un menú pertenece al módulo actual
   private isMenuForModule(url: string, module: ModuleType): boolean {
     const moduleConfig = this.moduleService.getModuleConfig(module);
     
-    // Ocultar temporalmente el módulo de usuarios
-    if (url.includes('user')) {
+    // Ocultar módulos que ahora están integrados en el módulo Comercial
+    if (url.includes('user') || url.includes('sale') || url.includes('customer')) {
       return false;
     }
     
     if (module === 'inventory') {
-      return url.includes('warehouse') || url.includes('location') || url.includes('movement') || 
-             url.includes('inventory') || url === '/home';
+      // Inventario: materiales, kardex, home. NO productos ni composición.
+      return url.includes('material') || url.includes('kardex') || url === '/home';
     } else if (module === 'manufacturing') {
-      return url.includes('material') || url.includes('product') || url.includes('menu') || 
-             url.includes('sale') || url.includes('cost') || url.includes('manufacturing') || 
-             url === '/home'; // Clientes ahora están integrados en sales
+      // Manufactura: materiales, productos, home.
+      return url.includes('material') || url.includes('product') || 
+             url.includes('cost') || url.includes('manufacturing') || 
+             url === '/home';
     }
     
     return url === '/home' || url.includes('setup'); // Menús comunes
@@ -242,7 +243,13 @@ export default class LayoutComponent implements OnInit {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
       if (this.isLargeScreen && this.sidebarStyle === 'list') {
-        this.setSidebarStyle('lateral');
+        this.sidebarStyle = 'lateral';
+        this.isSidebarVisible = true;
+        this.isListHiding = false;
+        if (localStorage) {
+          localStorage.setItem('sidebarStyle', 'lateral');
+          localStorage.setItem('sidebarVisible', 'true');
+        }
       }
     }
   }

@@ -175,6 +175,14 @@ export class OrdersComponent implements OnInit {
     this.selectedOrder = order;
   }
 
+  viewOrder(order: Order): void {
+    this.selectedOrder = order;
+  }
+
+  closeOrderDetail(): void {
+    this.selectedOrder = null;
+  }
+
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value || 0);
   }
