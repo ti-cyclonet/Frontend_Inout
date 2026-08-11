@@ -33,7 +33,7 @@
     <div class="section-card">
       <h4 class="section-title">Pedidos recientes</h4>
       <div class="recent-list" *ngIf="orders.length > 0">
-        <div class="recent-item" *ngFor="let order of orders.slice(0, 5)" (click)="selectOrder(order)">
+        <div class="recent-item" *ngFor="let order of orders.slice(0, 5)" (click)="viewOrder(order)">
           <div class="recent-code">{{ order.orderCode }}</div>
           <div class="recent-customer">{{ order.customerName || 'Sin cliente' }}</div>
           <div class="recent-total">{{ formatCurrency(order.total) }}</div>
@@ -74,13 +74,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let order of filteredOrders">
+          <tr *ngFor="let order of filteredOrders" (click)="viewOrder(order)" class="clickable-row">
             <td class="code-cell">{{ order.orderCode }}</td>
             <td>{{ order.customerName || '-' }}</td>
             <td class="total-cell">{{ formatCurrency(order.total) }}</td>
             <td>{{ formatDate(order.createdAt) }}</td>
             <td><span class="status-badge" [style.background]="getStatusColor(order.status)">{{ getStatusLabel(order.status) }}</span></td>
-            <td class="actions-cell">
+            <td class="actions-cell" (click)="$event.stopPropagation()">
               <button class="btn-action invoice" *ngIf="order.status !== 'DRAFT' && order.status !== 'CANCELLED'" (click)="generateInvoicePdf(order)" title="Generar Factura PDF">📄</button>
               <button class="btn-action advance" *ngIf="getNextStatus(order.status)" (click)="advanceStatus(order)" title="Avanzar estado">▶</button>
               <button class="btn-action cancel" *ngIf="order.status !== 'INVOICED' && order.status !== 'CANCELLED'" (click)="cancelOrder(order)" title="Cancelar">✕</button>
@@ -124,6 +124,73 @@
         (orderCreated)="onOrderCreated()"
         (formCancelled)="onFormCancelled()">
       </app-order-form>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal (Comanda) -->
+  <div class="modal-overlay" *ngIf="selectedOrder" (click)="closeOrderDetail()">
+    <div class="order-detail-modal" (click)="$event.stopPropagation()">
+      <div class="detail-header" [style.border-left-color]="getStatusColor(selectedOrder.status)">
+        <div class="detail-header-info">
+          <h3 class="detail-code">{{ selectedOrder.orderCode }}</h3>
+          <span class="status-badge" [style.background]="getStatusColor(selectedOrder.status)">{{ getStatusLabel(selectedOrder.status) }}</span>
+        </div>
+        <button class="detail-close" (click)="closeOrderDetail()" type="button">✕</button>
+      </div>
+
+      <div class="detail-body">
+        <!-- Client & Date Info -->
+        <div class="detail-info-row">
+          <div class="detail-info-item">
+            <span class="detail-label">Cliente</span>
+            <span class="detail-value">{{ selectedOrder.customerName || 'Sin cliente' }}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-label">Fecha</span>
+            <span class="detail-value">{{ formatDate(selectedOrder.createdAt) }}</span>
+          </div>
+          <div class="detail-info-item" *ngIf="selectedOrder.deliveryDate">
+            <span class="detail-label">Entrega</span>
+            <span class="detail-value">{{ formatDate(selectedOrder.deliveryDate) }}</span>
+          </div>
+        </div>
+
+        <!-- Items (Comanda) -->
+        <div class="detail-items" *ngIf="selectedOrder.items && selectedOrder.items.length > 0">
+          <h4 class="detail-section-title">Items del Pedido</h4>
+          <div class="comanda-list">
+            <div class="comanda-item" *ngFor="let item of selectedOrder.items; let i = index">
+              <div class="comanda-number">{{ i + 1 }}</div>
+              <div class="comanda-info">
+                <span class="comanda-product">{{ item.productName }}</span>
+                <span class="comanda-qty">x{{ item.quantity }}</span>
+              </div>
+              <div class="comanda-price">{{ formatCurrency(item.subtotal) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="detail-notes" *ngIf="selectedOrder.notes">
+          <h4 class="detail-section-title">Notas</h4>
+          <p class="notes-text">{{ selectedOrder.notes }}</p>
+        </div>
+
+        <!-- Totals -->
+        <div class="detail-totals">
+          <div class="total-row"><span>Subtotal</span><span>{{ formatCurrency(selectedOrder.subtotal) }}</span></div>
+          <div class="total-row"><span>IVA (19%)</span><span>{{ formatCurrency(selectedOrder.tax) }}</span></div>
+          <div class="total-row" *ngIf="selectedOrder.discount > 0"><span>Descuento</span><span>-{{ formatCurrency(selectedOrder.discount) }}</span></div>
+          <div class="total-row total-final"><span>TOTAL</span><span>{{ formatCurrency(selectedOrder.total) }}</span></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="detail-actions">
+        <button class="btn-detail-action" *ngIf="selectedOrder.status !== 'DRAFT' && selectedOrder.status !== 'CANCELLED'" (click)="generateInvoicePdf(selectedOrder)" type="button">📄 PDF</button>
+        <button class="btn-detail-action advance" *ngIf="getNextStatus(selectedOrder.status)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(getNextStatus(selectedOrder.status)!) }}</button>
+        <button class="btn-detail-action cancel" *ngIf="selectedOrder.status !== 'INVOICED' && selectedOrder.status !== 'CANCELLED'" (click)="cancelOrder(selectedOrder)" type="button">✕ Cancelar</button>
+      </div>
     </div>
   </div>
 </div>

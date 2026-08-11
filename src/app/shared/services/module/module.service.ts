@@ -24,14 +24,14 @@ export class ModuleService {
       displayName: 'INVENTARIO',
       color: '#0057B8',
       icon: 'boxes',
-      routes: ['/warehouses', '/locations', '/movements', '/reports-inventory']
+      routes: ['/materials', '/kardex', '/commercial', '/customers']
     },
     manufacturing: {
       name: 'manufacturing',
       displayName: 'MANUFACTURA',
       color: '#FF6600',
       icon: 'gear-fill',
-      routes: ['/materials', '/products', '/menus', '/sales', '/costs', '/reports-manufacturing']
+      routes: ['/materials', '/products', '/kardex', '/commercial', '/customers']
     }
   };
 

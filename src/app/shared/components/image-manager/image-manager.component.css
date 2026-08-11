@@ -6,13 +6,13 @@
 .upload-area {
   border: 2px dashed #ced4da;
   border-radius: 8px;
-  padding: 2rem;
+  padding: 1.25rem;
   text-align: center;
   background: #f8f9fa;
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .upload-area:hover {
@@ -38,22 +38,22 @@
 }
 
 .upload-icon {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   fill: #6c757d;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .upload-area h4 {
   color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 1.125rem;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
 }
 
 .upload-area p {
   color: #6c757d;
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .file-input {

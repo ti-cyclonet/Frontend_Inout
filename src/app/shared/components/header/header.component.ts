@@ -112,6 +112,11 @@ export class HeaderComponent implements OnInit {
     // Suscribirse a cambios de módulo
     this.moduleService.currentModule$.subscribe(module => {
       this.currentModule = module;
+      if (module === 'inventory') {
+        this.appDescription = 'GESTIÓN DE INVENTARIO';
+      } else if (module === 'manufacturing') {
+        this.appDescription = 'GESTIÓN DE INVENTARIO Y MANUFACTURA';
+      }
     });
     
     this.form = this.fb.group({
