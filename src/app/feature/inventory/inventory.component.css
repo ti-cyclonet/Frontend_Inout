@@ -19,7 +19,8 @@
 
 /* Forms */
 .create-form { background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.form-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.form-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.form-row .form-input { flex: 1; min-width: 0; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .form-grid .full { grid-column: 1 / -1; }
 .form-grid .actions { grid-column: 1 / -1; display: flex; gap: 0.5rem; justify-content: flex-end; }
@@ -28,8 +29,14 @@
 .form-input { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.82rem; }
 .form-input:focus { border-color: #0057B8; outline: 0; box-shadow: 0 0 0 2px rgba(0,87,184,0.1); }
 .form-input.small { max-width: 100px; }
-.btn-save { padding: 0.45rem 1rem; background: #0057B8; color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+.btn-save { padding: 0.45rem 1rem; background: #0057B8; color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
 .btn-cancel { padding: 0.45rem 0.75rem; background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+
+@media (max-width: 768px) {
+  .form-row { flex-direction: column; align-items: stretch; }
+  .form-row .form-input { flex: unset; width: 100%; }
+  .form-row .btn-save, .form-row .btn-cancel { width: 100%; text-align: center; }
+}
 
 /* Warehouses Grid */
 .warehouses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem; }

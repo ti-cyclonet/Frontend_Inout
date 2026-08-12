@@ -50,9 +50,10 @@
         <div class="create-form" *ngIf="showCreateLocation">
           <div class="form-row">
             <input class="form-input" [(ngModel)]="newLocation.name" placeholder="Nombre *">
-            <input class="form-input small" [(ngModel)]="newLocation.aisle" placeholder="Pasillo">
-            <input class="form-input small" [(ngModel)]="newLocation.shelf" placeholder="Estante">
-            <input class="form-input small" [(ngModel)]="newLocation.bin" placeholder="Bin">
+            <input class="form-input small" [(ngModel)]="newLocation.aisle" placeholder="Pasillo (Ej: 1)">
+            <input class="form-input small" [(ngModel)]="newLocation.shelf" placeholder="Estante (Ej: A)">
+            <input class="form-input small" [(ngModel)]="newLocation.bin" placeholder="Casillero (Ej: 3)">
+            <input class="form-input" [(ngModel)]="newLocation.capacity" placeholder="Capacidad (Ej: 10 kg)">
             <button class="btn-save" (click)="createLocation()" type="button">Guardar</button>
             <button class="btn-cancel" (click)="showCreateLocation = false" type="button">✕</button>
           </div>
@@ -60,7 +61,8 @@
         <div class="locations-list">
           <div class="location-item" *ngFor="let loc of selectedWarehouse.locations">
             <span>{{ loc.name }}</span>
-            <small *ngIf="loc.aisle">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }}</small>
+            <small *ngIf="loc.aisle">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }} <span *ngIf="loc.capacity">· Cap: {{ loc.capacity }}</span></small>
+            <button class="btn-remove-sm" (click)="deleteLocation(loc.id)" type="button" title="Eliminar ubicación">✕</button>
           </div>
           <div class="empty-msg" *ngIf="!selectedWarehouse.locations || selectedWarehouse.locations.length === 0">Sin ubicaciones</div>
         </div>

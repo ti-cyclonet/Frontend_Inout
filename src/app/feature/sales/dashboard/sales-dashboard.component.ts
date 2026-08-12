@@ -128,7 +128,7 @@ export class SalesDashboardComponent implements OnInit, OnChanges {
   }
 
   loadLoyaltyRanking(): void {
-    // Build loyalty from sales data - count purchases per customer
+    // Build loyalty from sales data + business params for points calculation
     this.salesService.getSales().subscribe({
       next: (response: any) => {
         const sales = response.data || response || [];
@@ -146,20 +146,37 @@ export class SalesDashboardComponent implements OnInit, OnChanges {
             (parseFloat(sale.fltQuantity?.toString() || '0') * parseFloat(sale.fltUnitPrice?.toString() || '0'));
         }
 
-        // Score: purchases * 10 + totalSpent / 10000
-        const ranked = Object.values(customerMap)
-          .map(c => ({
-            ...c,
-            score: Math.round(c.purchases * 10 + c.totalSpent / 10000),
-          }))
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 5);
+        // Get business params for points calculation
+        this.http.get<any>(`${this.baseUrl}/business-params`).subscribe({
+          next: (params) => {
+            const pointsPerPurchase = params.PUNTOS_POR_COMPRA || 10;
+            const pointsPerWeight = params.PUNTOS_POR_PESO || 10000;
 
-        const maxScore = ranked.length > 0 ? ranked[0].score : 1;
-        this.loyaltyRanking = ranked.map(c => ({
-          ...c,
-          scorePercent: Math.round((c.score / maxScore) * 100),
-        }));
+            const ranked = Object.values(customerMap)
+              .map(c => ({
+                ...c,
+                score: (c.purchases * pointsPerPurchase) + (pointsPerWeight > 0 ? Math.floor(c.totalSpent / pointsPerWeight) : 0),
+              }))
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 5);
+
+            const maxScore = ranked.length > 0 ? ranked[0].score : 1;
+            this.loyaltyRanking = ranked.map(c => ({
+              ...c,
+              scorePercent: Math.round((c.score / maxScore) * 100),
+            }));
+          },
+          error: () => {
+            // Fallback: use default scoring
+            const ranked = Object.values(customerMap)
+              .map(c => ({ ...c, score: Math.round(c.purchases * 10 + c.totalSpent / 10000) }))
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 5);
+
+            const maxScore = ranked.length > 0 ? ranked[0].score : 1;
+            this.loyaltyRanking = ranked.map(c => ({ ...c, scorePercent: Math.round((c.score / maxScore) * 100) }));
+          }
+        });
       },
       error: () => { this.loyaltyRanking = []; }
     });

@@ -34,7 +34,7 @@ export class ProductsDashboardComponent implements OnInit {
         const products = response.data;
         this.metrics.totalProducts = products.length;
         this.metrics.lowStockCount = products.filter((p: any) => 
-          Number(p.ingQuantity) < Number(p.ingStockMin)
+          Number(p.ingQuantity) < Number(p.ingStockMin) && Number(p.ingStockMin) > 0
         ).length;
         this.metrics.totalValue = products.reduce((sum: number, p: any) => 
           sum + (p.fltPrice * p.ingQuantity), 0

@@ -255,8 +255,21 @@ export class OrdersComponent implements OnInit {
 
   // Cotización (pedido en borrador)
   generateQuote(order: Order): void {
+    // Obtener días de vigencia del parámetro configurado
+    this.http.get<any>(`${environment.apiUrl}/business-params`).subscribe({
+      next: (params) => {
+        const days = params.DIAS_VIGENCIA_COTIZACION || 15;
+        this.buildAndGenerateQuote(order, days);
+      },
+      error: () => {
+        this.buildAndGenerateQuote(order, 15);
+      }
+    });
+  }
+
+  private buildAndGenerateQuote(order: Order, validityDays: number): void {
     const validUntil = new Date();
-    validUntil.setDate(validUntil.getDate() + 15); // 15 días de vigencia
+    validUntil.setDate(validUntil.getDate() + validityDays);
     this.documentsService.generateQuote({
       quoteNumber: order.orderCode,
       customerName: order.customerName || 'Sin cliente',

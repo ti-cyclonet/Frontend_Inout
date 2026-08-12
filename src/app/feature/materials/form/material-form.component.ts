@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { MaterialService } from '../../../shared/services/material.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
+import { WarehousesService, Warehouse } from '../../../shared/services/warehouses.service';
 import { Material, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 
@@ -29,6 +30,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   isEditMode = false;
   materialImages: MaterialImage[] = [];
   categories: Category[] = [];
+  locationOptions: string[] = [];
   showCategoryForm = false;
   useDifferentDischargeUnit = false;
   categorySearchText = '';
@@ -43,6 +45,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
     private fb: FormBuilder,
     private materialService: MaterialService,
     private categoryService: CategoryService,
+    private warehousesService: WarehousesService,
     private notificationService: NotificationService,
     private router: Router
   ) {
@@ -51,6 +54,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.loadCategories();
+    this.loadLocations();
     if (this.materialId) {
       this.isEditMode = true;
       this.loadMaterial();
@@ -104,6 +108,29 @@ export class MaterialFormComponent implements OnInit, OnChanges {
       },
       error: (error) => {
         console.error('Error loading categories:', error);
+      }
+    });
+  }
+
+  loadLocations(): void {
+    this.warehousesService.getWarehouses().subscribe({
+      next: (warehouses) => {
+        // Build location options from all warehouse locations
+        const locations: string[] = [];
+        for (const wh of warehouses) {
+          if (wh.locations && wh.locations.length > 0) {
+            for (const loc of wh.locations) {
+              locations.push(loc.name);
+            }
+          } else {
+            // If warehouse has no locations, use warehouse name as location
+            locations.push(wh.name);
+          }
+        }
+        this.locationOptions = locations.length > 0 ? locations : ['Bodega Principal'];
+      },
+      error: () => {
+        this.locationOptions = ['Bodega Principal'];
       }
     });
   }

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { ProductService } from '../../../shared/services/product.service';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
+import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import Swal from 'sweetalert2';
@@ -60,6 +61,7 @@ export class ProductFormComponent implements OnInit {
   locationFilter: string = '';
   categoryFilter: string = '';
   availableLocations: string[] = [];
+  warehouseLocations: string[] = [];
   showFilters: boolean = false;
   showAvailableMaterials: boolean = false;
   showSelectedMaterials: boolean = false;
@@ -78,13 +80,15 @@ export class ProductFormComponent implements OnInit {
     private fb: FormBuilder,
     private productService: ProductService,
     private materialService: MaterialService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private warehousesService: WarehousesService
   ) {}
 
   ngOnInit(): void {
     this.initForm();
     this.loadCategories();
     this.loadAvailableMaterials();
+    this.loadWarehouseLocations();
     
     if (this.productData) {
       this.isEditMode = true;
@@ -231,6 +235,27 @@ export class ProductFormComponent implements OnInit {
       .filter((location, index, arr) => location && arr.indexOf(location) === index)
       .sort();
     this.availableLocations = locations;
+  }
+
+  loadWarehouseLocations(): void {
+    this.warehousesService.getWarehouses().subscribe({
+      next: (warehouses) => {
+        const locations: string[] = [];
+        for (const wh of warehouses) {
+          if (wh.locations && wh.locations.length > 0) {
+            for (const loc of wh.locations) {
+              locations.push(loc.name);
+            }
+          } else {
+            locations.push(wh.name);
+          }
+        }
+        this.warehouseLocations = locations.length > 0 ? locations : ['Bodega Principal'];
+      },
+      error: () => {
+        this.warehouseLocations = ['Bodega Principal'];
+      }
+    });
   }
 
   nextStep(): void {

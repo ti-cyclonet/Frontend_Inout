@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
+import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialFilters, PaginatedResponse } from '../../../shared/models/material.model';
 
 @Component({
@@ -50,18 +51,21 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   // UI State
   showFilters = false;
   viewMode: 'table' | 'cards' = 'table';
+  locationOptions: string[] = [];
 
   private readonly VIEW_MODE_KEY = 'materials_view_mode';
 
   constructor(
     private materialService: MaterialService,
     private categoryService: CategoryService,
+    private warehousesService: WarehousesService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.loadViewMode();
     this.loadCategories();
+    this.loadLocations();
     this.loadMaterials();
   }
 
@@ -80,6 +84,25 @@ export class MaterialsListComponent implements OnInit, OnChanges {
       error: (error) => {
         console.error('Error loading categories:', error);
       }
+    });
+  }
+
+  loadLocations(): void {
+    this.warehousesService.getWarehouses().subscribe({
+      next: (warehouses) => {
+        const locations: string[] = [];
+        for (const wh of warehouses) {
+          if (wh.locations && wh.locations.length > 0) {
+            for (const loc of wh.locations) {
+              locations.push(loc.name);
+            }
+          } else {
+            locations.push(wh.name);
+          }
+        }
+        this.locationOptions = locations;
+      },
+      error: () => { this.locationOptions = []; }
     });
   }
 
