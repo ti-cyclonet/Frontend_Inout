@@ -20,6 +20,7 @@ export interface WarehouseLocation {
   aisle?: string;
   shelf?: string;
   bin?: string;
+  capacity?: string;
 }
 
 export interface StockTransfer {
@@ -88,6 +89,10 @@ export class WarehousesService {
 
   createLocation(data: any): Observable<WarehouseLocation> {
     return this.http.post<WarehouseLocation>(`${this.apiUrl}/locations`, data);
+  }
+
+  deleteLocation(locationId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/locations/${locationId}`);
   }
 
   // Transfers

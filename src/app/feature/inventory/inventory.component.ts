@@ -24,7 +24,7 @@ export class InventoryComponent implements OnInit {
   // Locations
   selectedWarehouse: Warehouse | null = null;
   showCreateLocation = false;
-  newLocation = { name: '', aisle: '', shelf: '', bin: '' };
+  newLocation = { name: '', aisle: '', shelf: '', bin: '', capacity: '' };
 
   // Transfers
   transfers: StockTransfer[] = [];
@@ -54,7 +54,13 @@ export class InventoryComponent implements OnInit {
   // ═══════ WAREHOUSES ═══════
   loadWarehouses(): void {
     this.warehousesService.getWarehouses().subscribe({
-      next: (data) => { this.warehouses = data; },
+      next: (data) => {
+        this.warehouses = data;
+        // Re-seleccionar el almacén si había uno seleccionado
+        if (this.selectedWarehouse) {
+          this.selectedWarehouse = this.warehouses.find(w => w.id === this.selectedWarehouse!.id) || null;
+        }
+      },
       error: () => { this.warehouses = []; }
     });
   }
@@ -90,9 +96,28 @@ export class InventoryComponent implements OnInit {
       next: () => {
         this.loadWarehouses();
         this.showCreateLocation = false;
-        this.newLocation = { name: '', aisle: '', shelf: '', bin: '' };
+        this.newLocation = { name: '', aisle: '', shelf: '', bin: '', capacity: '' };
       },
       error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo crear', 'error'); }
+    });
+  }
+
+  deleteLocation(locationId: string): void {
+    Swal.fire({
+      title: '¿Eliminar ubicación?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626'
+    }).then(r => {
+      if (r.isConfirmed) {
+        this.warehousesService.deleteLocation(locationId).subscribe({
+          next: () => { this.loadWarehouses(); },
+          error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo eliminar', 'error'); }
+        });
+      }
     });
   }
 

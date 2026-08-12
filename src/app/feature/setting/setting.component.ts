@@ -133,7 +133,7 @@ export class SettingComponent implements OnInit {
           valor: param.value,
           valorOriginal: param.value,
           descripcion: param.customerParameter.description,
-          estado: param.status,
+          estado: (param.status || 'ACTIVE').toUpperCase(),
           editando: false
         }));
         this.parametrosPage = 0;
@@ -480,15 +480,23 @@ export class SettingComponent implements OnInit {
         customerParameterId: param.id,
         periodId: this.periodoSeleccionado.id,
         value: param.value,
-        status: 'active'
+        status: 'ACTIVE'
       })
     );
 
     Promise.all(requests.map(req => req.toPromise())).then(() => {
       this.loading = false;
-      this.closeModal('addParameterModal');
       this.loadParametrosPorPeriodo(this.periodoSeleccionado.id);
-      Swal.fire('¡Éxito!', 'Parámetros asignados exitosamente', 'success');
+      if (this.periodoVistaParametrosId === this.periodoSeleccionado.id) {
+        this.loadParametrosVista(this.periodoSeleccionado.id);
+      }
+      Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: 'Parámetros asignados exitosamente',
+        timer: 1500,
+        showConfirmButton: false
+      });
     }).catch(() => {
       this.loading = false;
       Swal.fire('Error', 'No se pudieron asignar los parámetros', 'error');
@@ -551,9 +559,10 @@ export class SettingComponent implements OnInit {
       next: (parametros) => {
         this.parametrosVista = parametros.map(p => ({
           nombre: p.name || p.customerParameter?.name || 'Sin nombre',
-          valor: p.value || 0,
+          valor: p.value || '',
           descripcion: p.customerParameter?.description || p.description || '',
-          estado: p.status || 'ACTIVE',
+          estado: (p.status || 'ACTIVE').toUpperCase(),
+          dataType: p.customerParameter?.dataType || 'string',
         }));
       },
       error: () => {

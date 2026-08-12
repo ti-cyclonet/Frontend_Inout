@@ -82,7 +82,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         sum + (parseFloat(s.fltQuantity || 0) * parseFloat(s.fltUnitPrice || 0)), 0);
 
       this.metrics.lowStockProducts = this.chartData.products.filter((p: any) => 
-        parseFloat(p.ingQuantity || 0) < parseFloat(p.ingStockMin || 0)).length;
+        parseFloat(p.ingQuantity || 0) < parseFloat(p.ingStockMin || 0) && parseFloat(p.ingStockMin || 0) > 0).length;
 
       this.metrics.materialsCount = this.chartData.materials.length;
       this.metrics.productsCount = this.chartData.products.length;
@@ -380,7 +380,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   createStockChart(): void {
     const lowStock = this.chartData.products.filter((p: any) => 
-      parseFloat(p.ingQuantity || 0) < parseFloat(p.ingStockMin || 0)).length;
+      parseFloat(p.ingQuantity || 0) < parseFloat(p.ingStockMin || 0) && parseFloat(p.ingStockMin || 0) > 0).length;
     
     const normalStock = this.chartData.products.length - lowStock;
 

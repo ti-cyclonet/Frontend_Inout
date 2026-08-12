@@ -167,12 +167,13 @@
             <tr *ngFor="let param of parametrosVista">
               <td><strong>{{ param.nombre }}</strong></td>
               <td>
-                <span class="badge bg-primary" style="font-size: 0.8rem;">{{ param.valor | number:'1.0-0' }}</span>
+                <span class="badge bg-primary" style="font-size: 0.8rem;" *ngIf="param.dataType === 'number'">{{ param.valor | number:'1.0-0' }}</span>
+                <span class="badge bg-info" style="font-size: 0.8rem;" *ngIf="param.dataType !== 'number'">{{ param.valor }}</span>
               </td>
               <td class="d-none d-md-table-cell text-muted" style="font-size: 0.8rem;">{{ param.descripcion }}</td>
               <td class="text-center">
-                <span class="badge" [ngClass]="param.estado === 'ACTIVE' || param.estado === 'active' ? 'bg-success' : 'bg-secondary'">
-                  {{ param.estado === 'ACTIVE' || param.estado === 'active' ? 'ACTIVO' : 'INACTIVO' }}
+                <span class="badge" [ngClass]="param.estado === 'ACTIVE' ? 'bg-success' : 'bg-secondary'">
+                  {{ param.estado === 'ACTIVE' ? 'ACTIVO' : 'INACTIVO' }}
                 </span>
               </td>
             </tr>
@@ -417,7 +418,7 @@
 
 <!-- Modal para agregar parámetros disponibles -->
 <div class="modal fade" id="addParameterModal" tabindex="-1" aria-labelledby="addParameterModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addParameterModalLabel">Asignar Parámetros - {{ periodoSeleccionado?.nombre }}</h5>
@@ -449,21 +450,22 @@
             <thead>
               <tr>
                 <th style="width:40px;"></th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Tipo</th>
+                <th style="width: 40%;">Parámetro</th>
+                <th style="width: 60px;">Tipo</th>
                 <th>Valor</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let param of parametrosDisponiblesFiltrados">
+              <tr *ngFor="let param of parametrosDisponiblesFiltrados" [class.table-primary]="param.selected">
                 <td>
                   <input type="checkbox" class="form-check-input" 
                          [(ngModel)]="param.selected" 
                          id="param-{{ param.id }}">
                 </td>
-                <td>{{ param.name }}</td>
-                <td>{{ param.description }}</td>
+                <td>
+                  <strong>{{ param.name }}</strong>
+                  <div style="font-size: 0.72rem; color: #6c757d; margin-top: 2px;">{{ param.description }}</div>
+                </td>
                 <td>
                   <span class="badge" [ngClass]="param.dataType === 'number' ? 'bg-info' : 'bg-secondary'">
                     {{ param.dataType === 'number' ? 'NUM' : 'TXT' }}
@@ -472,13 +474,12 @@
                 <td>
                   <input type="text" class="form-control form-control-sm" 
                          [(ngModel)]="param.value" 
-                         [placeholder]="param.dataType === 'number' ? 'Ej: 19' : 'Ej: COP'"
-                         [disabled]="!param.selected"
-                         style="width: 90px;">
+                         [placeholder]="param.dataType === 'number' ? 'Ej: 19' : 'Ej: valor'"
+                         [disabled]="!param.selected">
                 </td>
               </tr>
               <tr *ngIf="parametrosDisponiblesFiltrados.length === 0">
-                <td colspan="5" class="text-center">No hay parámetros disponibles</td>
+                <td colspan="4" class="text-center">No hay parámetros disponibles</td>
               </tr>
             </tbody>
           </table>
