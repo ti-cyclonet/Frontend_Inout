@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule, NgStyle } from '@angular/common';
 import { OptionMenu } from '../../model/option_menu';
+import { StockAlertsService } from '../../services/stock-alerts.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -14,12 +15,24 @@ export class SidebarComponent implements OnInit {
   @Input() optionsMenu: OptionMenu[] = [];
   @Output() sidebarToggle = new EventEmitter<void>();
   private openSubmenuId: string | null = null;
+  materialAlertCount = 0;
+  productAlertCount = 0;
+
+  constructor(private stockAlertsService: StockAlertsService) {}
 
   ngOnInit(): void {
     this.optionsMenu.sort((a, b) => {
       const orderA = a.order ? parseInt(a.order, 10) : 99;
       const orderB = b.order ? parseInt(b.order, 10) : 99;
       return orderA - orderB;
+    });
+
+    this.stockAlertsService.getAlerts().subscribe({
+      next: (response) => {
+        this.materialAlertCount = response.data.filter(a => a.type === 'material').length;
+        this.productAlertCount = response.data.filter(a => a.type === 'product').length;
+      },
+      error: () => {}
     });
   }
 
@@ -50,5 +63,13 @@ export class SidebarComponent implements OnInit {
   hasSubmenu(optionId: string): boolean {
     const submenus = this.getSubmenus(optionId);
     return submenus && submenus.length > 0;
+  }
+
+  isMenuMaterials(option: OptionMenu): boolean {
+    return (option.url || '').includes('material');
+  }
+
+  isMenuProducts(option: OptionMenu): boolean {
+    return (option.url || '').includes('product');
   }
 }

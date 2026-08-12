@@ -57,7 +57,7 @@ import { CustomersComponent } from '../customers/customers.component';
 
         <!-- Clientes -->
         <div *ngIf="activeTab === 'customers'">
-          <app-customers></app-customers>
+          <app-customers [embedded]="true"></app-customers>
         </div>
       </div>
 

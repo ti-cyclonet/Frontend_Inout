@@ -1,9 +1,11 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { SalesService, Sale } from '../../../shared/services/sales.service';
 import { ProductsService, Product } from '../../../shared/services/products.service';
 import { KardexService } from '../../../shared/services/kardex.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-sales-list',
@@ -674,7 +676,7 @@ export class SalesListComponent implements OnInit {
   viewMode: 'table' | 'cards' = 'table';
   showViewModal = false;
 
-  constructor(private salesService: SalesService, private productsService: ProductsService, private kardexService: KardexService) {}
+  constructor(private salesService: SalesService, private productsService: ProductsService, private kardexService: KardexService, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.loadSales();
@@ -793,6 +795,28 @@ export class SalesListComponent implements OnInit {
   }
 
   generatePDF(): void {
+    if (!this.selectedSale || !this.selectedSale.strId) return;
+
+    const apiUrl = `${environment.apiUrl}/sales/${this.selectedSale.strId}/invoice-pdf`;
+
+    this.http.get(apiUrl, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `factura-${this.selectedSale?.strInvoiceCode || 'N-A'}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Error descargando factura PDF:', error);
+        // Fallback: usar impresión del navegador
+        this.generatePDFFallback();
+      }
+    });
+  }
+
+  generatePDFFallback(): void {
     if (!this.selectedSale) return;
 
     // Crear contenido HTML para imprimir
