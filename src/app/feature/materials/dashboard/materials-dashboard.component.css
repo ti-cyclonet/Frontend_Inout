@@ -285,6 +285,14 @@
   fill: #17a2b8;
 }
 
+.action-icon.primary {
+  background: rgba(0, 102, 204, 0.1);
+}
+
+.action-icon.primary svg {
+  fill: #0066CC;
+}
+
 .action-content h4 {
   font-size: 0.875rem;
   font-weight: 600;

@@ -1,0 +1,198 @@
+<div class="inventory-container">
+  <div class="inventory-header">
+    <h5 class="mb-0">Gestión de <span class="text-primary fw-bold">ALMACENES</span> <span style="color: #ff8000">●</span></h5>
+  </div>
+
+  <div class="inventory-tabs">
+    <button class="tab-button" [class.active]="activeTab === 'warehouses'" (click)="activeTab = 'warehouses'">Almacenes</button>
+    <button class="tab-button" [class.active]="activeTab === 'transfers'" (click)="activeTab = 'transfers'">Transferencias</button>
+    <button class="tab-button" [class.active]="activeTab === 'counts'" (click)="activeTab = 'counts'">Conteo Físico</button>
+  </div>
+
+  <div class="inventory-content">
+    <!-- WAREHOUSES TAB -->
+    <div *ngIf="activeTab === 'warehouses'" class="tab-panel">
+      <div class="panel-header">
+        <h6>Almacenes y Ubicaciones</h6>
+        <button class="btn-action-primary" (click)="showCreateWarehouse = true" type="button">+ Nuevo Almacén</button>
+      </div>
+
+      <!-- Create form -->
+      <div class="create-form" *ngIf="showCreateWarehouse">
+        <div class="form-row">
+          <input class="form-input" [(ngModel)]="newWarehouse.name" placeholder="Nombre del almacén *">
+          <input class="form-input" [(ngModel)]="newWarehouse.address" placeholder="Dirección">
+          <input class="form-input" [(ngModel)]="newWarehouse.phone" placeholder="Teléfono">
+          <button class="btn-save" (click)="createWarehouse()" type="button">Guardar</button>
+          <button class="btn-cancel" (click)="showCreateWarehouse = false" type="button">✕</button>
+        </div>
+      </div>
+
+      <!-- Warehouses list -->
+      <div class="warehouses-grid">
+        <div class="warehouse-card" *ngFor="let wh of warehouses" [class.selected]="selectedWarehouse?.id === wh.id" (click)="selectWarehouse(wh)">
+          <div class="wh-info">
+            <strong>{{ wh.name }}</strong>
+            <small *ngIf="wh.address">{{ wh.address }}</small>
+            <span class="location-count">{{ wh.locations?.length || 0 }} ubicaciones</span>
+          </div>
+          <button class="btn-remove-sm" (click)="$event.stopPropagation(); deleteWarehouse(wh)" type="button" title="Desactivar">✕</button>
+        </div>
+        <div class="empty-msg" *ngIf="warehouses.length === 0">No hay almacenes registrados</div>
+      </div>
+
+      <!-- Locations -->
+      <div class="locations-section" *ngIf="selectedWarehouse">
+        <div class="panel-header">
+          <h6>Ubicaciones de: {{ selectedWarehouse.name }}</h6>
+          <button class="btn-action-primary" (click)="showCreateLocation = true" type="button">+ Ubicación</button>
+        </div>
+        <div class="create-form" *ngIf="showCreateLocation">
+          <div class="form-row">
+            <input class="form-input" [(ngModel)]="newLocation.name" placeholder="Nombre *">
+            <input class="form-input small" [(ngModel)]="newLocation.aisle" placeholder="Pasillo">
+            <input class="form-input small" [(ngModel)]="newLocation.shelf" placeholder="Estante">
+            <input class="form-input small" [(ngModel)]="newLocation.bin" placeholder="Bin">
+            <button class="btn-save" (click)="createLocation()" type="button">Guardar</button>
+            <button class="btn-cancel" (click)="showCreateLocation = false" type="button">✕</button>
+          </div>
+        </div>
+        <div class="locations-list">
+          <div class="location-item" *ngFor="let loc of selectedWarehouse.locations">
+            <span>{{ loc.name }}</span>
+            <small *ngIf="loc.aisle">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }}</small>
+          </div>
+          <div class="empty-msg" *ngIf="!selectedWarehouse.locations || selectedWarehouse.locations.length === 0">Sin ubicaciones</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSFERS TAB -->
+    <div *ngIf="activeTab === 'transfers'" class="tab-panel">
+      <div class="panel-header">
+        <h6>Transferencias de Stock</h6>
+        <button class="btn-action-primary" (click)="showTransferModal = true" type="button">+ Nueva Transferencia</button>
+      </div>
+
+      <!-- Transfer form -->
+      <div class="create-form" *ngIf="showTransferModal">
+        <div class="form-grid">
+          <div class="field">
+            <label>Material</label>
+            <select class="form-input" [(ngModel)]="transferData.materialId">
+              <option value="">Seleccionar...</option>
+              <option *ngFor="let m of materials" [value]="m.id">{{ m.code }} - {{ m.name }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Desde almacén</label>
+            <select class="form-input" [(ngModel)]="transferData.fromWarehouseId">
+              <option value="">Seleccionar...</option>
+              <option *ngFor="let wh of warehouses" [value]="wh.id">{{ wh.name }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Hacia almacén</label>
+            <select class="form-input" [(ngModel)]="transferData.toWarehouseId">
+              <option value="">Seleccionar...</option>
+              <option *ngFor="let wh of warehouses" [value]="wh.id">{{ wh.name }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Cantidad</label>
+            <input type="number" class="form-input" [(ngModel)]="transferData.quantity" min="0.01" step="0.01">
+          </div>
+          <div class="field full">
+            <label>Notas</label>
+            <input class="form-input" [(ngModel)]="transferData.notes" placeholder="Observaciones...">
+          </div>
+          <div class="field actions">
+            <button class="btn-save" (click)="submitTransfer()" type="button">Transferir</button>
+            <button class="btn-cancel" (click)="showTransferModal = false" type="button">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transfer history -->
+      <div class="transfers-list">
+        <div class="transfer-item" *ngFor="let t of transfers">
+          <div class="transfer-info">
+            <strong>{{ t.materialName }}</strong>
+            <span>{{ t.fromWarehouseName }} → {{ t.toWarehouseName }}</span>
+          </div>
+          <div class="transfer-meta">
+            <span class="qty">{{ t.quantity }}</span>
+            <small>{{ formatDate(t.createdAt) }}</small>
+          </div>
+        </div>
+        <div class="empty-msg" *ngIf="transfers.length === 0">No hay transferencias registradas</div>
+      </div>
+    </div>
+
+    <!-- PHYSICAL COUNTS TAB -->
+    <div *ngIf="activeTab === 'counts'" class="tab-panel">
+      <div *ngIf="!selectedCount">
+        <div class="panel-header">
+          <h6>Conteos Físicos</h6>
+          <button class="btn-action-primary" (click)="startNewCount()" type="button">+ Nuevo Conteo</button>
+        </div>
+
+        <div class="counts-list">
+          <div class="count-card" *ngFor="let c of counts" (click)="openCount(c)">
+            <div class="count-info">
+              <strong>{{ c.description }}</strong>
+              <small>{{ formatDate(c.createdAt) }} — {{ c.performedBy }}</small>
+            </div>
+            <div class="count-meta">
+              <span class="badge" [style.background]="getStatusColor(c.status)">{{ getStatusLabel(c.status) }}</span>
+              <span class="discrepancy" *ngIf="c.discrepancies > 0">{{ c.discrepancies }} discrepancias</span>
+            </div>
+          </div>
+          <div class="empty-msg" *ngIf="counts.length === 0">No hay conteos registrados</div>
+        </div>
+      </div>
+
+      <!-- Count detail -->
+      <div *ngIf="selectedCount" class="count-detail">
+        <div class="panel-header">
+          <h6>{{ selectedCount.description }}</h6>
+          <div class="header-actions-group">
+            <button class="btn-save" *ngIf="selectedCount.status !== 'APPLIED'" (click)="saveCount()" type="button">💾 Guardar</button>
+            <button class="btn-action-danger" *ngIf="selectedCount.status !== 'APPLIED' && selectedCount.status !== 'DRAFT'" (click)="applyCount()" type="button">✓ Aplicar Ajustes</button>
+            <button class="btn-cancel" (click)="closeCount()" type="button">← Volver</button>
+          </div>
+        </div>
+
+        <div class="count-table-wrapper">
+          <table class="count-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Material</th>
+                <th>Stock Sistema</th>
+                <th>Stock Físico</th>
+                <th>Diferencia</th>
+                <th>Unidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of selectedCount.items" [class.discrepancy-row]="item.difference !== 0">
+                <td class="code-cell">{{ item.materialCode }}</td>
+                <td>{{ item.materialName }}</td>
+                <td class="text-center">{{ item.systemStock }}</td>
+                <td class="text-center">
+                  <input *ngIf="selectedCount.status !== 'APPLIED'" type="number" class="count-input" [value]="item.physicalStock" (change)="updateItemCount(item, $any($event.target).value)" min="0" step="0.01">
+                  <span *ngIf="selectedCount.status === 'APPLIED'">{{ item.physicalStock }}</span>
+                </td>
+                <td class="text-center" [class.positive]="item.difference > 0" [class.negative]="item.difference < 0">
+                  {{ item.difference > 0 ? '+' : '' }}{{ item.difference }}
+                </td>
+                <td class="text-center">{{ item.unit }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

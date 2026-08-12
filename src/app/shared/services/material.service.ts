@@ -66,6 +66,7 @@ export class MaterialService {
           updateDate: new Date(item.dtmUpdateDate || item.dtmCreationDate),
           images: item.images || [],
           categoryId: item.categoryId || item.category?.id,
+          categoryName: item.category?.name || null,
           expirationDate: item.dtmExpirationDate || null
         }))
       })),

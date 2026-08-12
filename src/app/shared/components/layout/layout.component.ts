@@ -114,6 +114,24 @@ export default class LayoutComponent implements OnInit {
           this.optionsMenu.push(commercialEntry);
         }
 
+        // Agregar enlace de Almacenes solo en modo Inventario
+        if (this.currentModule === 'inventory') {
+          const inventoryEntry: OptionMenu = {
+            id: 'inventory-mgmt',
+            name: 'Almacenes',
+            description: 'Almacenes',
+            url: '/inventory',
+            icon: 'building',
+            type: 'main_menu',
+            idMPather: null,
+            order: '30',
+            idApplication: this.application?.id ?? '',
+          };
+          if (!this.optionsMenu.some(m => m.id === inventoryEntry.id)) {
+            this.optionsMenu.push(inventoryEntry);
+          }
+        }
+
         // Agregar enlace estático de Consumos (panel de uso de paquete)
         const consumosEntry: OptionMenu = {
           id: 'usage-panel',

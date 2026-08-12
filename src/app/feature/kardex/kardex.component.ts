@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MaterialService } from '../../shared/services/material.service';
 import { SupplierService } from '../../shared/services/supplier.service';
+import { DocumentsService } from '../../shared/services/documents.service';
 import { Material } from '../../shared/models/material.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
@@ -78,6 +79,7 @@ export class KardexComponent implements OnInit {
     private http: HttpClient,
     private materialService: MaterialService,
     private supplierService: SupplierService,
+    private documentsService: DocumentsService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -741,7 +743,116 @@ export class KardexComponent implements OnInit {
       Swal.fire('Advertencia', 'Por favor seleccione un material primero', 'warning');
       return;
     }
-    Swal.fire('Información', 'Función de Nueva Salida próximamente', 'info');
+
+    Swal.fire({
+      title: 'Ajuste / Salida de Inventario',
+      html: `
+        <div style="text-align:left;font-size:14px;">
+          <p><strong>${this.selectedMaterial.name}</strong> (${this.selectedMaterial.code})</p>
+          <p>Stock actual: <strong>${this.selectedMaterial.balance} ${this.selectedMaterial.measureUnit || ''}</strong></p>
+          <hr>
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Motivo</label>
+          <select id="swal-reason" class="swal2-input" style="margin:0 0 12px;width:100%;font-size:13px;">
+            <option value="ADJUSTMENT">Ajuste de inventario</option>
+            <option value="DAMAGE">Merma / Daño</option>
+            <option value="RETURN">Devolución a proveedor</option>
+            <option value="INTERNAL_USE">Consumo interno</option>
+            <option value="OTHER">Otro</option>
+          </select>
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Cantidad a descontar</label>
+          <input id="swal-quantity" type="number" class="swal2-input" placeholder="0" min="0.01" step="0.01" style="margin:0 0 12px;width:100%;">
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Observaciones</label>
+          <textarea id="swal-notes" class="swal2-textarea" placeholder="Descripción del ajuste..." style="margin:0;width:100%;height:60px;font-size:13px;"></textarea>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Registrar Salida',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      preConfirm: () => {
+        const quantity = parseFloat((document.getElementById('swal-quantity') as HTMLInputElement).value);
+        const reason = (document.getElementById('swal-reason') as HTMLSelectElement).value;
+        const notes = (document.getElementById('swal-notes') as HTMLTextAreaElement).value;
+        if (!quantity || quantity <= 0) {
+          Swal.showValidationMessage('Ingrese una cantidad válida');
+          return false;
+        }
+        if (quantity > this.selectedMaterial.balance) {
+          Swal.showValidationMessage('La cantidad excede el stock disponible');
+          return false;
+        }
+        return { quantity, reason, notes };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        const { quantity, reason, notes } = result.value;
+        const previousStock = this.selectedMaterial.balance;
+        const newStock = previousStock - quantity;
+
+        // Register inventory movement
+        const movementData = {
+          strTenantId: '',
+          strMaterialId: this.selectedMaterial.id,
+          strType: 'OUT',
+          strReason: reason,
+          fltQuantity: quantity,
+          fltUnitPrice: this.selectedMaterial.price || 0,
+          strNotes: notes || `Salida: ${reason}`,
+          dtmDate: new Date().toISOString().split('T')[0]
+        };
+
+        this.http.post(`${this.baseUrl}/inventory-movements`, movementData).subscribe({
+          next: () => {
+            // Update local balance
+            this.selectedMaterial.balance = newStock;
+            this.loadMovements(this.selectedMaterial.id);
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Salida registrada',
+              html: `<p>Se descontaron <strong>${quantity}</strong> unidades.</p><p>Nuevo stock: <strong>${newStock}</strong></p>`,
+              showCancelButton: true,
+              confirmButtonText: '📄 Nota de Ajuste',
+              cancelButtonText: 'Cerrar',
+              confirmButtonColor: '#0066CC'
+            }).then((pdfResult) => {
+              if (pdfResult.isConfirmed) {
+                const adjustCode = `AJ-${Date.now().toString().slice(-6)}`;
+                this.documentsService.generateAdjustmentNote({
+                  adjustmentCode: adjustCode,
+                  date: new Date().toISOString(),
+                  reason: this.getReasonLabel(reason),
+                  items: [{
+                    code: this.selectedMaterial.code,
+                    name: this.selectedMaterial.name,
+                    previousStock: previousStock,
+                    newStock: newStock,
+                    difference: -quantity,
+                    unit: this.selectedMaterial.measureUnit || 'und'
+                  }],
+                  authorizedBy: sessionStorage.getItem('user_displayName') || sessionStorage.getItem('user_name') || 'Admin',
+                  notes: notes || undefined
+                });
+              }
+            });
+          },
+          error: (err) => {
+            Swal.fire('Error', err.error?.message || 'No se pudo registrar la salida', 'error');
+          }
+        });
+      }
+    });
+  }
+
+  private getReasonLabel(reason: string): string {
+    const labels: Record<string, string> = {
+      'ADJUSTMENT': 'Ajuste de inventario',
+      'DAMAGE': 'Merma / Daño',
+      'RETURN': 'Devolución a proveedor',
+      'INTERNAL_USE': 'Consumo interno',
+      'OTHER': 'Otro'
+    };
+    return labels[reason] || reason;
   }
 
   get paginatedMovements() {

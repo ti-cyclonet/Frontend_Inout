@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { OrderFormComponent } from './form/order-form.component';
 import { InvoiceService } from '../../shared/services/invoice.service';
+import { DocumentsService } from '../../shared/services/documents.service';
 
 interface OrderItem {
   productId: string;
@@ -64,7 +65,8 @@ export class OrdersComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private invoiceService: InvoiceService
+    private invoiceService: InvoiceService,
+    private documentsService: DocumentsService
   ) {}
 
   ngOnInit(): void {
@@ -221,11 +223,51 @@ export class OrdersComponent implements OnInit {
       Swal.fire({ icon: 'warning', title: 'Sin items', text: 'El pedido no tiene items para facturar' });
       return;
     }
-    this.invoiceService.generateOrderInvoice(order).then(() => {
-      Swal.fire({ icon: 'success', title: 'PDF Generado', text: `Factura del pedido ${order.orderCode} descargada`, timer: 1500, showConfirmButton: false });
-    }).catch((err) => {
-      console.error('Error generating PDF:', err);
-      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo generar el PDF' });
+    this.invoiceService.generateOrderInvoice(order);
+    Swal.fire({ icon: 'success', title: 'PDF Generado', text: `Factura del pedido ${order.orderCode} descargada`, timer: 1500, showConfirmButton: false });
+  }
+
+  // Comanda / Orden de pedido para producción
+  generateOrderTicket(order: Order): void {
+    this.documentsService.generateOrderTicket({
+      orderCode: order.orderCode,
+      customerName: order.customerName || 'Sin cliente',
+      date: order.createdAt,
+      deliveryDate: order.deliveryDate,
+      items: (order.items || []).map(item => ({ productName: item.productName, quantity: item.quantity })),
+      notes: order.notes,
+      status: this.getStatusLabel(order.status)
+    });
+  }
+
+  // Remisión / Nota de entrega
+  generateDeliveryNote(order: Order): void {
+    this.documentsService.generateDeliveryNote({
+      orderCode: order.orderCode,
+      customerName: order.customerName || 'Sin cliente',
+      date: new Date().toISOString(),
+      items: (order.items || []).map(item => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice, subtotal: item.subtotal })),
+      subtotal: order.subtotal,
+      tax: order.tax,
+      total: order.total
+    });
+  }
+
+  // Cotización (pedido en borrador)
+  generateQuote(order: Order): void {
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 15); // 15 días de vigencia
+    this.documentsService.generateQuote({
+      quoteNumber: order.orderCode,
+      customerName: order.customerName || 'Sin cliente',
+      date: order.createdAt,
+      validUntil: validUntil.toISOString(),
+      items: (order.items || []).map(item => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice, subtotal: item.subtotal })),
+      subtotal: order.subtotal,
+      tax: order.tax,
+      discount: order.discount,
+      total: order.total,
+      notes: order.notes || undefined
     });
   }
 }

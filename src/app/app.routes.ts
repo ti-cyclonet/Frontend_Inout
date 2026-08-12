@@ -25,6 +25,7 @@ import { TrainingSessionsComponent } from './feature/training-sessions/training-
 import { CustomersComponent } from './feature/customers/customers.component';
 import { OrdersComponent } from './feature/orders/orders.component';
 import { CommercialComponent } from './feature/commercial/commercial.component';
+import { InventoryComponent } from './feature/inventory/inventory.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -39,6 +40,7 @@ export const routes: Routes = [
             { path: ROOT_HOME, component: HomeComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: ROOT_MATERIALS, component: MaterialsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'kardex', component: KardexComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'inventory', component: InventoryComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'products', component: ProductsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'sales', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'commercial', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },

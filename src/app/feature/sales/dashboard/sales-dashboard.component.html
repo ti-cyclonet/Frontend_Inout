@@ -1,0 +1,142 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="list-header">
+    <div class="title-container">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="#6E6E6E">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#speedometer2"></use>
+      </svg>
+      /Panel Comercial
+    </div>
+    <div class="header-actions">
+      <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use></svg>
+        Venta
+      </a>
+      <a class="action-link action-link-primary" (click)="openOrderModal.emit()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use></svg>
+        Pedido
+      </a>
+      <a class="action-link action-link-primary" (click)="openCustomerTab.emit()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle"></use></svg>
+        Cliente
+      </a>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <!-- VENTAS Section -->
+    <div class="section-label">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="#0066cc"><use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check"></use></svg>
+      Ventas
+    </div>
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check"></use></svg></div>
+        <div class="stat-content"><h3>{{ totalSales }}</h3><p>Total Ventas</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#currency-dollar"></use></svg></div>
+        <div class="stat-content"><h3>{{ formatCurrency(totalRevenue) }}</h3><p>Ingresos Totales</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pending"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#clock"></use></svg></div>
+        <div class="stat-content"><h3>{{ pendingSales }}</h3><p>Pedidos Pendientes</p></div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS Section -->
+    <div class="section-label">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="#d97706"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard-data"></use></svg>
+      Pedidos
+    </div>
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon orders"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard-data"></use></svg></div>
+        <div class="stat-content"><h3>{{ orderStats.total }}</h3><p>Total Pedidos</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pending"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#gear-wide-connected"></use></svg></div>
+        <div class="stat-content"><h3>{{ orderStats.inProduction }}</h3><p>En Producción</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle"></use></svg></div>
+        <div class="stat-content"><h3>{{ orderStats.delivered }}</h3><p>Entregados</p></div>
+      </div>
+    </div>
+
+    <!-- CLIENTES Section -->
+    <div class="section-label">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="#16a34a"><use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use></svg>
+      Clientes
+    </div>
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon customers"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use></svg></div>
+        <div class="stat-content"><h3>{{ customerStats.total }}</h3><p>Total Clientes</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-check"></use></svg></div>
+        <div class="stat-content"><h3>{{ customerStats.active }}</h3><p>Clientes Activos</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-plus"></use></svg></div>
+        <div class="stat-content"><h3>{{ customerStats.recent }}</h3><p>Nuevos (último mes)</p></div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-section">
+      <div class="chart-card">
+        <h4 class="chart-title">Ventas Recientes</h4>
+        <div class="recent-sales-list" *ngIf="recentSales.length > 0">
+          <div class="recent-sale-item" *ngFor="let sale of recentSales">
+            <div class="sale-info">
+              <span class="sale-code">{{ sale.strInvoiceCode || 'N/A' }}</span>
+              <span class="sale-customer">{{ sale.customerName || 'Consumidor Final' }}</span>
+            </div>
+            <span class="sale-amount">{{ formatCurrency(sale.total || 0) }}</span>
+          </div>
+        </div>
+        <p class="empty-text" *ngIf="recentSales.length === 0">Sin ventas recientes</p>
+      </div>
+      <div class="chart-card">
+        <h4 class="chart-title">Estado de Pedidos</h4>
+        <div class="orders-status-chart">
+          <div class="status-bar-row" *ngFor="let item of orderStatusBars">
+            <span class="status-bar-label">{{ item.label }}</span>
+            <div class="status-bar-track">
+              <div class="status-bar-fill" [style.width.%]="item.percentage" [style.background]="item.color"></div>
+            </div>
+            <span class="status-bar-count">{{ item.count }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fidelidad de Clientes -->
+    <div class="section-label" style="margin-top: 1.5rem;">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="#7c3aed"><use xlink:href="./assets/icons/bootstrap-icons.svg#star"></use></svg>
+      Fidelidad de Clientes
+    </div>
+    <div class="loyalty-section">
+      <div class="loyalty-list" *ngIf="loyaltyRanking.length > 0">
+        <div class="loyalty-item" *ngFor="let client of loyaltyRanking; let i = index">
+          <div class="loyalty-rank" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">
+            {{ i + 1 }}
+          </div>
+          <div class="loyalty-info">
+            <span class="loyalty-name">{{ client.name }}</span>
+            <span class="loyalty-detail">{{ client.purchases }} compras · {{ formatCurrency(client.totalSpent) }}</span>
+          </div>
+          <div class="loyalty-score">
+            <div class="score-bar-track">
+              <div class="score-bar-fill" [style.width.%]="client.scorePercent"></div>
+            </div>
+            <span class="score-label">{{ client.score }} pts</span>
+          </div>
+        </div>
+      </div>
+      <p class="empty-text" *ngIf="loyaltyRanking.length === 0">Aún no hay datos de fidelidad. Los clientes acumulan puntos con cada compra.</p>
+    </div>
+  </div>
+</div>

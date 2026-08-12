@@ -1,37 +1,36 @@
 <div class="customers-container">
-  <div class="customers-content">
-    <div class="welcome-section">
-      <h3>Gestión de Clientes</h3>
-      <p class="text-muted">Administra la información de tus clientes desde aquí</p>
-    </div>
-    
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i class="bi bi-person-plus"></i>
+  <!-- Tabs solo si NO está embebido en otro módulo -->
+  <div class="module-tabs" *ngIf="!embedded">
+    <button class="tab" [class.active]="activeTab === 'panel'" (click)="activeTab = 'panel'" type="button">Panel</button>
+    <button class="tab" [class.active]="activeTab === 'list'" (click)="activeTab = 'list'" type="button">Clientes</button>
+  </div>
+
+  <!-- Panel Tab (solo si no está embebido) -->
+  <div *ngIf="activeTab === 'panel' && !embedded">
+    <app-customers-dashboard></app-customers-dashboard>
+  </div>
+
+  <!-- List Tab (siempre visible si embebido) -->
+  <div *ngIf="activeTab === 'list' || embedded">
+    <app-customers-list 
+      [refreshTrigger]="refreshTrigger" 
+      (openCreateModal)="showCreateModal = true">
+    </app-customers-list>
+  </div>
+  
+  <!-- Modal para crear cliente -->
+  <div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-body">
+          <app-customer-form 
+            [isModal]="true" 
+            (customerCreated)="onCustomerCreated()" 
+            (formCancelled)="showCreateModal = false">
+          </app-customer-form>
         </div>
-        <h5>Nuevo Cliente</h5>
-        <p>Registra nuevos clientes en el sistema</p>
-        <button class="btn btn-primary btn-sm">Crear Cliente</button>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i class="bi bi-people"></i>
-        </div>
-        <h5>Lista de Clientes</h5>
-        <p>Consulta y gestiona todos tus clientes</p>
-        <button class="btn btn-outline-primary btn-sm">Ver Clientes</button>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">
-          <i class="bi bi-graph-up"></i>
-        </div>
-        <h5>Estadísticas</h5>
-        <p>Analiza el comportamiento de tus clientes</p>
-        <button class="btn btn-outline-primary btn-sm">Ver Reportes</button>
       </div>
     </div>
   </div>
+  <div class="modal-backdrop fade" [class.show]="showCreateModal" *ngIf="showCreateModal"></div>
 </div>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MaterialService } from '../../../shared/services/material.service';
 import { SupplierService } from '../../../shared/services/supplier.service';
+import { DocumentsService } from '../../../shared/services/documents.service';
 import { Supplier } from '../../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
@@ -74,7 +75,8 @@ export class BulkEntryComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private materialService: MaterialService,
-    private supplierService: SupplierService
+    private supplierService: SupplierService,
+    private documentsService: DocumentsService
   ) {}
 
   ngOnInit(): void {
@@ -244,7 +246,26 @@ export class BulkEntryComponent implements OnInit {
           icon: 'success',
           title: 'Entrada registrada',
           html: `Se registraron <strong>${response.count}</strong> materiales del documento <strong>${response.document}</strong>`,
-          confirmButtonColor: '#0066CC'
+          confirmButtonColor: '#0066CC',
+          showCancelButton: true,
+          confirmButtonText: '📄 Descargar Comprobante',
+          cancelButtonText: 'Cerrar'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.documentsService.generatePurchaseReceipt({
+              document: this.documentNumber,
+              date: this.purchaseDate,
+              supplier: this.selectedSupplier!.name,
+              items: this.items.map(item => ({
+                materialName: item.materialName,
+                materialCode: item.materialCode,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                total: item.total
+              })),
+              grandTotal: this.grandTotal
+            });
+          }
         });
         this.resetForm();
         this.loadMaterials();

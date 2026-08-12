@@ -2,6 +2,7 @@ import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaterialService } from '../../../shared/services/material.service';
+import { DocumentsService } from '../../../shared/services/documents.service';
 import { MaterialMetrics } from '../../../shared/models/material.model';
 import { MetricCardComponent } from '../../../shared/components/metric-card/metric-card.component';
 import { Router } from '@angular/router';
@@ -42,7 +43,7 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   categoriesExpanded = true;
   uploadingCategories = false;
 
-  constructor(private materialService: MaterialService, private router: Router, private categoryService: CategoryService) {}
+  constructor(private materialService: MaterialService, private router: Router, private categoryService: CategoryService, private documentsService: DocumentsService) {}
 
   ngOnInit(): void {
     this.loadMetrics();
@@ -99,6 +100,32 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
 
   navigateToCreate(): void {
     this.openCreateModal.emit();
+  }
+
+  generateInventoryReport(): void {
+    this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+      next: (response) => {
+        const items = (response.data || []).map((m: any) => ({
+          code: m.strCode || '-',
+          name: m.name || m.strName,
+          category: m.categoryName || m.category?.name || '-',
+          stock: Number(m.currentStock || m.ingQuantity || 0),
+          unit: m.measurementUnit || m.strUnitMeasure || 'und',
+          unitPrice: Number(m.price || m.fltPrice || 0),
+          totalValue: Number(m.currentStock || m.ingQuantity || 0) * Number(m.price || m.fltPrice || 0)
+        }));
+        const totalValue = items.reduce((sum: number, item: any) => sum + item.totalValue, 0);
+        this.documentsService.generateInventoryReport({
+          date: new Date().toISOString().split('T')[0],
+          items,
+          totalValue,
+          totalItems: items.length
+        });
+      },
+      error: () => {
+        Swal.fire('Error', 'No se pudieron cargar los materiales para el reporte', 'error');
+      }
+    });
   }
 
   openUploadModal(): void {
