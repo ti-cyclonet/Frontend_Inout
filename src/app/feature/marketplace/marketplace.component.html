@@ -90,6 +90,27 @@
             </h5>
           </div>
           <div class="card-body">
+            <!-- Slug / URL personalizada -->
+            <div class="slug-editor mb-3">
+              <label class="form-label fw-bold" style="font-size: 0.85rem;">
+                <i class="bi bi-link-45deg me-1"></i> URL de tu tienda
+              </label>
+              <div class="input-group">
+                <span class="input-group-text" style="font-size: 0.8rem; background: #f8f9fa;">{{ getBaseUrl() }}/marketplace/</span>
+                <input type="text" class="form-control" [(ngModel)]="marketplaceSlug" 
+                       placeholder="mi-tienda" style="font-weight: 600;"
+                       (input)="onSlugInput($event)">
+                <button class="btn btn-outline-primary" type="button" (click)="saveSlug()" [disabled]="slugSaving">
+                  {{ slugSaving ? 'Guardando...' : 'Guardar' }}
+                </button>
+              </div>
+              <small class="text-muted">Solo letras, números y guiones. Este será el enlace público de tu catálogo.</small>
+              <div *ngIf="slugError" class="text-danger mt-1" style="font-size: 0.8rem;">{{ slugError }}</div>
+              <div *ngIf="slugSuccess" class="text-success mt-1" style="font-size: 0.8rem;">{{ slugSuccess }}</div>
+            </div>
+
+            <hr>
+
             <p class="text-muted mb-3">
               Selecciona los productos que quieres mostrar en tu marketplace público.
             </p>

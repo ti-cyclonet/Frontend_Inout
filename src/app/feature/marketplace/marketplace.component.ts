@@ -70,6 +70,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   selectedProduct: Product | null = null;
   providerInfo: any = null;
   
+  // Slug editor
+  marketplaceSlug: string = '';
+  slugSaving = false;
+  slugError = '';
+  slugSuccess = '';
+
   private baseUrl = environment.apiUrl;
 
   constructor(
@@ -92,6 +98,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.isAdminMode = queryParams['admin'] === 'true';
       if (this.isAdminMode) {
         this.checkAuthentication();
+        this.loadCurrentSlug();
       }
     });
   }
@@ -103,6 +110,24 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
     
+    // Check if it's a slug (not a UUID) — resolve it first
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(this.tenantId);
+    
+    if (!isUuid && this.tenantId !== 'current-tenant') {
+      // Resolve slug to tenantId
+      this.http.get<any>(`${this.baseUrl}/marketplace-config/resolve/${this.tenantId}`).subscribe({
+        next: (resolved) => {
+          this.tenantId = resolved.tenantId;
+          this.loadTenantData(this.tenantId);
+        },
+        error: () => {
+          // Maybe it's a tenantId that's not UUID format, try direct load
+          this.loadTenantData(this.tenantId);
+        }
+      });
+      return;
+    }
+
     // Para ruta pública, cargar datos del tenant específico
     if (this.tenantId && this.tenantId !== 'current-tenant') {
       this.loadTenantData(this.tenantId);
@@ -857,5 +882,60 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           address: 'Dirección no disponible'
         };
       });
+  }
+
+  // ═══════ SLUG EDITOR ═══════
+  loadCurrentSlug(): void {
+    this.http.get<any>(`${this.baseUrl}/marketplace-config/${this.tenantId}`).subscribe({
+      next: (config) => {
+        if (config?.slug) {
+          this.marketplaceSlug = config.slug;
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  getBaseUrl(): string {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return 'https://app.cyclonet.com.co';
+  }
+
+  onSlugInput(event: any): void {
+    // Normalize as they type
+    this.slugError = '';
+    this.slugSuccess = '';
+    let value = event.target.value || '';
+    value = value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+    this.marketplaceSlug = value;
+  }
+
+  saveSlug(): void {
+    if (!this.marketplaceSlug || this.marketplaceSlug.length < 3) {
+      this.slugError = 'El nombre debe tener al menos 3 caracteres';
+      return;
+    }
+
+    this.slugSaving = true;
+    this.slugError = '';
+    this.slugSuccess = '';
+
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    this.http.patch(`${this.baseUrl}/marketplace-config/${this.tenantId}/slug`, 
+      { slug: this.marketplaceSlug },
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).subscribe({
+      next: (response: any) => {
+        this.slugSaving = false;
+        this.marketplaceSlug = response.slug;
+        this.slugSuccess = `✓ URL guardada: ${this.getBaseUrl()}/marketplace/${response.slug}`;
+      },
+      error: (err) => {
+        this.slugSaving = false;
+        this.slugError = err.error?.message || 'Error al guardar. Intenta con otro nombre.';
+      }
+    });
   }
 }
