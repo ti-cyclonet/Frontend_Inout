@@ -148,6 +148,22 @@ export default class LayoutComponent implements OnInit {
           this.optionsMenu.push(consumosEntry);
         }
 
+        // Agregar enlace de Usuarios
+        const usersEntry: OptionMenu = {
+          id: 'users-mgmt',
+          name: 'Usuarios',
+          description: 'Usuarios',
+          url: '/users',
+          icon: 'people',
+          type: 'main_menu',
+          idMPather: null,
+          order: '85',
+          idApplication: this.application?.id ?? '',
+        };
+        if (!this.optionsMenu.some(m => m.id === usersEntry.id)) {
+          this.optionsMenu.push(usersEntry);
+        }
+
         // Ordenar por ingOrder numérico
         this.optionsMenu.sort((a, b) => parseInt(a.order) - parseInt(b.order));
       },

@@ -14,8 +14,10 @@
           </div>
         </div>
         <div class="user-actions">
-          <span class="user-greeting">¡Hola! Inicia sesión</span>
-          <div class="cart-icon">🛒 <span class="cart-count">0</span></div>
+          <span class="user-greeting" *ngIf="cart.length === 0">¡Bienvenido!</span>
+          <div class="cart-icon" (click)="openCheckout()" style="cursor: pointer;">
+            🛒 <span class="cart-count">{{ getCartCount() }}</span>
+          </div>
         </div>
       </div>
       
@@ -175,7 +177,7 @@
                 </div>
                 
                 <div class="product-actions-modern">
-                  <button class="btn-add-cart">Agregar al carrito</button>
+                  <button class="btn-add-cart" (click)="addToCart(product)">Agregar al carrito</button>
                   <button class="btn-details" (click)="openProductDetails(product)">Ver detalles</button>
                 </div>
               </div>
@@ -276,7 +278,7 @@
         </div>
         
         <div class="modal-actions">
-          <button class="btn-modal-cart">Agregar al Carrito</button>
+          <button class="btn-modal-cart" (click)="addToCart(selectedProduct!); closeProductDetails()">Agregar al Carrito</button>
           <button class="btn-modal-contact" *ngIf="providerInfo?.phone">
             <a [href]="'https://wa.me/' + providerInfo.phone" target="_blank" style="color: inherit; text-decoration: none;">
               Contactar por WhatsApp
@@ -284,6 +286,86 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Cart Button (mobile) -->
+<div class="floating-cart" *ngIf="cart.length > 0 && !showCheckout" (click)="openCheckout()">
+  🛒 {{ getCartCount() }} items · {{ formatCurrency(getCartTotal()) }}
+</div>
+
+<!-- Checkout Modal -->
+<div class="product-modal-overlay" *ngIf="showCheckout" (click)="closeCheckout()">
+  <div class="checkout-modal" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeCheckout()">&times;</button>
+
+    <!-- Order Success -->
+    <div *ngIf="orderSuccess" class="checkout-success">
+      <div class="success-icon">✅</div>
+      <h2>¡Pedido Confirmado!</h2>
+      <p class="order-code">{{ orderSuccess.order?.orderCode }}</p>
+      <p>Tu pedido ha sido recibido. Te contactaremos pronto para coordinar la entrega.</p>
+      <p class="payment-note">💵 Pago contra-entrega</p>
+      <button class="btn-checkout-primary" (click)="closeCheckout()">Cerrar</button>
+    </div>
+
+    <!-- Cart & Checkout Form -->
+    <div *ngIf="!orderSuccess">
+      <h2 class="checkout-title">🛒 Tu Pedido</h2>
+
+      <!-- Cart Items -->
+      <div class="checkout-items">
+        <div class="checkout-item" *ngFor="let item of cart">
+          <div class="item-info">
+            <strong>{{ item.product.strName }}</strong>
+            <span class="item-price">{{ formatCurrency(item.product.fltPrice) }}</span>
+          </div>
+          <div class="item-controls">
+            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity - 1)" type="button">−</button>
+            <span class="qty-value">{{ item.quantity }}</span>
+            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity + 1)" type="button">+</button>
+            <button class="remove-btn" (click)="removeFromCart(item.product.strId)" type="button">🗑</button>
+          </div>
+          <div class="item-subtotal">{{ formatCurrency(item.product.fltPrice * item.quantity) }}</div>
+        </div>
+      </div>
+
+      <div class="checkout-total">
+        <span>Total</span>
+        <strong>{{ formatCurrency(getCartTotal()) }}</strong>
+      </div>
+
+      <hr>
+
+      <!-- Customer Data -->
+      <h3 class="checkout-subtitle">📋 Tus Datos</h3>
+      <div class="checkout-form">
+        <div class="form-field">
+          <label>Nombre completo *</label>
+          <input type="text" [(ngModel)]="checkoutData.customerName" placeholder="Tu nombre">
+        </div>
+        <div class="form-field">
+          <label>Teléfono / WhatsApp *</label>
+          <input type="tel" [(ngModel)]="checkoutData.customerPhone" placeholder="+57 300 123 4567">
+        </div>
+        <div class="form-field">
+          <label>Dirección de entrega</label>
+          <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Opcional">
+        </div>
+        <div class="form-field">
+          <label>Notas</label>
+          <textarea [(ngModel)]="checkoutData.notes" placeholder="Instrucciones especiales..." rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="checkout-payment-info">
+        💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
+      </div>
+
+      <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending">
+        {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
+      </button>
     </div>
   </div>
 </div>

@@ -199,7 +199,12 @@ export class OrdersComponent implements OnInit {
     return this.orders.filter(o => o.status === status);
   }
 
+  getCompletedOrders(): Order[] {
+    return this.orders.filter(o => o.status === 'INVOICED' || o.status === 'CANCELLED');
+  }
+
   kanbanStatuses = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED'];
+  showHistory = false;
 
   // Modal methods
   openCreateModal(): void {

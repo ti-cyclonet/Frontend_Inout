@@ -23,17 +23,20 @@
           <th>Nombre</th>
           <th>Correo</th>
           <th>Teléfono</th>
-          <th>ID Usuario</th>
+          <th>Código / Documento</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let user of filteredUsers">
-          <td>{{ user.userDetails?.strFirstName }} {{ user.userDetails?.strLastName }}</td>
-          <td>{{ user.userDetails?.strEmail }}</td>
-          <td>{{ user.userDetails?.strPhone || 'N/A' }}</td>
-          <td>{{ user.userId }}</td>
+          <td>
+            <span *ngIf="user.personType === 'J'">{{ user.businessName || 'Sin nombre' }}</span>
+            <span *ngIf="user.personType !== 'J'">{{ user.firstName }} {{ user.firstSurname }}</span>
+          </td>
+          <td>{{ user.email || 'N/A' }}</td>
+          <td>{{ user.phone || 'N/A' }}</td>
+          <td>{{ user.customerCode || user.documentNumber || 'N/A' }}</td>
           <td>
             <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
               {{ user.isActive ? 'Activo' : 'Inactivo' }}

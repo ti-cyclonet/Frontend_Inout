@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 interface OrderItem {
   productId: string;
@@ -29,7 +31,28 @@ interface OrderData {
 })
 export class InvoiceService {
 
+  constructor(private http: HttpClient) {}
+
   async generateOrderInvoice(order: OrderData): Promise<void> {
+    // Fetch business params to get IVA/INC if not already applied
+    let taxPercent = 0;
+    let taxLabel = 'IVA';
+    let tax = order.tax || 0;
+    let total = order.total || 0;
+    const subtotal = order.subtotal || 0;
+
+    try {
+      const params: any = await this.http.get(`${environment.apiUrl}/business-params`).toPromise();
+      const ivaPercent = params?.IVA_PORCENTAJE || 0;
+      const incPercent = params?.INC_PORCENTAJE || 0;
+      taxPercent = incPercent > 0 ? incPercent : ivaPercent;
+      taxLabel = incPercent > 0 ? 'INC' : 'IVA';
+      if (taxPercent > 0 && tax === 0) {
+        tax = Math.round(subtotal * (taxPercent / 100));
+        total = subtotal + tax - (order.discount || 0);
+      }
+    } catch {}
+
     // Dynamic imports to avoid SSR issues with jspdf (CommonJS module)
     const { default: jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
@@ -128,11 +151,11 @@ export class InvoiceService {
 
     let yPos = finalY + 12;
     doc.text('Subtotal:', boxX + 5, yPos);
-    doc.text(this.formatCurrency(order.subtotal), boxX + boxWidth - 5, yPos, { align: 'right' });
+    doc.text(this.formatCurrency(subtotal), boxX + boxWidth - 5, yPos, { align: 'right' });
 
     yPos += 10;
-    doc.text('IVA (19%):', boxX + 5, yPos);
-    doc.text(this.formatCurrency(order.tax), boxX + boxWidth - 5, yPos, { align: 'right' });
+    doc.text(`${taxLabel} (${taxPercent}%):`, boxX + 5, yPos);
+    doc.text(this.formatCurrency(tax), boxX + boxWidth - 5, yPos, { align: 'right' });
 
     if (order.discount > 0) {
       yPos += 10;
@@ -147,7 +170,7 @@ export class InvoiceService {
     doc.setFontSize(11);
     doc.setTextColor(0, 102, 204);
     doc.text('TOTAL:', boxX + 5, yPos);
-    doc.text(this.formatCurrency(order.total), boxX + boxWidth - 5, yPos, { align: 'right' });
+    doc.text(this.formatCurrency(total), boxX + boxWidth - 5, yPos, { align: 'right' });
 
     // Notes section
     if (order.notes) {

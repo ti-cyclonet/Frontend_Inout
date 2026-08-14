@@ -76,6 +76,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   slugError = '';
   slugSuccess = '';
 
+  // Cart
+  cart: { product: Product; quantity: number }[] = [];
+  showCheckout = false;
+  checkoutData = { customerName: '', customerPhone: '', customerAddress: '', notes: '' };
+  checkoutSending = false;
+  orderSuccess: any = null;
+
   private baseUrl = environment.apiUrl;
 
   constructor(
@@ -121,8 +128,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           this.loadTenantData(this.tenantId);
         },
         error: () => {
-          // Maybe it's a tenantId that's not UUID format, try direct load
-          this.loadTenantData(this.tenantId);
+          // Slug not found — show empty state
+          this.products = [];
+          this.filteredProducts = [];
+          this.loading = false;
         }
       });
       return;
@@ -882,6 +891,93 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           address: 'Dirección no disponible'
         };
       });
+  }
+
+  // ═══════ CART & CHECKOUT ═══════
+  addToCart(product: Product): void {
+    const existing = this.cart.find(item => item.product.strId === product.strId);
+    if (existing) {
+      existing.quantity++;
+    } else {
+      this.cart.push({ product, quantity: 1 });
+    }
+    Swal.fire({ icon: 'success', title: 'Agregado', text: `${product.strName} añadido al carrito`, timer: 1200, showConfirmButton: false, position: 'top-end', toast: true });
+  }
+
+  removeFromCart(productId: string): void {
+    this.cart = this.cart.filter(item => item.product.strId !== productId);
+  }
+
+  updateCartQuantity(productId: string, qty: number): void {
+    const item = this.cart.find(i => i.product.strId === productId);
+    if (item) {
+      item.quantity = Math.max(1, qty);
+    }
+  }
+
+  getCartTotal(): number {
+    return this.cart.reduce((sum, item) => sum + (item.product.fltPrice * item.quantity), 0);
+  }
+
+  getCartCount(): number {
+    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+  }
+
+  openCheckout(): void {
+    if (this.cart.length === 0) return;
+    this.showCheckout = true;
+    this.orderSuccess = null;
+  }
+
+  closeCheckout(): void {
+    this.showCheckout = false;
+  }
+
+  submitOrder(): void {
+    if (!this.checkoutData.customerName.trim() || !this.checkoutData.customerPhone.trim()) {
+      Swal.fire({ icon: 'warning', title: 'Datos requeridos', text: 'Ingresa tu nombre y teléfono para continuar.' });
+      return;
+    }
+
+    this.checkoutSending = true;
+    const subtotal = this.getCartTotal();
+
+    const payload = {
+      tenantId: this.tenantId,
+      customerName: this.checkoutData.customerName.trim(),
+      customerPhone: this.checkoutData.customerPhone.trim(),
+      customerAddress: this.checkoutData.customerAddress.trim() || undefined,
+      items: this.cart.map(item => ({
+        productId: item.product.strId,
+        productName: item.product.strName,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.product.fltPrice),
+        subtotal: Number(item.product.fltPrice) * Number(item.quantity),
+      })),
+      notes: this.checkoutData.notes.trim() || undefined,
+      subtotal: Number(subtotal),
+      tax: 0,
+      total: Number(subtotal),
+    };
+
+    this.http.post<any>(`${this.baseUrl}/orders/marketplace`, payload).subscribe({
+      next: (response) => {
+        this.checkoutSending = false;
+        this.orderSuccess = response;
+        this.cart = [];
+        this.checkoutData = { customerName: '', customerPhone: '', customerAddress: '', notes: '' };
+
+        // If WhatsApp is available, offer to notify
+        if (response.whatsapp) {
+          const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}`);
+          window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
+        }
+      },
+      error: (err) => {
+        this.checkoutSending = false;
+        Swal.fire({ icon: 'error', title: 'Error', text: err.error?.message || 'No se pudo crear el pedido. Intenta de nuevo.' });
+      }
+    });
   }
 
   // ═══════ SLUG EDITOR ═══════
