@@ -17,8 +17,7 @@ import { KardexComponent } from './feature/kardex/kardex.component';
 import { ProductsComponent } from './feature/products/products.component';
 import { SalesComponent } from './feature/sales/sales.component';
 import { MarketplaceComponent } from './feature/marketplace/marketplace.component';
-// import { UsersComponent } from './feature/users/users.component';
-// import { UserFormComponent } from './feature/users/form/user-form.component';
+import { UsersComponent } from './feature/users/users.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 import { UsagePanelComponent } from './feature/usage-panel/usage-panel.component';
 import { TrainingSessionsComponent } from './feature/training-sessions/training-sessions.component';
@@ -45,8 +44,7 @@ export const routes: Routes = [
             { path: 'sales', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'commercial', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'marketplace', component: MarketplaceComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
-            // { path: 'users', component: UsersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
-            // { path: 'users/form', component: UserFormComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'users', component: UsersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'customers', component: CustomersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'orders', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'consumos', component: UsagePanelComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },

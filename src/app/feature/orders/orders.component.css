@@ -322,3 +322,97 @@
 .btn-detail-action.advance:hover { background: #16a34a; color: white; }
 .btn-detail-action.cancel { border-color: #dc2626; color: #dc2626; }
 .btn-detail-action.cancel:hover { background: #dc2626; color: white; }
+
+/* History Section */
+.orders-history {
+  margin-top: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.15s;
+}
+
+.history-header:hover { background: #f9fafb; }
+
+.history-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.history-toggle {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.history-item:hover { background: #f9fafb; }
+
+.history-code {
+  font-weight: 600;
+  color: #0066CC;
+}
+
+.history-customer {
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-total {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.history-date {
+  color: #9ca3af;
+  font-size: 0.72rem;
+}
+
+.history-status {
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  color: white;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .history-item {
+    grid-template-columns: 1fr auto;
+    gap: 0.3rem;
+  }
+  .history-customer,
+  .history-date {
+    display: none;
+  }
+}

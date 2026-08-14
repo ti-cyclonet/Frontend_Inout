@@ -35,15 +35,14 @@ export class UsersListComponent implements OnInit {
 
   loadUsers(): void {
     this.loading = true;
-    const tenantId = sessionStorage.getItem('tenant_id') || '1';
     
-    this.customersService.getCustomersWithDetailsByTenant(tenantId).subscribe({
-      next: (users) => {
+    this.customersService.getCustomersWithDetails().subscribe({
+      next: (users: CustomerWithDetails[]) => {
         this.users = users;
         this.filteredUsers = users;
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading users:', error);
         this.loading = false;
       }
@@ -58,10 +57,12 @@ export class UsersListComponent implements OnInit {
 
     const term = this.searchTerm.toLowerCase();
     this.filteredUsers = this.users.filter(user => 
-      user.userDetails?.strFirstName?.toLowerCase().includes(term) ||
-      user.userDetails?.strLastName?.toLowerCase().includes(term) ||
-      user.userDetails?.strEmail?.toLowerCase().includes(term) ||
-      user.userId.toLowerCase().includes(term)
+      user.firstName?.toLowerCase().includes(term) ||
+      user.firstSurname?.toLowerCase().includes(term) ||
+      user.businessName?.toLowerCase().includes(term) ||
+      user.email?.toLowerCase().includes(term) ||
+      user.documentNumber?.toLowerCase().includes(term) ||
+      user.customerCode?.toLowerCase().includes(term)
     );
   }
 
@@ -71,7 +72,7 @@ export class UsersListComponent implements OnInit {
         next: () => {
           this.loadUsers();
         },
-        error: (error) => {
+        error: (error: unknown) => {
           console.error('Error removing user:', error);
         }
       });

@@ -28,6 +28,23 @@
     </div>
   </div>
 
+  <!-- History: Invoiced & Cancelled -->
+  <div class="orders-history" *ngIf="getCompletedOrders().length > 0">
+    <div class="history-header" (click)="showHistory = !showHistory">
+      <h6 class="history-title">📋 Historial de Pedidos ({{ getCompletedOrders().length }})</h6>
+      <span class="history-toggle">{{ showHistory ? '▲' : '▼' }}</span>
+    </div>
+    <div class="history-list" *ngIf="showHistory">
+      <div class="history-item" *ngFor="let order of getCompletedOrders()" (click)="selectOrder(order)">
+        <span class="history-code">{{ order.orderCode }}</span>
+        <span class="history-customer">{{ order.customerName || 'Sin cliente' }}</span>
+        <span class="history-total">{{ formatCurrency(order.total) }}</span>
+        <span class="history-date">{{ formatDate(order.updatedAt || order.createdAt) }}</span>
+        <span class="history-status" [style.background]="getStatusColor(order.status)">{{ getStatusLabel(order.status) }}</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Create Order Modal -->
   <div class="modal-overlay" *ngIf="showCreateModal" (click)="onFormCancelled()">
     <div class="modal-content" (click)="$event.stopPropagation()">
