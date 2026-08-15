@@ -1,4 +1,4 @@
-﻿﻿<div class="container-fluid p-0">
+﻿<div class="container-fluid p-0">
   <div class="card shadow-sm kardex-card" style="border: 1px solid white;">
     <div class="card-header bg-white d-flex justify-content-end align-items-center py-2"
       style="border-bottom: 1px solid orange"
@@ -810,7 +810,7 @@
               </div>
               
               <div *ngIf="productIngredients.length > 0" class="mt-3">
-                <h6>âœ“ Verificar stock de ingredientes</h6>
+                <h6>&#10003; Verificar stock de ingredientes</h6>
                 <table class="table table-sm">
                   <thead>
                     <tr>
@@ -828,8 +828,8 @@
                       <td class="text-center">{{ formatNumber(ing.stock) }}{{ ing.unit }}</td>
                       <td class="text-center">{{ formatNumber(ing.quantity * productEntryData.quantity) }}{{ ing.unit }}</td>
                       <td class="text-center">
-                        <span *ngIf="ing.stock >= (ing.quantity * productEntryData.quantity)" class="badge bg-success">âœ“ Disponible</span>
-                        <span *ngIf="ing.stock < (ing.quantity * productEntryData.quantity)" class="badge bg-danger">âš  Insuficiente</span>
+                        <span *ngIf="ing.stock >= (ing.quantity * productEntryData.quantity)" class="badge bg-success">&#10003; Disponible</span>
+                        <span *ngIf="ing.stock < (ing.quantity * productEntryData.quantity)" class="badge bg-danger">&#9888; Insuficiente</span>
                       </td>
                     </tr>
                   </tbody>
