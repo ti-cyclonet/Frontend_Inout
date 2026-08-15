@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 })
 export class CustomersService {
   private apiUrl = `${environment.apiUrl}/customers`;
+  private authorizaUrl = `${environment.auth.authorizaUrl}`;
 
   constructor(private http: HttpClient) { }
 
@@ -30,5 +31,13 @@ export class CustomersService {
 
   removeCustomer(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  getUserByEmail(email: string): Observable<any> {
+    return this.http.get<any>(`${this.authorizaUrl}/potential-users/by-email/${email}`);
+  }
+
+  createFullUser(dto: any): Observable<any> {
+    return this.http.post<any>(`${this.authorizaUrl}/potential-users/full`, dto);
   }
 }

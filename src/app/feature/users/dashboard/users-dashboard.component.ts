@@ -180,15 +180,13 @@ export class UsersDashboardComponent implements OnInit {
   }
 
   loadStats(): void {
-    const tenantId = sessionStorage.getItem('tenant_id') || '1';
-    
-    this.customersService.getCustomersWithDetailsByTenant(tenantId).subscribe({
-      next: (customers) => {
+    this.customersService.getCustomersWithDetails().subscribe({
+      next: (customers: CustomerWithDetails[]) => {
         this.totalUsers = customers.length;
-        this.activeUsers = customers.filter(c => c.isActive).length;
-        this.inactiveUsers = customers.filter(c => !c.isActive).length;
+        this.activeUsers = customers.filter((c: CustomerWithDetails) => c.isActive).length;
+        this.inactiveUsers = customers.filter((c: CustomerWithDetails) => !c.isActive).length;
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading stats:', error);
       }
     });
