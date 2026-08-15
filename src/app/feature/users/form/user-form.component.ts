@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
+import { CreateCustomerDto } from '../../../shared/model/customer.model';
 
 @Component({
   selector: 'app-user-form',
@@ -113,7 +114,7 @@ export class UserFormComponent {
     const userName = this.userForm.value.strUserName;
     
     this.customersService.getUserByEmail(userName).subscribe({
-      next: (userData) => {
+      next: (userData: any) => {
         if (userData) {
           this.userExists = true;
           this.loadedUserData = userData;
@@ -184,9 +185,14 @@ export class UserFormComponent {
     this.saving = true;
 
     if (this.userExists && this.loadedUserData) {
-      const dto = {
-        userId: this.userForm.value.strUserName,
-        tenantId: sessionStorage.getItem('tenant_id') || '1'
+      const dto: CreateCustomerDto = {
+        email: this.userForm.value.strUserName,
+        personType: this.loadedUserData?.basicData?.strPersonType || 'N',
+        documentType: this.loadedUserData?.documentType?.strDocumentType,
+        documentNumber: this.loadedUserData?.documentType?.strDocumentNumber,
+        firstName: this.loadedUserData?.naturalPersonData?.firstName,
+        firstSurname: this.loadedUserData?.naturalPersonData?.firstSurname,
+        businessName: this.loadedUserData?.legalEntityData?.businessName,
       };
       
       this.customersService.createCustomer(dto).subscribe({
@@ -194,7 +200,7 @@ export class UserFormComponent {
           this.saving = false;
           this.userCreated.emit();
         },
-        error: (err) => {
+        error: (err: unknown) => {
           console.error('Error creating customer:', err);
           this.saving = false;
         },
@@ -224,7 +230,7 @@ export class UserFormComponent {
           this.saving = false;
           this.userCreated.emit();
         },
-        error: (err) => {
+        error: (err: unknown) => {
           console.error('Error creating user:', err);
           this.saving = false;
         },
