@@ -42,7 +42,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   chartData: any = {
     materials: [],
     products: [],
-    sales: []
+    salesDaily: [],
+    topProducts: []
   };
 
   loading = true;
@@ -64,29 +65,32 @@ export class HomeComponent implements OnInit, AfterViewInit {
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/materials`).toPromise(),
       this.http.get<any>(`${this.baseUrl}/products`).toPromise(),
-      this.http.get<any>(`${this.baseUrl}/sales`).toPromise()
-    ]).then(([materials, products, sales]) => {
-      this.chartData.materials = materials.data || [];
-      this.chartData.products = products.data || [];
-      this.chartData.sales = sales.data || [];
+      this.http.get<any>(`${this.baseUrl}/sales/stats`).toPromise().catch(() => null),
+      this.http.get<any>(`${this.baseUrl}/sales/chart-data`).toPromise().catch(() => null)
+    ]).then(([materials, products, stats, chartResponse]) => {
+      this.chartData.materials = materials.data || materials || [];
+      this.chartData.products = products.data || products || [];
+      this.chartData.salesDaily = (chartResponse?.daily || []).map((d: any) => ({
+        date: d.date,
+        total: Number(d.total)
+      }));
+      this.chartData.topProducts = (chartResponse?.topProducts || []).map((p: any) => ({
+        name: p.name,
+        total: Number(p.total)
+      }));
 
       const materialsValue = this.chartData.materials.reduce((sum: number, m: any) => 
-        sum + (parseFloat(m.ingQuantity || 0) * parseFloat(m.fltPrice || 0)), 0);
-      
+        sum + (Number(m.ingQuantity || 0) * Number(m.fltPrice || 0)), 0);
       const productsValue = this.chartData.products.reduce((sum: number, p: any) => 
-        sum + (parseFloat(p.ingQuantity || 0) * parseFloat(p.fltPrice || 0)), 0);
+        sum + (Number(p.ingQuantity || 0) * Number(p.fltPrice || 0)), 0);
       
       this.metrics.totalInventoryValue = materialsValue + productsValue;
-
-      this.metrics.totalSales = this.chartData.sales.reduce((sum: number, s: any) => 
-        sum + (parseFloat(s.fltQuantity || 0) * parseFloat(s.fltUnitPrice || 0)), 0);
-
+      this.metrics.totalSales = Number(stats?.totalRevenue || 0);
+      this.metrics.salesCount = stats?.totalSales || 0;
       this.metrics.lowStockProducts = this.chartData.products.filter((p: any) => 
-        parseFloat(p.ingQuantity || 0) < parseFloat(p.ingStockMin || 0) && parseFloat(p.ingStockMin || 0) > 0).length;
-
+        Number(p.ingQuantity || 0) < Number(p.ingStockMin || 0) && Number(p.ingStockMin || 0) > 0).length;
       this.metrics.materialsCount = this.chartData.materials.length;
       this.metrics.productsCount = this.chartData.products.length;
-      this.metrics.salesCount = this.chartData.sales.length;
 
       this.loading = false;
       setTimeout(() => this.createCharts(), 100);
@@ -106,10 +110,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   createInventoryChart(): void {
     const materialsValue = this.chartData.materials.reduce((sum: number, m: any) => 
-      sum + (parseFloat(m.ingQuantity || 0) * parseFloat(m.fltPrice || 0)), 0);
+      sum + (Number(m.ingQuantity || 0) * Number(m.fltPrice || 0)), 0);
     
     const productsValue = this.chartData.products.reduce((sum: number, p: any) => 
-      sum + (parseFloat(p.ingQuantity || 0) * parseFloat(p.fltPrice || 0)), 0);
+      sum + (Number(p.ingQuantity || 0) * Number(p.fltPrice || 0)), 0);
 
     const chart = new Chart(this.inventoryChartRef.nativeElement, {
       type: 'doughnut',
@@ -141,57 +145,38 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   createSalesTrendChart(): void {
+    // Usar datos pre-procesados del backend (ya agrupados por día)
+    const dailyData = this.chartData.salesDaily || [];
+    
     let salesData: any[] = [];
     
     if (this.chartFilter === 'daily') {
-      const currentTenantSales = this.chartData.sales.filter((sale: any) => 
-        sale.strTenantId === '3b0fa0d3-4993-4c50-bb38-f7333873b1ca'
-      );
-      
-      const salesByDate = currentTenantSales.reduce((acc: any, sale: any) => {
-        const date = new Date(sale.dtmCreationDate);
-        const dateStr = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-        const total = parseFloat(sale.total);
-        acc[dateStr] = (acc[dateStr] || 0) + total;
-        return acc;
-      }, {});
-      
-      salesData = Object.keys(salesByDate).sort((a, b) => {
-        const dateA = new Date(a.split('/').reverse().join('-'));
-        const dateB = new Date(b.split('/').reverse().join('-'));
-        return dateA.getTime() - dateB.getTime();
-      }).map(date => ({ label: date, value: salesByDate[date] }));
-      
+      salesData = dailyData.map((d: any) => {
+        const date = new Date(d.date + 'T12:00:00');
+        return { label: `${date.getDate()}/${date.getMonth() + 1}`, value: d.total };
+      });
     } else if (this.chartFilter === 'weekly') {
-      // Agrupar por semana
-      const salesByWeek = this.chartData.sales.reduce((acc: any, sale: any) => {
-        const date = new Date(sale.dtmDate);
-        const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
-        const weekLabel = `Semana ${weekStart.toLocaleDateString('es-CO')}`;
-        const total = parseFloat(sale.total);
-        acc[weekLabel] = (acc[weekLabel] || 0) + total;
-        return acc;
-      }, {});
-      
-      salesData = Object.keys(salesByWeek).map(week => ({ 
-        label: week, 
-        value: salesByWeek[week] 
-      }));
-      
+      const weekMap: Record<string, number> = {};
+      for (const d of dailyData) {
+        const date = new Date(d.date + 'T12:00:00');
+        const weekStart = new Date(date);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        const weekLabel = `Sem ${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+        weekMap[weekLabel] = (weekMap[weekLabel] || 0) + d.total;
+      }
+      salesData = Object.entries(weekMap).map(([label, value]) => ({ label, value }));
     } else if (this.chartFilter === 'monthly') {
-      // Agrupar por mes
-      const salesByMonth = this.chartData.sales.reduce((acc: any, sale: any) => {
-        const date = new Date(sale.dtmDate);
-        const monthLabel = date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
-        const total = parseFloat(sale.total);
-        acc[monthLabel] = (acc[monthLabel] || 0) + total;
-        return acc;
-      }, {});
-      
-      salesData = Object.keys(salesByMonth).map(month => ({ 
-        label: month, 
-        value: salesByMonth[month] 
-      }));
+      const monthMap: Record<string, number> = {};
+      for (const d of dailyData) {
+        const date = new Date(d.date + 'T12:00:00');
+        const monthLabel = date.toLocaleDateString('es-CO', { month: 'short', year: 'numeric' });
+        monthMap[monthLabel] = (monthMap[monthLabel] || 0) + d.total;
+      }
+      salesData = Object.entries(monthMap).map(([label, value]) => ({ label, value }));
+    }
+    
+    if (salesData.length === 0) {
+      salesData = [{ label: 'Sin ventas', value: 0 }];
     }
     
     this.salesTrendChart = new Chart(this.salesTrendChartRef.nativeElement, {
@@ -235,24 +220,17 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   createSalesChart(): void {
-    const salesByProduct = this.chartData.sales.reduce((acc: any, sale: any) => {
-      const productName = sale.product?.strName || 'Sin producto';
-      const total = parseFloat(sale.fltQuantity || 0) * parseFloat(sale.fltUnitPrice || 0);
-      acc[productName] = (acc[productName] || 0) + total;
-      return acc;
-    }, {});
-
-    const sorted = Object.entries(salesByProduct)
-      .sort(([,a]: any, [,b]: any) => b - a)
-      .slice(0, 5);
+    const topProducts = this.chartData.topProducts || [];
+    
+    if (topProducts.length === 0) return;
 
     const chart = new Chart(this.salesChartRef.nativeElement, {
       type: 'bar',
       data: {
-        labels: sorted.map(([name]) => name),
+        labels: topProducts.map((p: any) => p.name),
         datasets: [{
           label: 'Ventas',
-          data: sorted.map(([,value]) => Number(value)),
+          data: topProducts.map((p: any) => p.total),
           backgroundColor: ['#667eea', '#11998e', '#38ef7d', '#4facfe', '#f5576c'],
           borderRadius: 8,
           borderWidth: 0
@@ -295,7 +273,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         datasets: [
           {
             label: 'Valor Materiales',
-            data: materials.map((m: any) => parseFloat(m.ingQuantity || 0) * parseFloat(m.fltPrice || 0)),
+            data: materials.map((m: any) => Number(m.ingQuantity || 0) * Number(m.fltPrice || 0)),
             borderColor: '#11998e',
             backgroundColor: 'rgba(17, 153, 142, 0.1)',
             fill: true,
@@ -304,7 +282,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
           },
           {
             label: 'Valor Productos',
-            data: [...Array(materials.length).fill(null), ...products.map((p: any) => parseFloat(p.ingQuantity || 0) * parseFloat(p.fltPrice || 0))],
+            data: [...Array(materials.length).fill(null), ...products.map((p: any) => Number(p.ingQuantity || 0) * Number(p.fltPrice || 0))],
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             fill: true,
@@ -339,25 +317,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   createProfitChart(): void {
-    const profitByProduct = this.chartData.sales.reduce((acc: any, sale: any) => {
-      const productName = sale.product?.strName || 'Sin producto';
-      const revenue = parseFloat(sale.fltQuantity || 0) * parseFloat(sale.fltUnitPrice || 0);
-      const cost = parseFloat(sale.fltQuantity || 0) * parseFloat(sale.product?.fltPrice || 0);
-      const profit = revenue - cost;
-      acc[productName] = (acc[productName] || 0) + profit;
-      return acc;
-    }, {});
-
-    const sorted = Object.entries(profitByProduct)
-      .sort(([,a]: any, [,b]: any) => b - a)
-      .slice(0, 5);
+    const topProducts = this.chartData.topProducts || [];
+    
+    if (topProducts.length === 0) return;
 
     const chart = new Chart(this.profitChartRef.nativeElement, {
       type: 'doughnut',
       data: {
-        labels: sorted.map(([name]) => name),
+        labels: topProducts.map((p: any) => p.name),
         datasets: [{
-          data: sorted.map(([,value]) => Number(value)),
+          data: topProducts.map((p: any) => p.total),
           backgroundColor: ['#667eea', '#11998e', '#38ef7d', '#4facfe', '#f5576c'],
           borderWidth: 0
         }]
@@ -380,7 +349,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   createStockChart(): void {
     const lowStock = this.chartData.products.filter((p: any) => 
-      parseFloat(p.ingQuantity || 0) < parseFloat(p.ingStockMin || 0) && parseFloat(p.ingStockMin || 0) > 0).length;
+      Number(p.ingQuantity || 0) < Number(p.ingStockMin || 0) && Number(p.ingStockMin || 0) > 0).length;
     
     const normalStock = this.chartData.products.length - lowStock;
 

@@ -302,6 +302,10 @@ export class SaleFormComponent implements OnInit {
     this.resetCurrentItem();
   }
 
+  getTotalQuantity(): number {
+    return this.orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+  }
+
   registerKardexMovements(sale: any, items: OrderItem[]): void {
     items.forEach(item => {
       const productId = this.getProductIdByName(item.product);
