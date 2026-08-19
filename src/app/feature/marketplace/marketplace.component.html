@@ -127,6 +127,34 @@
                 <i class="bi bi-save"></i> Guardar Configuración ({{ selectedProductIds.size }})
               </button>
             </div>
+
+            <!-- Display Mode Selector -->
+            <hr>
+            <div class="display-mode-selector">
+              <label class="form-label fw-bold" style="font-size: 0.85rem;">
+                <i class="bi bi-layout-text-window-reverse me-1"></i> Modo de visualización del catálogo
+              </label>
+              <p class="text-muted mb-2" style="font-size: 0.8rem;">
+                Elige cómo se mostrarán tus productos a los clientes.
+              </p>
+              <div class="d-flex gap-2 align-items-center">
+                <button class="btn btn-sm" 
+                        [class.btn-primary]="displayMode === 'grid'" 
+                        [class.btn-outline-secondary]="displayMode !== 'grid'"
+                        (click)="setDisplayMode('grid')">
+                  <i class="bi bi-grid-3x3-gap"></i> Tarjetas (Grid)
+                </button>
+                <button class="btn btn-sm" 
+                        [class.btn-primary]="displayMode === 'menu'" 
+                        [class.btn-outline-secondary]="displayMode !== 'menu'"
+                        (click)="setDisplayMode('menu')">
+                  <i class="bi bi-list-ul"></i> Menú (Restaurante)
+                </button>
+                <button class="btn btn-success btn-sm ms-2" (click)="saveDisplayMode()">
+                  <i class="bi bi-save"></i> Guardar modo
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -145,8 +173,8 @@
         </div>
 
         <div class="products-sections">
-          <!-- Mostrar todos los productos filtrados directamente -->
-          <div class="products-grid-modern">
+          <!-- ═══════ GRID VIEW (Tarjetas) ═══════ -->
+          <div class="products-grid-modern" *ngIf="displayMode === 'grid' || isAdminMode">
             <div class="product-card-modern" *ngFor="let product of filteredProducts" 
                  [class.selected-product]="isAdminMode && isProductSelected(product.strId)">
               <!-- Checkbox de selección en modo admin -->
@@ -179,6 +207,40 @@
                 <div class="product-actions-modern">
                   <button class="btn-add-cart" (click)="addToCart(product)">Agregar al carrito</button>
                   <button class="btn-details" (click)="openProductDetails(product)">Ver detalles</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════ MENU VIEW (Restaurante) ═══════ -->
+          <div class="menu-view" *ngIf="displayMode === 'menu' && !isAdminMode">
+            <div class="menu-header">
+              <h2 class="menu-title">{{ businessName || 'Menú' }}</h2>
+              <p class="menu-subtitle">Selecciona tus productos y agrégalos al pedido</p>
+            </div>
+
+            <div class="menu-category-section" *ngFor="let group of getProductsByCategory()">
+              <div class="menu-category-header">
+                <h3 class="menu-category-name">{{ group.category }}</h3>
+                <div class="menu-category-divider"></div>
+              </div>
+
+              <div class="menu-items-list">
+                <div class="menu-item" *ngFor="let product of group.products" (click)="openProductDetails(product)">
+                  <div class="menu-item-image" *ngIf="product.image && !hasImageError(product.strId)">
+                    <img [src]="product.image" [alt]="product.strName" (error)="onImageError($event, product)">
+                  </div>
+                  <div class="menu-item-content">
+                    <div class="menu-item-header">
+                      <h4 class="menu-item-name">{{ product.strName }}</h4>
+                      <span class="menu-item-dots"></span>
+                      <span class="menu-item-price">{{ formatCurrency(product.fltPrice) }}</span>
+                    </div>
+                    <p class="menu-item-description" *ngIf="product.strDescription">{{ product.strDescription }}</p>
+                  </div>
+                  <button class="menu-item-add" (click)="addToCart(product); $event.stopPropagation()" title="Agregar al pedido">
+                    +
+                  </button>
                 </div>
               </div>
             </div>
