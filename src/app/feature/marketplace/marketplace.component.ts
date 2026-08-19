@@ -76,6 +76,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   slugError = '';
   slugSuccess = '';
 
+  // Display mode: 'grid' (cards) or 'menu' (restaurant menu style)
+  displayMode: 'grid' | 'menu' = 'grid';
+
   // Cart
   cart: { product: Product; quantity: number }[] = [];
   showCheckout = false;
@@ -249,6 +252,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
             this.selectedProductIds.has(product.strId)
           );
         }
+      }
+
+      // Load display mode from config
+      if (configResponse && configResponse.displayMode) {
+        this.displayMode = configResponse.displayMode;
       }
       
       // Obtener nombre del negocio y sector
@@ -746,6 +754,65 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   clearAllProducts(): void {
     this.selectedProductIds.clear();
+  }
+
+  // ═══════ DISPLAY MODE ═══════
+  setDisplayMode(mode: 'grid' | 'menu'): void {
+    this.displayMode = mode;
+  }
+
+  saveDisplayMode(): void {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) return;
+
+    const payload = {
+      tenantId: this.tenantId,
+      selectedProductIds: Array.from(this.selectedProductIds),
+      displayMode: this.displayMode
+    };
+
+    this.http.post(`${this.baseUrl}/marketplace-config`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
+      next: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Modo de visualización guardado',
+          text: this.displayMode === 'menu' ? 'Tu marketplace se mostrará como menú de restaurante' : 'Tu marketplace se mostrará en tarjetas',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      },
+      error: () => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar el modo de visualización' });
+      }
+    });
+  }
+
+  getProductsByCategory(): { category: string; categoryId: string; products: Product[] }[] {
+    const categoryMap: { [key: string]: string } = {
+      '23': 'Alimentos y Restaurantes',
+      '24': 'Moda y Belleza',
+      '25': 'Ferretería y Electrónicos',
+      '26': 'Hogar y Salud',
+      '27': 'Deportes y Automotriz',
+      '28': 'Servicios'
+    };
+
+    const grouped: { [key: string]: Product[] } = {};
+    for (const product of this.filteredProducts) {
+      const catId = product.intCategoryId?.toString() || 'other';
+      if (!grouped[catId]) {
+        grouped[catId] = [];
+      }
+      grouped[catId].push(product);
+    }
+
+    return Object.entries(grouped).map(([catId, products]) => ({
+      category: categoryMap[catId] || 'Otros',
+      categoryId: catId,
+      products
+    }));
   }
 
   private checkAuthentication(): void {
