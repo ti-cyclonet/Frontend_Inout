@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpEventType, HttpEvent } from '@angular/common/http';
 import { Observable, of, BehaviorSubject, forkJoin } from 'rxjs';
 import { delay, map, catchError, switchMap } from 'rxjs/operators';
 import { Material, MaterialFilters, MaterialMetrics, PaginatedResponse } from '../models/material.model';
@@ -237,9 +237,12 @@ export class MaterialService {
     return this.http.post(`${this.apiConfig.ENDPOINTS.MATERIALS}/bulk-validate`, formData);
   }
 
-  bulkUpload(file: File): Observable<any> {
+  bulkUpload(file: File): Observable<HttpEvent<any>> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post(`${this.apiConfig.ENDPOINTS.MATERIALS}/bulk-upload`, formData);
+    return this.http.post(`${this.apiConfig.ENDPOINTS.MATERIALS}/bulk-upload`, formData, {
+      reportProgress: true,
+      observe: 'events',
+    });
   }
 }

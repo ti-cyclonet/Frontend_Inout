@@ -106,13 +106,16 @@ import { BulkEntryComponent } from '../kardex/bulk-entry/bulk-entry.component';
       border-bottom-color: #007bff;
     }
 
-    @media (max-width: 576px) {
+    @media (max-width: 650px) {
       .demo-tabs {
         padding: 0 0.25rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .tab-button {
         padding: 0.75rem 0.6rem;
-        font-size: 0.78rem;
+        font-size: 12px;
+        white-space: nowrap;
       }
     }
     

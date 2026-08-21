@@ -31,7 +31,7 @@ import { UserFormComponent } from './form/user-form.component';
       
       <div class="demo-content">
         <app-users-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-users-dashboard>
-        <app-users-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger"></app-users-list>
+        <app-users-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-users-list>
       </div>
       
       <app-user-form *ngIf="showCreateModal" (userCreated)="onUserCreated()" (formCancelled)="showCreateModal = false"></app-user-form>

@@ -50,9 +50,9 @@ export class UserFormComponent {
       secondName: [''],
       firstSurname: ['', Validators.required],
       secondSurname: [''],
-      birthDate: ['', Validators.required],
-      maritalStatus: ['', Validators.required],
-      sex: ['', Validators.required],
+      birthDate: [''],
+      maritalStatus: [''],
+      sex: [''],
       phone: [''],
     });
 
@@ -226,9 +226,38 @@ export class UserFormComponent {
       };
 
       this.customersService.createFullUser(dto).subscribe({
-        next: () => {
-          this.saving = false;
-          this.userCreated.emit();
+        next: (response: any) => {
+          // User created in Authoriza — now create customer in InOut
+          const customerDto: CreateCustomerDto = {
+            email: this.userForm.value.strUserName,
+            personType: this.basicDataForm.value.strPersonType,
+            documentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.value.strDocumentType,
+            documentNumber: this.basicDataForm.value.strPersonType === 'J'
+              ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
+              : this.documentForm.value.strDocumentNumber,
+            firstName: this.naturalForm.value.firstName || undefined,
+            secondName: this.naturalForm.value.secondName || undefined,
+            firstSurname: this.naturalForm.value.firstSurname || undefined,
+            secondSurname: this.naturalForm.value.secondSurname || undefined,
+            birthDate: this.naturalForm.value.birthDate || undefined,
+            maritalStatus: this.naturalForm.value.maritalStatus || undefined,
+            sex: this.naturalForm.value.sex || undefined,
+            phone: this.naturalForm.value.phone || undefined,
+            businessName: this.legalForm.value.businessName || undefined,
+            contactPerson: this.legalForm.value.contactName || undefined,
+          };
+
+          this.customersService.createCustomer(customerDto).subscribe({
+            next: () => {
+              this.saving = false;
+              this.userCreated.emit();
+            },
+            error: () => {
+              // Customer may already exist or other error — still close the form
+              this.saving = false;
+              this.userCreated.emit();
+            },
+          });
         },
         error: (err: unknown) => {
           console.error('Error creating user:', err);
