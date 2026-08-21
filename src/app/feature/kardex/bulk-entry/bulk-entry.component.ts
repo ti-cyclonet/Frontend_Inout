@@ -36,6 +36,9 @@ interface MaterialOption {
   styleUrls: ['./bulk-entry.component.css']
 })
 export class BulkEntryComponent implements OnInit {
+  // Description toggle (hidden by default on mobile)
+  showDescription = false;
+
   // Supplier
   suppliers: Supplier[] = [];
   filteredSuppliers: Supplier[] = [];
@@ -242,6 +245,25 @@ export class BulkEntryComponent implements OnInit {
     this.http.post(`${this.baseUrl}/bulk`, payload).subscribe({
       next: (response: any) => {
         this.submitting = false;
+
+        // Guardar datos para el comprobante antes de resetear
+        const receiptData = {
+          document: this.documentNumber,
+          date: this.purchaseDate,
+          supplier: this.selectedSupplier!.name,
+          items: this.items.map(item => ({
+            materialName: item.materialName,
+            materialCode: item.materialCode,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.total
+          })),
+          grandTotal: this.grandTotal
+        };
+
+        this.resetForm();
+        this.loadMaterials();
+
         Swal.fire({
           icon: 'success',
           title: 'Entrada registrada',
@@ -252,23 +274,9 @@ export class BulkEntryComponent implements OnInit {
           cancelButtonText: 'Cerrar'
         }).then((result) => {
           if (result.isConfirmed) {
-            this.documentsService.generatePurchaseReceipt({
-              document: this.documentNumber,
-              date: this.purchaseDate,
-              supplier: this.selectedSupplier!.name,
-              items: this.items.map(item => ({
-                materialName: item.materialName,
-                materialCode: item.materialCode,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                total: item.total
-              })),
-              grandTotal: this.grandTotal
-            });
+            this.documentsService.generatePurchaseReceipt(receiptData);
           }
         });
-        this.resetForm();
-        this.loadMaterials();
       },
       error: (err) => {
         this.submitting = false;

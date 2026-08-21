@@ -1,6 +1,8 @@
 .bulk-card {
   margin: 1rem;
   margin-bottom: 3rem;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .card-header h5 {
@@ -14,6 +16,17 @@
   font-size: 0.78rem;
   text-align: justify;
   color: #555;
+}
+
+.description-toggle {
+  font-size: 0.78rem;
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.description-toggle:hover {
+  text-decoration: underline;
 }
 
 /* Search Section - matches Kardex */
@@ -201,7 +214,8 @@
 .movements-table-container {
   border: 2px solid #0066cc;
   border-radius: 4px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .movements-table {
@@ -292,12 +306,13 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .bulk-card { margin: 0.5rem; }
+  .bulk-card { margin: 0.5rem; margin-bottom: 3rem; }
+  .search-section { padding: 0.75rem; }
   .search-row { flex-direction: column; }
   .supplier-field, .document-field, .date-field { flex: none; width: 100%; min-width: 0; }
   .add-material-row { flex-direction: column; }
-  .material-search-field, .qty-field, .price-field, .unit-price-field, .exp-field { flex: none; width: 100%; }
+  .material-search-field, .qty-field, .price-field, .unit-price-field, .exp-field { flex: none; width: 100%; min-width: 0; }
   .supplier-grid { grid-template-columns: 1fr; }
-  .movements-table { font-size: 0.72rem; }
+  .movements-table { font-size: 0.72rem; min-width: 520px; }
   .movements-table thead th, .movements-table tbody td { padding: 0.3rem 0.4rem; }
 }

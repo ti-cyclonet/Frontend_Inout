@@ -26,7 +26,7 @@
 
     <!-- Form Content -->
     <div class="form-content">
-      <form (ngSubmit)="onSubmit()">
+      <div class="form-wrapper">
         <!-- Step 1: User Data -->
         <div class="form-step" *ngIf="currentStep === 1" [formGroup]="userForm">
           <div class="step-header">
@@ -216,7 +216,7 @@
           </div>
           
           <div class="right-actions">
-            <button type="submit" class="btn btn-success" *ngIf="currentStep === totalSteps" [disabled]="!isStepValid(2) || saving">
+            <button type="button" class="btn btn-success" *ngIf="currentStep === totalSteps" [disabled]="!isStepValid(2) || saving" (click)="onSubmit()">
               <div class="btn-spinner" *ngIf="saving"></div>
               <svg viewBox="0 0 16 16" *ngIf="!saving">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" />
@@ -225,7 +225,7 @@
             </button>
           </div>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </div>

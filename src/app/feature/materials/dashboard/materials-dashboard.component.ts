@@ -1,6 +1,7 @@
 import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpEventType } from '@angular/common/http';
 import { MaterialService } from '../../../shared/services/material.service';
 import { DocumentsService } from '../../../shared/services/documents.service';
 import { MaterialMetrics } from '../../../shared/models/material.model';
@@ -32,6 +33,9 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   showCategoryModal = false;
   validationResult: any = null;
   selectedFile: File | null = null;
+  uploadProgress = 0;
+  uploadPhase: 'uploading' | 'processing' | '' = '';
+  private progressInterval: any = null;
   categories: any[] = [];
   filteredCategories: any[] = [];
   categorySearch = '';
@@ -206,44 +210,67 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
     if (!this.selectedFile) return;
     
     this.uploadingFile = true;
+    this.uploadProgress = 0;
+    this.uploadPhase = 'uploading';
+
     this.materialService.bulkUpload(this.selectedFile).subscribe({
-      next: (response) => {
-        this.uploadingFile = false;
-        this.showUploadModal = false;
-        
-        const hasErrors = response.errors.length > 0;
-        Swal.fire({
-          icon: hasErrors ? 'warning' : 'success',
-          title: hasErrors ? 'Carga con advertencias' : '¡Carga Exitosa!',
-          html: `
-            <div style="text-align: center; padding: 8px 0;">
-              <div style="display: inline-flex; gap: 24px; margin-bottom: 16px;">
-                <div style="text-align: center; padding: 12px 20px; background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0;">
-                  <div style="font-size: 28px; font-weight: 700; color: #16a34a;">${response.success}</div>
-                  <div style="font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Creados</div>
+      next: (event) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          // Fase 1: Subiendo archivo (0% - 50%)
+          const fileProgress = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
+          this.uploadProgress = Math.round(fileProgress * 0.5);
+          this.uploadPhase = 'uploading';
+        } else if (event.type === HttpEventType.Response) {
+          // Fase 2 completada: Respuesta recibida (100%)
+          this.stopProcessingSimulation();
+          this.uploadProgress = 100;
+          this.uploadPhase = '';
+          this.uploadingFile = false;
+          this.showUploadModal = false;
+
+          const response = event.body;
+          const hasErrors = response.errors.length > 0;
+          Swal.fire({
+            icon: hasErrors ? 'warning' : 'success',
+            title: hasErrors ? 'Carga con advertencias' : '¡Carga Exitosa!',
+            html: `
+              <div style="text-align: center; padding: 8px 0;">
+                <div style="display: inline-flex; gap: 24px; margin-bottom: 16px;">
+                  <div style="text-align: center; padding: 12px 20px; background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 28px; font-weight: 700; color: #16a34a;">${response.success}</div>
+                    <div style="font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Creados</div>
+                  </div>
+                  <div style="text-align: center; padding: 12px 20px; background: ${hasErrors ? '#fef2f2' : '#f8f9fa'}; border-radius: 10px; border: 1px solid ${hasErrors ? '#fecaca' : '#e9ecef'};">
+                    <div style="font-size: 28px; font-weight: 700; color: ${hasErrors ? '#dc2626' : '#6c757d'};">${response.errors.length}</div>
+                    <div style="font-size: 11px; color: ${hasErrors ? '#991b1b' : '#6c757d'}; text-transform: uppercase; letter-spacing: 0.5px;">Errores</div>
+                  </div>
                 </div>
-                <div style="text-align: center; padding: 12px 20px; background: ${hasErrors ? '#fef2f2' : '#f8f9fa'}; border-radius: 10px; border: 1px solid ${hasErrors ? '#fecaca' : '#e9ecef'};">
-                  <div style="font-size: 28px; font-weight: 700; color: ${hasErrors ? '#dc2626' : '#6c757d'};">${response.errors.length}</div>
-                  <div style="font-size: 11px; color: ${hasErrors ? '#991b1b' : '#6c757d'}; text-transform: uppercase; letter-spacing: 0.5px;">Errores</div>
-                </div>
+                ${hasErrors ? '<div style="text-align: left; max-height: 180px; overflow-y: auto; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 13px;">' + response.errors.map((e: any) => `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #fee2e2;"><strong style="color: #991b1b;">${e.row}:</strong> <span style="color: #7f1d1d;">${e.error}</span></div>`).join('') + '</div>' : ''}
               </div>
-              ${hasErrors ? '<div style="text-align: left; max-height: 180px; overflow-y: auto; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 13px;">' + response.errors.map((e: any) => `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #fee2e2;"><strong style="color: #991b1b;">${e.row}:</strong> <span style="color: #7f1d1d;">${e.error}</span></div>`).join('') + '</div>' : ''}
-            </div>
-          `,
-          confirmButtonText: 'Aceptar',
-          confirmButtonColor: '#0d6efd',
-          width: '420px',
-          customClass: { popup: 'swal-rounded' }
-        });
-        
-        this.loadMetrics();
-        this.loadRecentActivities();
-        this.refreshList.emit();
-        this.selectedFile = null;
-        this.validationResult = null;
+            `,
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#0d6efd',
+            width: '420px',
+            customClass: { popup: 'swal-rounded' }
+          });
+          
+          this.loadMetrics();
+          this.loadRecentActivities();
+          this.refreshList.emit();
+          this.selectedFile = null;
+          this.validationResult = null;
+        } else if (event.type === HttpEventType.Sent) {
+          // Archivo enviado, ahora el servidor procesa
+          this.uploadProgress = 50;
+          this.uploadPhase = 'processing';
+          this.startProcessingSimulation();
+        }
       },
       error: (error) => {
+        this.stopProcessingSimulation();
         this.uploadingFile = false;
+        this.uploadProgress = 0;
+        this.uploadPhase = '';
         Swal.fire({
           icon: 'error',
           title: 'Error al cargar',
@@ -254,6 +281,30 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
         });
       }
     });
+  }
+
+  private startProcessingSimulation(): void {
+    // Simula avance gradual de 50% a 95% mientras el servidor procesa
+    const totalRows = this.validationResult?.totalRows || 10;
+    // Estimar ~200ms por registro para la velocidad de la simulación
+    const estimatedMs = totalRows * 200;
+    const steps = 45; // de 50 a 95
+    const intervalMs = Math.max(estimatedMs / steps, 300);
+
+    this.progressInterval = setInterval(() => {
+      if (this.uploadProgress < 95) {
+        this.uploadProgress += 1;
+      } else {
+        this.stopProcessingSimulation();
+      }
+    }, intervalMs);
+  }
+
+  private stopProcessingSimulation(): void {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
   }
 
   loadCategories(): void {

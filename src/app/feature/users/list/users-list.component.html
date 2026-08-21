@@ -1,77 +1,174 @@
-<div class="list-container">
+<div class="users-list-container" style="border-top: 1px solid orange; border-bottom: 1px solid orange;">
+  <!-- Header -->
   <div class="list-header">
-    <div class="search-section">
-      <div class="search-box">
-        <svg fill="currentcolor" viewBox="0 0 16 16" class="search-icon">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#search"></use>
+    <div class="title-container">
+      <a class="title-link">
+        <svg viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#people" />
         </svg>
-        <input type="text" placeholder="Buscar usuarios..." [(ngModel)]="searchTerm" (input)="filterUsers()">
+        /Lista de Usuarios
+      </a>
+    </div>
+
+    <div class="header-actions">
+      <a class="action-link" (click)="showFilters = !showFilters" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#funnel" />
+        </svg>
+        Filtros
+      </a>
+
+      <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
+        <svg viewBox="0 0 16 16" width="16" height="16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#person-plus" />
+        </svg>
+        Usuario
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel" [class.show]="showFilters">
+    <div class="filters-content">
+      <div class="filter-group">
+        <label>Buscar</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="searchTerm"
+          (input)="onFilterChange()"
+          placeholder="Nombre, correo o documento...">
+      </div>
+
+      <div class="filter-group">
+        <label>Estado</label>
+        <select class="form-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+          <option value="all">Todos</option>
+          <option value="active">Activos</option>
+          <option value="inactive">Inactivos</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Tipo de Persona</label>
+        <select class="form-select" [(ngModel)]="personTypeFilter" (change)="onFilterChange()">
+          <option value="all">Todos</option>
+          <option value="N">Natural</option>
+          <option value="J">Jurídica</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+          Limpiar
+        </button>
       </div>
     </div>
-    <button class="btn btn-primary" (click)="showCreateModal = true">
-      <svg fill="currentcolor" viewBox="0 0 16 16">
-        <use xlink:href="./assets/icons/bootstrap-icons.svg#person-plus"></use>
-      </svg>
-      Agregar Usuario
-    </button>
   </div>
 
-  <div class="table-container" *ngIf="!loading">
-    <table class="users-table" *ngIf="filteredUsers.length > 0; else noUsers">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Correo</th>
-          <th>Teléfono</th>
-          <th>Código / Documento</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of filteredUsers">
-          <td>
-            <span *ngIf="user.personType === 'J'">{{ user.businessName || 'Sin nombre' }}</span>
-            <span *ngIf="user.personType !== 'J'">{{ user.firstName }} {{ user.firstSurname }}</span>
-          </td>
-          <td>{{ user.email || 'N/A' }}</td>
-          <td>{{ user.phone || 'N/A' }}</td>
-          <td>{{ user.customerCode || user.documentNumber || 'N/A' }}</td>
-          <td>
-            <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
-              {{ user.isActive ? 'Activo' : 'Inactivo' }}
-            </span>
-          </td>
-          <td>
-            <button 
-              class="btn btn-sm btn-danger" 
-              (click)="removeUser(user.id!)" 
-              *ngIf="user.isActive">
-              <svg fill="currentcolor" viewBox="0 0 16 16">
-                <use xlink:href="./assets/icons/bootstrap-icons.svg#person-dash"></use>
-              </svg>
-              Eliminar
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <ng-template #noUsers>
-      <div class="no-data">
-        <svg fill="currentcolor" viewBox="0 0 16 16" class="no-data-icon">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use>
-        </svg>
-        <h4>No se encontraron usuarios</h4>
-        <p>Agrega tu primer usuario para comenzar</p>
-      </div>
-    </ng-template>
-  </div>
-
-  <div class="loading" *ngIf="loading">
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
     <div class="spinner"></div>
     <p>Cargando usuarios...</p>
   </div>
 
-  <app-user-form *ngIf="showCreateModal" (userCreated)="onUserCreated()" (formCancelled)="showCreateModal = false"></app-user-form>
+  <!-- Table -->
+  <div class="table-container" *ngIf="!loading && filteredUsers.length > 0">
+    <div class="table-responsive">
+      <table class="table users-table">
+        <thead>
+          <tr>
+            <th (click)="onSort('name')" class="sortable col-name">
+              Nombre
+              <svg viewBox="0 0 16 16" class="sort-icon">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
+              </svg>
+            </th>
+            <th (click)="onSort('email')" class="sortable col-email">
+              Correo
+              <svg viewBox="0 0 16 16" class="sort-icon">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" />
+              </svg>
+            </th>
+            <th class="col-phone hide-mobile">Teléfono</th>
+            <th class="col-document hide-mobile">Documento</th>
+            <th class="text-center col-status">Estado</th>
+            <th class="text-center col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of filteredUsers">
+            <td>
+              <div class="user-info">
+                <div class="user-avatar">
+                  {{ getUserName(user).charAt(0).toUpperCase() }}
+                </div>
+                <div class="user-name">
+                  <strong>{{ getUserName(user) }}</strong>
+                  <small class="text-muted d-block">{{ user.customerCode || '' }}</small>
+                </div>
+              </div>
+            </td>
+            <td class="col-email">{{ user.email || 'N/A' }}</td>
+            <td class="col-phone hide-mobile">{{ user.phone || 'N/A' }}</td>
+            <td class="col-document hide-mobile">
+              <span class="text-muted">{{ user.documentType || '' }} {{ user.documentNumber || 'N/A' }}</span>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="user.isActive ? 'status-active' : 'status-inactive'">
+                {{ user.isActive ? 'ACTIVE' : 'INACTIVE' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-danger" (click)="removeUser(user.id!)" title="Eliminar" *ngIf="user.isActive">
+                  <svg viewBox="0 0 16 16">
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && filteredUsers.length === 0">
+    <svg fill="currentcolor" viewBox="0 0 16 16" class="empty-icon">
+      <use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use>
+    </svg>
+    <h4>No se encontraron usuarios</h4>
+    <p>Agrega tu primer usuario para comenzar</p>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading && totalPages > 0">
+    <div class="pagination-info">
+      Mostrando {{ (currentPage - 1) * pageSize + 1 }} a {{ Math.min(currentPage * pageSize, totalItems) }} de {{ totalItems }} usuarios
+    </div>
+
+    <div class="pagination-controls">
+      <select class="form-select page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} por página</option>
+      </select>
+
+      <div class="pagination-buttons">
+        <button 
+          class="btn btn-outline-secondary btn-sm" 
+          [disabled]="currentPage === 1"
+          (click)="onPageChange(currentPage - 1)">
+          Anterior
+        </button>
+        <span class="page-indicator">Página {{ currentPage }} de {{ totalPages }}</span>
+        <button 
+          class="btn btn-outline-secondary btn-sm" 
+          [disabled]="currentPage === totalPages"
+          (click)="onPageChange(currentPage + 1)">
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

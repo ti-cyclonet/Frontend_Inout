@@ -191,10 +191,18 @@
 
         <!-- Barra de progreso -->
         <div *ngIf="uploadingFile" class="upload-progress fade-in">
-          <div class="progress" style="height: 6px; border-radius: 3px;">
-            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%; background: linear-gradient(90deg, #0d6efd, #6610f2);"></div>
+          <div class="progress" style="height: 8px; border-radius: 4px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" 
+                 [style.width.%]="uploadProgress" 
+                 style="background: linear-gradient(90deg, #0d6efd, #6610f2); transition: width 0.3s ease;">
+            </div>
           </div>
-          <small>Procesando archivo...</small>
+          <small>
+            <span *ngIf="uploadPhase === 'uploading'">Subiendo archivo... {{ uploadProgress }}%</span>
+            <span *ngIf="uploadPhase === 'processing'">Procesando {{ validationResult?.totalRows || '' }} materiales... {{ uploadProgress }}%</span>
+            <span *ngIf="!uploadPhase">Procesando archivo...</span>
+          </small>
         </div>
         
         <!-- Resultado de validación -->
