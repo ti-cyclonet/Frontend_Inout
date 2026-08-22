@@ -499,3 +499,212 @@
     height: 14px;
   }
 }
+
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  border-radius: 0;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+.view-toggle .btn {
+  border-radius: 0 !important;
+  border: none;
+  border-right: 1px solid #dee2e6;
+}
+
+.view-toggle .btn:last-child {
+  border-right: none;
+}
+
+/* Cards View */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.user-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.user-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  border-color: #007bff;
+}
+
+.card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e3f2fd;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.card-body-content {
+  flex: 1;
+}
+
+.card-user-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.2rem;
+}
+
+.card-user-email {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin: 0 0 0.5rem;
+}
+
+.card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-detail {
+  font-size: 0.75rem;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card-detail svg {
+  fill: #6c757d;
+}
+
+.card-footer-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Detail Modal */
+.detail-user-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #e3f2fd;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.detail-section {
+  margin-top: 0.75rem;
+}
+
+.detail-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.4rem;
+}
+
+.detail-section small {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  color: #6c757d;
+}
+
+/* Toggle Switch */
+.signer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.toggle-slider:before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #198754;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  font-size: 0.82rem;
+  color: #495057;
+}
+
+/* Modal styles */
+.modal { z-index: 1060; }
+.modal-backdrop { z-index: 1055; }
+.modal-title { font-size: 0.95rem; display: flex; align-items: center; }
+
+@media (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}

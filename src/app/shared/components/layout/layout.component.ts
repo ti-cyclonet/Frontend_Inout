@@ -148,20 +148,23 @@ export default class LayoutComponent implements OnInit {
           this.optionsMenu.push(consumosEntry);
         }
 
-        // Agregar enlace de Usuarios
-        const usersEntry: OptionMenu = {
-          id: 'users-mgmt',
-          name: 'Usuarios',
-          description: 'Usuarios',
-          url: '/users',
-          icon: 'people',
-          type: 'main_menu',
-          idMPather: null,
-          order: '85',
-          idApplication: this.application?.id ?? '',
-        };
-        if (!this.optionsMenu.some(m => m.id === usersEntry.id)) {
-          this.optionsMenu.push(usersEntry);
+        // Agregar enlace de Usuarios (solo para administradores)
+        const userRol = sessionStorage.getItem('user_rol') || '';
+        if (userRol === 'adminInout') {
+          const usersEntry: OptionMenu = {
+            id: 'users-mgmt',
+            name: 'Usuarios',
+            description: 'Usuarios',
+            url: '/users',
+            icon: 'people',
+            type: 'main_menu',
+            idMPather: null,
+            order: '85',
+            idApplication: this.application?.id ?? '',
+          };
+          if (!this.optionsMenu.some(m => m.id === usersEntry.id)) {
+            this.optionsMenu.push(usersEntry);
+          }
         }
 
         // Ordenar por ingOrder numérico

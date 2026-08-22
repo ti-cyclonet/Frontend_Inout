@@ -61,7 +61,7 @@
 .menu-item {
     color: #FF8C42;
     /* color: var(--primary-text-color); */
-    margin-bottom: 1.2rem; /* Asegura que las opciones de menú principal estén bien separadas */
+    margin-bottom: 0.7rem; /* Espacio reducido entre opciones */
     text-decoration: none;
     display: flex;
     flex-direction: column;
@@ -72,7 +72,7 @@
 }
 
 .menu-item:first-child {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .icon-container {
@@ -84,7 +84,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     transition: transform 0.3s ease;
     position: relative;
 }
@@ -183,7 +183,7 @@
     }
 
     .menu-item {
-        margin-bottom: 1.0rem;
+        margin-bottom: 0.6rem;
     }
 }
 
