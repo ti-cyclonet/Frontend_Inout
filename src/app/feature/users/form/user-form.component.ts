@@ -1,13 +1,14 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { CreateCustomerDto } from '../../../shared/model/customer.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-user-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css'],
 })
@@ -18,8 +19,12 @@ export class UserFormComponent {
   currentStep = 1;
   totalSteps = 2;
   saving = false;
+  checking = false;
   userExists = false;
   loadedUserData: any = null;
+  availableRoles: any[] = [];
+  contractId: string | null = null;
+  selectedRoleId = '';
   
   userForm: FormGroup;
   basicDataForm: FormGroup;
@@ -79,11 +84,44 @@ export class UserFormComponent {
       this.documentForm.get('strDocumentNumber')?.updateValueAndValidity();
       this.documentForm.get('strDocumentDV')?.updateValueAndValidity();
     });
+
+    // Load available roles for this tenant
+    this.loadAvailableRoles();
+  }
+
+  loadAvailableRoles(): void {
+    // Get tenantId from JWT token (the contract owner), not the logged-in user
+    const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
+    if (!token) return;
+    
+    let tenantId: string | null = null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      tenantId = payload.tenantId || payload.basicDataId || null;
+    } catch { return; }
+    
+    if (!tenantId) return;
+
+    this.customersService.getTenantContract(tenantId).subscribe({
+      next: (data: any) => {
+        this.contractId = data.contractId;
+        if (this.contractId) {
+          this.customersService.getRoleAvailability(this.contractId).subscribe({
+            next: (roles: any[]) => {
+              // Only show roles with available slots (exclude adminInout — that's for the principal)
+              this.availableRoles = roles.filter(r => r.available > 0 && r.role.strName !== 'adminInout');
+            },
+            error: () => { this.availableRoles = []; }
+          });
+        }
+      },
+      error: () => {}
+    });
   }
 
   nextStep() {
     if (this.currentStep === 1) {
-      this.createUser();
+      this.validateAndProceed();
     } else {
       this.currentStep++;
     }
@@ -105,30 +143,55 @@ export class UserFormComponent {
     return true;
   }
 
-  createUser() {
+  validateAndProceed() {
     if (this.userForm.invalid) {
       this.userForm.markAllAsTouched();
       return;
     }
 
-    const userName = this.userForm.value.strUserName;
-    
-    this.customersService.getUserByEmail(userName).subscribe({
-      next: (userData: any) => {
-        if (userData) {
-          this.userExists = true;
-          this.loadedUserData = userData;
-          this.populateFormWithUserData(userData);
-          this.currentStep++;
-        } else {
-          this.userExists = false;
-          this.currentStep++;
+    const email = this.userForm.value.strUserName;
+    this.checking = true;
+
+    // 1. Check if already exists as customer in InOut (duplicate local)
+    this.customersService.getCustomersWithDetails().subscribe({
+      next: (customers) => {
+        const existingLocal = customers.find(c => c.email?.toLowerCase() === email.toLowerCase());
+        if (existingLocal) {
+          this.checking = false;
+          this.userForm.get('strUserName')?.setErrors({ taken: true });
+          return;
         }
+
+        // 2. Check if exists in Authoriza (real user)
+        this.customersService.checkEmailExists(email).subscribe({
+          next: (data: any) => {
+            this.checking = false;
+            if (data.exists) {
+              // User already exists in Authoriza — load their data
+              this.userExists = true;
+              this.loadedUserData = data;
+              if (data.basicData) this.populateFormWithUserData(data);
+              this.currentStep++;
+            } else {
+              // User doesn't exist — will be created fresh
+              this.userExists = false;
+              this.loadedUserData = null;
+              this.currentStep++;
+            }
+          },
+          error: () => {
+            // If check fails, allow proceeding (user will be created)
+            this.checking = false;
+            this.userExists = false;
+            this.currentStep++;
+          }
+        });
       },
       error: () => {
+        this.checking = false;
         this.userExists = false;
         this.currentStep++;
-      },
+      }
     });
   }
 
@@ -185,83 +248,52 @@ export class UserFormComponent {
     this.saving = true;
 
     if (this.userExists && this.loadedUserData) {
-      const dto: CreateCustomerDto = {
-        email: this.userForm.value.strUserName,
-        personType: this.loadedUserData?.basicData?.strPersonType || 'N',
-        documentType: this.loadedUserData?.documentType?.strDocumentType,
-        documentNumber: this.loadedUserData?.documentType?.strDocumentNumber,
-        firstName: this.loadedUserData?.naturalPersonData?.firstName,
-        firstSurname: this.loadedUserData?.naturalPersonData?.firstSurname,
-        businessName: this.loadedUserData?.legalEntityData?.businessName,
-      };
-      
-      this.customersService.createCustomer(dto).subscribe({
-        next: () => {
-          this.saving = false;
-          this.userCreated.emit();
-        },
-        error: (err: unknown) => {
-          console.error('Error creating customer:', err);
-          this.saving = false;
-        },
-      });
+      // User already exists in Authoriza — just create local customer
+      this.createLocalCustomerAndFinish();
     } else {
+      // Create new user in Authoriza
       const dto: any = {
         user: {
           ...this.userForm.value,
-          strStatus: 'UNCONFIRMED',
+          strStatus: 'ACTIVE',
         },
         basicData: {
           ...this.basicDataForm.value,
           strStatus: 'ACTIVE',
         },
         documentType: {
-          strDocumentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.value.strDocumentType,
+          strDocumentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.getRawValue().strDocumentType,
           strDocumentNumber: this.basicDataForm.value.strPersonType === 'J' 
             ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
             : this.documentForm.value.strDocumentNumber,
         },
-        naturalPersonData: this.basicDataForm.value.strPersonType === 'N' ? this.naturalForm.value : undefined,
+        naturalPersonData: this.basicDataForm.value.strPersonType === 'N' ? {
+          firstName: this.naturalForm.value.firstName,
+          secondName: this.naturalForm.value.secondName || undefined,
+          firstSurname: this.naturalForm.value.firstSurname,
+          secondSurname: this.naturalForm.value.secondSurname || undefined,
+          birthDate: this.naturalForm.value.birthDate || undefined,
+          maritalStatus: this.naturalForm.value.maritalStatus || undefined,
+          sex: this.naturalForm.value.sex || undefined,
+        } : undefined,
         legalEntityData: this.basicDataForm.value.strPersonType === 'J' ? this.legalForm.value : undefined,
       };
 
       this.customersService.createFullUser(dto).subscribe({
-        next: (response: any) => {
-          // User created in Authoriza — now create customer in InOut
-          const customerDto: CreateCustomerDto = {
-            email: this.userForm.value.strUserName,
-            personType: this.basicDataForm.value.strPersonType,
-            documentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.value.strDocumentType,
-            documentNumber: this.basicDataForm.value.strPersonType === 'J'
-              ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
-              : this.documentForm.value.strDocumentNumber,
-            firstName: this.naturalForm.value.firstName || undefined,
-            secondName: this.naturalForm.value.secondName || undefined,
-            firstSurname: this.naturalForm.value.firstSurname || undefined,
-            secondSurname: this.naturalForm.value.secondSurname || undefined,
-            birthDate: this.naturalForm.value.birthDate || undefined,
-            maritalStatus: this.naturalForm.value.maritalStatus || undefined,
-            sex: this.naturalForm.value.sex || undefined,
-            phone: this.naturalForm.value.phone || undefined,
-            businessName: this.legalForm.value.businessName || undefined,
-            contactPerson: this.legalForm.value.contactName || undefined,
-          };
-
-          this.customersService.createCustomer(customerDto).subscribe({
-            next: () => {
-              this.saving = false;
-              this.userCreated.emit();
-            },
-            error: () => {
-              // Customer may already exist or other error — still close the form
-              this.saving = false;
-              this.userCreated.emit();
-            },
-          });
+        next: () => {
+          // User created in Authoriza — now save locally
+          this.createLocalCustomerAndFinish();
         },
-        error: (err: unknown) => {
-          console.error('Error creating user:', err);
+        error: (err: any) => {
+          console.error('Error creating user in Authoriza:', err);
           this.saving = false;
+          const message = err?.error?.message || err?.message || 'Error al crear el usuario';
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al crear usuario',
+            text: message,
+            confirmButtonColor: '#0066CC',
+          });
         },
       });
     }
@@ -269,6 +301,38 @@ export class UserFormComponent {
 
   cancel() {
     this.formCancelled.emit();
+  }
+
+  private createLocalCustomerAndFinish(): void {
+    const customerDto: CreateCustomerDto = {
+      email: this.userForm.value.strUserName,
+      personType: this.basicDataForm.value.strPersonType,
+      documentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.value.strDocumentType,
+      documentNumber: this.basicDataForm.value.strPersonType === 'J'
+        ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
+        : this.documentForm.value.strDocumentNumber,
+      firstName: this.naturalForm.value.firstName || undefined,
+      secondName: this.naturalForm.value.secondName || undefined,
+      firstSurname: this.naturalForm.value.firstSurname || undefined,
+      secondSurname: this.naturalForm.value.secondSurname || undefined,
+      birthDate: this.naturalForm.value.birthDate || undefined,
+      maritalStatus: this.naturalForm.value.maritalStatus || undefined,
+      sex: this.naturalForm.value.sex || undefined,
+      phone: this.naturalForm.value.phone || undefined,
+      businessName: this.legalForm.value.businessName || undefined,
+      contactPerson: this.legalForm.value.contactName || undefined,
+    };
+
+    this.customersService.createCustomer(customerDto).subscribe({
+      next: () => {
+        this.saving = false;
+        this.userCreated.emit();
+      },
+      error: () => {
+        this.saving = false;
+        this.userCreated.emit();
+      },
+    });
   }
 
   getFieldError(fieldName: string): string {

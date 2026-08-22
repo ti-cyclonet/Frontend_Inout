@@ -1,8 +1,10 @@
 import { Component, Input, OnInit, OnChanges, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { CustomerWithDetails } from '../../../shared/model/customer.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-users-list',
@@ -19,6 +21,7 @@ export class UsersListComponent implements OnInit, OnChanges {
   filteredUsers: CustomerWithDetails[] = [];
   loading = false;
   showFilters = false;
+  viewMode: 'table' | 'cards' = 'table';
 
   // Filters
   searchTerm = '';
@@ -36,18 +39,168 @@ export class UsersListComponent implements OnInit, OnChanges {
   sortField = 'name';
   sortDirection: 'asc' | 'desc' = 'asc';
 
+  // Detail modal
+  showDetailModal = false;
+  selectedUser: CustomerWithDetails | null = null;
+  selectedUserRole = '';
+  originalUserRole = '';
+  selectedUserSigner = false;
+  savingRole = false;
+  availableRoles: any[] = [];
+  contractId: string | null = null;
+  private selectedUserAuthorizaId: string | null = null;
+
   Math = Math;
 
   constructor(private customersService: CustomersService) {}
 
   ngOnInit(): void {
     this.loadUsers();
+    this.loadRoles();
   }
 
   ngOnChanges(): void {
     if (this.refreshTrigger > 0) {
       this.loadUsers();
     }
+  }
+
+  loadRoles(): void {
+    // Get tenantId from JWT token (the contract owner)
+    const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
+    if (!token) return;
+    
+    let tenantId: string | null = null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      tenantId = payload.tenantId || payload.basicDataId || null;
+    } catch { return; }
+    
+    if (!tenantId) return;
+
+    this.customersService.getTenantContract(tenantId).subscribe({
+      next: (data: any) => {
+        this.contractId = data.contractId;
+        if (this.contractId) {
+          this.customersService.getRoleAvailability(this.contractId).subscribe({
+            next: (roles: any[]) => {
+              // Show all roles with available slots
+              this.availableRoles = roles;
+            },
+            error: () => {}
+          });
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  openUserDetail(user: CustomerWithDetails): void {
+    this.selectedUser = user;
+    this.selectedUserRole = '';
+    this.originalUserRole = '';
+    this.selectedUserSigner = false;
+    this.selectedUserAuthorizaId = null;
+    this.showDetailModal = true;
+
+    // Load current role: first get Authoriza userId, then fetch their roles
+    if (user.email) {
+      this.customersService.checkEmailExists(user.email).subscribe({
+        next: (data: any) => {
+          if (data.exists && data.userId) {
+            this.selectedUserAuthorizaId = data.userId;
+            this.customersService.getUserRoles(data.userId).subscribe({
+              next: (roles: any[]) => {
+                const match = roles.find((r: any) => r.contractId === this.contractId && r.status === 'ACTIVE');
+                if (match) {
+                  this.selectedUserRole = match.roleId || '';
+                  this.originalUserRole = this.selectedUserRole;
+                }
+              },
+              error: () => {}
+            });
+          }
+        },
+        error: () => {}
+      });
+    }
+  }
+
+  closeDetailModal(): void {
+    this.showDetailModal = false;
+    this.selectedUser = null;
+  }
+
+  saveUserChanges(): void {
+    if (!this.selectedUserAuthorizaId || !this.contractId) {
+      Swal.fire({ icon: 'warning', title: 'Sin datos', text: 'No se pudo identificar al usuario en el sistema.', confirmButtonColor: '#0066CC' });
+      return;
+    }
+
+    this.savingRole = true;
+    const userId = this.selectedUserAuthorizaId;
+    const tenantToken = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
+    let tenantId: string | null = null;
+    try {
+      const payload = JSON.parse(atob(tenantToken!.split('.')[1]));
+      tenantId = payload.tenantId || payload.basicDataId || null;
+    } catch {}
+
+    // If role changed
+    if (this.selectedUserRole !== this.originalUserRole) {
+      // Remove old role if it existed
+      const removeOld = this.originalUserRole
+        ? this.customersService.removeRole(userId, this.originalUserRole, this.contractId)
+        : new Observable<any>(sub => { sub.next(null); sub.complete(); });
+
+      removeOld.subscribe({
+        next: () => {
+          if (this.selectedUserRole) {
+            // Ensure dependency exists, then assign new role
+            const ensureDependency = tenantId
+              ? this.customersService.createUserDependency(tenantId, userId)
+              : new Observable<any>(sub => { sub.next(null); sub.complete(); });
+
+            ensureDependency.subscribe({
+              next: () => this.assignNewRole(userId),
+              error: () => this.assignNewRole(userId), // dependency may already exist
+            });
+          } else {
+            // Role removed, no new one
+            this.savingRole = false;
+            this.originalUserRole = '';
+            this.loadRoles(); // refresh availability
+            Swal.fire({ icon: 'success', title: 'Rol removido', timer: 1500, showConfirmButton: false });
+          }
+        },
+        error: () => {
+          // If remove fails, try assigning anyway
+          if (this.selectedUserRole) {
+            this.assignNewRole(userId);
+          } else {
+            this.savingRole = false;
+          }
+        }
+      });
+    } else {
+      this.savingRole = false;
+      Swal.fire({ icon: 'info', title: 'Sin cambios', text: 'No se detectaron cambios en el rol.', timer: 1500, showConfirmButton: false });
+    }
+  }
+
+  private assignNewRole(userId: string): void {
+    this.customersService.assignRole(userId, this.selectedUserRole, this.contractId!).subscribe({
+      next: () => {
+        this.savingRole = false;
+        this.originalUserRole = this.selectedUserRole;
+        this.loadRoles();
+        Swal.fire({ icon: 'success', title: 'Rol asignado', text: 'Los cambios se guardaron correctamente.', confirmButtonColor: '#0066CC', timer: 2000, showConfirmButton: false });
+      },
+      error: (err: any) => {
+        this.savingRole = false;
+        Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message || 'No se pudo asignar el rol', confirmButtonColor: '#0066CC' });
+      },
+    });
   }
 
   loadUsers(): void {

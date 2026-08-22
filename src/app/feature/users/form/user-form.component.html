@@ -193,6 +193,23 @@
           </div>
         </div>
 
+        <!-- Role Assignment -->
+        <div class="form-step" *ngIf="currentStep === 2 && availableRoles.length > 0" style="margin-top: 1rem;">
+          <hr style="border: 2px solid #6f42c1; margin: 0 0 1rem 0;">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Rol a Asignar *</label>
+              <select class="form-select" [(ngModel)]="selectedRoleId">
+                <option value="">Seleccione un rol</option>
+                <option *ngFor="let item of availableRoles" [value]="item.role.id">
+                  {{ item.role.strDescription1 || item.role.strName }} ({{ item.available }} disponibles)
+                </option>
+              </select>
+              <small class="text-muted" style="margin-top: 0.25rem; display: block;">El rol define qué puede hacer el usuario en la aplicación</small>
+            </div>
+          </div>
+        </div>
+
         <!-- Form Actions -->
         <div class="form-actions">
           <div class="left-actions">
@@ -207,8 +224,8 @@
               <span class="btn-text">Anterior</span>
             </button>
             
-            <button type="button" class="btn btn-primary" *ngIf="currentStep < totalSteps" [disabled]="!isStepValid(currentStep)" (click)="nextStep()">
-              <span class="btn-text">Siguiente</span>
+            <button type="button" class="btn btn-primary" *ngIf="currentStep < totalSteps" [disabled]="!isStepValid(currentStep) || checking" (click)="nextStep()">
+              <span class="btn-text">{{ checking ? 'Verificando...' : 'Siguiente' }}</span>
               <svg viewBox="0 0 16 16">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" />
               </svg>
