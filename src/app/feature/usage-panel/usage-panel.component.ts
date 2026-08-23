@@ -144,4 +144,24 @@ export class UsagePanelComponent implements OnInit {
   clampPercentage(value: number): number {
     return Math.min(value, 100);
   }
+
+  /**
+   * Texto del límite de usuarios según el paquete.
+   * Los planes DEV y de pago (no facturable = DEV, o premium/enterprise) permiten
+   * usuarios ilimitados; el plan gratuito tiene un cupo acotado.
+   */
+  get usersLimitText(): string {
+    const name = (this.usageStatus?.packageName || '').toUpperCase();
+    const isUnlimited =
+      name.includes('DEV') ||
+      name.includes('PRO') ||
+      name.includes('PREMIUM') ||
+      name.includes('ENTERPRISE') ||
+      name.includes('EMPRESA');
+
+    if (isUnlimited) {
+      return 'Tu plan permite crear usuarios ilimitados con roles de Operador o Visor.';
+    }
+    return 'Tu plan gratuito incluye hasta 2 usuarios con roles de Operador o Visor.';
+  }
 }
