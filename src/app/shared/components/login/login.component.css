@@ -115,14 +115,16 @@
 }
 /* Logo responsive */
 .logo-img {
-    max-width: 70%;
+    max-width: 55%;
     height: auto;
     width: auto;
+    margin-bottom: 18px;
 }
 
 @media (max-width: 576px) {
     .logo-img {
-        max-width: 60%;
+        max-width: 48%;
+        margin-bottom: 14px;
     }
 }
 
