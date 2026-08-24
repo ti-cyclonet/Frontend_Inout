@@ -4,13 +4,13 @@
   }
    */
    .forgot-password-link {
-    color: rgb(39, 28, 28); /* Cambia el color a blanco */
-    text-decoration: none; /* Elimina el subrayado predeterminado */
+    color: rgb(0, 10, 102);
+    text-decoration: none;
   }
   
   .forgot-password-link:hover {
-    text-decoration: underline; /* Si deseas un subrayado al pasar el ratón */
-    color: rgb(255, 255, 255); /* Mantiene el color blanco también al pasar el ratón */
+    text-decoration: underline;
+    color: rgb(0, 6, 58);
   }
   .login-container .custom-btn {
     background-color: rgb(0, 10, 102);
@@ -88,12 +88,10 @@
 .custom-card {
     border-radius: 18px !important;
     padding: 30px 24px !important;
-    background: rgba(255, 255, 255, 0.12) !important;
-    backdrop-filter: blur(18px) !important;
-    -webkit-backdrop-filter: blur(18px) !important;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-    color: #ffffff !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    color: #1a2233 !important;
     width: 92%;
     max-width: 400px;
     margin: auto;
@@ -168,7 +166,8 @@
 .custom-welcome {
     padding-top: 1%;
     font-family: 'Roboto Condensed', sans-serif;
-    color: rgb(253, 244, 244);
+    color: rgb(0, 10, 102);
+    font-weight: 600;
     font-size: 1.5rem;
 }
 
@@ -186,7 +185,7 @@
 .fieldsForm .input-group {
   border: 2px solid #f5c49b;
   border-radius: 25px;
-  background-color: rgba(255, 255, 255, 0.85);
+  background-color: #f7f8fa;
   align-items: center;
   overflow: hidden;
   flex-wrap: nowrap !important;
