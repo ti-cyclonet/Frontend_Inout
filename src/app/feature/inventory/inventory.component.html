@@ -77,7 +77,7 @@
           <div class="form-row">
             <input class="form-input wide" [(ngModel)]="newZone.positionsText"
                    placeholder="Posiciones separadas por coma (Ej: 10,11,12,17,18,19)">
-            <input class="form-input small" [(ngModel)]="newZone.capacity" placeholder="Capacidad c/u">
+            <input class="form-input capacity-field" [(ngModel)]="newZone.capacity" placeholder="Capacidad por casilla (Ej: 10 kg)">
             <button class="btn-save" (click)="createZone()" type="button">Crear zona</button>
             <button class="btn-cancel" (click)="showCreateZone = false" type="button">✕</button>
           </div>
@@ -95,6 +95,7 @@
               <button class="btn-remove-sm" (click)="deleteZone(grp)" type="button" title="Eliminar zona completa">✕ zona</button>
             </div>
             <div class="location-item" *ngFor="let loc of grp.items" [class.in-zone]="grp.zone">
+              <span class="loc-code" *ngIf="loc.locationCode" title="Código para carga masiva">{{ loc.locationCode }}</span>
               <span>{{ loc.name }}</span>
               <small *ngIf="loc.aisle || loc.shelf || loc.bin">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }} <span *ngIf="loc.capacity">· Cap: {{ loc.capacity }}</span></small>
               <button class="btn-remove-sm" (click)="deleteLocation(loc.id)" type="button" title="Eliminar ubicación">✕</button>

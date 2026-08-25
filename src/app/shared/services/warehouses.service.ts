@@ -17,6 +17,7 @@ export interface WarehouseLocation {
   id: string;
   warehouseId: string;
   name: string;
+  locationCode?: string;
   aisle?: string;
   shelf?: string;
   bin?: string;

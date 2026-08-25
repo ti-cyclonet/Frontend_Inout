@@ -29,6 +29,7 @@
 .form-input { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.82rem; }
 .form-input:focus { border-color: #0057B8; outline: 0; box-shadow: 0 0 0 2px rgba(0,87,184,0.1); }
 .form-input.small { max-width: 100px; }
+.form-input.capacity-field { flex: 0 0 200px; min-width: 200px; }
 .btn-save { padding: 0.45rem 1rem; background: #0057B8; color: white; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
 .btn-cancel { padding: 0.45rem 0.75rem; background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
 
@@ -121,3 +122,6 @@
 .zone-count { margin-left: auto; color: #6b7280; font-size: 0.72rem; }
 .location-item.in-zone { border-left: 3px solid #9dc0ec; margin-left: 0.5rem; border-radius: 0; }
 .location-item.in-zone:last-child { border-radius: 0 0 4px 4px; }
+
+/* Código de ubicación (para carga masiva) */
+.loc-code { display: inline-block; background: #eef4fc; color: #0057B8; font-weight: 700; font-size: 0.72rem; padding: 1px 8px; border-radius: 4px; margin-right: 8px; font-family: monospace; border: 1px solid #d6e4f7; }
