@@ -49,7 +49,7 @@ export class ModuleSelectorComponent {
   hoveredCard: string | null = null;
   isLoading = false;
   selectedModuleName = '';
-  logoPath: string = './assets/img/logo_inout_v12.png';
+  logoPath: string = './assets/img/logo_inout_v11.png';
 
   constructor(
     private router: Router,
