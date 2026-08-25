@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Fondo redondeado azul marca -->
+  <rect x="0" y="0" width="64" height="64" rx="14" ry="14" fill="#000a66"/>
+  <!-- Simbolo In/Out: dos flechas circulares entrelazadas (ciclo de inventario) -->
+  <g fill="none" stroke="#f28c1e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Lazo izquierdo: flecha entrando (IN) -->
+    <path d="M30 26
+             A11 11 0 1 0 30 42"/>
+    <polyline points="30 20 30 26 24 26"/>
+    <!-- Lazo derecho: flecha saliendo (OUT) -->
+    <path d="M34 42
+             A11 11 0 1 0 34 26"/>
+    <polyline points="34 48 34 42 40 42"/>
+  </g>
+</svg>
