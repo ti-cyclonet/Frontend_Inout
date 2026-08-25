@@ -45,8 +45,13 @@
       <div class="locations-section" *ngIf="selectedWarehouse">
         <div class="panel-header">
           <h6>Ubicaciones de: {{ selectedWarehouse.name }}</h6>
-          <button class="btn-action-primary" (click)="showCreateLocation = true" type="button">+ Ubicación</button>
+          <div class="header-actions">
+            <button class="btn-action-secondary" (click)="openLocationForm()" type="button">+ Ubicación</button>
+            <button class="btn-action-primary" (click)="openZoneForm()" type="button">+ Zona (varias posiciones)</button>
+          </div>
         </div>
+
+        <!-- Crear ubicación simple -->
         <div class="create-form" *ngIf="showCreateLocation">
           <div class="form-row">
             <input class="form-input" [(ngModel)]="newLocation.name" placeholder="Nombre *">
@@ -58,11 +63,42 @@
             <button class="btn-cancel" (click)="showCreateLocation = false" type="button">✕</button>
           </div>
         </div>
+
+        <!-- Crear ZONA (grupo de posiciones) -->
+        <div class="create-form zone-form" *ngIf="showCreateZone">
+          <div class="zone-form-title">Nueva zona — agrupa varias posiciones de un estante</div>
+          <div class="form-row">
+            <input class="form-input" [(ngModel)]="newZone.zone" placeholder="Nombre de la zona * (Ej: ZONA 15)">
+            <input class="form-input small" [(ngModel)]="newZone.zoneCode" placeholder="Código (Ej: Z15)">
+            <input class="form-input small" [(ngModel)]="newZone.shelf" placeholder="Estante (Ej: C)">
+            <input class="form-input small" [(ngModel)]="newZone.aisle" placeholder="Pasillo (opc.)">
+            <input class="form-input" [(ngModel)]="newZone.description" placeholder="Descripción (Ej: Productos NC)">
+          </div>
+          <div class="form-row">
+            <input class="form-input wide" [(ngModel)]="newZone.positionsText"
+                   placeholder="Posiciones separadas por coma (Ej: 10,11,12,17,18,19)">
+            <input class="form-input small" [(ngModel)]="newZone.capacity" placeholder="Capacidad c/u">
+            <button class="btn-save" (click)="createZone()" type="button">Crear zona</button>
+            <button class="btn-cancel" (click)="showCreateZone = false" type="button">✕</button>
+          </div>
+          <small class="zone-hint">Se creará una ubicación por cada posición, todas dentro de la zona indicada.</small>
+        </div>
+
+        <!-- Lista de ubicaciones agrupadas por zona -->
         <div class="locations-list">
-          <div class="location-item" *ngFor="let loc of selectedWarehouse.locations">
-            <span>{{ loc.name }}</span>
-            <small *ngIf="loc.aisle">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }} <span *ngIf="loc.capacity">· Cap: {{ loc.capacity }}</span></small>
-            <button class="btn-remove-sm" (click)="deleteLocation(loc.id)" type="button" title="Eliminar ubicación">✕</button>
+          <!-- Grupos por zona -->
+          <div class="zone-group" *ngFor="let grp of groupedLocations">
+            <div class="zone-group-header" *ngIf="grp.zone">
+              <span class="zone-badge">{{ grp.zone }}</span>
+              <small *ngIf="grp.description">{{ grp.description }}</small>
+              <span class="zone-count">{{ grp.items.length }} posiciones</span>
+              <button class="btn-remove-sm" (click)="deleteZone(grp)" type="button" title="Eliminar zona completa">✕ zona</button>
+            </div>
+            <div class="location-item" *ngFor="let loc of grp.items" [class.in-zone]="grp.zone">
+              <span>{{ loc.name }}</span>
+              <small *ngIf="loc.aisle || loc.shelf || loc.bin">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }} <span *ngIf="loc.capacity">· Cap: {{ loc.capacity }}</span></small>
+              <button class="btn-remove-sm" (click)="deleteLocation(loc.id)" type="button" title="Eliminar ubicación">✕</button>
+            </div>
           </div>
           <div class="empty-msg" *ngIf="!selectedWarehouse.locations || selectedWarehouse.locations.length === 0">Sin ubicaciones</div>
         </div>

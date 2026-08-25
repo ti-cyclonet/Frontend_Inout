@@ -100,3 +100,24 @@
   .form-grid { grid-template-columns: 1fr; }
   .form-row { flex-direction: column; }
 }
+
+/* Header actions (ubicación / zona) */
+.header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.btn-action-secondary { padding: 0.4rem 1rem; background: #fff; color: #0057B8; border: 1px solid #0057B8; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.btn-action-secondary:hover { background: #eef4fc; }
+
+/* Formulario de zona */
+.zone-form { border-left: 4px solid #0057B8; }
+.zone-form-title { font-weight: 600; color: #0057B8; font-size: 0.85rem; margin-bottom: 0.6rem; }
+.zone-form .form-row { margin-bottom: 0.6rem; }
+.form-input.wide { flex: 3; }
+.zone-hint { color: #6b7280; font-size: 0.72rem; }
+
+/* Agrupación por zona en la lista */
+.zone-group { margin-bottom: 0.6rem; }
+.zone-group-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.6rem; background: #eef4fc; border-radius: 6px 6px 0 0; border: 1px solid #d6e4f7; }
+.zone-badge { background: #0057B8; color: #fff; font-weight: 700; font-size: 0.75rem; padding: 2px 10px; border-radius: 12px; letter-spacing: 0.3px; }
+.zone-group-header small { color: #4b5563; font-size: 0.75rem; }
+.zone-count { margin-left: auto; color: #6b7280; font-size: 0.72rem; }
+.location-item.in-zone { border-left: 3px solid #9dc0ec; margin-left: 0.5rem; border-radius: 0; }
+.location-item.in-zone:last-child { border-radius: 0 0 4px 4px; }
