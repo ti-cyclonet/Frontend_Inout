@@ -21,6 +21,9 @@ export interface WarehouseLocation {
   shelf?: string;
   bin?: string;
   capacity?: string;
+  zone?: string;
+  zoneCode?: string;
+  description?: string;
 }
 
 export interface StockTransfer {
@@ -89,6 +92,11 @@ export class WarehousesService {
 
   createLocation(data: any): Observable<WarehouseLocation> {
     return this.http.post<WarehouseLocation>(`${this.apiUrl}/locations`, data);
+  }
+
+  // Crea una zona que agrupa varias posiciones de un estante
+  createLocationsBatch(data: any): Observable<{ message: string; zone: string; count: number; locations: WarehouseLocation[] }> {
+    return this.http.post<{ message: string; zone: string; count: number; locations: WarehouseLocation[] }>(`${this.apiUrl}/locations/batch`, data);
   }
 
   deleteLocation(locationId: string): Observable<any> {

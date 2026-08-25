@@ -26,6 +26,10 @@ export class InventoryComponent implements OnInit {
   showCreateLocation = false;
   newLocation = { name: '', aisle: '', shelf: '', bin: '', capacity: '' };
 
+  // Zones (grupos de posiciones)
+  showCreateZone = false;
+  newZone = { zone: '', zoneCode: '', shelf: '', aisle: '', description: '', capacity: '', positionsText: '' };
+
   // Transfers
   transfers: StockTransfer[] = [];
   showTransferModal = false;
@@ -90,6 +94,16 @@ export class InventoryComponent implements OnInit {
     this.selectedWarehouse = wh;
   }
 
+  openLocationForm(): void {
+    this.showCreateZone = false;
+    this.showCreateLocation = true;
+  }
+
+  openZoneForm(): void {
+    this.showCreateLocation = false;
+    this.showCreateZone = true;
+  }
+
   createLocation(): void {
     if (!this.newLocation.name || !this.selectedWarehouse) return;
     this.warehousesService.createLocation({ ...this.newLocation, warehouseId: this.selectedWarehouse.id }).subscribe({
@@ -100,6 +114,93 @@ export class InventoryComponent implements OnInit {
       },
       error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo crear', 'error'); }
     });
+  }
+
+  /** Crea una zona que agrupa varias posiciones de un estante. */
+  createZone(): void {
+    if (!this.selectedWarehouse) return;
+    const zone = this.newZone.zone.trim();
+    if (!zone) { Swal.fire('Atención', 'Indica el nombre de la zona.', 'warning'); return; }
+
+    const positions = this.newZone.positionsText
+      .split(',')
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+
+    if (positions.length === 0) {
+      Swal.fire('Atención', 'Indica al menos una posición (Ej: 10,11,12).', 'warning');
+      return;
+    }
+
+    this.warehousesService.createLocationsBatch({
+      warehouseId: this.selectedWarehouse.id,
+      zone,
+      zoneCode: this.newZone.zoneCode || null,
+      shelf: this.newZone.shelf || null,
+      aisle: this.newZone.aisle || null,
+      description: this.newZone.description || null,
+      capacity: this.newZone.capacity || null,
+      positions,
+    }).subscribe({
+      next: (res) => {
+        this.loadWarehouses();
+        this.showCreateZone = false;
+        this.newZone = { zone: '', zoneCode: '', shelf: '', aisle: '', description: '', capacity: '', positionsText: '' };
+        Swal.fire({ icon: 'success', title: res.message || 'Zona creada', timer: 1800, showConfirmButton: false });
+      },
+      error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo crear la zona', 'error'); }
+    });
+  }
+
+  /** Ubicaciones del almacén seleccionado agrupadas por zona (las sin zona van al final). */
+  get groupedLocations(): { zone: string | null; description: string | null; items: WarehouseLocation[] }[] {
+    const locs = this.selectedWarehouse?.locations || [];
+    const groups = new Map<string, { zone: string | null; description: string | null; items: WarehouseLocation[] }>();
+    const noZoneKey = '__none__';
+
+    for (const loc of locs) {
+      const key = loc.zone ? `z:${loc.zone}` : noZoneKey;
+      if (!groups.has(key)) {
+        groups.set(key, { zone: loc.zone || null, description: loc.description || null, items: [] });
+      }
+      groups.get(key)!.items.push(loc);
+    }
+
+    // Zonas primero (orden alfabético), ubicaciones sueltas al final
+    const zoned = [...groups.values()].filter(g => g.zone).sort((a, b) => (a.zone || '').localeCompare(b.zone || ''));
+    const loose = [...groups.values()].filter(g => !g.zone);
+    return [...zoned, ...loose];
+  }
+
+  /** Elimina todas las posiciones de una zona. */
+  deleteZone(grp: { zone: string | null; items: WarehouseLocation[] }): void {
+    if (!grp.zone) return;
+    Swal.fire({
+      title: `¿Eliminar la zona "${grp.zone}"?`,
+      text: `Se eliminarán sus ${grp.items.length} posiciones. Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar zona',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626'
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      let pending = grp.items.length;
+      let failed = 0;
+      grp.items.forEach(loc => {
+        this.warehousesService.deleteLocation(loc.id).subscribe({
+          next: () => { if (--pending === 0) this.finishZoneDeletion(failed); },
+          error: () => { failed++; if (--pending === 0) this.finishZoneDeletion(failed); }
+        });
+      });
+    });
+  }
+
+  private finishZoneDeletion(failed: number): void {
+    this.loadWarehouses();
+    if (failed > 0) {
+      Swal.fire('Atención', `No se pudieron eliminar ${failed} posición(es).`, 'warning');
+    }
   }
 
   deleteLocation(locationId: string): void {
