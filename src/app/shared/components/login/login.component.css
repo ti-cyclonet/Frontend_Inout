@@ -95,6 +95,16 @@
     width: 92%;
     max-width: 400px;
     margin: auto;
+    overflow: hidden;
+}
+
+/* Sección inferior del formulario con fondo gris claro.
+   Los márgenes negativos extienden el gris hasta los bordes de la tarjeta. */
+.card-bottom {
+    background: #f1f3f6;
+    margin: 18px -24px -30px -24px;
+    padding: 22px 24px 26px 24px;
+    border-top: 1px solid #e3e6ea;
 }
 
 /* Responsive cuando la pantalla es menor a 412px */
