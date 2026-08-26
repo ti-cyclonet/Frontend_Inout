@@ -11,6 +11,12 @@
             <svg fill="currentColor" viewBox="0 0 16 16">
               <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
             </svg>
+            <span class="stock-alert-badge" *ngIf="isMenuMaterials(option) && materialAlertCount > 0">
+              {{ materialAlertCount > 99 ? '99+' : materialAlertCount }}
+            </span>
+            <span class="stock-alert-badge" *ngIf="isMenuProducts(option) && productAlertCount > 0">
+              {{ productAlertCount > 99 ? '99+' : productAlertCount }}
+            </span>
           </div>
           <div class="list-text">
             <span class="list-title">{{ option.description }}</span>
