@@ -14,7 +14,10 @@
     <div *ngIf="activeTab === 'warehouses'" class="tab-panel">
       <div class="panel-header">
         <h6>Almacenes y Ubicaciones</h6>
-        <button class="btn-action-primary" (click)="showCreateWarehouse = true" type="button">+ Nuevo Almacén</button>
+        <a class="action-link action-link-primary" (click)="showCreateWarehouse = true" style="cursor:pointer;">
+          <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
+          Nuevo
+        </a>
       </div>
 
       <!-- Create form -->
@@ -46,8 +49,14 @@
         <div class="panel-header">
           <h6>Ubicaciones de: {{ selectedWarehouse.name }}</h6>
           <div class="header-actions">
-            <button class="btn-action-secondary" (click)="openLocationForm()" type="button">+ Ubicación</button>
-            <button class="btn-action-primary" (click)="openZoneForm()" type="button">+ Zona (varias posiciones)</button>
+            <a class="action-link" (click)="openLocationForm()" style="cursor:pointer;">
+              <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
+              Ubicación
+            </a>
+            <a class="action-link action-link-primary" (click)="openZoneForm()" style="cursor:pointer;">
+              <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
+              Zona
+            </a>
           </div>
         </div>
 
@@ -110,7 +119,10 @@
     <div *ngIf="activeTab === 'transfers'" class="tab-panel">
       <div class="panel-header">
         <h6>Transferencias de Stock</h6>
-        <button class="btn-action-primary" (click)="showTransferModal = true" type="button">+ Nueva Transferencia</button>
+        <a class="action-link action-link-primary" (click)="showTransferModal = true" style="cursor:pointer;">
+          <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
+          Nueva
+        </a>
       </div>
 
       <!-- Transfer form -->
@@ -173,7 +185,10 @@
       <div *ngIf="!selectedCount">
         <div class="panel-header">
           <h6>Conteos Físicos</h6>
-          <button class="btn-action-primary" (click)="startNewCount()" type="button">+ Nuevo Conteo</button>
+          <a class="action-link action-link-primary" (click)="startNewCount()" style="cursor:pointer;">
+            <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
+            Nuevo
+          </a>
         </div>
 
         <div class="counts-list">
