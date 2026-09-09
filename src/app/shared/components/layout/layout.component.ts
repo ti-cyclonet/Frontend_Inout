@@ -6,6 +6,7 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 import { SidebarListComponent } from '../sidebar-list/sidebar-list.component';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
+import { DeliveryRequestComponent } from '../../../feature/commercial/delivery/delivery-request.component';
 import { Application } from '../../model/application.model';
 import { ApplicationsService } from '../../services/applications/applications.service';
 import { ModuleService, ModuleType } from '../../services/module/module.service';
@@ -24,7 +25,8 @@ import { NAME_APP_SHORT } from '../../../config/config';
     SidebarListComponent,
     FooterComponent,
     RouterOutlet,
-    RouterModule
+    RouterModule,
+    DeliveryRequestComponent
   ],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css'],

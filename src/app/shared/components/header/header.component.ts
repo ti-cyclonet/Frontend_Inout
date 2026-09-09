@@ -44,6 +44,7 @@ export class HeaderComponent implements OnInit {
   userRol: string | null = null;
   userRolDescription: string | null = null;
   userImage: string | null = null;
+  uploadingAvatar = false;
   clientName: string | null = null;
   packageName: string | null = null;
   appDescription: string = 'INVENTORY MANAGEMENT';
@@ -283,6 +284,50 @@ export class HeaderComponent implements OnInit {
         this.packageName = null;
       }
     });
+  }
+
+  /**
+   * Sube la foto de perfil al endpoint CENTRAL de Authoriza. La imagen vive en
+   * Authoriza y se refleja en todas las apps del ecosistema. El interceptor
+   * agrega el Bearer automáticamente (URL de Authoriza, no de Shotra).
+   */
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // permite re-elegir el mismo archivo
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      this.showToast('Selecciona un archivo de imagen.', 'warning', 'A', 1);
+      return;
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+    // Normalizar base de Authoriza: puede venir como '.../api' (dev) o
+    // '.../api/auth' (prod). Se quita un '/auth' final para construir
+    // '.../auth/users/me/avatar' consistente en ambos entornos.
+    const base = environment.auth.authorizaUrl.replace(/\/auth\/?$/, '');
+    this.uploadingAvatar = true;
+    this.http.post<{ url: string }>(`${base}/users/me/avatar`, form).subscribe({
+      next: (res) => {
+        this.uploadingAvatar = false;
+        if (res?.url) {
+          this.userImage = res.url;
+          sessionStorage.setItem('user_image', res.url);
+          this.cdr.detectChanges();
+        }
+        this.showToast('Foto de perfil actualizada.', 'success', 'A', 1);
+      },
+      error: (err) => {
+        this.uploadingAvatar = false;
+        this.showToast('Error: ' + (err.error?.message || 'No se pudo subir la foto'), 'danger', 'A', 1);
+      },
+    });
+  }
+
+  triggerAvatarInput(): void {
+    const el = document.getElementById('avatarFileInput') as HTMLInputElement | null;
+    el?.click();
   }
 
   openSettings(event?: Event): void {
