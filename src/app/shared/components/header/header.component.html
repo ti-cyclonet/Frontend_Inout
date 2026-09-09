@@ -129,6 +129,14 @@
             </a>
           </li>
           <li>
+            <a class="dropdown-item" href="#" (click)="$event.preventDefault(); triggerAvatarInput()">
+              <svg class="dropdown-icon" width="16" height="16" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#camera" />
+              </svg>
+              {{ uploadingAvatar ? 'Subiendo foto…' : 'Cambiar foto' }}
+            </a>
+          </li>
+          <li>
             <a class="dropdown-item" href="#" (click)="openSettings($event)">
               <svg
                 class="dropdown-icon"
@@ -305,6 +313,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Input oculto para la foto de perfil (avatar centralizado en Authoriza) -->
+      <input
+        type="file"
+        id="avatarFileInput"
+        accept="image/*"
+        style="display: none"
+        (change)="onAvatarSelected($event)"
+      />
     </div>
   </div>
 </div>

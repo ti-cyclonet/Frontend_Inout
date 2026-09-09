@@ -1,0 +1,337 @@
+<!-- FAB flotante transversal: abre el módulo de Shotra dentro de InOut -->
+<button class="shotra-fab" type="button" (click)="openPanel()" *ngIf="!open" title="Pedir domicilio (Shotra)">
+  <img src="assets/img/logo_shotra.png" alt="Shotra" class="fab-logo" />
+  <span class="fab-text">Domicilios</span>
+</button>
+
+<!-- Backdrop + Drawer lateral (estilo "otra aplicación") -->
+<div class="shotra-backdrop" *ngIf="open" (click)="closePanel()"></div>
+
+<aside class="shotra-drawer" [class.open]="open">
+  <!-- Cinta estilo login de Shotra: franja carmesí + placa + frase -->
+  <div class="shotra-head">
+    <button class="drawer-close" type="button" (click)="closePanel()">✕</button>
+    <img src="assets/img/shotra_placa.png" alt="Shotra" class="brand-logo" />
+    <p class="brand-tag">Conectamos soluciones con quienes las necesitan</p>
+  </div>
+
+  <!-- Aviso de app externa -->
+  <div class="shotra-note">
+    Módulo del marketplace <b>Shotra</b>. Publica tu solicitud y recibe ofertas de domiciliarios.
+  </div>
+
+  <div class="shotra-body">
+    <!-- Toolbar -->
+    <div class="drawer-toolbar">
+      <h6 class="toolbar-title">Mis solicitudes</h6>
+      <button class="btn-create" type="button" (click)="openForm()" [disabled]="loading">+ Nueva solicitud</button>
+    </div>
+
+    <!-- Error de conexión / acceso -->
+    <div class="delivery-alert" *ngIf="error">
+      <span>⚠️ {{ error }}</span>
+      <button type="button" (click)="retry()">Reintentar</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="delivery-loading" *ngIf="loading && !error">Cargando…</div>
+
+    <!-- Lista de solicitudes -->
+    <div class="requests-list" *ngIf="!loading && !error">
+      <div class="empty" *ngIf="requests.length === 0">
+        Aún no has publicado solicitudes de domicilio.
+      </div>
+
+      <div class="request-card" *ngFor="let req of requests"
+           [class.card-closed]="getBadge(req).closed" (click)="openDetail(req)">
+        <div class="request-main">
+          <div class="request-title">{{ req.title }}</div>
+          <div class="request-address" *ngIf="req.address">📍 {{ req.address }}</div>
+        </div>
+        <div class="request-meta">
+          <span class="request-proposals">{{ proposalCount(req) }} oferta(s)</span>
+          <!-- Badge redondo de novedad: color por estado; punto pulsante si hay
+               algo que atender; estilo apagado cuando ya está cerrada. -->
+          <span class="novelty-badge"
+                [class.closed]="getBadge(req).closed"
+                [style.background]="getBadge(req).closed ? 'transparent' : getBadge(req).color"
+                [style.color]="getBadge(req).closed ? getBadge(req).color : '#fff'"
+                [style.border]="getBadge(req).closed ? '1px solid ' + getBadge(req).color : 'none'">
+            <span class="dot" *ngIf="getBadge(req).pulse" [style.background]="'#fff'"></span>
+            {{ getBadge(req).label }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista: Formulario nueva solicitud (dentro del drawer) -->
+  <div class="drawer-sheet" *ngIf="showForm">
+    <div class="sheet-head">
+      <button class="sheet-back" type="button" (click)="closeForm()">← Volver</button>
+      <h6>Nueva solicitud</h6>
+    </div>
+
+    <div class="sheet-body">
+      <div class="form-group">
+        <label>Tipo de entrega *</label>
+        <select [(ngModel)]="form.categoryId" name="categoryId" class="form-control">
+          <option value="">Selecciona…</option>
+          <option *ngFor="let sub of subcategories" [value]="sub.id">{{ sub.name }}</option>
+        </select>
+        <small *ngIf="subcategories.length === 0" class="hint-warn">
+          No se pudieron cargar los tipos de entrega.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Título *</label>
+        <input type="text" [(ngModel)]="form.title" name="title" class="form-control"
+          placeholder="Ej: Entregar pedido a cliente en el centro" maxlength="120" />
+      </div>
+
+      <div class="form-group">
+        <label>Descripción *</label>
+        <textarea [(ngModel)]="form.description" name="description" class="form-control" rows="3"
+          placeholder="Detalles: qué se entrega, referencias, indicaciones al domiciliario…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Dirección de entrega *</label>
+        <div class="address-row">
+          <input type="text" [(ngModel)]="form.address" name="address" class="form-control"
+            placeholder="Calle, número, barrio, ciudad" />
+          <button type="button" class="btn-loc" (click)="useMyLocation()" title="Usar mi ubicación">📍</button>
+        </div>
+        <small class="hint" *ngIf="form.latitude">
+          Ubicación GPS capturada ({{ form.latitude | number:'1.4-4' }}, {{ form.longitude | number:'1.4-4' }})
+        </small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Presupuesto mín. (COP)</label>
+          <input type="number" [(ngModel)]="form.budgetMin" name="budgetMin" class="form-control" min="0" placeholder="0" />
+        </div>
+        <div class="form-group half">
+          <label>Presupuesto máx. (COP)</label>
+          <input type="number" [(ngModel)]="form.budgetMax" name="budgetMax" class="form-control" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label>¿Para cuándo?</label>
+          <input type="datetime-local" [(ngModel)]="form.scheduledAt" name="scheduledAt" class="form-control" />
+        </div>
+        <div class="form-group half check">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="form.isUrgent" name="isUrgent" />
+            Es urgente
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-foot">
+      <button class="btn-secondary" type="button" (click)="closeForm()">Cancelar</button>
+      <button class="btn-primary" type="button" (click)="submit()" [disabled]="!canSubmit() || submitting">
+        {{ submitting ? 'Publicando…' : 'Publicar solicitud' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Vista: Detalle + Ofertas (dentro del drawer) -->
+  <div class="drawer-sheet" *ngIf="selectedRequest || loadingDetail">
+    <div class="sheet-head">
+      <button class="sheet-back" type="button" (click)="closeDetail()">← Volver</button>
+      <h6>Detalle de la solicitud</h6>
+    </div>
+
+    <div class="sheet-body" *ngIf="loadingDetail">Cargando…</div>
+
+    <div class="sheet-body" *ngIf="selectedRequest && !loadingDetail">
+      <div class="detail-head">
+        <div class="detail-title">{{ selectedRequest.title }}</div>
+        <span class="novelty-badge"
+              [class.closed]="getDetailBadge(selectedRequest).closed"
+              [style.background]="getDetailBadge(selectedRequest).closed ? 'transparent' : getDetailBadge(selectedRequest).color"
+              [style.color]="getDetailBadge(selectedRequest).closed ? getDetailBadge(selectedRequest).color : '#fff'"
+              [style.border]="getDetailBadge(selectedRequest).closed ? '1px solid ' + getDetailBadge(selectedRequest).color : 'none'">
+          {{ getDetailBadge(selectedRequest).label }}
+        </span>
+      </div>
+      <p class="detail-desc">{{ selectedRequest.description }}</p>
+      <div class="detail-line" *ngIf="selectedRequest.address">📍 {{ selectedRequest.address }}</div>
+      <div class="detail-line" *ngIf="selectedRequest.budgetMin || selectedRequest.budgetMax">
+        💰 {{ formatCurrency(selectedRequest.budgetMin) }} – {{ formatCurrency(selectedRequest.budgetMax) }}
+      </div>
+
+      <!-- Estado del contrato (cuando ya se aceptó una oferta) -->
+      <div class="contract-box" *ngIf="contract">
+        <div class="contract-row">
+          <span class="contract-code">Contrato {{ contract.code }}</span>
+          <span class="contract-state" [class.done]="isContractClosed()">
+            {{ getStatusLabel(contract.status) }}
+          </span>
+        </div>
+        <div class="contract-signs">
+          <span [class.ok]="contract.requesterSignedAt">
+            {{ contract.requesterSignedAt ? '✔' : '○' }} Tu firma
+          </span>
+          <span [class.ok]="contract.providerSignedAt">
+            {{ contract.providerSignedAt ? '✔' : '○' }} Firma del domiciliario
+          </span>
+        </div>
+
+        <!-- Acción de cierre: confirmar recepción + pago -->
+        <button class="btn-close-work" type="button"
+                *ngIf="canConfirmReceipt()"
+                (click)="openConfirmForm()">
+          ✅ Recibí a satisfacción y pagué — cerrar
+        </button>
+
+        <div class="contract-closed-note" *ngIf="isContractClosed()">
+          Trabajo cerrado. Recepción confirmada y pago declarado.
+        </div>
+
+        <!-- Evaluación del domiciliario -->
+        <button class="btn-rate" type="button" *ngIf="canRate()" (click)="openRatingForm()">
+          ⭐ Calificar al domiciliario
+        </button>
+        <div class="contract-rated-note" *ngIf="isContractClosed() && hasRated()">
+          ✔ Ya calificaste este servicio.
+        </div>
+      </div>
+
+      <hr />
+
+      <h6 class="offers-title">Ofertas recibidas ({{ selectedRequest.proposals.length }})</h6>
+
+      <div class="empty" *ngIf="selectedRequest.proposals.length === 0">
+        Todavía no hay ofertas. Los domiciliarios de Shotra las verán y podrán proponer.
+      </div>
+
+      <div class="offer-card" *ngFor="let p of selectedRequest.proposals">
+        <!-- Avatar del ofertante (o ícono de usuario si no tiene foto) -->
+        <div class="offer-avatar">
+          <img *ngIf="p.provider?.avatarUrl" [src]="p.provider?.avatarUrl" alt="" class="offer-avatar-img" />
+          <svg *ngIf="!p.provider?.avatarUrl" width="20" height="20" viewBox="0 0 16 16" fill="#9ca3af">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#person-fill" />
+          </svg>
+        </div>
+        <div class="offer-main">
+          <div class="offer-provider">
+            {{ p.provider?.displayName || 'Domiciliario' }}
+            <span class="offer-rating" *ngIf="p.provider?.averageRating">★ {{ p.provider?.averageRating | number:'1.1-1' }}</span>
+          </div>
+          <div class="offer-desc">{{ p.description }}</div>
+          <div class="offer-time" *ngIf="p.estimatedTime">⏱ {{ p.estimatedTime }}</div>
+        </div>
+        <div class="offer-side">
+          <div class="offer-price">{{ formatCurrency(p.price) }}</div>
+          <div class="offer-status" *ngIf="p.status !== 'PENDING'">{{ getProposalStatusLabel(p.status) }}</div>
+          <div class="offer-actions" *ngIf="p.status === 'PENDING' && canManageProposals()">
+            <button class="btn-accept" type="button" (click)="acceptProposal(p)">Aceptar</button>
+            <button class="btn-reject" type="button" (click)="rejectProposal(p)">Rechazar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-foot" *ngIf="selectedRequest && !loadingDetail && canManageProposals()">
+      <button class="btn-danger-outline" type="button" (click)="cancelRequest(selectedRequest)">
+        Cancelar solicitud
+      </button>
+    </div>
+  </div>
+
+  <!-- Vista: Confirmar recepción + declarar pago (cierre del trabajo) -->
+  <div class="drawer-sheet" *ngIf="showConfirmForm">
+    <div class="sheet-head">
+      <button class="sheet-back" type="button" (click)="closeConfirmForm()">← Volver</button>
+      <h6>Cerrar trabajo</h6>
+    </div>
+
+    <div class="sheet-body">
+      <p class="detail-desc">
+        Confirma que recibiste el servicio a satisfacción y registra cómo pagaste al domiciliario.
+        Esta declaración cierra la solicitud.
+      </p>
+
+      <div class="form-group">
+        <label>Medio de pago *</label>
+        <div class="pay-methods">
+          <button type="button" class="pay-method"
+                  *ngFor="let m of paymentMethods"
+                  [class.active]="payment.method === m.value"
+                  (click)="selectPayMethod(m.value)">
+            <span class="pay-icon">{{ m.icon }}</span>
+            <span class="pay-label">{{ m.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Monto pagado (COP)</label>
+        <input type="number" [(ngModel)]="payment.amount" name="payAmount" class="form-control" min="0"
+               [placeholder]="formatCurrency(contract?.agreedPrice)" />
+        <small class="hint">Por defecto, el precio acordado.</small>
+      </div>
+
+      <div class="form-group">
+        <label>Comprobante de pago (opcional)</label>
+        <label class="voucher-drop">
+          <input type="file" accept="image/*,application/pdf" (change)="onVoucherSelected($event)" hidden />
+          <span *ngIf="uploadingVoucher">Subiendo…</span>
+          <span *ngIf="!uploadingVoucher && !payment.voucherUrl">☁️ Adjuntar comprobante (imagen o PDF)</span>
+          <span *ngIf="!uploadingVoucher && payment.voucherUrl" class="voucher-ok">✔ Comprobante adjuntado</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>Observación (opcional)</label>
+        <textarea [(ngModel)]="payment.note" name="payNote" class="form-control" rows="2"
+                  placeholder="Ej: pagado en efectivo al recibir"></textarea>
+      </div>
+    </div>
+
+    <div class="sheet-foot">
+      <button class="btn-secondary" type="button" (click)="closeConfirmForm()">Cancelar</button>
+      <button class="btn-primary" type="button" (click)="submitConfirmReceipt()" [disabled]="confirming">
+        {{ confirming ? 'Cerrando…' : 'Confirmar y cerrar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Vista: Evaluar al domiciliario -->
+  <div class="drawer-sheet" *ngIf="showRatingForm">
+    <div class="sheet-head">
+      <button class="sheet-back" type="button" (click)="closeRatingForm()">← Volver</button>
+      <h6>Calificar domiciliario</h6>
+    </div>
+
+    <div class="sheet-body">
+      <p class="detail-desc">¿Cómo fue el servicio? Tu evaluación ayuda a la comunidad de Shotra.</p>
+
+      <div class="rating-stars">
+        <button type="button" class="star" *ngFor="let s of stars"
+                [class.active]="s <= ratingForm.score" (click)="setScore(s)">★</button>
+      </div>
+      <div class="rating-value">{{ ratingForm.score }} de 5</div>
+
+      <div class="form-group">
+        <label>Comentario (opcional)</label>
+        <textarea [(ngModel)]="ratingForm.comment" name="ratingComment" class="form-control" rows="3"
+                  placeholder="Cuéntanos cómo estuvo la entrega…"></textarea>
+      </div>
+    </div>
+
+    <div class="sheet-foot">
+      <button class="btn-secondary" type="button" (click)="closeRatingForm()">Cancelar</button>
+      <button class="btn-primary" type="button" (click)="submitRating()" [disabled]="rating">
+        {{ rating ? 'Enviando…' : 'Enviar evaluación' }}
+      </button>
+    </div>
+  </div>
+</aside>

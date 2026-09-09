@@ -39,3 +39,11 @@ footer {
   border-width: 3px !important;
   margin-bottom: 12px !important;
 }
+
+/* SweetAlert2 debe quedar SIEMPRE por encima de paneles/drawers flotantes.
+   El drawer de Shotra (Domicilios) usa z-index 1090; el backdrop de SweetAlert
+   por defecto es 1060, por lo que los diálogos de confirmación (aceptar/rechazar
+   oferta) quedaban detrás del panel. Se eleva por encima. */
+.swal2-container {
+  z-index: 20000 !important;
+}
