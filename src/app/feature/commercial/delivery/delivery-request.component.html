@@ -1,5 +1,5 @@
 <!-- FAB flotante transversal: abre el módulo de Shotra dentro de InOut -->
-<button class="shotra-fab" type="button" (click)="openPanel()" *ngIf="!open" title="Pedir domicilio (Shotra)">
+<button class="shotra-fab" type="button" (click)="openPanel()" *ngIf="!open && fabEnabled" title="Pedir domicilio (Shotra)">
   <img src="assets/img/logo_shotra.png" alt="Shotra" class="fab-logo" />
   <span class="fab-text">Domicilios</span>
 </button>
@@ -75,10 +75,20 @@
     <div class="sheet-body">
       <div class="form-group">
         <label>Tipo de entrega *</label>
-        <select [(ngModel)]="form.categoryId" name="categoryId" class="form-control">
-          <option value="">Selecciona…</option>
-          <option *ngFor="let sub of subcategories" [value]="sub.id">{{ sub.name }}</option>
-        </select>
+        <!-- Selector estilo Shotra: campo que abre un bottom-sheet con buscador -->
+        <button type="button" class="cat-select" (click)="openCategorySheet()">
+          <span class="cat-select-icon">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (selectedCategory ? categoryIcon(selectedCategory) : 'grid-3x3-gap-fill')" />
+            </svg>
+          </span>
+          <span class="cat-select-text" [class.placeholder]="!selectedCategory">
+            {{ selectedCategory?.name || 'Selecciona una categoría' }}
+          </span>
+          <svg class="cat-select-caret" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-down" />
+          </svg>
+        </button>
         <small *ngIf="subcategories.length === 0" class="hint-warn">
           No se pudieron cargar los tipos de entrega.
         </small>
@@ -106,6 +116,14 @@
         <small class="hint" *ngIf="form.latitude">
           Ubicación GPS capturada ({{ form.latitude | number:'1.4-4' }}, {{ form.longitude | number:'1.4-4' }})
         </small>
+        <!-- Mini-mapa de la ubicación capturada (OpenStreetMap embebido) -->
+        <div class="mini-map" *ngIf="mapUrl">
+          <iframe
+            [src]="mapUrl"
+            title="Ubicación de entrega"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
       </div>
 
       <div class="form-row">
@@ -332,6 +350,37 @@
       <button class="btn-primary" type="button" (click)="submitRating()" [disabled]="rating">
         {{ rating ? 'Enviando…' : 'Enviar evaluación' }}
       </button>
+    </div>
+  </div>
+
+  <!-- Bottom-sheet: seleccionar categoría (estilo Shotra) -->
+  <div class="cat-sheet-backdrop" *ngIf="showCategorySheet" (click)="closeCategorySheet()"></div>
+  <div class="cat-sheet" [class.open]="showCategorySheet">
+    <div class="cat-sheet-handle"></div>
+    <h6 class="cat-sheet-title">Selecciona una categoría</h6>
+    <div class="cat-search">
+      <svg width="16" height="16" fill="#9ca3af" viewBox="0 0 16 16">
+        <use xlink:href="./assets/icons/bootstrap-icons.svg#search" />
+      </svg>
+      <input type="text" [(ngModel)]="categorySearch" name="categorySearch" placeholder="Buscar categoría…" autocomplete="off" />
+    </div>
+    <div class="cat-sheet-list">
+      <div class="cat-group-label">Delivery</div>
+      <button type="button" class="cat-item"
+              *ngFor="let sub of filteredSubcategories"
+              [class.active]="form.categoryId === sub.id"
+              (click)="selectCategory(sub.id)">
+        <span class="cat-icon">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+            <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + categoryIcon(sub)" />
+          </svg>
+        </span>
+        <span class="cat-name">{{ sub.name }}</span>
+        <svg class="cat-check" *ngIf="form.categoryId === sub.id" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle-fill" />
+        </svg>
+      </button>
+      <div class="empty" *ngIf="filteredSubcategories.length === 0">Sin resultados.</div>
     </div>
   </div>
 </aside>

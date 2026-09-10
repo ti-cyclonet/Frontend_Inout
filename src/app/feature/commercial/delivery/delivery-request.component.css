@@ -448,3 +448,120 @@
 @media (max-width: 360px) {
   .pay-methods { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Selector de categoría estilo Shotra ─────────────────────────────────────
+   Campo que abre un bottom-sheet con buscador (en vez del select nativo). */
+.cat-select {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.cat-select:hover { border-color: var(--shotra-red); }
+.cat-select-icon {
+  width: 34px; height: 34px; flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--shotra-soft);
+  color: var(--shotra-red);
+  display: flex; align-items: center; justify-content: center;
+}
+.cat-select-text { flex: 1 1 auto; font-size: 0.9rem; font-weight: 600; color: #1f2937; }
+.cat-select-text.placeholder { font-weight: 500; color: #9ca3af; }
+.cat-select-caret { color: #9ca3af; flex: 0 0 auto; }
+
+/* Bottom-sheet que sube desde abajo */
+.cat-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 5;
+}
+.cat-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 80%;
+  background: #fff;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 1rem 1rem;
+  transform: translateY(100%);
+  transition: transform 0.28s ease;
+  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.18);
+}
+.cat-sheet.open { transform: translateY(0); }
+.cat-sheet-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: #d1d5db; margin: 0.2rem auto 0.7rem;
+}
+.cat-sheet-title { font-weight: 800; color: #1f2937; margin: 0 0 0.7rem; }
+.cat-search {
+  display: flex; align-items: center; gap: 0.5rem;
+  border: 1px solid #e6e9ec; border-radius: 10px;
+  padding: 0.5rem 0.7rem; margin-bottom: 0.8rem;
+}
+.cat-search input { border: none; outline: none; flex: 1; font-size: 0.88rem; background: transparent; }
+.cat-sheet-list { overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+.cat-group-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: #9ca3af; margin: 0.2rem 0;
+}
+
+/* Tarjetas de categoría (usadas dentro del sheet) */
+.cat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #e6e9ec;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.cat-item:hover { border-color: var(--shotra-red); }
+.cat-item.active {
+  border-color: var(--shotra-red);
+  background: var(--shotra-soft);
+  box-shadow: inset 0 0 0 1px var(--shotra-red);
+}
+.cat-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--shotra-soft);
+  color: var(--shotra-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cat-name { flex: 1 1 auto; font-size: 0.9rem; font-weight: 600; color: #1f2937; }
+.cat-item.active .cat-name { color: var(--shotra-red-dark); }
+.cat-check { color: var(--shotra-red); flex: 0 0 auto; }
+
+/* Mini-mapa de la ubicación de entrega (OpenStreetMap embebido) */
+.mini-map {
+  margin-top: 0.5rem;
+  border: 1px solid #e6e9ec;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mini-map iframe {
+  display: block;
+  width: 100%;
+  height: 160px;
+  border: 0;
+}

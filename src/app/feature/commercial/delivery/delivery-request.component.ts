@@ -1,6 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import Swal from 'sweetalert2';
 import {
   ShotraService,
@@ -12,6 +13,8 @@ import {
   ShotraPaymentMethod,
   CreateShotraRequest,
 } from '../../../shared/services/shotra/shotra.service';
+import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
+import { Subscription } from 'rxjs';
 
 /**
  * Pestaña "Domicilios" del módulo Comercial de InOut.
@@ -33,6 +36,14 @@ export class DeliveryRequestComponent implements OnDestroy {
   // sobre InOut. Cerrado por defecto; se abre desde el FAB.
   open = false;
   private initialized = false;
+
+  // Visibilidad del FAB según preferencia de Configuración (localStorage).
+  fabEnabled = true;
+  private prefSub?: Subscription;
+
+  // Selector de categoría estilo Shotra (bottom-sheet con buscador).
+  showCategorySheet = false;
+  categorySearch = '';
 
   // ─── Polling de ofertas en tiempo (casi) real ───────────────────────────────
   // Mientras el panel está abierto, se refresca la lista periódicamente. Si el
@@ -86,7 +97,15 @@ export class DeliveryRequestComponent implements OnDestroy {
   submitting = false;
   form: CreateShotraRequest = this.emptyForm();
 
-  constructor(private shotra: ShotraService) {}
+  constructor(private shotra: ShotraService, private uiPrefs: UiPrefsService, private sanitizer: DomSanitizer) {
+    this.fabEnabled = this.uiPrefs.getShowDeliveryFab();
+    // Reacciona en vivo al toggle de Configuración: si se apaga con el panel
+    // abierto, se cierra.
+    this.prefSub = this.uiPrefs.showDeliveryFab$.subscribe((v) => {
+      this.fabEnabled = v;
+      if (!v && this.open) this.closePanel();
+    });
+  }
 
   /** Abre el panel de Shotra. La primera vez inicializa (perfil + datos). */
   openPanel(): void {
@@ -111,6 +130,7 @@ export class DeliveryRequestComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.stopPolling();
+    this.prefSub?.unsubscribe();
   }
 
   // ─── Polling ─────────────────────────────────────────────────────────────
@@ -262,7 +282,50 @@ export class DeliveryRequestComponent implements OnDestroy {
     if (this.subcategories.length === 1) {
       this.form.categoryId = this.subcategories[0].id;
     }
+    this.updateMapUrl(); // limpia el mapa (form sin coordenadas aún)
     this.showForm = true;
+  }
+
+  /** Selecciona el tipo de entrega y cierra el bottom-sheet. */
+  selectCategory(id: string): void {
+    this.form.categoryId = id;
+    this.showCategorySheet = false;
+    this.categorySearch = '';
+  }
+
+  openCategorySheet(): void {
+    this.categorySearch = '';
+    this.showCategorySheet = true;
+  }
+
+  closeCategorySheet(): void {
+    this.showCategorySheet = false;
+  }
+
+  /** Categoría seleccionada (para mostrar su nombre/ícono en el selector). */
+  get selectedCategory(): ShotraCategory | undefined {
+    return this.subcategories.find((s) => s.id === this.form.categoryId);
+  }
+
+  /** Subcategorías filtradas por el buscador del sheet. */
+  get filteredSubcategories(): ShotraCategory[] {
+    const q = this.categorySearch.trim().toLowerCase();
+    if (!q) return this.subcategories;
+    return this.subcategories.filter((s) => (s.name || '').toLowerCase().includes(q));
+  }
+
+  /** Ícono (Bootstrap Icons) representativo según la subcategoría de delivery. */
+  categoryIcon(sub: ShotraCategory): string {
+    const key = `${sub.slug || ''} ${sub.name || ''}`.toLowerCase();
+    if (key.includes('comida') || key.includes('food')) return 'cup-hot';
+    if (key.includes('mercado') || key.includes('grocery')) return 'cart';
+    if (key.includes('paquet') || key.includes('package') || key.includes('express')) return 'box-seam';
+    if (key.includes('mensaj') || key.includes('messenger')) return 'envelope';
+    if (key.includes('compra') || key.includes('mandado') || key.includes('errand')) return 'bag';
+    if (key.includes('mudanz') || key.includes('move')) return 'truck';
+    if (key.includes('mascota') || key.includes('pet')) return 'heart';
+    if (key.includes('prenda') || key.includes('laundry') || key.includes('ropa')) return 'bag-check';
+    return 'geo-alt';
   }
 
   closeForm(): void {
@@ -279,10 +342,39 @@ export class DeliveryRequestComponent implements OnDestroy {
       (pos) => {
         this.form.latitude = pos.coords.latitude;
         this.form.longitude = pos.coords.longitude;
+        this.updateMapUrl(); // construir el mini-mapa una sola vez
         Swal.fire({ icon: 'success', title: 'Ubicación capturada', timer: 1200, showConfirmButton: false });
       },
       () => Swal.fire('Error', 'No se pudo obtener tu ubicación.', 'error'),
     );
+  }
+
+  // URL segura del mini-mapa (OpenStreetMap embebido). Es una PROPIEDAD, no un
+  // getter: se recalcula SOLO cuando cambian las coordenadas (updateMapUrl), no
+  // en cada ciclo de detección de cambios — si no, el iframe se recargaría con
+  // cada mousemove/tecla porque bypassSecurityTrustResourceUrl crea un objeto
+  // nuevo cada vez.
+  mapUrl: SafeResourceUrl | null = null;
+  private mapKey = ''; // "lat,lng" del último mapa construido, para no rehacerlo
+
+  /** Reconstruye el mini-mapa solo si las coordenadas cambiaron. */
+  private updateMapUrl(): void {
+    const lat = this.form.latitude;
+    const lng = this.form.longitude;
+    if (lat == null || lng == null) {
+      this.mapUrl = null;
+      this.mapKey = '';
+      return;
+    }
+    const key = `${lat},${lng}`;
+    if (key === this.mapKey) return; // sin cambios: no recrear (evita parpadeo)
+    this.mapKey = key;
+    const d = 0.004; // bbox pequeño (~zoom de manzana)
+    const bbox = `${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}`;
+    const url =
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}` +
+      `&layer=mapnik&marker=${lat}%2C${lng}`;
+    this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   canSubmit(): boolean {

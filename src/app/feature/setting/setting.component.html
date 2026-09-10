@@ -1,5 +1,22 @@
 <div class="floating-container">
   <div class="outer-container">
+    <!-- Preferencias de interfaz -->
+    <div class="inner-container">
+      <h3 class="card-title mb-0">Preferencias</h3>
+    </div>
+    <div class="inner-container">
+      <div class="d-flex justify-content-between align-items-center py-2">
+        <div>
+          <div class="fw-semibold">Botón flotante de Domicilios (Shotra)</div>
+          <small class="text-muted">Muestra u oculta el acceso rápido para pedir domicilios vía Shotra.</small>
+        </div>
+        <div class="form-check form-switch m-0">
+          <input class="form-check-input" type="checkbox" role="switch" id="toggleDeliveryFab"
+                 [checked]="showDeliveryFab" (change)="toggleDeliveryFab()" style="cursor:pointer;">
+        </div>
+      </div>
+    </div>
+
     <!-- Lista de Períodos -->
     <div class="inner-container">
       <h3 class="card-title mb-0">Gestión de Períodos</h3>
