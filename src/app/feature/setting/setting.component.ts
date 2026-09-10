@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
+import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service';
 
 @Component({
   selector: 'app-setting',
@@ -48,7 +49,11 @@ export class SettingComponent implements OnInit {
 
   private baseUrl = environment.apiUrl;
 
-  constructor(private fb: FormBuilder, private http: HttpClient) {
+  // Preferencia de UI: mostrar/ocultar el botón flotante de Domicilios (Shotra).
+  showDeliveryFab = true;
+
+  constructor(private fb: FormBuilder, private http: HttpClient, private uiPrefs: UiPrefsService) {
+    this.showDeliveryFab = this.uiPrefs.getShowDeliveryFab();
     this.nuevoPeriodoForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       fechaInicio: ['', Validators.required],
@@ -72,6 +77,12 @@ export class SettingComponent implements OnInit {
     this.loadPeriodos();
     this.loadPeriodoActivo();
     this.loadParametrosDisponibles();
+  }
+
+  /** Muestra/oculta el botón flotante de Domicilios (Shotra) en toda la app. */
+  toggleDeliveryFab(): void {
+    this.showDeliveryFab = !this.showDeliveryFab;
+    this.uiPrefs.setShowDeliveryFab(this.showDeliveryFab);
   }
 
   loadPeriodos(): void {
