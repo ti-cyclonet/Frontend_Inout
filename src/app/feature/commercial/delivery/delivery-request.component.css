@@ -48,7 +48,13 @@
   position: fixed;
   top: 0;
   right: 0;
+  /* 100vh en móvil se calcula con la barra de direcciones colapsada, no con el
+     alto realmente visible: eso empuja .sheet-foot (botón "Publicar solicitud")
+     fuera de pantalla sin poder llegar a él (el drawer en sí no tiene scroll,
+     solo .sheet-body). 100dvh sigue el viewport visible real; se deja 100vh
+     como fallback automático para navegadores sin soporte de dvh. */
   height: 100vh;
+  height: 100dvh;
   width: 440px;
   max-width: 100vw;
   background: #ffffff;
