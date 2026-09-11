@@ -110,19 +110,25 @@
         <label>Dirección de entrega *</label>
         <div class="address-row">
           <input type="text" [(ngModel)]="form.address" name="address" class="form-control"
-            placeholder="Calle, número, barrio, ciudad" />
-          <button type="button" class="btn-loc" (click)="useMyLocation()" title="Usar mi ubicación">📍</button>
+            placeholder="Calle, número, barrio, ciudad" (ngModelChange)="onAddressChange()" />
+          <button type="button" class="btn-loc" (click)="useMyLocation()" title="Marcar mi ubicación como punto de recogida">📍</button>
         </div>
-        <small class="hint" *ngIf="form.latitude">
-          Ubicación GPS capturada ({{ form.latitude | number:'1.4-4' }}, {{ form.longitude | number:'1.4-4' }})
+        <small class="hint" *ngIf="originCoords">
+          🏪 Punto de recogida capturado ({{ originCoords.lat | number:'1.4-4' }}, {{ originCoords.lng | number:'1.4-4' }})
         </small>
-        <!-- Mini-mapa de la ubicación capturada (OpenStreetMap embebido) -->
-        <div class="mini-map" *ngIf="mapUrl">
-          <iframe
-            [src]="mapUrl"
-            title="Ubicación de entrega"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <small class="hint" *ngIf="geocoding">Ubicando la dirección de entrega en el mapa…</small>
+        <small class="hint-warn" *ngIf="geocodeFailed">
+          No pudimos ubicar esta dirección automáticamente en el mapa. Se enviará el texto tal cual lo escribiste.
+        </small>
+
+        <!-- Mini-mapa: recogida (🏪) → entrega (📍) y la ruta entre ambas -->
+        <div class="mini-map" *ngIf="showMapPreview()">
+          <div #mapEl class="mini-map-canvas"></div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="legend-pin">🏪</span> Recogida</span>
+            <span class="legend-item"><span class="legend-pin">📍</span> Entrega</span>
+            <span class="legend-item" *ngIf="originCoords && destCoords"><span class="legend-line"></span> Ruta</span>
+          </div>
         </div>
       </div>
 

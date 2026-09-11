@@ -1,7 +1,12 @@
-import { Component, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, ElementRef, ViewChild, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+// Import SOLO DE TIPOS: se borra en compilación, no mete leaflet en el bundle.
+// El módulo real se carga en runtime (import() dinámico) en loadLeaflet(), y
+// solo cuando el comerciante abre el formulario — así los ~45KB gzip de
+// Leaflet no viajan en cada carga de InOut (este componente vive en el layout
+// global, no en una ruta lazy).
+import type * as Leaflet from 'leaflet';
 import Swal from 'sweetalert2';
 import {
   ShotraService,
@@ -97,7 +102,11 @@ export class DeliveryRequestComponent implements OnDestroy {
   submitting = false;
   form: CreateShotraRequest = this.emptyForm();
 
-  constructor(private shotra: ShotraService, private uiPrefs: UiPrefsService, private sanitizer: DomSanitizer) {
+  constructor(
+    private shotra: ShotraService,
+    private uiPrefs: UiPrefsService,
+    @Inject(PLATFORM_ID) private platformId: Object,
+  ) {
     this.fabEnabled = this.uiPrefs.getShowDeliveryFab();
     // Reacciona en vivo al toggle de Configuración: si se apaga con el panel
     // abierto, se cierra.
@@ -131,6 +140,7 @@ export class DeliveryRequestComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.stopPolling();
     this.prefSub?.unsubscribe();
+    this.destroyMap();
   }
 
   // ─── Polling ─────────────────────────────────────────────────────────────
@@ -282,7 +292,12 @@ export class DeliveryRequestComponent implements OnDestroy {
     if (this.subcategories.length === 1) {
       this.form.categoryId = this.subcategories[0].id;
     }
-    this.updateMapUrl(); // limpia el mapa (form sin coordenadas aún)
+    // Reinicia el estado del mini-mapa (origen/destino/ruta) del formulario anterior.
+    this.originCoords = null;
+    this.destCoords = null;
+    this.geocoding = false;
+    this.geocodeFailed = false;
+    if (this.geocodeTimer) clearTimeout(this.geocodeTimer);
     this.showForm = true;
   }
 
@@ -332,7 +347,59 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.showForm = false;
   }
 
-  /** Rellena lat/lng con la ubicación del navegador (opcional). */
+  // ─── Mini-mapa: recogida (origen) → entrega (destino) ──────────────────────
+  //
+  // El botón 📍 captura la ubicación GPS del comerciante, que normalmente está
+  // en su tienda al publicar la solicitud: eso es el ORIGEN (punto de
+  // recogida), NUNCA el destino. El destino real es la "Dirección de entrega"
+  // que el usuario escribe, geocodificada para obtener sus coordenadas.
+  //
+  // Solo destCoords se envía al backend como latitude/longitude de la
+  // solicitud (así el punto coincide con el texto de `form.address`). originCoords
+  // es puramente referencial: sirve para dibujar el mini-mapa con la ruta que
+  // debe recorrer el domiciliario, pero no se persiste (Shotra no tiene un
+  // campo de origen en su modelo de solicitud).
+  originCoords: { lat: number; lng: number } | null = null;
+  destCoords: { lat: number; lng: number } | null = null;
+  geocoding = false;
+  geocodeFailed = false;
+  private geocodeTimer: any = null;
+
+  // Módulo de Leaflet cargado en runtime (ver loadLeaflet) + instancias vivas.
+  private L: typeof Leaflet | null = null;
+  private leafletModulePromise: Promise<typeof Leaflet> | null = null;
+  private map: Leaflet.Map | null = null;
+  private mapContainer: HTMLDivElement | null = null; // detecta si el form se cerró mientras cargaba
+  private originMarker: Leaflet.Marker | null = null;
+  private destMarker: Leaflet.Marker | null = null;
+  private routeLine: Leaflet.Polyline | null = null;
+  private originIcon: Leaflet.DivIcon | null = null;
+  private destIcon: Leaflet.DivIcon | null = null;
+
+  /** Aparece/desaparece con el *ngIf del contenedor (form abierto/cerrado). */
+  @ViewChild('mapEl')
+  set mapElRef(ref: ElementRef<HTMLDivElement> | undefined) {
+    if (ref) {
+      this.initMap(ref.nativeElement);
+    } else {
+      this.destroyMap();
+    }
+  }
+
+  /** Carga leaflet bajo demanda (una sola vez por sesión de página, cacheada). */
+  private loadLeaflet(): Promise<typeof Leaflet> {
+    if (!this.leafletModulePromise) {
+      this.leafletModulePromise = import('leaflet').then((mod) => (mod as any).default ?? mod);
+    }
+    return this.leafletModulePromise;
+  }
+
+  /** ¿Hay algo que mostrar en el mini-mapa? (origen, destino o buscando). */
+  showMapPreview(): boolean {
+    return !!(this.originCoords || this.destCoords || this.geocoding);
+  }
+
+  /** Captura la ubicación GPS del comerciante como punto de RECOGIDA (origen). */
   useMyLocation(): void {
     if (!navigator?.geolocation) {
       Swal.fire('No disponible', 'Tu navegador no permite geolocalización.', 'info');
@@ -340,41 +407,172 @@ export class DeliveryRequestComponent implements OnDestroy {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        this.form.latitude = pos.coords.latitude;
-        this.form.longitude = pos.coords.longitude;
-        this.updateMapUrl(); // construir el mini-mapa una sola vez
-        Swal.fire({ icon: 'success', title: 'Ubicación capturada', timer: 1200, showConfirmButton: false });
+        this.originCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        this.drawRoute();
+        Swal.fire({ icon: 'success', title: 'Punto de recogida capturado', timer: 1200, showConfirmButton: false });
       },
       () => Swal.fire('Error', 'No se pudo obtener tu ubicación.', 'error'),
     );
   }
 
-  // URL segura del mini-mapa (OpenStreetMap embebido). Es una PROPIEDAD, no un
-  // getter: se recalcula SOLO cuando cambian las coordenadas (updateMapUrl), no
-  // en cada ciclo de detección de cambios — si no, el iframe se recargaría con
-  // cada mousemove/tecla porque bypassSecurityTrustResourceUrl crea un objeto
-  // nuevo cada vez.
-  mapUrl: SafeResourceUrl | null = null;
-  private mapKey = ''; // "lat,lng" del último mapa construido, para no rehacerlo
-
-  /** Reconstruye el mini-mapa solo si las coordenadas cambiaron. */
-  private updateMapUrl(): void {
-    const lat = this.form.latitude;
-    const lng = this.form.longitude;
-    if (lat == null || lng == null) {
-      this.mapUrl = null;
-      this.mapKey = '';
+  /** Debounce: geocodifica la dirección de entrega ~700ms después de dejar de escribir. */
+  onAddressChange(): void {
+    this.destCoords = null;
+    this.geocodeFailed = false;
+    if (this.geocodeTimer) clearTimeout(this.geocodeTimer);
+    const address = this.form.address?.trim();
+    if (!address || address.length < 6) {
+      this.drawRoute(); // limpia el marcador/ruta de destino si ya no aplica
       return;
     }
-    const key = `${lat},${lng}`;
-    if (key === this.mapKey) return; // sin cambios: no recrear (evita parpadeo)
-    this.mapKey = key;
-    const d = 0.004; // bbox pequeño (~zoom de manzana)
-    const bbox = `${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}`;
-    const url =
-      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}` +
-      `&layer=mapnik&marker=${lat}%2C${lng}`;
-    this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    this.geocodeTimer = setTimeout(() => this.geocodeAddress(address), 700);
+  }
+
+  /**
+   * Geocodifica la dirección de entrega con Nominatim (OpenStreetMap) para
+   * ubicarla en el mini-mapa y obtener las coordenadas reales que se envían
+   * al backend. Usa fetch() nativo (no HttpClient) a propósito: así evita el
+   * AuthInterceptor de InOut, que le adjuntaría el token/tenant de InOut a un
+   * servicio externo. Si falla o no encuentra nada, no bloquea el envío: el
+   * texto de la dirección siempre se manda tal cual lo escribió el usuario.
+   *
+   * Nota: el servidor público de Nominatim limita a ~1 req/seg de uso; el
+   * debounce de onAddressChange es suficiente para un formulario manual. Si el
+   * volumen crece, migrar a un geocodificador comercial (Google/Mapbox).
+   */
+  private geocodeAddress(address: string): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.geocoding = true;
+    this.geocodeFailed = false;
+    const q = encodeURIComponent(`${address}, Colombia`);
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((results: Array<{ lat: string; lon: string }>) => {
+        this.geocoding = false;
+        const hit = results?.[0];
+        this.destCoords = hit ? { lat: parseFloat(hit.lat), lng: parseFloat(hit.lon) } : null;
+        this.geocodeFailed = !hit;
+        this.drawRoute();
+      })
+      .catch(() => {
+        this.geocoding = false;
+        this.geocodeFailed = true;
+        this.destCoords = null;
+        this.drawRoute();
+      });
+  }
+
+  private initMap(container: HTMLDivElement): void {
+    if (!isPlatformBrowser(this.platformId) || this.map) return;
+    this.mapContainer = container;
+    this.loadLeaflet().then((L) => {
+      // El form pudo cerrarse (destroyMap) mientras el chunk de leaflet cargaba.
+      if (this.mapContainer !== container) return;
+      this.L = L;
+      this.originIcon = L.divIcon({
+        className: 'route-pin route-pin-origin',
+        html: '🏪',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+      this.destIcon = L.divIcon({
+        className: 'route-pin route-pin-dest',
+        html: '📍',
+        iconSize: [28, 36],
+        iconAnchor: [14, 32],
+      });
+      this.map = L.map(container, { zoomControl: false, attributionControl: false }).setView([4.6097, -74.0817], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(this.map);
+      L.control.attribution({ prefix: false }).addTo(this.map).addAttribution('© OpenStreetMap contributors');
+      this.drawRoute();
+    });
+  }
+
+  private destroyMap(): void {
+    this.mapContainer = null;
+    this.map?.remove();
+    this.map = null;
+    this.originMarker = null;
+    this.destMarker = null;
+    this.routeLine = null;
+  }
+
+  /** Dibuja/actualiza los marcadores de origen y destino y reencuadra el mapa. */
+  private drawRoute(): void {
+    if (!this.map || !this.L) return;
+    const L = this.L;
+
+    if (this.originCoords) {
+      const pos: Leaflet.LatLngExpression = [this.originCoords.lat, this.originCoords.lng];
+      if (this.originMarker) this.originMarker.setLatLng(pos);
+      else this.originMarker = L.marker(pos, { icon: this.originIcon!, title: 'Punto de recogida' }).addTo(this.map);
+    } else if (this.originMarker) {
+      this.originMarker.remove();
+      this.originMarker = null;
+    }
+
+    if (this.destCoords) {
+      const pos: Leaflet.LatLngExpression = [this.destCoords.lat, this.destCoords.lng];
+      if (this.destMarker) this.destMarker.setLatLng(pos);
+      else this.destMarker = L.marker(pos, { icon: this.destIcon!, title: 'Dirección de entrega' }).addTo(this.map);
+    } else if (this.destMarker) {
+      this.destMarker.remove();
+      this.destMarker = null;
+    }
+
+    this.fitAndRoute();
+  }
+
+  /** Encuadra los puntos disponibles y, si hay ambos, pide la ruta real (OSRM). */
+  private fitAndRoute(): void {
+    if (!this.map || !this.L) return;
+    if (this.routeLine) {
+      this.routeLine.remove();
+      this.routeLine = null;
+    }
+
+    const points: Leaflet.LatLngExpression[] = [];
+    if (this.originCoords) points.push([this.originCoords.lat, this.originCoords.lng]);
+    if (this.destCoords) points.push([this.destCoords.lat, this.destCoords.lng]);
+
+    if (points.length === 0) return;
+    if (points.length === 1) {
+      this.map.setView(points[0], 15);
+      return;
+    }
+
+    this.map.fitBounds(this.L.latLngBounds(points), { padding: [24, 24] });
+    this.fetchRoute();
+  }
+
+  /** Ruta real por vías entre origen y destino, vía el servidor público de OSRM. */
+  private fetchRoute(): void {
+    if (!this.originCoords || !this.destCoords) return;
+    const { lat: oLat, lng: oLng } = this.originCoords;
+    const { lat: dLat, lng: dLng } = this.destCoords;
+    const url = `https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${dLng},${dLat}?overview=full&geometry=geojson`;
+
+    fetch(url)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data: any) => {
+        const coords: [number, number][] | undefined = data?.routes?.[0]?.geometry?.coordinates;
+        if (!this.map || !this.L || !coords?.length) return this.drawStraightLine();
+        const latLngs: Leaflet.LatLngExpression[] = coords.map(([lng, lat]) => [lat, lng]);
+        this.routeLine = this.L.polyline(latLngs, { color: '#dc2626', weight: 4, opacity: 0.85 }).addTo(this.map);
+      })
+      .catch(() => this.drawStraightLine());
+  }
+
+  /** Respaldo si OSRM falla: línea recta punteada entre origen y destino. */
+  private drawStraightLine(): void {
+    if (!this.map || !this.L || !this.originCoords || !this.destCoords) return;
+    const latLngs: Leaflet.LatLngExpression[] = [
+      [this.originCoords.lat, this.originCoords.lng],
+      [this.destCoords.lat, this.destCoords.lng],
+    ];
+    this.routeLine = this.L.polyline(latLngs, { color: '#dc2626', weight: 3, opacity: 0.7, dashArray: '6 6' }).addTo(
+      this.map,
+    );
   }
 
   canSubmit(): boolean {
@@ -400,8 +598,12 @@ export class DeliveryRequestComponent implements OnDestroy {
     };
     if (this.form.budgetMin != null) payload.budgetMin = Number(this.form.budgetMin);
     if (this.form.budgetMax != null) payload.budgetMax = Number(this.form.budgetMax);
-    if (this.form.latitude != null) payload.latitude = Number(this.form.latitude);
-    if (this.form.longitude != null) payload.longitude = Number(this.form.longitude);
+    // Coordenadas del DESTINO (geocodificadas desde la dirección de entrega),
+    // nunca las del origen/GPS: así lat/lng siempre coinciden con `address`.
+    if (this.destCoords) {
+      payload.latitude = this.destCoords.lat;
+      payload.longitude = this.destCoords.lng;
+    }
     if (this.form.scheduledAt) payload.scheduledAt = new Date(this.form.scheduledAt).toISOString();
 
     this.shotra.createRequest(payload).subscribe({
