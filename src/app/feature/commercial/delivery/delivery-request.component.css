@@ -552,16 +552,44 @@
 .cat-item.active .cat-name { color: var(--shotra-red-dark); }
 .cat-check { color: var(--shotra-red); flex: 0 0 auto; }
 
-/* Mini-mapa de la ubicación de entrega (OpenStreetMap embebido) */
+/* Mini-mapa: recogida (origen) → entrega (destino), con la ruta entre ambas */
 .mini-map {
   margin-top: 0.5rem;
   border: 1px solid #e6e9ec;
   border-radius: 10px;
   overflow: hidden;
 }
-.mini-map iframe {
-  display: block;
+.mini-map-canvas {
   width: 100%;
-  height: 160px;
-  border: 0;
+  height: 180px;
+}
+.map-legend {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: #f9fafb;
+  border-top: 1px solid #e6e9ec;
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
+.legend-pin { font-size: 0.95rem; line-height: 1; }
+.legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: #dc2626;
+}
+/* Marcadores del mapa (L.divIcon): Leaflet los crea con DOM vanilla, fuera del
+   árbol de plantillas de Angular, así que la encapsulación de estilos no los
+   alcanza sin ::ng-deep (equivalente a un selector global para esta regla). */
+::ng-deep .route-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
