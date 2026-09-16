@@ -161,7 +161,7 @@
                 formControlName="ubicacion"
                 [class.is-invalid]="materialForm.get('ubicacion')?.invalid && materialForm.get('ubicacion')?.touched">
                 <option value="">Seleccionar ubicación</option>
-                <option *ngFor="let loc of locationOptions" [value]="loc">{{ loc }}</option>
+                <option *ngFor="let loc of locationOptions" [value]="loc.value">{{ loc.label }}</option>
               </select>
               <div class="invalid-feedback">{{ getFieldError('ubicacion') }}</div>
             </div>

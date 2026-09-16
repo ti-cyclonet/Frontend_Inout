@@ -30,7 +30,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   isEditMode = false;
   materialImages: MaterialImage[] = [];
   categories: Category[] = [];
-  locationOptions: string[] = [];
+  locationOptions: { value: string; label: string }[] = [];
   showCategoryForm = false;
   useDifferentDischargeUnit = false;
   categorySearchText = '';
@@ -115,22 +115,25 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   loadLocations(): void {
     this.warehousesService.getWarehouses().subscribe({
       next: (warehouses) => {
-        // Build location options from all warehouse locations
-        const locations: string[] = [];
+        // El material guarda el locationCode corto (p. ej. "Z-15-10"), no el
+        // nombre descriptivo de la ubicacion ("ZONA-15 - Estante a - Pos 10").
+        // El value del option debe ser ese mismo codigo para que el select
+        // quede pre-seleccionado correctamente al editar.
+        const locations: { value: string; label: string }[] = [];
         for (const wh of warehouses) {
           if (wh.locations && wh.locations.length > 0) {
             for (const loc of wh.locations) {
-              locations.push(loc.name);
+              locations.push({ value: loc.locationCode || loc.name, label: loc.name });
             }
           } else {
             // If warehouse has no locations, use warehouse name as location
-            locations.push(wh.name);
+            locations.push({ value: wh.name, label: wh.name });
           }
         }
-        this.locationOptions = locations.length > 0 ? locations : ['Bodega Principal'];
+        this.locationOptions = locations.length > 0 ? locations : [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
       },
       error: () => {
-        this.locationOptions = ['Bodega Principal'];
+        this.locationOptions = [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
       }
     });
   }

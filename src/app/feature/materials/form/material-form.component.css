@@ -91,6 +91,7 @@
   color: #6b7280;
   margin-top: 0.5rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .step.active .step-label {

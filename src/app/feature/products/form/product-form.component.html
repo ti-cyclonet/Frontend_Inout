@@ -70,7 +70,7 @@
               <label>Ubicación *</label>
               <select class="form-control" formControlName="strLocation">
                 <option value="">Seleccionar ubicación</option>
-                <option *ngFor="let loc of warehouseLocations" [value]="loc">{{ loc }}</option>
+                <option *ngFor="let loc of warehouseLocations" [value]="loc.value">{{ loc.label }}</option>
               </select>
             </div>
 

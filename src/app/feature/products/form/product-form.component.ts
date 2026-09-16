@@ -61,7 +61,7 @@ export class ProductFormComponent implements OnInit {
   locationFilter: string = '';
   categoryFilter: string = '';
   availableLocations: string[] = [];
-  warehouseLocations: string[] = [];
+  warehouseLocations: { value: string; label: string }[] = [];
   showFilters: boolean = false;
   showAvailableMaterials: boolean = false;
   showSelectedMaterials: boolean = false;
@@ -240,20 +240,23 @@ export class ProductFormComponent implements OnInit {
   loadWarehouseLocations(): void {
     this.warehousesService.getWarehouses().subscribe({
       next: (warehouses) => {
-        const locations: string[] = [];
+        // El producto guarda el locationCode corto (p. ej. "Z-15-10"), no el
+        // nombre descriptivo de la ubicacion; el value del option debe ser
+        // ese mismo codigo para que el select quede preseleccionado al editar.
+        const locations: { value: string; label: string }[] = [];
         for (const wh of warehouses) {
           if (wh.locations && wh.locations.length > 0) {
             for (const loc of wh.locations) {
-              locations.push(loc.name);
+              locations.push({ value: loc.locationCode || loc.name, label: loc.name });
             }
           } else {
-            locations.push(wh.name);
+            locations.push({ value: wh.name, label: wh.name });
           }
         }
-        this.warehouseLocations = locations.length > 0 ? locations : ['Bodega Principal'];
+        this.warehouseLocations = locations.length > 0 ? locations : [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
       },
       error: () => {
-        this.warehouseLocations = ['Bodega Principal'];
+        this.warehouseLocations = [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
       }
     });
   }
