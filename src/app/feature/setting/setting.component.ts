@@ -226,9 +226,10 @@ export class SettingComponent implements OnInit {
             this.loadPeriodos();
             Swal.fire('¡Activado!', 'Período activado exitosamente', 'success');
           },
-          error: () => {
+          error: (error) => {
             this.loading = false;
-            Swal.fire('Error', 'No se pudo activar el período', 'error');
+            const mensaje = error?.error?.message || 'No se pudo activar el período';
+            Swal.fire('Error', mensaje, 'error');
           }
         });
       }
