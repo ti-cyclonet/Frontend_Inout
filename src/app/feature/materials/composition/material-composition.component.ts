@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
+import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialComposition, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 
@@ -51,6 +52,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   locationFilter: string = '';
   categoryFilterMaterials: string = '';
   availableLocations: string[] = [];
+  locationOptions: { value: string; label: string }[] = [];
   
   // Pagination
   currentPage: number = 1;
@@ -93,6 +95,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   constructor(
     private materialService: MaterialService,
     private categoryService: CategoryService,
+    private warehousesService: WarehousesService,
     private router: Router
   ) {}
 
@@ -100,6 +103,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     this.loadViewMode();
     this.loadCategories();
     this.loadAvailableMaterials();
+    this.loadLocations();
   }
 
   loadCategories(): void {
@@ -109,6 +113,30 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       },
       error: (error) => {
         console.error('Error loading categories:', error);
+      }
+    });
+  }
+
+  loadLocations(): void {
+    this.warehousesService.getWarehouses().subscribe({
+      next: (warehouses) => {
+        // El material guarda el locationCode corto (p. ej. "Z-15-10"), no el
+        // nombre descriptivo de la ubicacion; el value del option debe ser
+        // ese mismo codigo para que el select quede preseleccionado al editar.
+        const locations: { value: string; label: string }[] = [];
+        for (const wh of warehouses) {
+          if (wh.locations && wh.locations.length > 0) {
+            for (const loc of wh.locations) {
+              locations.push({ value: loc.locationCode || loc.name, label: loc.name });
+            }
+          } else {
+            locations.push({ value: wh.name, label: wh.name });
+          }
+        }
+        this.locationOptions = locations;
+      },
+      error: () => {
+        this.locationOptions = [];
       }
     });
   }
