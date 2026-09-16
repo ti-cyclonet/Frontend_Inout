@@ -12,8 +12,9 @@
 
 /* Estilo para la imagen del logo */
 .logo-img {
-    max-width: 80%;
-    height: auto;
+    height: 42px;
+    width: auto;
+    max-width: 100%;
     margin: 5px;
 }
 
