@@ -303,3 +303,61 @@
 .pwd-feedback svg { flex-shrink: 0; }
 .text-success.pwd-feedback svg { fill: #198754; }
 .text-danger.pwd-feedback svg { fill: #dc3545; }
+
+/* ═══════ Modal de cambio de contraseña: header con color + botones anchos ═══════ */
+#changePasswordModal .modal-content {
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+#changePasswordModal .modal-header {
+  background: linear-gradient(135deg, #0057B8, #0074e8);
+  padding: 1.25rem 1.5rem;
+  border-bottom: none;
+}
+#changePasswordModal .modal-title {
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+#changePasswordModal .modal-title svg { fill: #fff; }
+#changePasswordModal .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+#changePasswordModal .btn-close:hover { opacity: 1; }
+#changePasswordModal .modal-body { padding: 1.5rem; }
+#changePasswordModal .form-label { font-weight: 600; color: #374151; }
+
+#changePasswordModal .modal-footer {
+  border-top: 1px solid #eef2f7;
+  padding: 1.1rem 1.5rem;
+  gap: 0.75rem;
+}
+#changePasswordModal .modal-footer .btn {
+  flex: 1;
+  min-width: 130px;
+  padding: 0.65rem 1.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+#changePasswordModal .btn-secondary {
+  background: #475569;
+  color: #fff;
+}
+#changePasswordModal .btn-secondary:hover { background: #334155; }
+#changePasswordModal .btn-primary {
+  background: linear-gradient(135deg, #0057B8, #0074e8);
+  color: #fff;
+}
+#changePasswordModal .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #004a99, #0064c9);
+  box-shadow: 0 6px 16px rgba(0, 87, 184, 0.35);
+}
+#changePasswordModal .btn-primary:disabled { opacity: 0.5; }
+#changePasswordModal .modal-footer .btn:active:not(:disabled) { transform: scale(0.97); }
