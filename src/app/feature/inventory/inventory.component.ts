@@ -172,6 +172,17 @@ export class InventoryComponent implements OnInit {
     return [...zoned, ...loose];
   }
 
+  /** groupedLocations crea objetos nuevos en cada lectura (getter); sin trackBy,
+   * Angular los trata como elementos nuevos en cada ciclo de detección de cambios
+   * (incluido movimiento del mouse) y recrea el DOM, haciendo parpadear la lista. */
+  trackByZone(_index: number, grp: { zone: string | null; items: WarehouseLocation[] }): string {
+    return grp.zone || '__none__';
+  }
+
+  trackByLocationId(_index: number, loc: WarehouseLocation): string {
+    return loc.id;
+  }
+
   /** Elimina todas las posiciones de una zona. */
   deleteZone(grp: { zone: string | null; items: WarehouseLocation[] }): void {
     if (!grp.zone) return;

@@ -149,7 +149,7 @@
         <!-- Lista de ubicaciones agrupadas por zona -->
         <div class="locations-list">
           <!-- Grupos por zona -->
-          <div class="zone-group card-pop" *ngFor="let grp of groupedLocations; let gi = index" [style.animation-delay.ms]="gi * 45">
+          <div class="zone-group card-pop" *ngFor="let grp of groupedLocations; let gi = index; trackBy: trackByZone" [style.animation-delay.ms]="gi * 45">
             <div class="zone-group-header" *ngIf="grp.zone">
               <svg viewBox="0 0 16 16" width="14" height="14" class="zone-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap-fill" /></svg>
               <span class="zone-badge">{{ grp.zone }}</span>
@@ -157,7 +157,7 @@
               <span class="zone-count">{{ grp.items.length }} posiciones</span>
               <button class="btn-remove-sm" (click)="deleteZone(grp)" type="button" title="Eliminar zona completa">✕ zona</button>
             </div>
-            <div class="location-item" *ngFor="let loc of grp.items" [class.in-zone]="grp.zone">
+            <div class="location-item" *ngFor="let loc of grp.items; trackBy: trackByLocationId" [class.in-zone]="grp.zone">
               <svg class="loc-pin" viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt-fill" /></svg>
               <span class="loc-code" *ngIf="loc.locationCode" title="Código para carga masiva">{{ loc.locationCode }}</span>
               <span>{{ loc.name }}</span>
