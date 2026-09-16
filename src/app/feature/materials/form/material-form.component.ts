@@ -54,11 +54,15 @@ export class MaterialFormComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.loadCategories();
-    this.loadLocations();
-    if (this.materialId) {
-      this.isEditMode = true;
-      this.loadMaterial();
-    }
+    // Cargar ubicaciones ANTES de parchar el material: si loadMaterial() setea
+    // ubicacion antes de que existan las <option> del select, el navegador no
+    // preselecciona nada (el <select> nativo ignora un value sin match previo).
+    this.loadLocations(() => {
+      if (this.materialId) {
+        this.isEditMode = true;
+        this.loadMaterial();
+      }
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -112,7 +116,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
     });
   }
 
-  loadLocations(): void {
+  loadLocations(onLoaded?: () => void): void {
     this.warehousesService.getWarehouses().subscribe({
       next: (warehouses) => {
         // El material guarda el locationCode corto (p. ej. "Z-15-10"), no el
@@ -131,9 +135,11 @@ export class MaterialFormComponent implements OnInit, OnChanges {
           }
         }
         this.locationOptions = locations.length > 0 ? locations : [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
+        onLoaded?.();
       },
       error: () => {
         this.locationOptions = [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
+        onLoaded?.();
       }
     });
   }

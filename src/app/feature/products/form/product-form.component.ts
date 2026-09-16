@@ -88,13 +88,17 @@ export class ProductFormComponent implements OnInit {
     this.initForm();
     this.loadCategories();
     this.loadAvailableMaterials();
-    this.loadWarehouseLocations();
-    
-    if (this.productData) {
-      this.isEditMode = true;
-      this.showSelectedMaterials = true;
-      this.loadProductData();
-    }
+    // Cargar ubicaciones ANTES de parchar el producto: si loadProductData()
+    // setea strLocation antes de que existan las <option> del select, el
+    // navegador no preselecciona nada (el <select> nativo ignora un value
+    // sin match previo).
+    this.loadWarehouseLocations(() => {
+      if (this.productData) {
+        this.isEditMode = true;
+        this.showSelectedMaterials = true;
+        this.loadProductData();
+      }
+    });
   }
 
   initForm(): void {
@@ -237,7 +241,7 @@ export class ProductFormComponent implements OnInit {
     this.availableLocations = locations;
   }
 
-  loadWarehouseLocations(): void {
+  loadWarehouseLocations(onLoaded?: () => void): void {
     this.warehousesService.getWarehouses().subscribe({
       next: (warehouses) => {
         // El producto guarda el locationCode corto (p. ej. "Z-15-10"), no el
@@ -254,9 +258,11 @@ export class ProductFormComponent implements OnInit {
           }
         }
         this.warehouseLocations = locations.length > 0 ? locations : [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
+        onLoaded?.();
       },
       error: () => {
         this.warehouseLocations = [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
+        onLoaded?.();
       }
     });
   }
