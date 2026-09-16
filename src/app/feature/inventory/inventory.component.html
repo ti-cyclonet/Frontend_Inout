@@ -13,47 +13,81 @@
     <!-- WAREHOUSES TAB -->
     <div *ngIf="activeTab === 'warehouses'" class="tab-panel">
       <div class="panel-header">
-        <h6>Almacenes y Ubicaciones</h6>
-        <a class="action-link action-link-primary" (click)="showCreateWarehouse = true" style="cursor:pointer;">
+        <h6><svg class="panel-icon" viewBox="0 0 16 16" width="18" height="18"><use xlink:href="./assets/icons/bootstrap-icons.svg#buildings" /></svg> Almacenes y Ubicaciones</h6>
+        <a class="action-link action-link-primary btn-bounce" (click)="showCreateWarehouse = true" style="cursor:pointer;">
           <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
           Nuevo
         </a>
       </div>
 
       <!-- Create form -->
-      <div class="create-form" *ngIf="showCreateWarehouse">
+      <div class="create-form form-animated" *ngIf="showCreateWarehouse">
+        <div class="form-card-title">
+          <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#building-add" /></svg>
+          Nuevo almacén
+        </div>
         <div class="form-row">
-          <input class="form-input" [(ngModel)]="newWarehouse.name" placeholder="Nombre del almacén *">
-          <input class="form-input" [(ngModel)]="newWarehouse.address" placeholder="Dirección">
-          <input class="form-input" [(ngModel)]="newWarehouse.phone" placeholder="Teléfono">
-          <button class="btn-save" (click)="createWarehouse()" type="button">Guardar</button>
-          <button class="btn-cancel" (click)="showCreateWarehouse = false" type="button">✕</button>
+          <div class="input-icon-group">
+            <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#building-fill" /></svg>
+            <input class="form-input" [(ngModel)]="newWarehouse.name" placeholder="Nombre del almacén *">
+          </div>
+          <div class="input-icon-group">
+            <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt" /></svg>
+            <input class="form-input" [(ngModel)]="newWarehouse.address" placeholder="Dirección">
+          </div>
+          <div class="input-icon-group">
+            <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#pin" /></svg>
+            <input class="form-input" [(ngModel)]="newWarehouse.phone" placeholder="Teléfono">
+          </div>
+          <button class="btn-save btn-bounce" (click)="createWarehouse()" type="button">
+            <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#check2-circle" /></svg>
+            Guardar
+          </button>
+          <button class="btn-cancel btn-bounce" (click)="showCreateWarehouse = false" type="button">✕</button>
         </div>
       </div>
 
       <!-- Warehouses list -->
       <div class="warehouses-grid">
-        <div class="warehouse-card" *ngFor="let wh of warehouses" [class.selected]="selectedWarehouse?.id === wh.id" (click)="selectWarehouse(wh)">
+        <div class="warehouse-card card-pop"
+             *ngFor="let wh of warehouses; let i = index"
+             [style.animation-delay.ms]="i * 45"
+             [class.selected]="selectedWarehouse?.id === wh.id"
+             (click)="selectWarehouse(wh)">
+          <svg class="wh-check" *ngIf="selectedWarehouse?.id === wh.id" viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#check2-circle" /></svg>
+          <div class="wh-icon">
+            <svg viewBox="0 0 16 16" width="20" height="20"><use xlink:href="./assets/icons/bootstrap-icons.svg#building-fill" /></svg>
+          </div>
           <div class="wh-info">
             <strong>{{ wh.name }}</strong>
-            <small *ngIf="wh.address">{{ wh.address }}</small>
-            <span class="location-count">{{ wh.locations?.length || 0 }} ubicaciones</span>
+            <small *ngIf="wh.address">
+              <svg viewBox="0 0 16 16" width="10" height="10"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt-fill" /></svg>
+              {{ wh.address }}
+            </small>
+            <span class="location-count">
+              <svg viewBox="0 0 16 16" width="11" height="11"><use xlink:href="./assets/icons/bootstrap-icons.svg#pin-map-fill" /></svg>
+              {{ wh.locations?.length || 0 }} ubicaciones
+            </span>
           </div>
           <button class="btn-remove-sm" (click)="$event.stopPropagation(); deleteWarehouse(wh)" type="button" title="Desactivar">✕</button>
         </div>
-        <div class="empty-msg" *ngIf="warehouses.length === 0">No hay almacenes registrados</div>
+        <div class="empty-msg empty-state-fancy" *ngIf="warehouses.length === 0">
+          <svg viewBox="0 0 16 16" width="40" height="40"><use xlink:href="./assets/icons/bootstrap-icons.svg#inboxes" /></svg>
+          <strong>Aún no tienes almacenes registrados</strong>
+          <span>Crea el primero para empezar a organizar tu inventario</span>
+        </div>
       </div>
 
       <!-- Locations -->
       <div class="locations-section" *ngIf="selectedWarehouse">
         <div class="panel-header">
-          <h6>Ubicaciones de: {{ selectedWarehouse.name }}</h6>
+          <h6><svg class="panel-icon" viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt-fill" /></svg> Ubicaciones de: {{ selectedWarehouse.name }}</h6>
           <div class="header-actions">
-            <a class="action-link action-link-primary" (click)="openLocationForm()" style="cursor:pointer;">
+            <a class="action-link action-link-primary btn-bounce" (click)="openLocationForm()" style="cursor:pointer;">
               <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
               Ubicación
             </a>
-            <a class="action-link action-link-primary" (click)="openZoneForm()" style="cursor:pointer;">
+            <a class="action-link action-link-primary btn-bounce" (click)="openZoneForm()" style="cursor:pointer;">
               <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
               Zona
             </a>
@@ -61,21 +95,37 @@
         </div>
 
         <!-- Crear ubicación simple -->
-        <div class="create-form" *ngIf="showCreateLocation">
+        <div class="create-form form-animated" *ngIf="showCreateLocation">
+          <div class="form-card-title">
+            <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#pin-map-fill" /></svg>
+            Nueva ubicación
+          </div>
           <div class="form-row">
-            <input class="form-input" [(ngModel)]="newLocation.name" placeholder="Nombre *">
+            <div class="input-icon-group">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt" /></svg>
+              <input class="form-input" [(ngModel)]="newLocation.name" placeholder="Nombre *">
+            </div>
             <input class="form-input small" [(ngModel)]="newLocation.aisle" placeholder="Pasillo (Ej: 1)">
             <input class="form-input small" [(ngModel)]="newLocation.shelf" placeholder="Estante (Ej: A)">
             <input class="form-input small" [(ngModel)]="newLocation.bin" placeholder="Casillero (Ej: 3)">
-            <input class="form-input" [(ngModel)]="newLocation.capacity" placeholder="Capacidad (Ej: 10 kg)">
-            <button class="btn-save" (click)="createLocation()" type="button">Guardar</button>
-            <button class="btn-cancel" (click)="showCreateLocation = false" type="button">✕</button>
+            <div class="input-icon-group">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" /></svg>
+              <input class="form-input" [(ngModel)]="newLocation.capacity" placeholder="Capacidad (Ej: 10 kg)">
+            </div>
+            <button class="btn-save btn-bounce" (click)="createLocation()" type="button">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#check2-circle" /></svg>
+              Guardar
+            </button>
+            <button class="btn-cancel btn-bounce" (click)="showCreateLocation = false" type="button">✕</button>
           </div>
         </div>
 
         <!-- Crear ZONA (grupo de posiciones) -->
-        <div class="create-form zone-form" *ngIf="showCreateZone">
-          <div class="zone-form-title">Nueva zona — agrupa varias posiciones de un estante</div>
+        <div class="create-form zone-form form-animated" *ngIf="showCreateZone">
+          <div class="zone-form-title">
+            <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap-fill" /></svg>
+            Nueva zona — agrupa varias posiciones de un estante
+          </div>
           <div class="form-row">
             <input class="form-input" [(ngModel)]="newZone.zone" placeholder="Nombre de la zona * (Ej: ZONA 15)">
             <input class="form-input small" [(ngModel)]="newZone.zoneCode" placeholder="Código (Ej: Z15)">
@@ -87,8 +137,11 @@
             <input class="form-input wide" [(ngModel)]="newZone.positionsText"
                    placeholder="Posiciones separadas por coma (Ej: 10,11,12,17,18,19)">
             <input class="form-input capacity-field" [(ngModel)]="newZone.capacity" placeholder="Capacidad por casilla (Ej: 10 kg)">
-            <button class="btn-save" (click)="createZone()" type="button">Crear zona</button>
-            <button class="btn-cancel" (click)="showCreateZone = false" type="button">✕</button>
+            <button class="btn-save btn-bounce" (click)="createZone()" type="button">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#check2-circle" /></svg>
+              Crear zona
+            </button>
+            <button class="btn-cancel btn-bounce" (click)="showCreateZone = false" type="button">✕</button>
           </div>
           <small class="zone-hint">Se creará una ubicación por cada posición, todas dentro de la zona indicada.</small>
         </div>
@@ -96,21 +149,27 @@
         <!-- Lista de ubicaciones agrupadas por zona -->
         <div class="locations-list">
           <!-- Grupos por zona -->
-          <div class="zone-group" *ngFor="let grp of groupedLocations">
+          <div class="zone-group card-pop" *ngFor="let grp of groupedLocations; let gi = index" [style.animation-delay.ms]="gi * 45">
             <div class="zone-group-header" *ngIf="grp.zone">
+              <svg viewBox="0 0 16 16" width="14" height="14" class="zone-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap-fill" /></svg>
               <span class="zone-badge">{{ grp.zone }}</span>
               <small *ngIf="grp.description">{{ grp.description }}</small>
               <span class="zone-count">{{ grp.items.length }} posiciones</span>
               <button class="btn-remove-sm" (click)="deleteZone(grp)" type="button" title="Eliminar zona completa">✕ zona</button>
             </div>
             <div class="location-item" *ngFor="let loc of grp.items" [class.in-zone]="grp.zone">
+              <svg class="loc-pin" viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt-fill" /></svg>
               <span class="loc-code" *ngIf="loc.locationCode" title="Código para carga masiva">{{ loc.locationCode }}</span>
               <span>{{ loc.name }}</span>
               <small *ngIf="loc.aisle || loc.shelf || loc.bin">{{ loc.aisle }} / {{ loc.shelf }} / {{ loc.bin }} <span *ngIf="loc.capacity">· Cap: {{ loc.capacity }}</span></small>
               <button class="btn-remove-sm" (click)="deleteLocation(loc.id)" type="button" title="Eliminar ubicación">✕</button>
             </div>
           </div>
-          <div class="empty-msg" *ngIf="!selectedWarehouse.locations || selectedWarehouse.locations.length === 0">Sin ubicaciones</div>
+          <div class="empty-msg empty-state-fancy" *ngIf="!selectedWarehouse.locations || selectedWarehouse.locations.length === 0">
+            <svg viewBox="0 0 16 16" width="36" height="36"><use xlink:href="./assets/icons/bootstrap-icons.svg#pin-map" /></svg>
+            <strong>Sin ubicaciones</strong>
+            <span>Agrega una ubicación o una zona para organizar este almacén</span>
+          </div>
         </div>
       </div>
     </div>
@@ -118,65 +177,81 @@
     <!-- TRANSFERS TAB -->
     <div *ngIf="activeTab === 'transfers'" class="tab-panel">
       <div class="panel-header">
-        <h6>Transferencias de Stock</h6>
-        <a class="action-link action-link-primary" (click)="showTransferModal = true" style="cursor:pointer;">
+        <h6><svg class="panel-icon" viewBox="0 0 16 16" width="17" height="17"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left-right" /></svg> Transferencias de Stock</h6>
+        <a class="action-link action-link-primary btn-bounce" (click)="showTransferModal = true" style="cursor:pointer;">
           <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
           Nueva
         </a>
       </div>
 
       <!-- Transfer form -->
-      <div class="create-form" *ngIf="showTransferModal">
+      <div class="create-form form-animated" *ngIf="showTransferModal">
+        <div class="form-card-title">
+          <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left-right" /></svg>
+          Nueva transferencia
+        </div>
         <div class="form-grid">
           <div class="field">
-            <label>Material</label>
+            <label><svg viewBox="0 0 16 16" width="11" height="11"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" /></svg> Material</label>
             <select class="form-input" [(ngModel)]="transferData.materialId">
               <option value="">Seleccionar...</option>
               <option *ngFor="let m of materials" [value]="m.id">{{ m.code }} - {{ m.name }}</option>
             </select>
           </div>
           <div class="field">
-            <label>Desde almacén</label>
+            <label><svg viewBox="0 0 16 16" width="11" height="11"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-right" /></svg> Desde almacén</label>
             <select class="form-input" [(ngModel)]="transferData.fromWarehouseId">
               <option value="">Seleccionar...</option>
               <option *ngFor="let wh of warehouses" [value]="wh.id">{{ wh.name }}</option>
             </select>
           </div>
           <div class="field">
-            <label>Hacia almacén</label>
+            <label><svg viewBox="0 0 16 16" width="11" height="11"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-in-right" /></svg> Hacia almacén</label>
             <select class="form-input" [(ngModel)]="transferData.toWarehouseId">
               <option value="">Seleccionar...</option>
               <option *ngFor="let wh of warehouses" [value]="wh.id">{{ wh.name }}</option>
             </select>
           </div>
           <div class="field">
-            <label>Cantidad</label>
+            <label><svg viewBox="0 0 16 16" width="11" height="11"><use xlink:href="./assets/icons/bootstrap-icons.svg#hash" /></svg> Cantidad</label>
             <input type="number" class="form-input" [(ngModel)]="transferData.quantity" min="0.01" step="0.01">
           </div>
           <div class="field full">
-            <label>Notas</label>
+            <label><svg viewBox="0 0 16 16" width="11" height="11"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg> Notas</label>
             <input class="form-input" [(ngModel)]="transferData.notes" placeholder="Observaciones...">
           </div>
           <div class="field actions">
-            <button class="btn-save" (click)="submitTransfer()" type="button">Transferir</button>
-            <button class="btn-cancel" (click)="showTransferModal = false" type="button">Cancelar</button>
+            <button class="btn-save btn-bounce" (click)="submitTransfer()" type="button">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left-right" /></svg>
+              Transferir
+            </button>
+            <button class="btn-cancel btn-bounce" (click)="showTransferModal = false" type="button">Cancelar</button>
           </div>
         </div>
       </div>
 
       <!-- Transfer history -->
       <div class="transfers-list">
-        <div class="transfer-item" *ngFor="let t of transfers">
-          <div class="transfer-info">
-            <strong>{{ t.materialName }}</strong>
-            <span>{{ t.fromWarehouseName }} → {{ t.toWarehouseName }}</span>
+        <div class="transfer-item card-pop" *ngFor="let t of transfers; let i = index" [style.animation-delay.ms]="i * 40">
+          <div class="transfer-main">
+            <div class="transfer-icon">
+              <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left-right" /></svg>
+            </div>
+            <div class="transfer-info">
+              <strong>{{ t.materialName }}</strong>
+              <span>{{ t.fromWarehouseName }} → {{ t.toWarehouseName }}</span>
+            </div>
           </div>
           <div class="transfer-meta">
             <span class="qty">{{ t.quantity }}</span>
-            <small>{{ formatDate(t.createdAt) }}</small>
+            <small><svg viewBox="0 0 16 16" width="10" height="10"><use xlink:href="./assets/icons/bootstrap-icons.svg#calendar3" /></svg> {{ formatDate(t.createdAt) }}</small>
           </div>
         </div>
-        <div class="empty-msg" *ngIf="transfers.length === 0">No hay transferencias registradas</div>
+        <div class="empty-msg empty-state-fancy" *ngIf="transfers.length === 0">
+          <svg viewBox="0 0 16 16" width="36" height="36"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-down-up" /></svg>
+          <strong>No hay transferencias registradas</strong>
+          <span>Cuando muevas stock entre almacenes, aparecerá aquí</span>
+        </div>
       </div>
     </div>
 
@@ -184,36 +259,54 @@
     <div *ngIf="activeTab === 'counts'" class="tab-panel">
       <div *ngIf="!selectedCount">
         <div class="panel-header">
-          <h6>Conteos Físicos</h6>
-          <a class="action-link action-link-primary" (click)="startNewCount()" style="cursor:pointer;">
+          <h6><svg class="panel-icon" viewBox="0 0 16 16" width="17" height="17"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard2-data" /></svg> Conteos Físicos</h6>
+          <a class="action-link action-link-primary btn-bounce" (click)="startNewCount()" style="cursor:pointer;">
             <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" /></svg>
             Nuevo
           </a>
         </div>
 
         <div class="counts-list">
-          <div class="count-card" *ngFor="let c of counts" (click)="openCount(c)">
-            <div class="count-info">
-              <strong>{{ c.description }}</strong>
-              <small>{{ formatDate(c.createdAt) }} — {{ c.performedBy }}</small>
+          <div class="count-card card-pop" *ngFor="let c of counts; let i = index" [style.animation-delay.ms]="i * 40" (click)="openCount(c)">
+            <div class="count-main">
+              <div class="count-icon">
+                <svg viewBox="0 0 16 16" width="18" height="18"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard-check" /></svg>
+              </div>
+              <div class="count-info">
+                <strong>{{ c.description }}</strong>
+                <small><svg viewBox="0 0 16 16" width="10" height="10"><use xlink:href="./assets/icons/bootstrap-icons.svg#calendar3" /></svg> {{ formatDate(c.createdAt) }} <svg viewBox="0 0 16 16" width="10" height="10"><use xlink:href="./assets/icons/bootstrap-icons.svg#person" /></svg> {{ c.performedBy }}</small>
+              </div>
             </div>
             <div class="count-meta">
               <span class="badge" [style.background]="getStatusColor(c.status)">{{ getStatusLabel(c.status) }}</span>
-              <span class="discrepancy" *ngIf="c.discrepancies > 0">{{ c.discrepancies }} discrepancias</span>
+              <span class="discrepancy" *ngIf="c.discrepancies > 0">
+                <svg viewBox="0 0 16 16" width="10" height="10"><use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle" /></svg>
+                {{ c.discrepancies }} discrepancias
+              </span>
             </div>
           </div>
-          <div class="empty-msg" *ngIf="counts.length === 0">No hay conteos registrados</div>
+          <div class="empty-msg empty-state-fancy" *ngIf="counts.length === 0">
+            <svg viewBox="0 0 16 16" width="36" height="36"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard2-data" /></svg>
+            <strong>No hay conteos registrados</strong>
+            <span>Inicia un conteo físico para comparar el stock del sistema con el real</span>
+          </div>
         </div>
       </div>
 
       <!-- Count detail -->
       <div *ngIf="selectedCount" class="count-detail">
         <div class="panel-header">
-          <h6>{{ selectedCount.description }}</h6>
+          <h6><svg class="panel-icon" viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard-check" /></svg> {{ selectedCount.description }}</h6>
           <div class="header-actions-group">
-            <button class="btn-save" *ngIf="selectedCount.status !== 'APPLIED'" (click)="saveCount()" type="button">💾 Guardar</button>
-            <button class="btn-action-danger" *ngIf="selectedCount.status !== 'APPLIED' && selectedCount.status !== 'DRAFT'" (click)="applyCount()" type="button">✓ Aplicar Ajustes</button>
-            <button class="btn-cancel" (click)="closeCount()" type="button">← Volver</button>
+            <button class="btn-save btn-bounce" *ngIf="selectedCount.status !== 'APPLIED'" (click)="saveCount()" type="button">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#save2" /></svg>
+              Guardar
+            </button>
+            <button class="btn-action-danger btn-bounce" *ngIf="selectedCount.status !== 'APPLIED' && selectedCount.status !== 'DRAFT'" (click)="applyCount()" type="button">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle" /></svg>
+              Aplicar Ajustes
+            </button>
+            <button class="btn-cancel btn-bounce" (click)="closeCount()" type="button">← Volver</button>
           </div>
         </div>
 
