@@ -203,14 +203,20 @@
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="changePasswordModalLabel">
+                <svg width="18" height="18" fill="currentColor" class="me-2"><use xlink:href="./assets/icons/bootstrap-icons.svg#shield-lock" /></svg>
                 Password Change Form
               </h5>
               <button
+                *ngIf="!forcedPasswordChange"
                 type="button"
                 class="btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
               ></button>
+            </div>
+            <div *ngIf="forcedPasswordChange" class="forced-password-banner">
+              <svg width="16" height="16" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" /></svg>
+              Debes cambiar tu contraseña temporal antes de continuar.
             </div>
             <!-- Contenedor flotante (derecha) -->
             <div class="notification-container">
@@ -247,51 +253,83 @@
                   <label for="oldPassword" class="form-label"
                     >Old password</label
                   >
-                  <input
-                    type="password"
-                    id="oldPassword"
-                    formControlName="oldPassword"
-                    class="form-control"
-                    required
-                  />
+                  <div class="password-input-group">
+                    <svg width="14" height="14" class="pwd-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#key-fill" /></svg>
+                    <input
+                      [type]="showOldPassword ? 'text' : 'password'"
+                      id="oldPassword"
+                      formControlName="oldPassword"
+                      class="form-control"
+                      required
+                    />
+                    <button type="button" class="pwd-toggle" (click)="togglePasswordVisibility('old')" tabindex="-1">
+                      <svg width="16" height="16"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showOldPassword ? 'eye-slash' : 'eye')" /></svg>
+                    </button>
+                  </div>
                 </div>
                 <div class="mb-3">
                   <label for="newPassword" class="form-label"
                     >New password</label
                   >
-                  <input
-                    type="password"
-                    id="newPassword"
-                    formControlName="newPassword"
-                    class="form-control"
-                    required
-                  />
+                  <div class="password-input-group">
+                    <svg width="14" height="14" class="pwd-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#shield-lock" /></svg>
+                    <input
+                      [type]="showNewPassword ? 'text' : 'password'"
+                      id="newPassword"
+                      formControlName="newPassword"
+                      class="form-control"
+                      required
+                    />
+                    <button type="button" class="pwd-toggle" (click)="togglePasswordVisibility('new')" tabindex="-1">
+                      <svg width="16" height="16"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showNewPassword ? 'eye-slash' : 'eye')" /></svg>
+                    </button>
+                  </div>
+                  <small class="form-text text-muted">Mínimo 6 caracteres.</small>
                 </div>
                 <div class="mb-3">
                   <label for="repeatPassword" class="form-label"
                     >Repeat password</label
                   >
-                  <input
-                    type="password"
-                    id="repeatPassword"
-                    formControlName="repeatPassword"
-                    class="form-control"
-                    required
-                  />
+                  <div class="password-input-group">
+                    <svg width="14" height="14" class="pwd-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#shield-lock" /></svg>
+                    <input
+                      [type]="showRepeatPassword ? 'text' : 'password'"
+                      id="repeatPassword"
+                      formControlName="repeatPassword"
+                      class="form-control"
+                      required
+                    />
+                    <button type="button" class="pwd-toggle" (click)="togglePasswordVisibility('repeat')" tabindex="-1">
+                      <svg width="16" height="16"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showRepeatPassword ? 'eye-slash' : 'eye')" /></svg>
+                    </button>
+                  </div>
                   <div
                     *ngIf="
+                      form.get('repeatPassword')?.value &&
                       form.get('repeatPassword')?.value !==
                         form.get('newPassword')?.value &&
                       form.get('repeatPassword')?.touched
                     "
-                    class="text-danger"
+                    class="text-danger pwd-feedback"
                   >
+                    <svg width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" /></svg>
                     The passwords don't match.
+                  </div>
+                  <div
+                    *ngIf="
+                      form.get('repeatPassword')?.value &&
+                      form.get('repeatPassword')?.value === form.get('newPassword')?.value
+                    "
+                    class="text-success pwd-feedback"
+                  >
+                    <svg width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle-fill" /></svg>
+                    Passwords match.
                   </div>
                 </div>
               </div>
               <div class="modal-footer">
                 <button
+                  *ngIf="!forcedPasswordChange"
                   type="button"
                   class="btn btn-secondary"
                   data-bs-dismiss="modal"
@@ -303,10 +341,12 @@
                   class="btn btn-primary"
                   [disabled]="
                     form.invalid ||
+                    changingPassword ||
                     form.get('repeatPassword')?.value !==
                       form.get('newPassword')?.value
                   "
                 >
+                  <span *ngIf="changingPassword" class="spinner-border spinner-border-sm me-1"></span>
                   Update
                 </button>
               </div>

@@ -38,7 +38,8 @@ export class AuthService {
       sessionStorage.setItem('user_rol', userData.user?.rol || '');
       sessionStorage.setItem('user_rolDescription', userData.user?.rolDescription || '');
       sessionStorage.setItem('user_image', userData.user?.image || '');
-      
+      sessionStorage.setItem('must_change_password', userData.user?.mustChangePassword ? 'true' : 'false');
+
       // Guardar nombre real del usuario (razón social o nombre + apellido)
       const displayName = userData.user?.businessName 
         || (userData.user?.firstName ? `${userData.user.firstName} ${userData.user.secondName || ''}`.trim() : '')
