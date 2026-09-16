@@ -67,6 +67,11 @@ export class HeaderComponent implements OnInit {
   nombreApp = DESCRIPTION_APP;
 
   form!: FormGroup;
+  forcedPasswordChange = false;
+  showOldPassword = false;
+  showNewPassword = false;
+  showRepeatPassword = false;
+  changingPassword = false;
 
   // configuración notificaciones tipo toast
   toastTitle: string = '';
@@ -125,6 +130,29 @@ export class HeaderComponent implements OnInit {
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
       repeatPassword: ['', Validators.required],
     });
+
+    // Obligar el cambio de contraseña temporal (asignada en registro/creación
+    // de usuario) antes de dejar usar el resto de la aplicación.
+    if (isPlatformBrowser(this.platformId) && sessionStorage.getItem('must_change_password') === 'true') {
+      this.forcedPasswordChange = true;
+      setTimeout(() => this.openChangePasswordModal(true), 0);
+    }
+  }
+
+  openChangePasswordModal(forced: boolean): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const el = document.getElementById('changePasswordModal');
+    if (!el) return;
+    const bootstrap = (window as any).bootstrap;
+    if (!bootstrap) return;
+    const options = forced ? { backdrop: 'static', keyboard: false } : {};
+    bootstrap.Modal.getOrCreateInstance(el, options).show();
+  }
+
+  togglePasswordVisibility(field: 'old' | 'new' | 'repeat'): void {
+    if (field === 'old') this.showOldPassword = !this.showOldPassword;
+    if (field === 'new') this.showNewPassword = !this.showNewPassword;
+    if (field === 'repeat') this.showRepeatPassword = !this.showRepeatPassword;
   }
 
   changeSidebarStyle(style: 'lateral' | 'list'): void {
@@ -138,32 +166,52 @@ export class HeaderComponent implements OnInit {
 
   onSubmit(): void {
     if (
-      this.form.valid &&
-      this.form.get('newPassword')?.value ===
+      !this.form.valid ||
+      this.form.get('newPassword')?.value !==
         this.form.get('repeatPassword')?.value
     ) {
-      const userId =
-        sessionStorage.getItem('user_id') || localStorage.getItem('userId');
-      const { oldPassword, newPassword } = this.form.value;
-
-      this.http
-        .post(`/api/users/${userId}/change-password`, {
-          oldPassword,
-          newPassword,
-        })
-        .subscribe({
-          next: (res: any) => {
-            // Mostrar el mensaje devuelto
-            this.showToast(res.message, 'success', 'A', 1);
-
-            // Resetear formulario
-            this.form.reset();
-          },
-          error: (err: any) => {
-            this.showToast('Error: ' + err.error.message, 'danger', 'A', 1);
-          },
-        });
+      this.form.markAllAsTouched();
+      return;
     }
+
+    const userId =
+      sessionStorage.getItem('user_id') || localStorage.getItem('userId');
+    const { oldPassword, newPassword } = this.form.value;
+
+    this.changingPassword = true;
+
+    this.http
+      .post(`${environment.auth.authorizaUrl}/users/${userId}/change-password`, {
+        oldPassword,
+        newPassword,
+      })
+      .subscribe({
+        next: (res: any) => {
+          this.changingPassword = false;
+          this.showToast(res.message || 'Contraseña actualizada correctamente', 'success', 'A', 1);
+          this.form.reset();
+
+          if (isPlatformBrowser(this.platformId)) {
+            sessionStorage.setItem('must_change_password', 'false');
+          }
+
+          if (this.forcedPasswordChange) {
+            this.forcedPasswordChange = false;
+            const el = document.getElementById('changePasswordModal');
+            const bootstrap = (window as any).bootstrap;
+            if (el && bootstrap) {
+              bootstrap.Modal.getInstance(el)?.hide();
+              // Sin esto, la instancia queda "pegada" con backdrop estatico y
+              // sin teclado (config forzada) para futuras aperturas voluntarias.
+              bootstrap.Modal.getInstance(el)?.dispose();
+            }
+          }
+        },
+        error: (err: any) => {
+          this.changingPassword = false;
+          this.showToast('Error: ' + (err.error?.message || 'No se pudo actualizar la contraseña'), 'danger', 'A', 1);
+        },
+      });
   }
 
   changeModule(): void {
