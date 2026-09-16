@@ -52,7 +52,8 @@
           aria-expanded="false"
           href="#"
         >
-          <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+          <img *ngIf="userImage" [src]="userImage" alt="Avatar" class="header-avatar-icon" />
+          <svg *ngIf="!userImage" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
             <use
               xlink:href="./assets/icons/bootstrap-icons.svg#person-circle"
             />

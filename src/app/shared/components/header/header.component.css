@@ -88,6 +88,15 @@
     display: none;
 }
 
+/* Avatar del usuario en el icono de la cabecera (reemplaza el icono generico) */
+.header-avatar-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
 /* Estilo para el botón toggle */
 .toggle-button {
     background-color: transparent;
