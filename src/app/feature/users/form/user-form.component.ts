@@ -281,6 +281,7 @@ export class UserFormComponent {
           birthDate: this.naturalForm.value.birthDate || undefined,
           maritalStatus: this.naturalForm.value.maritalStatus || undefined,
           sex: this.naturalForm.value.sex || undefined,
+          phone: this.naturalForm.value.phone || undefined,
         } : undefined,
         legalEntityData: this.basicDataForm.value.strPersonType === 'J' ? this.legalForm.value : undefined,
         roleId: this.selectedRoleId,
