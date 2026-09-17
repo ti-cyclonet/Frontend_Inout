@@ -602,6 +602,21 @@
   border-top: 1px solid #f0f0f0;
 }
 
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card-actions .btn-outline-danger {
+  padding: 0.25rem 0.5rem;
+}
+
+.card-actions .btn-outline-danger svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* Detail Modal */
 .detail-user-header {
   display: flex;
