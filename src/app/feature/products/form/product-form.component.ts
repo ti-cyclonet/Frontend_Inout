@@ -1,12 +1,14 @@
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { ProductService } from '../../../shared/services/product.service';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
 import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
+import { environment } from '../../../../environments/environment';
 import Swal from 'sweetalert2';
 
 interface ExtendedMaterial extends Material {
@@ -76,8 +78,17 @@ export class ProductFormComponent implements OnInit {
   editingComposition: number | null = null;
   tempQuantity: number = 0;
 
+  // Cálculo discriminado de precio sugerido (costo materiales + indirecto + margen)
+  estimatedMonthlyUnits: number = 1;
+  overheadTotal: number = 0;
+  overheadBreakdown: { arriendo: number; agua: number; energia: number; gas: number; internet: number; nomina: number } | null = null;
+  marginPercent: number = 0;
+  loadingPricing = false;
+  pricingError = false;
+
   constructor(
     private fb: FormBuilder,
+    private http: HttpClient,
     private productService: ProductService,
     private materialService: MaterialService,
     private categoryService: CategoryService,
@@ -270,6 +281,9 @@ export class ProductFormComponent implements OnInit {
   nextStep(): void {
     if (this.currentStep < this.totalSteps) {
       this.currentStep++;
+      if (this.currentStep === 4) {
+        this.loadPricingData();
+      }
     }
   }
 
@@ -435,6 +449,57 @@ export class ProductFormComponent implements OnInit {
     }, 0);
   }
 
+  /** Costo indirecto (arriendo, servicios, nómina) prorrateado por unidad. */
+  get indirectCostPerUnit(): number {
+    if (!this.overheadTotal || !this.estimatedMonthlyUnits || this.estimatedMonthlyUnits <= 0) return 0;
+    return this.overheadTotal / this.estimatedMonthlyUnits;
+  }
+
+  /** Costo total por unidad: materiales + indirecto prorrateado. */
+  get totalUnitCost(): number {
+    return this.getTotalCost() + this.indirectCostPerUnit;
+  }
+
+  /** Precio sugerido = costo total + margen de ganancia configurado. Es el
+   * precio mínimo permitido: nunca se debe vender por debajo de esto. */
+  get suggestedPrice(): number {
+    return this.totalUnitCost * (1 + (this.marginPercent || 0) / 100);
+  }
+
+  get priceBelowMinimum(): boolean {
+    const price = +this.productForm?.get('fltPrice')?.value || 0;
+    return this.suggestedPrice > 0 && price < this.suggestedPrice;
+  }
+
+  /** Carga el costo indirecto mensual y el % de ganancia configurados en el
+   * periodo activo, para mostrar el desglose y calcular el precio sugerido. */
+  loadPricingData(): void {
+    this.loadingPricing = true;
+    this.pricingError = false;
+
+    Promise.all([
+      this.http.get<any>(`${environment.apiUrl}/business-params/overhead`).toPromise(),
+      this.http.get<any>(`${environment.apiUrl}/business-params`).toPromise(),
+    ]).then(([overhead, params]) => {
+      this.overheadTotal = overhead?.total || 0;
+      this.overheadBreakdown = overhead?.breakdown || null;
+      this.marginPercent = params?.PORCENTAJE_GANANCIA || 0;
+      this.loadingPricing = false;
+    }).catch(() => {
+      this.loadingPricing = false;
+      this.pricingError = true;
+    });
+  }
+
+  onEstimatedUnitsChange(value: number): void {
+    this.estimatedMonthlyUnits = value > 0 ? value : 1;
+  }
+
+  /** Aplica el precio sugerido tal cual al campo Precio. */
+  useSuggestedPrice(): void {
+    this.productForm.get('fltPrice')?.setValue(Math.round(this.suggestedPrice * 100) / 100);
+  }
+
   formatNumber(value: number): string {
     return new Intl.NumberFormat('es-ES', {
       minimumFractionDigits: 0,
@@ -455,7 +520,12 @@ export class ProductFormComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.isFormValid()) return;
-    
+
+    if (this.priceBelowMinimum) {
+      Swal.fire('Precio muy bajo', `El precio no puede ser menor al mínimo calculado (${this.formatCurrency(this.suggestedPrice)}), que cubre costo de materiales, costo indirecto y margen de ganancia.`, 'warning');
+      return;
+    }
+
     this.saving = true;
     const formData = this.productForm.value;
 
@@ -463,6 +533,7 @@ export class ProductFormComponent implements OnInit {
       strName: formData.strName.toUpperCase(),
       strDescription: formData.strDescription,
       fltPrice: +formData.fltPrice,
+      fltCost: this.totalUnitCost,
       strMeasurementUnit: formData.strMeasurementUnit,
       ingStockMin: +formData.ingStockMin,
       ingStockMax: +formData.ingStockMax,
