@@ -117,7 +117,7 @@
                 <button class="btn btn-sm btn-outline-primary" (click)="openUserDetail(user)" title="Gestionar">
                   <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#gear" /></svg>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" (click)="removeUser(user.id!)" title="Eliminar" *ngIf="user.isActive">
+                <button class="btn btn-sm btn-outline-danger" (click)="removeUser(user)" title="Quitar del equipo" *ngIf="user.isActive">
                   <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#trash" /></svg>
                 </button>
               </div>

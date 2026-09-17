@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CustomersService } from '../../../shared/services/customers.service';
-import { CustomerWithDetails } from '../../../shared/model/customer.model';
 import { MetricCardComponent } from '../../../shared/components/metric-card/metric-card.component';
+import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 
 @Component({
   selector: 'app-users-dashboard',
@@ -153,11 +153,17 @@ export class UsersDashboardComponent implements OnInit, OnChanges {
   }
 
   loadStats(): void {
-    this.customersService.getCustomersWithDetails().subscribe({
-      next: (customers: CustomerWithDetails[]) => {
-        this.totalUsers = customers.length;
-        this.activeUsers = customers.filter((c: CustomerWithDetails) => c.isActive).length;
-        this.inactiveUsers = customers.filter((c: CustomerWithDetails) => !c.isActive).length;
+    const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
+    if (!token) return;
+    const payload = decodeJwtPayload(token);
+    const tenantId: string | null = payload?.tenantId || payload?.basicDataId || null;
+    if (!tenantId) return;
+
+    this.customersService.getDependentsWithRoles(tenantId).subscribe({
+      next: (dependents: any[]) => {
+        this.totalUsers = dependents.length;
+        this.activeUsers = dependents.filter((d: any) => d.isActive).length;
+        this.inactiveUsers = dependents.filter((d: any) => !d.isActive).length;
       },
       error: (error: unknown) => {
         console.error('Error loading stats:', error);

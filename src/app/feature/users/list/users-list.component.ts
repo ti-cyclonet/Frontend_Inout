@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { CustomersService } from '../../../shared/services/customers.service';
-import { CustomerWithDetails } from '../../../shared/model/customer.model';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
 
@@ -18,8 +17,8 @@ export class UsersListComponent implements OnInit, OnChanges {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
 
-  users: CustomerWithDetails[] = [];
-  filteredUsers: CustomerWithDetails[] = [];
+  users: any[] = [];
+  filteredUsers: any[] = [];
   loading = false;
   showFilters = false;
   viewMode: 'table' | 'cards' = 'table';
@@ -42,13 +41,16 @@ export class UsersListComponent implements OnInit, OnChanges {
 
   // Detail modal
   showDetailModal = false;
-  selectedUser: CustomerWithDetails | null = null;
+  selectedUser: any | null = null;
   selectedUserRole = '';
   originalUserRole = '';
   selectedUserSigner = false;
+  originalUserSigner = false;
   savingRole = false;
   availableRoles: any[] = [];
   contractId: string | null = null;
+  tenantId: string | null = null;
+  private selectedDependencyId: string | null = null;
   private selectedUserAuthorizaId: string | null = null;
 
   Math = Math;
@@ -56,8 +58,10 @@ export class UsersListComponent implements OnInit, OnChanges {
   constructor(private customersService: CustomersService) {}
 
   ngOnInit(): void {
-    this.loadUsers();
-    this.loadRoles();
+    this.resolveTenantAndContract(() => {
+      this.loadUsers();
+      this.loadRoles();
+    });
   }
 
   ngOnChanges(): void {
@@ -66,61 +70,46 @@ export class UsersListComponent implements OnInit, OnChanges {
     }
   }
 
-  loadRoles(): void {
-    // Get tenantId from JWT token (the contract owner)
+  private resolveTenantAndContract(onResolved: () => void): void {
     const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
     if (!token) return;
-    
-    const payload = decodeJwtPayload(token);
-    const tenantId: string | null = payload?.tenantId || payload?.basicDataId || null;
-    if (!tenantId) return;
 
-    this.customersService.getTenantContract(tenantId).subscribe({
+    const payload = decodeJwtPayload(token);
+    this.tenantId = payload?.tenantId || payload?.basicDataId || null;
+    if (!this.tenantId) return;
+
+    this.customersService.getTenantContract(this.tenantId).subscribe({
       next: (data: any) => {
         this.contractId = data.contractId;
-        if (this.contractId) {
-          this.customersService.getRoleAvailability(this.contractId).subscribe({
-            next: (roles: any[]) => {
-              // Show all roles with available slots
-              this.availableRoles = roles;
-            },
-            error: () => {}
-          });
-        }
+        onResolved();
+      },
+      error: () => onResolved(),
+    });
+  }
+
+  loadRoles(): void {
+    if (!this.contractId) return;
+    this.customersService.getRoleAvailability(this.contractId).subscribe({
+      next: (roles: any[]) => {
+        // Show all roles with available slots
+        this.availableRoles = roles;
       },
       error: () => {}
     });
   }
 
-  openUserDetail(user: CustomerWithDetails): void {
+  openUserDetail(user: any): void {
     this.selectedUser = user;
-    this.selectedUserRole = '';
-    this.originalUserRole = '';
-    this.selectedUserSigner = false;
-    this.selectedUserAuthorizaId = null;
-    this.showDetailModal = true;
+    this.selectedUserAuthorizaId = user.userId || null;
+    this.selectedDependencyId = user.dependencyId || null;
+    this.selectedUserSigner = !!user.isAuthorizedSigner;
+    this.originalUserSigner = this.selectedUserSigner;
 
-    // Load current role: first get Authoriza userId, then fetch their roles
-    if (user.email) {
-      this.customersService.checkEmailExists(user.email).subscribe({
-        next: (data: any) => {
-          if (data.exists && data.userId) {
-            this.selectedUserAuthorizaId = data.userId;
-            this.customersService.getUserRoles(data.userId).subscribe({
-              next: (roles: any[]) => {
-                const match = roles.find((r: any) => r.contractId === this.contractId && r.status === 'ACTIVE');
-                if (match) {
-                  this.selectedUserRole = match.roleId || '';
-                  this.originalUserRole = this.selectedUserRole;
-                }
-              },
-              error: () => {}
-            });
-          }
-        },
-        error: () => {}
-      });
-    }
+    const currentRole = (user.roles || [])[0];
+    this.selectedUserRole = currentRole?.id || '';
+    this.originalUserRole = this.selectedUserRole;
+
+    this.showDetailModal = true;
   }
 
   closeDetailModal(): void {
@@ -134,61 +123,70 @@ export class UsersListComponent implements OnInit, OnChanges {
       return;
     }
 
+    const roleChanged = this.selectedUserRole !== this.originalUserRole;
+    const signerChanged = this.selectedUserSigner !== this.originalUserSigner;
+
+    if (!roleChanged && !signerChanged) {
+      Swal.fire({ icon: 'info', title: 'Sin cambios', text: 'No se detectaron cambios.', timer: 1500, showConfirmButton: false });
+      return;
+    }
+
     this.savingRole = true;
     const userId = this.selectedUserAuthorizaId;
-    const tenantToken = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
-    const tokenPayload = tenantToken ? decodeJwtPayload(tenantToken) : null;
-    const tenantId: string | null = tokenPayload?.tenantId || tokenPayload?.basicDataId || null;
 
-    // If role changed
-    if (this.selectedUserRole !== this.originalUserRole) {
-      // Remove old role if it existed
-      const removeOld = this.originalUserRole
-        ? this.customersService.removeRole(userId, this.originalUserRole, this.contractId)
-        : new Observable<any>(sub => { sub.next(null); sub.complete(); });
+    const applySignerChange = () => {
+      if (signerChanged && this.selectedDependencyId) {
+        this.customersService.updateSigner(this.selectedDependencyId, this.selectedUserSigner).subscribe({
+          next: () => this.finishSave(),
+          error: () => this.finishSave(),
+        });
+      } else {
+        this.finishSave();
+      }
+    };
 
-      removeOld.subscribe({
-        next: () => {
-          if (this.selectedUserRole) {
-            // Ensure dependency exists, then assign new role
-            const ensureDependency = tenantId
-              ? this.customersService.createUserDependency(tenantId, userId)
-              : new Observable<any>(sub => { sub.next(null); sub.complete(); });
-
-            ensureDependency.subscribe({
-              next: () => this.assignNewRole(userId),
-              error: () => this.assignNewRole(userId), // dependency may already exist
-            });
-          } else {
-            // Role removed, no new one
-            this.savingRole = false;
-            this.originalUserRole = '';
-            this.loadRoles(); // refresh availability
-            Swal.fire({ icon: 'success', title: 'Rol removido', timer: 1500, showConfirmButton: false });
-          }
-        },
-        error: () => {
-          // If remove fails, try assigning anyway
-          if (this.selectedUserRole) {
-            this.assignNewRole(userId);
-          } else {
-            this.savingRole = false;
-          }
-        }
-      });
-    } else {
-      this.savingRole = false;
-      Swal.fire({ icon: 'info', title: 'Sin cambios', text: 'No se detectaron cambios en el rol.', timer: 1500, showConfirmButton: false });
+    if (!roleChanged) {
+      applySignerChange();
+      return;
     }
+
+    // Remove old role if it existed
+    const removeOld = this.originalUserRole
+      ? this.customersService.removeRole(userId, this.originalUserRole, this.contractId)
+      : new Observable<any>(sub => { sub.next(null); sub.complete(); });
+
+    removeOld.subscribe({
+      next: () => {
+        if (this.selectedUserRole) {
+          // Ensure dependency exists, then assign new role
+          const ensureDependency = this.tenantId
+            ? this.customersService.createUserDependency(this.tenantId, userId)
+            : new Observable<any>(sub => { sub.next(null); sub.complete(); });
+
+          ensureDependency.subscribe({
+            next: () => this.assignNewRole(userId, applySignerChange),
+            error: () => this.assignNewRole(userId, applySignerChange), // dependency may already exist
+          });
+        } else {
+          applySignerChange();
+        }
+      },
+      error: () => {
+        // If remove fails, try assigning anyway
+        if (this.selectedUserRole) {
+          this.assignNewRole(userId, applySignerChange);
+        } else {
+          this.savingRole = false;
+        }
+      }
+    });
   }
 
-  private assignNewRole(userId: string): void {
+  private assignNewRole(userId: string, then: () => void): void {
     this.customersService.assignRole(userId, this.selectedUserRole, this.contractId!).subscribe({
       next: () => {
-        this.savingRole = false;
         this.originalUserRole = this.selectedUserRole;
-        this.loadRoles();
-        Swal.fire({ icon: 'success', title: 'Rol asignado', text: 'Los cambios se guardaron correctamente.', confirmButtonColor: '#0066CC', timer: 2000, showConfirmButton: false });
+        then();
       },
       error: (err: any) => {
         this.savingRole = false;
@@ -197,12 +195,38 @@ export class UsersListComponent implements OnInit, OnChanges {
     });
   }
 
+  private finishSave(): void {
+    this.savingRole = false;
+    this.originalUserSigner = this.selectedUserSigner;
+    this.loadRoles();
+    this.loadUsers();
+    Swal.fire({ icon: 'success', title: 'Cambios guardados', text: 'Los cambios se guardaron correctamente.', confirmButtonColor: '#0066CC', timer: 2000, showConfirmButton: false });
+  }
+
   loadUsers(): void {
+    if (!this.tenantId) return;
     this.loading = true;
 
-    this.customersService.getCustomersWithDetails().subscribe({
-      next: (users: CustomerWithDetails[]) => {
-        this.users = users;
+    this.customersService.getDependentsWithRoles(this.tenantId, this.contractId || undefined).subscribe({
+      next: (dependents: any[]) => {
+        this.users = dependents.map(d => ({
+          id: d.userId,
+          userId: d.userId,
+          dependencyId: d.dependencyId,
+          email: d.email,
+          customerCode: d.code,
+          personType: d.personType,
+          firstName: d.firstName,
+          firstSurname: d.firstSurname,
+          businessName: d.businessName,
+          documentType: d.documentType,
+          documentNumber: d.documentNumber,
+          phone: d.phone,
+          isActive: d.isActive,
+          isAuthorizedSigner: d.isAuthorizedSigner,
+          createdAt: d.createdAt,
+          roles: d.roles,
+        }));
         this.applyFilters();
         this.loading = false;
       },
@@ -302,19 +326,39 @@ export class UsersListComponent implements OnInit, OnChanges {
     this.applyFilters();
   }
 
-  getUserName(user: CustomerWithDetails): string {
+  getUserName(user: any): string {
     if (user.personType === 'J') {
       return user.businessName || 'Sin nombre';
     }
     return [user.firstName, user.firstSurname].filter(Boolean).join(' ') || 'Sin nombre';
   }
 
-  removeUser(id: string): void {
-    if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      this.customersService.removeCustomer(id).subscribe({
-        next: () => this.loadUsers(),
-        error: (error: unknown) => console.error('Error removing user:', error)
-      });
+  removeUser(user: any): void {
+    if (!user?.dependencyId) return;
+    if (!confirm('¿Estás seguro de que deseas quitar a este usuario del equipo? Perderá su acceso a la aplicación y su cupo de rol quedará libre.')) {
+      return;
     }
+
+    // Liberar el cupo del rol antes de desactivar la dependencia.
+    const roleRemovals = (user.roles || []).map((r: any) =>
+      this.customersService.removeRole(user.userId, r.id, this.contractId!)
+    );
+
+    const finish = () => {
+      this.customersService.deactivateDependency(user.dependencyId).subscribe({
+        next: () => { this.loadUsers(); this.loadRoles(); },
+        error: (error: unknown) => console.error('Error removing user:', error),
+      });
+    };
+
+    if (roleRemovals.length === 0 || !this.contractId) {
+      finish();
+      return;
+    }
+
+    let pending = roleRemovals.length;
+    roleRemovals.forEach((obs: Observable<any>) => {
+      obs.subscribe({ next: () => { if (--pending === 0) finish(); }, error: () => { if (--pending === 0) finish(); } });
+    });
   }
 }

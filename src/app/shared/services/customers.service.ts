@@ -56,6 +56,28 @@ export class CustomersService {
     return this.http.post<any>(`${this.authorizaUrl}/users/full`, dto);
   }
 
+  /**
+   * Crea un usuario dependiente del tenant en sesión (proceso completo de
+   * Authoriza: User + BasicData + datos de persona), vinculado como
+   * dependiente y con un rol asignado. El backend valida el cupo del rol
+   * contra el plan contratado y deriva el tenant/contrato del JWT del admin
+   * en sesión (no hace falta enviarlos).
+   */
+  createDependentUser(dto: any): Observable<any> {
+    return this.http.post<any>(`${this.authorizaUrl}/users/dependents`, dto);
+  }
+
+  /** Dependientes activos del tenant en sesión, con su rol vigente en un contrato. */
+  getDependentsWithRoles(principalUserId: string, contractId?: string): Observable<any[]> {
+    const query = contractId ? `?contractId=${contractId}` : '';
+    return this.http.get<any[]>(`${this.authorizaUrl}/user-dependencies/principal/${principalUserId}/roles${query}`);
+  }
+
+  /** Desactiva la relación de dependencia (el usuario deja de ser parte del equipo del tenant). */
+  deactivateDependency(dependencyId: string): Observable<any> {
+    return this.http.patch<any>(`${this.authorizaUrl}/user-dependencies/${dependencyId}/deactivate`, {});
+  }
+
   createUserDependency(principalUserId: string, dependentUserId: string): Observable<any> {
     return this.http.post<any>(`${this.authorizaUrl}/user-dependencies`, {
       principalUserId,
@@ -69,9 +91,9 @@ export class CustomersService {
     return this.http.get<any[]>(`${this.authorizaUrl}/user-roles/user/${userId}`);
   }
 
-  /** Assign a role to a user for a contract */
+  /** Assign a role to a user for a contract — valida cupo del plan y aplica la cascada adminInout -> adminInvoices. */
   assignRole(userId: string, roleId: string, contractId: string): Observable<any> {
-    return this.http.post<any>(`${this.authorizaUrl}/user-roles`, {
+    return this.http.post<any>(`${this.authorizaUrl}/user-roles/assign`, {
       userId,
       roleId,
       contractId,
@@ -82,5 +104,10 @@ export class CustomersService {
   /** Remove a role from a user */
   removeRole(userId: string, roleId: string, contractId: string): Observable<any> {
     return this.http.delete<any>(`${this.authorizaUrl}/user-roles/${userId}/${roleId}`);
+  }
+
+  /** Marca/desmarca a un dependiente como firmante autorizado. */
+  updateSigner(dependencyId: string, isAuthorizedSigner: boolean): Observable<any> {
+    return this.http.patch<any>(`${this.authorizaUrl}/user-dependencies/${dependencyId}/signer`, { isAuthorizedSigner });
   }
 }
