@@ -150,7 +150,12 @@
         <span class="status-badge" [ngClass]="user.isActive ? 'status-active' : 'status-inactive'">
           {{ user.isActive ? 'Activo' : 'Inactivo' }}
         </span>
-        <button class="btn btn-sm btn-outline-primary" (click)="openUserDetail(user); $event.stopPropagation()">Gestionar</button>
+        <div class="card-actions" (click)="$event.stopPropagation()">
+          <button class="btn btn-sm btn-outline-primary" (click)="openUserDetail(user)">Gestionar</button>
+          <button class="btn btn-sm btn-outline-danger" (click)="removeUser(user)" title="Quitar del equipo" *ngIf="user.isActive">
+            <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#trash" /></svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
