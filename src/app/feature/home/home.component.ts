@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
+import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 Chart.register(...registerables);
 
@@ -408,30 +409,31 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return;
     }
     
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const tenantId = payload.tenantId || payload.basicDataId;
-      
-      this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
-        .then(contract => {
-          window.open(`/marketplace/${contract.user.id}?admin=true`, '_blank');
-        })
-        .catch(error => {
-          console.error('Error al obtener contrato:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se encontró un contrato para este usuario'
-          });
-        });
-    } catch (error) {
-      console.error('Error al decodificar token:', error);
+    const payload = decodeJwtPayload(token);
+    if (!payload) {
+      console.error('Error al decodificar token');
       Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'Error al procesar la sesión'
       });
+      return;
     }
+
+    const tenantId = payload.tenantId || payload.basicDataId;
+
+    this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
+      .then(contract => {
+        window.open(`/marketplace/${contract.user.id}?admin=true`, '_blank');
+      })
+      .catch(error => {
+        console.error('Error al obtener contrato:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se encontró un contrato para este usuario'
+        });
+      });
   }
 
   private setupInactivityTimer(): void {
