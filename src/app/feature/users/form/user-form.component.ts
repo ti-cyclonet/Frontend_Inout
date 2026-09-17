@@ -2,7 +2,6 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
-import { CreateCustomerDto } from '../../../shared/model/customer.model';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
 
@@ -25,6 +24,7 @@ export class UserFormComponent {
   loadedUserData: any = null;
   availableRoles: any[] = [];
   contractId: string | null = null;
+  tenantId: string | null = null;
   selectedRoleId = '';
   
   userForm: FormGroup;
@@ -94,19 +94,22 @@ export class UserFormComponent {
     // Get tenantId from JWT token (the contract owner), not the logged-in user
     const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
     if (!token) return;
-    
-    const payload = decodeJwtPayload(token);
-    const tenantId: string | null = payload?.tenantId || payload?.basicDataId || null;
-    if (!tenantId) return;
 
-    this.customersService.getTenantContract(tenantId).subscribe({
+    const payload = decodeJwtPayload(token);
+    this.tenantId = payload?.tenantId || payload?.basicDataId || null;
+    if (!this.tenantId) return;
+
+    this.customersService.getTenantContract(this.tenantId).subscribe({
       next: (data: any) => {
         this.contractId = data.contractId;
         if (this.contractId) {
           this.customersService.getRoleAvailability(this.contractId).subscribe({
             next: (roles: any[]) => {
-              // Only show roles with available slots (exclude adminInout — that's for the principal)
-              this.availableRoles = roles.filter(r => r.available > 0 && r.role.strName !== 'adminInout');
+              // Solo roles con cupo disponible en el plan contratado. adminInout
+              // SI puede volver a aparecer aqui si el plan permite mas de una
+              // cuenta admin (ej. PRO permite 2): la exclusion anterior impedia
+              // crear exactamente el caso que se necesita — admins adicionales.
+              this.availableRoles = roles.filter(r => r.available > 0);
             },
             error: () => { this.availableRoles = []; }
           });
@@ -132,10 +135,11 @@ export class UserFormComponent {
     if (step === 1) return this.userForm.valid;
     if (step === 2) {
       const isDocValid = this.documentForm.valid;
-      const isPersonValid = this.basicDataForm.value.strPersonType === 'N' 
-        ? this.naturalForm.valid 
+      const isPersonValid = this.basicDataForm.value.strPersonType === 'N'
+        ? this.naturalForm.valid
         : this.legalForm.valid;
-      return isDocValid && isPersonValid;
+      const isRoleValid = !!this.selectedRoleId;
+      return isDocValid && isPersonValid && isRoleValid;
     }
     return true;
   }
@@ -239,31 +243,36 @@ export class UserFormComponent {
       } else {
         this.legalForm.markAllAsTouched();
       }
+      if (!this.selectedRoleId) {
+        Swal.fire({ icon: 'warning', title: 'Selecciona un rol', text: 'Debes asignar un rol para poder crear el usuario.', confirmButtonColor: '#0066CC' });
+      }
+      return;
+    }
+
+    if (!this.tenantId || !this.contractId) {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo determinar el contrato de tu cuenta. Cierra sesión y vuelve a ingresar.', confirmButtonColor: '#0066CC' });
       return;
     }
 
     this.saving = true;
 
     if (this.userExists && this.loadedUserData) {
-      // User already exists in Authoriza — just create local customer
-      this.createLocalCustomerAndFinish();
+      // El usuario ya existe en Authoriza: vincularlo como dependiente del
+      // tenant en sesión y asignarle el rol (con validación de cupo).
+      this.customersService.createUserDependency(this.tenantId, this.loadedUserData.userId).subscribe({
+        next: () => this.assignRoleAndFinish(this.loadedUserData.userId),
+        error: () => this.assignRoleAndFinish(this.loadedUserData.userId), // la dependencia puede ya existir
+      });
     } else {
-      // Create new user in Authoriza
+      // Usuario nuevo: proceso completo de Authoriza (User + BasicData + datos
+      // de persona) + dependencia + rol, todo en un único paso atómico.
       const dto: any = {
-        user: {
-          ...this.userForm.value,
-          strStatus: 'ACTIVE',
-        },
-        basicData: {
-          ...this.basicDataForm.value,
-          strStatus: 'ACTIVE',
-        },
-        documentType: {
-          strDocumentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.getRawValue().strDocumentType,
-          strDocumentNumber: this.basicDataForm.value.strPersonType === 'J' 
-            ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
-            : this.documentForm.value.strDocumentNumber,
-        },
+        email: this.userForm.value.strUserName,
+        personType: this.basicDataForm.value.strPersonType,
+        documentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.getRawValue().strDocumentType,
+        documentNumber: this.basicDataForm.value.strPersonType === 'J'
+          ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
+          : this.documentForm.value.strDocumentNumber,
         naturalPersonData: this.basicDataForm.value.strPersonType === 'N' ? {
           firstName: this.naturalForm.value.firstName,
           secondName: this.naturalForm.value.secondName || undefined,
@@ -274,15 +283,17 @@ export class UserFormComponent {
           sex: this.naturalForm.value.sex || undefined,
         } : undefined,
         legalEntityData: this.basicDataForm.value.strPersonType === 'J' ? this.legalForm.value : undefined,
+        roleId: this.selectedRoleId,
       };
 
-      this.customersService.createFullUser(dto).subscribe({
+      this.customersService.createDependentUser(dto).subscribe({
         next: () => {
-          // User created in Authoriza — now save locally
-          this.createLocalCustomerAndFinish();
+          this.saving = false;
+          Swal.fire({ icon: 'success', title: 'Usuario creado', text: 'El usuario fue creado y vinculado correctamente.', confirmButtonColor: '#0066CC', timer: 2000, showConfirmButton: false });
+          this.userCreated.emit();
         },
         error: (err: any) => {
-          console.error('Error creating user in Authoriza:', err);
+          console.error('Error creating dependent user:', err);
           this.saving = false;
           const message = err?.error?.message || err?.message || 'Error al crear el usuario';
           Swal.fire({
@@ -296,40 +307,23 @@ export class UserFormComponent {
     }
   }
 
-  cancel() {
-    this.formCancelled.emit();
-  }
-
-  private createLocalCustomerAndFinish(): void {
-    const customerDto: CreateCustomerDto = {
-      email: this.userForm.value.strUserName,
-      personType: this.basicDataForm.value.strPersonType,
-      documentType: this.basicDataForm.value.strPersonType === 'J' ? 'NIT' : this.documentForm.value.strDocumentType,
-      documentNumber: this.basicDataForm.value.strPersonType === 'J'
-        ? `${this.documentForm.value.strDocumentNumber}-${this.documentForm.value.strDocumentDV}`
-        : this.documentForm.value.strDocumentNumber,
-      firstName: this.naturalForm.value.firstName || undefined,
-      secondName: this.naturalForm.value.secondName || undefined,
-      firstSurname: this.naturalForm.value.firstSurname || undefined,
-      secondSurname: this.naturalForm.value.secondSurname || undefined,
-      birthDate: this.naturalForm.value.birthDate || undefined,
-      maritalStatus: this.naturalForm.value.maritalStatus || undefined,
-      sex: this.naturalForm.value.sex || undefined,
-      phone: this.naturalForm.value.phone || undefined,
-      businessName: this.legalForm.value.businessName || undefined,
-      contactPerson: this.legalForm.value.contactName || undefined,
-    };
-
-    this.customersService.createCustomer(customerDto).subscribe({
+  private assignRoleAndFinish(userId: string): void {
+    this.customersService.assignRole(userId, this.selectedRoleId, this.contractId!).subscribe({
       next: () => {
         this.saving = false;
+        Swal.fire({ icon: 'success', title: 'Usuario vinculado', text: 'El usuario fue vinculado y el rol asignado correctamente.', confirmButtonColor: '#0066CC', timer: 2000, showConfirmButton: false });
         this.userCreated.emit();
       },
-      error: () => {
+      error: (err: any) => {
         this.saving = false;
-        this.userCreated.emit();
-      },
+        const message = err?.error?.message || err?.message || 'No se pudo asignar el rol';
+        Swal.fire({ icon: 'error', title: 'Error', text: message, confirmButtonColor: '#0066CC' });
+      }
     });
+  }
+
+  cancel() {
+    this.formCancelled.emit();
   }
 
   getFieldError(fieldName: string): string {
