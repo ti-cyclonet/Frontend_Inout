@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { CustomerWithDetails } from '../../../shared/model/customer.model';
+import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -70,12 +71,8 @@ export class UsersListComponent implements OnInit, OnChanges {
     const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
     if (!token) return;
     
-    let tenantId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      tenantId = payload.tenantId || payload.basicDataId || null;
-    } catch { return; }
-    
+    const payload = decodeJwtPayload(token);
+    const tenantId: string | null = payload?.tenantId || payload?.basicDataId || null;
     if (!tenantId) return;
 
     this.customersService.getTenantContract(tenantId).subscribe({
@@ -140,11 +137,8 @@ export class UsersListComponent implements OnInit, OnChanges {
     this.savingRole = true;
     const userId = this.selectedUserAuthorizaId;
     const tenantToken = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
-    let tenantId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(tenantToken!.split('.')[1]));
-      tenantId = payload.tenantId || payload.basicDataId || null;
-    } catch {}
+    const tokenPayload = tenantToken ? decodeJwtPayload(tenantToken) : null;
+    const tenantId: string | null = tokenPayload?.tenantId || tokenPayload?.basicDataId || null;
 
     // If role changed
     if (this.selectedUserRole !== this.originalUserRole) {

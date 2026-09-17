@@ -24,6 +24,7 @@ import { NotificationsComponent } from '../notifications/notifications.component
 import { ModuleService, ModuleType } from '../../services/module/module.service';
 import { UsageStatusService } from '../../services/usage-status.service';
 import { environment } from '../../../../environments/environment';
+import { decodeJwtPayload } from '../../utils/jwt.util';
 
 @Component({
   selector: 'app-header',
@@ -289,27 +290,28 @@ export class HeaderComponent implements OnInit {
   }
 
   private getClientNameFromToken(): void {
-    try {
-      const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('token');
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        // Hacer llamada al backend para obtener el nombre del cliente usando el tenantId
-        this.http.get(`${environment.auth.authorizaUrl}/users/${payload.tenantId}`).subscribe({
-          next: (user: any) => {
-            if (user.basicData?.strPersonType === 'N') {
-              this.clientName = `${user.basicData.naturalPersonData?.firstName || ''} ${user.basicData.naturalPersonData?.firstSurname || ''}`.trim();
-            } else if (user.basicData?.strPersonType === 'J') {
-              this.clientName = user.basicData.legalEntityData?.businessName || '';
-            }
-          },
-          error: () => {
-            this.clientName = null;
-          }
-        });
-      }
-    } catch (error) {
+    const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('token');
+    if (!token) return;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload) {
       this.clientName = null;
+      return;
     }
+
+    // Hacer llamada al backend para obtener el nombre del cliente usando el tenantId
+    this.http.get(`${environment.auth.authorizaUrl}/users/${payload.tenantId}`).subscribe({
+      next: (user: any) => {
+        if (user.basicData?.strPersonType === 'N') {
+          this.clientName = `${user.basicData.naturalPersonData?.firstName || ''} ${user.basicData.naturalPersonData?.firstSurname || ''}`.trim();
+        } else if (user.basicData?.strPersonType === 'J') {
+          this.clientName = user.basicData.legalEntityData?.businessName || '';
+        }
+      },
+      error: () => {
+        this.clientName = null;
+      }
+    });
   }
 
   private getAppDescription(): void {
