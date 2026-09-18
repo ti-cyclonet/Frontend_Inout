@@ -208,6 +208,13 @@
           </span>
         </div>
 
+        <!-- Chat: solo cuando ambas partes firmaron el contrato -->
+        <button class="btn-close-work" type="button"
+                *ngIf="canChat()"
+                (click)="openChat()">
+          💬 Chat con el domiciliario
+        </button>
+
         <!-- Acción de cierre: confirmar recepción + pago -->
         <button class="btn-close-work" type="button"
                 *ngIf="canConfirmReceipt()"
@@ -355,6 +362,40 @@
       <button class="btn-secondary" type="button" (click)="closeRatingForm()">Cancelar</button>
       <button class="btn-primary" type="button" (click)="submitRating()" [disabled]="rating">
         {{ rating ? 'Enviando…' : 'Enviar evaluación' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Vista: Chat con el domiciliario -->
+  <div class="drawer-sheet chat-sheet" *ngIf="showChat">
+    <div class="sheet-head">
+      <button class="sheet-back" type="button" (click)="closeChat()">← Volver</button>
+      <h6>Chat con el domiciliario</h6>
+    </div>
+
+    <div class="chat-messages">
+      <div class="empty" *ngIf="!loadingChat && chatMessages.length === 0">
+        Todavía no hay mensajes. Escribe el primero.
+      </div>
+      <div *ngIf="loadingChat" class="empty">Cargando…</div>
+      <div *ngFor="let m of chatMessages"
+           class="chat-bubble-row"
+           [class.mine]="isMyMessage(m)">
+        <div class="chat-bubble" [class.mine]="isMyMessage(m)">
+          <span class="chat-sender" *ngIf="!isMyMessage(m)">{{ m.sender?.displayName || 'Domiciliario' }}</span>
+          <span class="chat-content">{{ m.content }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-bar">
+      <textarea class="chat-input" rows="1" [(ngModel)]="chatText" name="chatText"
+                placeholder="Escribe un mensaje..."
+                (keydown.enter)="$event.preventDefault(); sendChatMessage()"></textarea>
+      <button class="chat-send" type="button" [disabled]="!chatText.trim() || sendingChat" (click)="sendChatMessage()">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="#fff">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#send-fill" />
+        </svg>
       </button>
     </div>
   </div>
