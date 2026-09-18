@@ -235,6 +235,15 @@ export class ShotraService {
   // el contrato (requesterSignedAt + providerSignedAt); el backend valida esto
   // igual, esta capa solo refleja esa regla en la UI.
 
+  /** Mis conversaciones activas (una por solicitud con contrato firmado por ambas partes). */
+  getConversations(): Observable<ShotraConversation[]> {
+    return this.request((token) =>
+      this.http.get<ShotraConversation[]>(`${this.shotraApi}/messaging/conversations`, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
   /** Mensajes de la conversación de una solicitud. */
   getMessages(requestId: string): Observable<ShotraMessage[]> {
     return this.request((token) =>
@@ -352,6 +361,12 @@ export interface ShotraContract {
   requesterConfirmedAt?: string | null;
   completedAt?: string | null;
   ratings?: ShotraRating[];
+}
+
+export interface ShotraConversation {
+  requestId: string;
+  lastMessage: ShotraMessage;
+  unreadCount: number;
 }
 
 export interface ShotraMessage {

@@ -2,6 +2,7 @@
 <button class="shotra-fab" type="button" (click)="openPanel()" *ngIf="!open && fabEnabled" title="Pedir domicilio (Shotra)">
   <img src="assets/img/logo_shotra.png" alt="Shotra" class="fab-logo" />
   <span class="fab-text">Domicilios</span>
+  <span class="fab-chat-badge" *ngIf="totalUnreadChat > 0">{{ totalUnreadChat > 9 ? '9+' : totalUnreadChat }}</span>
 </button>
 
 <!-- Backdrop + Drawer lateral (estilo "otra aplicación") -->
@@ -24,7 +25,16 @@
     <!-- Toolbar -->
     <div class="drawer-toolbar">
       <h6 class="toolbar-title">Mis solicitudes</h6>
-      <button class="btn-create" type="button" (click)="openForm()" [disabled]="loading">+ Nueva solicitud</button>
+      <div class="toolbar-actions">
+        <button class="btn-bell" type="button" *ngIf="totalUnreadChat > 0"
+                (click)="openMostRecentConversation()" title="Mensajes sin leer">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="#374151">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#bell-fill" />
+          </svg>
+          <span class="bell-badge">{{ totalUnreadChat > 9 ? '9+' : totalUnreadChat }}</span>
+        </button>
+        <button class="btn-create" type="button" (click)="openForm()" [disabled]="loading">+ Nueva solicitud</button>
+      </div>
     </div>
 
     <!-- Error de conexión / acceso -->
@@ -49,6 +59,12 @@
           <div class="request-address" *ngIf="req.address">📍 {{ req.address }}</div>
         </div>
         <div class="request-meta">
+          <span class="request-chat-badge" *ngIf="unreadCountFor(req) > 0" title="Mensajes sin leer">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="#fff">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#chat-dots-fill" />
+            </svg>
+            {{ unreadCountFor(req) }}
+          </span>
           <span class="request-proposals">{{ proposalCount(req) }} oferta(s)</span>
           <!-- Badge redondo de novedad: color por estado; punto pulsante si hay
                algo que atender; estilo apagado cuando ya está cerrada. -->
