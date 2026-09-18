@@ -17,6 +17,7 @@ import {
   ShotraContract,
   ShotraPaymentMethod,
   ShotraMessage,
+  ShotraConversation,
   CreateShotraRequest,
 } from '../../../shared/services/shotra/shotra.service';
 import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
@@ -89,6 +90,17 @@ export class DeliveryRequestComponent implements OnDestroy {
   private chatPollTimer: any = null;
   private readonly CHAT_POLL_MS = 5000;
 
+  // ─── Campana de notificaciones de chat (badge + sonido) ────────────────────
+  // Independiente del polling de la lista: corre mientras el módulo esté
+  // inicializado (aunque el panel/drawer esté cerrado), para que el badge del
+  // FAB y el sonido avisen aunque el comerciante no tenga el panel abierto.
+  totalUnreadChat = 0;
+  conversationsByRequest: Record<string, ShotraConversation> = {};
+  private lastTotalUnreadChat = 0;
+  private chatBaselineSet = false;
+  private bellPollTimer: any = null;
+  private readonly BELL_POLL_MS = 12000;
+
   // Evaluación del domiciliario (tras completar el trabajo)
   showRatingForm = false;
   rating = false;
@@ -151,6 +163,7 @@ export class DeliveryRequestComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.stopPolling();
     this.stopChatPolling();
+    this.stopBellPolling();
     this.prefSub?.unsubscribe();
     this.destroyMap();
   }
@@ -231,6 +244,32 @@ export class DeliveryRequestComponent implements OnDestroy {
     }
   }
 
+  /** Beep de un solo tono agudo para mensajes de chat (distinto del "ding-ding" de ofertas). */
+  private playChatNotification(): void {
+    try {
+      if (typeof window === 'undefined') return;
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return;
+      if (!this.audioCtx) this.audioCtx = new Ctx();
+      const ctx = this.audioCtx!;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1320;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.28, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.22);
+    } catch {
+      // Si el navegador bloquea el audio (autoplay policy), se ignora.
+    }
+  }
+
   /** Reintenta la conexión/carga inicial (botón de la alerta de error). */
   retry(): void {
     this.init();
@@ -260,12 +299,90 @@ export class DeliveryRequestComponent implements OnDestroy {
       next: () => {
         this.loadCategories();
         this.loadRequests();
+        this.refreshChatNotifications();
+        this.startBellPolling();
       },
       error: (err) => {
         this.loading = false;
         this.error = this.readError(err, 'No se pudo conectar con Shotra. Verifica que tengas acceso.');
       },
     });
+  }
+
+  // ─── Campana de notificaciones de chat ─────────────────────────────────────
+
+  private startBellPolling(): void {
+    this.stopBellPolling();
+    this.bellPollTimer = setInterval(() => this.refreshChatNotifications(), this.BELL_POLL_MS);
+  }
+
+  private stopBellPolling(): void {
+    if (this.bellPollTimer) {
+      clearInterval(this.bellPollTimer);
+      this.bellPollTimer = null;
+    }
+  }
+
+  /**
+   * Trae mis conversaciones (solo existen si hay contrato firmado por ambas
+   * partes) y actualiza el total de no leídos + el mapa por solicitud (para
+   * el badge de cada tarjeta). Si el total subió respecto a la última
+   * revisión, suena la alerta. La primera vez solo establece la base (sin
+   * sonar), igual que detectNewProposals con las ofertas.
+   */
+  private refreshChatNotifications(): void {
+    this.shotra.getConversations().subscribe({
+      next: (convs) => {
+        const map: Record<string, ShotraConversation> = {};
+        let total = 0;
+        for (const c of convs || []) {
+          map[c.requestId] = c;
+          total += c.unreadCount || 0;
+        }
+        this.conversationsByRequest = map;
+
+        if (this.chatBaselineSet && total > this.lastTotalUnreadChat) {
+          this.playChatNotification();
+        }
+        this.chatBaselineSet = true;
+        this.totalUnreadChat = total;
+        this.lastTotalUnreadChat = total;
+      },
+      error: () => {
+        // Silencioso: un fallo de poll no debe romper la vista.
+      },
+    });
+  }
+
+  /** Badge de no leídos para la tarjeta de una solicitud puntual. */
+  unreadCountFor(req: ShotraRequest): number {
+    return this.conversationsByRequest[req.id]?.unreadCount || 0;
+  }
+
+  /**
+   * Abre la conversación más relevante (la de mensaje más reciente; si
+   * ninguna tiene no leídos, la primera disponible) directamente desde la
+   * campana, sin pasar por la lista.
+   */
+  openMostRecentConversation(): void {
+    const convs = Object.values(this.conversationsByRequest);
+    if (convs.length === 0) return;
+    const target =
+      convs.find((c) => c.unreadCount > 0) ||
+      convs.sort((a, b) => new Date(b.lastMessage?.createdAt).getTime() - new Date(a.lastMessage?.createdAt).getTime())[0];
+    if (!target) return;
+
+    this.openDetail({ id: target.requestId } as ShotraRequest);
+    // openDetail es asíncrono (getRequest); abrir el chat cuando el contrato
+    // (con las firmas) ya esté cargado.
+    const waitAndOpen = () => {
+      if (this.loadingDetail) {
+        setTimeout(waitAndOpen, 150);
+        return;
+      }
+      if (this.canChat()) this.openChat();
+    };
+    waitAndOpen();
   }
 
   private loadCategories(): void {
@@ -711,6 +828,8 @@ export class DeliveryRequestComponent implements OnDestroy {
       next: (msgs) => {
         this.chatMessages = msgs || [];
         this.loadingChat = false;
+        // getMessages marca como leídos en el backend: refrescar el badge ya.
+        this.refreshChatNotifications();
       },
       error: () => {
         this.loadingChat = false;
