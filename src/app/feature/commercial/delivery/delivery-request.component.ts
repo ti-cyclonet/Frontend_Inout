@@ -733,6 +733,13 @@ export class DeliveryRequestComponent implements OnDestroy {
       payload.latitude = this.destCoords.lat;
       payload.longitude = this.destCoords.lng;
     }
+    // Origen del trayecto (punto de recogida, capturado por GPS): ahora sí se
+    // envía al backend, que lo persiste si la categoría tiene requiresRoute.
+    if (this.originCoords) {
+      payload.originLatitude = this.originCoords.lat;
+      payload.originLongitude = this.originCoords.lng;
+      payload.originAddress = 'Punto de recogida (GPS)';
+    }
     if (this.form.scheduledAt) payload.scheduledAt = new Date(this.form.scheduledAt).toISOString();
 
     this.shotra.createRequest(payload).subscribe({

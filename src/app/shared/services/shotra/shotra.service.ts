@@ -273,6 +273,8 @@ export interface ShotraCategory {
   slug: string;
   icon?: string;
   description?: string;
+  // Si la categoría implica trayecto (origen → destino, ej. domicilios).
+  requiresRoute?: boolean;
   children?: ShotraCategory[];
 }
 
@@ -285,6 +287,10 @@ export interface CreateShotraRequest {
   latitude?: number;
   longitude?: number;
   address?: string;
+  // Origen del trayecto (recogida). Solo aplica a categorías con requiresRoute.
+  originLatitude?: number;
+  originLongitude?: number;
+  originAddress?: string;
   isRemote?: boolean;
   scheduledAt?: string;
   isUrgent?: boolean;
