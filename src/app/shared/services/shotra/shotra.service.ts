@@ -229,6 +229,31 @@ export class ShotraService {
       }),
     );
   }
+
+  // ─── Chat ──────────────────────────────────────────────────────────────────
+  // Solo se habilita una vez la propuesta fue aceptada y AMBAS partes firmaron
+  // el contrato (requesterSignedAt + providerSignedAt); el backend valida esto
+  // igual, esta capa solo refleja esa regla en la UI.
+
+  /** Mensajes de la conversación de una solicitud. */
+  getMessages(requestId: string): Observable<ShotraMessage[]> {
+    return this.request((token) =>
+      this.http.get<ShotraMessage[]>(`${this.shotraApi}/messaging/${requestId}`, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
+  /** Envía un mensaje en el contexto de una solicitud. */
+  sendMessage(requestId: string, content: string): Observable<ShotraMessage> {
+    return this.request((token) =>
+      this.http.post<ShotraMessage>(
+        `${this.shotraApi}/messaging`,
+        { requestId, content, type: 'TEXT' },
+        { headers: this.authHeaders(token) },
+      ),
+    );
+  }
 }
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
@@ -327,6 +352,17 @@ export interface ShotraContract {
   requesterConfirmedAt?: string | null;
   completedAt?: string | null;
   ratings?: ShotraRating[];
+}
+
+export interface ShotraMessage {
+  id: string;
+  requestId: string;
+  senderId: string;
+  content: string;
+  type: string;
+  createdAt: string;
+  readAt?: string | null;
+  sender?: { id?: string; displayName?: string; avatarUrl?: string };
 }
 
 export interface CreateRatingPayload {

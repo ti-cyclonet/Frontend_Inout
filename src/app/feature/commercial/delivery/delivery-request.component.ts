@@ -16,6 +16,7 @@ import {
   ShotraProposal,
   ShotraContract,
   ShotraPaymentMethod,
+  ShotraMessage,
   CreateShotraRequest,
 } from '../../../shared/services/shotra/shotra.service';
 import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
@@ -79,6 +80,15 @@ export class DeliveryRequestComponent implements OnDestroy {
   uploadingVoucher = false;
   payment: { method: ShotraPaymentMethod; amount?: number; note?: string; voucherUrl?: string } = { method: 'CASH' };
 
+  // ─── Chat (solo habilitado cuando ambas partes firmaron el contrato) ───────
+  showChat = false;
+  chatMessages: ShotraMessage[] = [];
+  chatText = '';
+  loadingChat = false;
+  sendingChat = false;
+  private chatPollTimer: any = null;
+  private readonly CHAT_POLL_MS = 5000;
+
   // Evaluación del domiciliario (tras completar el trabajo)
   showRatingForm = false;
   rating = false;
@@ -135,10 +145,12 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.showForm = false;
     this.selectedRequest = null;
     this.stopPolling();
+    this.closeChat();
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
+    this.stopChatPolling();
     this.prefSub?.unsubscribe();
     this.destroyMap();
   }
@@ -633,6 +645,8 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.selectedRequest = null;
     this.contract = null;
     this.showConfirmForm = false;
+    this.closeChat();
+    this.chatMessages = [];
     this.shotra.getRequest(req.id).subscribe({
       next: (detail) => {
         this.selectedRequest = detail;
@@ -660,6 +674,71 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.selectedRequest = null;
     this.contract = null;
     this.showConfirmForm = false;
+    this.closeChat();
+  }
+
+  // ─── Chat ────────────────────────────────────────────────────────────────
+
+  /** El chat solo se habilita cuando la propuesta fue aceptada y AMBAS partes firmaron. */
+  canChat(): boolean {
+    return !!(this.contract?.requesterSignedAt && this.contract?.providerSignedAt);
+  }
+
+  openChat(): void {
+    if (!this.selectedRequest || !this.canChat()) return;
+    this.showChat = true;
+    this.loadChatMessages();
+    this.stopChatPolling();
+    this.chatPollTimer = setInterval(() => this.loadChatMessages(true), this.CHAT_POLL_MS);
+  }
+
+  closeChat(): void {
+    this.showChat = false;
+    this.stopChatPolling();
+  }
+
+  private stopChatPolling(): void {
+    if (this.chatPollTimer) {
+      clearInterval(this.chatPollTimer);
+      this.chatPollTimer = null;
+    }
+  }
+
+  private loadChatMessages(silent = false): void {
+    if (!this.selectedRequest) return;
+    if (!silent) this.loadingChat = true;
+    this.shotra.getMessages(this.selectedRequest.id).subscribe({
+      next: (msgs) => {
+        this.chatMessages = msgs || [];
+        this.loadingChat = false;
+      },
+      error: () => {
+        this.loadingChat = false;
+      },
+    });
+  }
+
+  /** ¿El mensaje lo envié yo (el comerciante = siempre el solicitante en esta extensión)? */
+  isMyMessage(msg: ShotraMessage): boolean {
+    return !!this.contract && msg.senderId === this.contract.requesterId;
+  }
+
+  sendChatMessage(): void {
+    const content = this.chatText.trim();
+    if (!content || this.sendingChat || !this.selectedRequest) return;
+    this.sendingChat = true;
+    this.chatText = '';
+    this.shotra.sendMessage(this.selectedRequest.id, content).subscribe({
+      next: (msg) => {
+        this.chatMessages = [...this.chatMessages, msg];
+        this.sendingChat = false;
+      },
+      error: (err) => {
+        this.sendingChat = false;
+        this.chatText = content;
+        Swal.fire('Error', this.readError(err, 'No se pudo enviar el mensaje.'), 'error');
+      },
+    });
   }
 
   // ─── Cierre del trabajo: confirmar recepción + declarar pago ────────────────
