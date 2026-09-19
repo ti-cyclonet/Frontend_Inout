@@ -248,6 +248,27 @@ export class ShotraService {
     );
   }
 
+  /** Marca una notificación como leída. */
+  markNotificationRead(id: string): Observable<any> {
+    return this.request((token) =>
+      this.http.patch<any>(`${this.shotraApi}/notifications/${id}/read`, {}, { headers: this.authHeaders(token) }),
+    );
+  }
+
+  /** Marca todas mis notificaciones como leídas. */
+  markAllNotificationsRead(): Observable<any> {
+    return this.request((token) =>
+      this.http.patch<any>(`${this.shotraApi}/notifications/read-all`, {}, { headers: this.authHeaders(token) }),
+    );
+  }
+
+  /** Vacía (borra) todas mis notificaciones. */
+  clearAllNotifications(): Observable<any> {
+    return this.request((token) =>
+      this.http.delete<any>(`${this.shotraApi}/notifications`, { headers: this.authHeaders(token) }),
+    );
+  }
+
   /** Mis conversaciones activas (una por solicitud con contrato firmado por ambas partes). */
   getConversations(): Observable<ShotraConversation[]> {
     return this.request((token) =>
@@ -372,6 +393,7 @@ export interface ShotraContract {
   status: string; // PENDING | SIGNED | IN_PROGRESS | PENDING_CONFIRMATION | COMPLETED | EVALUATED | DISPUTED | CANCELLED
   agreedPrice: number;
   currency?: string;
+  requestId?: string;
   requesterId?: string;
   providerId?: string;
   requesterSignedAt?: string | null;

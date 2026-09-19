@@ -18,6 +18,7 @@ import {
   ShotraPaymentMethod,
   ShotraMessage,
   ShotraConversation,
+  ShotraNotification,
   CreateShotraRequest,
 } from '../../../shared/services/shotra/shotra.service';
 import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
@@ -100,6 +101,10 @@ export class DeliveryRequestComponent implements OnDestroy {
   conversationsByRequest: Record<string, ShotraConversation> = {};
   private knownNotificationIds = new Set<string>();
   private notificationsBaselineSet = false;
+
+  // ─── Vista de notificaciones (abierta desde la campana) ─────────────────────
+  showNotifications = false;
+  notificationItems: ShotraNotification[] = [];
   private bellPollTimer: any = null;
   private readonly BELL_POLL_MS = 12000;
 
@@ -158,6 +163,7 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.open = false;
     this.showForm = false;
     this.selectedRequest = null;
+    this.showNotifications = false;
     this.stopPolling();
     this.closeChat();
   }
@@ -349,6 +355,7 @@ export class DeliveryRequestComponent implements OnDestroy {
         }
         this.notificationsBaselineSet = true;
         this.totalPendingNotifications = res?.unread || 0;
+        this.notificationItems = list;
       },
       error: () => {
         // Silencioso: un fallo de poll no debe romper la vista.
@@ -373,30 +380,107 @@ export class DeliveryRequestComponent implements OnDestroy {
     return this.conversationsByRequest[req.id]?.unreadCount || 0;
   }
 
-  /**
-   * Abre la conversación más relevante (la de mensaje más reciente; si
-   * ninguna tiene no leídos, la primera disponible) directamente desde la
-   * campana, sin pasar por la lista.
-   */
-  openMostRecentConversation(): void {
-    const convs = Object.values(this.conversationsByRequest);
-    if (convs.length === 0) return;
-    const target =
-      convs.find((c) => c.unreadCount > 0) ||
-      convs.sort((a, b) => new Date(b.lastMessage?.createdAt).getTime() - new Date(a.lastMessage?.createdAt).getTime())[0];
-    if (!target) return;
+  // ─── Vista de notificaciones ─────────────────────────────────────────────
 
-    this.openDetail({ id: target.requestId } as ShotraRequest);
-    // openDetail es asíncrono (getRequest); abrir el chat cuando el contrato
-    // (con las firmas) ya esté cargado.
-    const waitAndOpen = () => {
-      if (this.loadingDetail) {
-        setTimeout(waitAndOpen, 150);
-        return;
-      }
-      if (this.canChat()) this.openChat();
+  openNotifications(): void {
+    this.showNotifications = true;
+    this.refreshNotifications();
+  }
+
+  closeNotifications(): void {
+    this.showNotifications = false;
+  }
+
+  notificationIcon(type: string): string {
+    const icons: Record<string, string> = {
+      NEW_PROPOSAL: 'send',
+      PROPOSAL_ACCEPTED: 'check-circle',
+      PROPOSAL_REJECTED: 'x-circle',
+      CONTRACT_SIGNED: 'pen',
+      CONTRACT_COMPLETED: 'check2-all',
+      NEW_RATING: 'star',
+      NEW_MESSAGE: 'chat-dots',
     };
-    waitAndOpen();
+    return icons[type] || 'bell';
+  }
+
+  notificationTimeAgo(iso: string): string {
+    const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (diffMin < 1) return 'ahora';
+    if (diffMin < 60) return `hace ${diffMin} min`;
+    const h = Math.floor(diffMin / 60);
+    if (h < 24) return `hace ${h} h`;
+    return `hace ${Math.floor(h / 24)} d`;
+  }
+
+  /** Marca como leída y navega a la solicitud/chat correspondiente. */
+  openNotificationItem(n: ShotraNotification): void {
+    if (!n.read) {
+      n.read = true;
+      this.totalPendingNotifications = Math.max(0, this.totalPendingNotifications - 1);
+      this.shotra.markNotificationRead(n.id).subscribe({ error: () => {} });
+    }
+
+    if (!n.entityId) return;
+
+    if (n.entityType === 'chat' || n.entityType === 'request') {
+      this.closeNotifications();
+      this.openDetail({ id: n.entityId } as ShotraRequest);
+      if (n.entityType === 'chat') {
+        const waitAndOpenChat = () => {
+          if (this.loadingDetail) {
+            setTimeout(waitAndOpenChat, 150);
+            return;
+          }
+          if (this.canChat()) this.openChat();
+        };
+        waitAndOpenChat();
+      }
+    } else if (n.entityType === 'contract') {
+      // El contrato no tiene vista propia en InOut: se resuelve a la
+      // solicitud dueña del contrato y se abre su detalle.
+      this.shotra.getContract(n.entityId).subscribe({
+        next: (c) => {
+          if (c?.requestId) {
+            this.closeNotifications();
+            this.openDetail({ id: c.requestId } as ShotraRequest);
+          }
+        },
+        error: () => {},
+      });
+    }
+  }
+
+  markAllNotificationsReadClick(): void {
+    this.shotra.markAllNotificationsRead().subscribe({
+      next: () => {
+        this.notificationItems = this.notificationItems.map((n) => ({ ...n, read: true }));
+        this.totalPendingNotifications = 0;
+      },
+      error: () => {},
+    });
+  }
+
+  clearAllNotificationsClick(): void {
+    Swal.fire({
+      title: '¿Vaciar notificaciones?',
+      text: 'Se eliminarán todas tus notificaciones. Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, vaciar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.shotra.clearAllNotifications().subscribe({
+        next: () => {
+          this.notificationItems = [];
+          this.totalPendingNotifications = 0;
+          this.knownNotificationIds.clear();
+        },
+        error: (err) => Swal.fire('Error', this.readError(err, 'No se pudo vaciar las notificaciones.'), 'error'),
+      });
+    });
   }
 
   private loadCategories(): void {
