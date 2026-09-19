@@ -235,6 +235,19 @@ export class ShotraService {
   // el contrato (requesterSignedAt + providerSignedAt); el backend valida esto
   // igual, esta capa solo refleja esa regla en la UI.
 
+  /**
+   * Mis notificaciones de Shotra (nueva oferta, contrato firmado, evaluación,
+   * mensaje de chat, etc.) — la misma fuente que usa el badge del ícono en la
+   * app móvil de Shotra. `unread` es el total pendiente para el badge del FAB.
+   */
+  getNotifications(): Observable<{ items: ShotraNotification[]; unread: number }> {
+    return this.request((token) =>
+      this.http.get<{ items: ShotraNotification[]; unread: number }>(`${this.shotraApi}/notifications`, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
   /** Mis conversaciones activas (una por solicitud con contrato firmado por ambas partes). */
   getConversations(): Observable<ShotraConversation[]> {
     return this.request((token) =>
@@ -367,6 +380,17 @@ export interface ShotraContract {
   requesterConfirmedAt?: string | null;
   completedAt?: string | null;
   ratings?: ShotraRating[];
+}
+
+export interface ShotraNotification {
+  id: string;
+  type: string; // NEW_PROPOSAL | PROPOSAL_ACCEPTED | PROPOSAL_REJECTED | CONTRACT_SIGNED | CONTRACT_COMPLETED | NEW_RATING | NEW_MESSAGE
+  title: string;
+  body: string;
+  entityType?: string;
+  entityId?: string;
+  read: boolean;
+  createdAt: string;
 }
 
 export interface ShotraConversation {

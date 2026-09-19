@@ -52,12 +52,10 @@ export class DeliveryRequestComponent implements OnDestroy {
   showCategorySheet = false;
   categorySearch = '';
 
-  // ─── Polling de ofertas en tiempo (casi) real ───────────────────────────────
-  // Mientras el panel está abierto, se refresca la lista periódicamente. Si el
-  // total de ofertas aumenta respecto al último conteo conocido, suena una alerta.
+  // ─── Polling de la lista en tiempo (casi) real ──────────────────────────────
+  // Mientras el panel está abierto, se refresca la lista periódicamente.
   private pollTimer: any = null;
   private readonly POLL_MS = 12000; // cada 12s
-  private lastProposalTotal = 0;
   private audioCtx: AudioContext | null = null;
 
   // Estado general
@@ -90,14 +88,18 @@ export class DeliveryRequestComponent implements OnDestroy {
   private chatPollTimer: any = null;
   private readonly CHAT_POLL_MS = 5000;
 
-  // ─── Campana de notificaciones de chat (badge + sonido) ────────────────────
+  // ─── Campana de notificaciones (badge + sonido) ─────────────────────────────
   // Independiente del polling de la lista: corre mientras el módulo esté
   // inicializado (aunque el panel/drawer esté cerrado), para que el badge del
   // FAB y el sonido avisen aunque el comerciante no tenga el panel abierto.
-  totalUnreadChat = 0;
+  // totalPendingNotifications = TODAS las novedades (ofertas, firmas,
+  // evaluaciones, mensajes) — mismo criterio que el badge de Android en la
+  // app de Shotra. conversationsByRequest sigue siendo solo para el badge de
+  // chat por tarjeta.
+  totalPendingNotifications = 0;
   conversationsByRequest: Record<string, ShotraConversation> = {};
-  private lastTotalUnreadChat = 0;
-  private chatBaselineSet = false;
+  private knownNotificationIds = new Set<string>();
+  private notificationsBaselineSet = false;
   private bellPollTimer: any = null;
   private readonly BELL_POLL_MS = 12000;
 
@@ -189,29 +191,21 @@ export class DeliveryRequestComponent implements OnDestroy {
   }
 
   /**
-   * Refresca la lista SIN mostrar el spinner (para no parpadear en cada poll) y,
-   * si el total de ofertas aumentó, suena una alerta.
+   * Refresca la lista SIN mostrar el spinner (para no parpadear en cada poll).
+   * El sonido de "nueva oferta" ya no se detecta aquí por delta de conteo:
+   * lo dispara refreshNotifications() a partir del feed real de notificaciones
+   * de Shotra (más preciso, y funciona aunque el panel esté cerrado).
    */
   private refreshRequestsSilently(): void {
     this.shotra.getMyRequests().subscribe({
       next: (reqs) => {
         this.requests = reqs || [];
         this.error = null;
-        this.detectNewProposals();
       },
       error: () => {
         // Silencioso: un fallo de poll no debe romper la vista.
       },
     });
-  }
-
-  /** Suma total de ofertas actuales; si subió, emite sonido. */
-  private detectNewProposals(): void {
-    const total = this.requests.reduce((sum, r) => sum + this.proposalCount(r), 0);
-    if (total > this.lastProposalTotal) {
-      this.playNotification();
-    }
-    this.lastProposalTotal = total;
   }
 
   /** Beep sintetizado con Web Audio API (no requiere archivo de audio). */
@@ -299,7 +293,7 @@ export class DeliveryRequestComponent implements OnDestroy {
       next: () => {
         this.loadCategories();
         this.loadRequests();
-        this.refreshChatNotifications();
+        this.refreshNotifications();
         this.startBellPolling();
       },
       error: (err) => {
@@ -309,11 +303,14 @@ export class DeliveryRequestComponent implements OnDestroy {
     });
   }
 
-  // ─── Campana de notificaciones de chat ─────────────────────────────────────
+  // ─── Campana de notificaciones (badge del FAB + sonido) ────────────────────
+  // Independiente del panel abierto/cerrado: corre desde que el módulo se
+  // inicializa por primera vez, igual que en la app de Shotra (mismo criterio
+  // de "badge de Android" — total de pendientes, no solo chat).
 
   private startBellPolling(): void {
     this.stopBellPolling();
-    this.bellPollTimer = setInterval(() => this.refreshChatNotifications(), this.BELL_POLL_MS);
+    this.bellPollTimer = setInterval(() => this.refreshNotifications(), this.BELL_POLL_MS);
   }
 
   private stopBellPolling(): void {
@@ -324,33 +321,50 @@ export class DeliveryRequestComponent implements OnDestroy {
   }
 
   /**
-   * Trae mis conversaciones (solo existen si hay contrato firmado por ambas
-   * partes) y actualiza el total de no leídos + el mapa por solicitud (para
-   * el badge de cada tarjeta). Si el total subió respecto a la última
-   * revisión, suena la alerta. La primera vez solo establece la base (sin
-   * sonar), igual que detectNewProposals con las ofertas.
+   * Trae el feed de notificaciones de Shotra (nueva oferta, contrato firmado,
+   * evaluación, mensaje de chat...) — la misma fuente que alimenta el badge
+   * del ícono en la app móvil — y las conversaciones (para el badge por
+   * tarjeta). Detecta notificaciones nuevas por id (no por delta de conteo,
+   * más preciso) y suena la alerta que corresponda según el tipo. La primera
+   * carga solo establece la base, sin sonar.
    */
-  private refreshChatNotifications(): void {
-    this.shotra.getConversations().subscribe({
-      next: (convs) => {
-        const map: Record<string, ShotraConversation> = {};
-        let total = 0;
-        for (const c of convs || []) {
-          map[c.requestId] = c;
-          total += c.unreadCount || 0;
-        }
-        this.conversationsByRequest = map;
+  private refreshNotifications(): void {
+    this.shotra.getNotifications().subscribe({
+      next: (res) => {
+        const list = res?.items || [];
+        const fresh = list.filter((n) => !this.knownNotificationIds.has(n.id));
+        list.forEach((n) => this.knownNotificationIds.add(n.id));
 
-        if (this.chatBaselineSet && total > this.lastTotalUnreadChat) {
-          this.playChatNotification();
+        if (this.notificationsBaselineSet) {
+          const freshUnread = fresh.filter((n) => !n.read);
+          if (freshUnread.length > 0) {
+            // Sonido distinto para mensajes de chat vs. el resto (nueva
+            // oferta, contrato firmado, evaluación).
+            if (freshUnread[0].type === 'NEW_MESSAGE') {
+              this.playChatNotification();
+            } else {
+              this.playNotification();
+            }
+          }
         }
-        this.chatBaselineSet = true;
-        this.totalUnreadChat = total;
-        this.lastTotalUnreadChat = total;
+        this.notificationsBaselineSet = true;
+        this.totalPendingNotifications = res?.unread || 0;
       },
       error: () => {
         // Silencioso: un fallo de poll no debe romper la vista.
       },
+    });
+
+    // Badge por tarjeta (específico de chat): sigue viniendo de conversations.
+    this.shotra.getConversations().subscribe({
+      next: (convs) => {
+        const map: Record<string, ShotraConversation> = {};
+        for (const c of convs || []) {
+          map[c.requestId] = c;
+        }
+        this.conversationsByRequest = map;
+      },
+      error: () => {},
     });
   }
 
@@ -403,9 +417,6 @@ export class DeliveryRequestComponent implements OnDestroy {
       next: (reqs) => {
         this.requests = reqs || [];
         this.loading = false;
-        // Baseline inicial: registrar el total actual SIN sonar (evita beep al
-        // abrir por primera vez). El polling posterior sí detecta incrementos.
-        this.lastProposalTotal = this.requests.reduce((sum, r) => sum + this.proposalCount(r), 0);
       },
       error: (err) => {
         this.loading = false;
@@ -803,13 +814,17 @@ export class DeliveryRequestComponent implements OnDestroy {
 
   // ─── Chat ────────────────────────────────────────────────────────────────
 
-  /** El chat solo se habilita cuando la propuesta fue aceptada y AMBAS partes firmaron. */
+  /**
+   * El chat se muestra desde que ambas partes firman el contrato (así se ve
+   * el botón aunque luego se deshabilite, en vez de desaparecer de golpe).
+   * Ver isContractClosed() para cuándo queda deshabilitado (Completado/Evaluado).
+   */
   canChat(): boolean {
     return !!(this.contract?.requesterSignedAt && this.contract?.providerSignedAt);
   }
 
   openChat(): void {
-    if (!this.selectedRequest || !this.canChat()) return;
+    if (!this.selectedRequest || !this.canChat() || this.isContractClosed()) return;
     this.showChat = true;
     this.loadChatMessages();
     this.stopChatPolling();
@@ -836,7 +851,7 @@ export class DeliveryRequestComponent implements OnDestroy {
         this.chatMessages = msgs || [];
         this.loadingChat = false;
         // getMessages marca como leídos en el backend: refrescar el badge ya.
-        this.refreshChatNotifications();
+        this.refreshNotifications();
       },
       error: () => {
         this.loadingChat = false;
