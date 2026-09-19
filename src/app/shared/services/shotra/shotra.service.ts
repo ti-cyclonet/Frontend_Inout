@@ -419,6 +419,7 @@ export interface ShotraConversation {
   requestId: string;
   lastMessage: ShotraMessage;
   unreadCount: number;
+  closed: boolean;
 }
 
 export interface ShotraMessage {
