@@ -416,6 +416,14 @@
 }
 .btn-close-work:hover { background: #15803d; }
 .btn-close-work + .btn-close-work { margin-top: 0.6rem; }
+.btn-close-work.btn-disabled,
+.btn-close-work:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.btn-close-work.btn-disabled:hover,
+.btn-close-work:disabled:hover { background: #9ca3af; }
 .contract-closed-note {
   font-size: 0.8rem;
   color: #16a34a;
