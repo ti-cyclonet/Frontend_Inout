@@ -60,9 +60,28 @@
               <label>Unidad de Medida *</label>
               <select class="form-control" formControlName="strMeasurementUnit">
                 <option value="">Seleccionar unidad</option>
+                <option value="kg">Kilogramos (kg)</option>
+                <option value="g">Gramos (g)</option>
+                <option value="mg">Miligramos (mg)</option>
+                <option value="lb">Libras (lb)</option>
+                <option value="oz">Onzas (oz)</option>
+                <option value="l">Litros (l)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="gal">Galones (gal)</option>
+                <option value="m">Metros (m)</option>
+                <option value="cm">Centímetros (cm)</option>
+                <option value="mm">Milímetros (mm)</option>
+                <option value="in">Pulgadas (in)</option>
+                <option value="ft">Pies (ft)</option>
+                <option value="m2">Metros cuadrados (m²)</option>
+                <option value="m3">Metros cúbicos (m³)</option>
                 <option value="units">Unidades</option>
-                <option value="kg">Kilogramos</option>
-                <option value="liters">Litros</option>
+                <option value="pcs">Piezas</option>
+                <option value="box">Cajas</option>
+                <option value="pack">Paquetes</option>
+                <option value="doz">Docenas</option>
+                <!-- Compatibilidad con productos ya guardados con el valor legado "liters" -->
+                <option value="liters" hidden>Litros</option>
               </select>
             </div>
 
