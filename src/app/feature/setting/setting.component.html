@@ -105,6 +105,11 @@
                       <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-square" />
                     </svg>
                   </button>
+                  <button type="button" class="btn-icon" data-bs-toggle="modal" data-bs-target="#editPeriodModal" (click)="editarPeriodo(periodo)" title="Editar">
+                    <svg width="18" height="18" fill="currentColor" class="text-primary">
+                      <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+                    </svg>
+                  </button>
                   <button type="button" class="btn-icon" data-bs-toggle="modal" data-bs-target="#parametersModal" (click)="configurarPeriodo(periodo)" title="Configure">
                     <svg width="18" height="18" fill="currentColor" class="text-success">
                       <use xlink:href="./assets/icons/bootstrap-icons.svg#gear" />
@@ -379,6 +384,53 @@
         <button type="button" class="btn btn-success" (click)="crearPeriodo()" [disabled]="loading || nuevoPeriodoForm.invalid">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
           Crear Período
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar período (o subperiodo) existente -->
+<div class="modal fade" id="editPeriodModal" tabindex="-1" aria-labelledby="editPeriodModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editPeriodModalLabel">
+          Editar {{ periodoEnEdicion?.parentPeriodId ? 'Subperíodo' : 'Período' }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="editPeriodoForm">
+          <div class="mb-3">
+            <label for="editPeriodName" class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="editPeriodName" formControlName="nombre">
+            <div class="text-danger small mt-1" *ngIf="editPeriodoForm.get('nombre')?.invalid && editPeriodoForm.get('nombre')?.touched">
+              <div *ngIf="editPeriodoForm.get('nombre')?.errors?.['required']">El nombre es requerido</div>
+              <div *ngIf="editPeriodoForm.get('nombre')?.errors?.['minlength']">El nombre debe tener al menos 3 caracteres</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="editPeriodStartDate" class="form-label">Fecha Inicio *</label>
+            <input type="datetime-local" class="form-control" id="editPeriodStartDate" formControlName="fechaInicio">
+            <div class="text-danger small mt-1" *ngIf="editPeriodoForm.get('fechaInicio')?.invalid && editPeriodoForm.get('fechaInicio')?.touched">
+              <div *ngIf="editPeriodoForm.get('fechaInicio')?.errors?.['required']">La fecha de inicio es requerida</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="editPeriodEndDate" class="form-label">Fecha Fin *</label>
+            <input type="datetime-local" class="form-control" id="editPeriodEndDate" formControlName="fechaFin">
+            <div class="text-danger small mt-1" *ngIf="editPeriodoForm.get('fechaFin')?.invalid && editPeriodoForm.get('fechaFin')?.touched">
+              <div *ngIf="editPeriodoForm.get('fechaFin')?.errors?.['required']">La fecha de fin es requerida</div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="actualizarPeriodo()" [disabled]="loading || editPeriodoForm.invalid">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Guardar Cambios
         </button>
       </div>
     </div>

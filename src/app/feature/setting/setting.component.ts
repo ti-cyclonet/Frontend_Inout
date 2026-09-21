@@ -24,6 +24,8 @@ export class SettingComponent implements OnInit {
   nuevoPeriodoForm: FormGroup;
   nuevoParametroForm: FormGroup;
   nuevoSubperiodoForm: FormGroup;
+  editPeriodoForm: FormGroup;
+  periodoEnEdicion: any = null;
   
   filtroNombre: string = '';
   filtroTipo: string = '';
@@ -68,6 +70,12 @@ export class SettingComponent implements OnInit {
     
     this.nuevoSubperiodoForm = this.fb.group({
       nombre: ['', Validators.required],
+      fechaInicio: ['', Validators.required],
+      fechaFin: ['', Validators.required]
+    });
+
+    this.editPeriodoForm = this.fb.group({
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
       fechaInicio: ['', Validators.required],
       fechaFin: ['', Validators.required]
     });
@@ -187,6 +195,59 @@ export class SettingComponent implements OnInit {
       error: () => {
         this.loading = false;
         Swal.fire('Error', 'No se pudo crear el período', 'error');
+      }
+    });
+  }
+
+  /** Convierte una fecha ISO al formato que espera un input datetime-local (YYYY-MM-DDTHH:mm), en hora local. */
+  private toDatetimeLocalValue(fecha: string): string {
+    const d = new Date(fecha);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  editarPeriodo(periodo: any): void {
+    this.periodoEnEdicion = periodo;
+    this.editPeriodoForm.setValue({
+      nombre: periodo.nombre,
+      fechaInicio: this.toDatetimeLocalValue(periodo.fechaInicio),
+      fechaFin: this.toDatetimeLocalValue(periodo.fechaFin)
+    });
+  }
+
+  actualizarPeriodo(): void {
+    if (this.editPeriodoForm.invalid || !this.periodoEnEdicion) {
+      this.editPeriodoForm.markAllAsTouched();
+      return;
+    }
+
+    const fechaInicio = new Date(this.editPeriodoForm.value.fechaInicio);
+    const fechaFin = new Date(this.editPeriodoForm.value.fechaFin);
+
+    if (fechaFin <= fechaInicio) {
+      Swal.fire('Error de validación', 'La fecha de fin debe ser posterior a la fecha de inicio', 'error');
+      return;
+    }
+
+    this.loading = true;
+    const periodoData = {
+      nombre: this.editPeriodoForm.value.nombre,
+      fechaInicio: this.editPeriodoForm.value.fechaInicio,
+      fechaFin: this.editPeriodoForm.value.fechaFin
+    };
+
+    this.http.patch(`${this.baseUrl}/periods/${this.periodoEnEdicion.id}`, periodoData).subscribe({
+      next: () => {
+        this.loading = false;
+        this.periodoEnEdicion = null;
+        this.loadPeriodos();
+        this.closeModal('editPeriodModal');
+        Swal.fire('¡Éxito!', 'Período actualizado exitosamente', 'success');
+      },
+      error: (error) => {
+        this.loading = false;
+        const mensaje = error?.error?.message || 'No se pudo actualizar el período';
+        Swal.fire('Error', mensaje, 'error');
       }
     });
   }
