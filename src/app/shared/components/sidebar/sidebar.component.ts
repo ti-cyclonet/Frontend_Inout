@@ -27,13 +27,17 @@ export class SidebarComponent implements OnInit {
       return orderA - orderB;
     });
 
-    this.stockAlertsService.getAlerts().subscribe({
-      next: (response) => {
-        this.materialAlertCount = response.data.filter(a => a.type === 'material').length;
-        this.productAlertCount = response.data.filter(a => a.type === 'product').length;
-      },
-      error: () => {}
+    // Suscripción al observable compartido (no solo la carga inicial): así el
+    // badge se refresca en cuanto cualquier otra parte de la app (ej. una
+    // entrada de Kardex/compra que cambia el stock) llama a refreshAlerts(),
+    // sin depender de recargar la página o volver a montar el sidebar.
+    this.stockAlertsService.alerts$.subscribe(response => {
+      this.materialAlertCount = response.data.filter(a => a.type === 'material').length;
+      this.productAlertCount = response.data.filter(a => a.type === 'product').length;
     });
+
+    // Dispara la carga inicial; el resultado llega al badge vía alerts$ arriba.
+    this.stockAlertsService.getAlerts().subscribe({ error: () => {} });
   }
 
   getSubmenus(id: string): OptionMenu[] {
