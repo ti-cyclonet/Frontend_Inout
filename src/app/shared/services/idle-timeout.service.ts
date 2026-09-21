@@ -7,7 +7,7 @@ import { Router, NavigationEnd } from '@angular/router';
 })
 export class IdleTimeoutService {
   private timeoutId: any;
-  private readonly idleTime = 60 * 1000;
+  private readonly idleTime = 3 * 60 * 1000;
   private isBrowser: boolean;
 
   constructor(
