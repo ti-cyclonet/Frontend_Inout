@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MaterialService } from '../../shared/services/material.service';
 import { SupplierService } from '../../shared/services/supplier.service';
 import { DocumentsService } from '../../shared/services/documents.service';
+import { StockAlertsService } from '../../shared/services/stock-alerts.service';
 import { Material } from '../../shared/models/material.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
@@ -86,6 +87,7 @@ export class KardexComponent implements OnInit {
     private materialService: MaterialService,
     private supplierService: SupplierService,
     private documentsService: DocumentsService,
+    private stockAlertsService: StockAlertsService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -520,6 +522,8 @@ export class KardexComponent implements OnInit {
         Swal.fire('Éxito', 'Entrada registrada correctamente', 'success');
         // Recargar movimientos (esto actualizará automáticamente el balance y precio)
         this.loadMovements(this.selectedMaterial.id);
+        // El stock cambió: refrescar el badge de alertas del sidebar (Materiales).
+        this.stockAlertsService.refreshAlerts();
       },
       error: (error) => {
         console.error('Error al guardar entrada:', error);
@@ -830,7 +834,9 @@ export class KardexComponent implements OnInit {
         
         // Recargar movimientos
         this.loadMovements(this.selectedMaterial.id);
-        
+        // El stock cambió: refrescar el badge de alertas del sidebar (Productos/Materiales).
+        this.stockAlertsService.refreshAlerts();
+
         Swal.fire('Éxito', 'Producción registrada correctamente', 'success');
         this.closeProductEntryModal();
       },
@@ -908,6 +914,8 @@ export class KardexComponent implements OnInit {
             // Update local balance
             this.selectedMaterial.balance = newStock;
             this.loadMovements(this.selectedMaterial.id);
+            // El stock cambió: refrescar el badge de alertas del sidebar (Materiales).
+            this.stockAlertsService.refreshAlerts();
 
             Swal.fire({
               icon: 'success',
