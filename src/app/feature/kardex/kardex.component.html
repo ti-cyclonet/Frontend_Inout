@@ -68,7 +68,7 @@
             </div>
           </div>
           
-          <div class="search-field search-input-field">
+          <div class="search-field search-input-field" style="position: relative;">
             <label class="search-label">Términos de búsqueda</label>
             <div class="input-group">
               <span class="input-group-text" *ngIf="searchType === 'code'">
@@ -78,8 +78,12 @@
                 type="text"
                 class="form-control search-input"
                 [(ngModel)]="searchTerm"
-                [placeholder]="searchType === 'code' ? 'Código' : 'Términos de búsqueda'"
+                [placeholder]="searchType === 'code' ? 'Código' : 'Escribe para filtrar por nombre...'"
                 (keyup.enter)="search()"
+                (input)="onNameInput()"
+                (focus)="onNameInputFocus()"
+                (blur)="onNameInputBlur()"
+                autocomplete="off"
               />
               <button class="btn btn-primary search-button" (click)="search()">
                 <svg width="20" height="20" fill="currentColor">
@@ -90,6 +94,19 @@
                 <svg width="20" height="20" fill="currentColor">
                   <use xlink:href="./assets/icons/bootstrap-icons.svg#x-circle" />
                 </svg>
+              </button>
+            </div>
+
+            <!-- Select con filtro: lista de coincidencias por nombre -->
+            <div class="name-suggestions-dropdown" *ngIf="searchType === 'name' && showNameSuggestions">
+              <button
+                type="button"
+                class="name-suggestion-item"
+                *ngFor="let m of nameSuggestions"
+                (mousedown)="selectNameSuggestion(m)"
+              >
+                <span class="fw-bold">{{ m.name }}</span>
+                <span class="text-muted small ms-2">{{ m.code }}</span>
               </button>
             </div>
           </div>

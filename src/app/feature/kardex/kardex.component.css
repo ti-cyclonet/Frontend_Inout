@@ -455,6 +455,43 @@ tbody tr:nth-child(even) {
   flex: 1;
 }
 
+/* Select con filtro para la búsqueda por Nombre */
+.name-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  margin-top: 2px;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.name-suggestion-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: white;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.name-suggestion-item:hover,
+.name-suggestion-item:focus {
+  background-color: #f0f6ff;
+}
+
+.name-suggestion-item + .name-suggestion-item {
+  border-top: 1px solid #f1f1f1;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .kardex-card {

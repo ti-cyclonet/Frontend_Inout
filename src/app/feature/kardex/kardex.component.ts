@@ -30,7 +30,13 @@ export class KardexComponent implements OnInit {
   showFilters = false;
   mobileTab: 'entries' | 'outputs' | 'balances' = 'entries';
   clientCode = 'CYN';
-  
+
+  // Sugerencias tipo "select con filtro" para la búsqueda por Nombre: en vez
+  // de exigir coincidencia exacta con todo el nombre, se muestra una lista
+  // desplegable con las coincidencias parciales para que el usuario elija.
+  nameSuggestions: any[] = [];
+  showNameSuggestions = false;
+
   page = 0;
   pageSize = 6;
 
@@ -248,10 +254,12 @@ export class KardexComponent implements OnInit {
       if (this.searchType === 'code') {
         return m.code?.toLowerCase().includes(searchValue.toLowerCase());
       } else {
-        return m.name?.toLowerCase() === searchValue.toLowerCase();
+        // Coincidencia parcial, no exacta: complementa el select con filtro
+        // (si el usuario escribe Enter en vez de elegir una sugerencia).
+        return m.name?.toLowerCase().includes(searchValue.toLowerCase());
       }
     });
-    
+
     if (filtered.length > 0) {
       this.selectedMaterial = filtered[0];
       this.loadMovements(filtered[0].id);
@@ -265,10 +273,14 @@ export class KardexComponent implements OnInit {
     this.selectedMaterial = null;
     this.movements = [];
     this.materials = [];
+    this.nameSuggestions = [];
+    this.showNameSuggestions = false;
   }
 
   onSearchTypeChange(): void {
     this.searchTerm = '';
+    this.nameSuggestions = [];
+    this.showNameSuggestions = false;
   }
 
   onEntityTypeChange(): void {
@@ -276,6 +288,96 @@ export class KardexComponent implements OnInit {
     this.selectedMaterial = null;
     this.movements = [];
     this.materials = [];
+    this.nameSuggestions = [];
+    this.showNameSuggestions = false;
+  }
+
+  /** Se dispara al escribir en el campo de búsqueda por Nombre: filtra en vivo. */
+  onNameInput(): void {
+    if (this.searchType !== 'name') return;
+    const term = this.searchTerm.trim();
+    if (!term) {
+      this.nameSuggestions = [];
+      this.showNameSuggestions = false;
+      return;
+    }
+    if (this.materials.length === 0) {
+      this.loadMaterialsForSuggestions();
+      return;
+    }
+    this.filterNameSuggestions();
+  }
+
+  onNameInputFocus(): void {
+    if (this.searchType === 'name' && this.searchTerm.trim()) {
+      this.onNameInput();
+    }
+  }
+
+  /** Retraso corto para que el click sobre una sugerencia se registre antes de ocultar la lista. */
+  onNameInputBlur(): void {
+    setTimeout(() => (this.showNameSuggestions = false), 150);
+  }
+
+  private filterNameSuggestions(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.nameSuggestions = this.materials
+      .filter(m => m.name?.toLowerCase().includes(term))
+      .slice(0, 15);
+    this.showNameSuggestions = this.nameSuggestions.length > 0;
+  }
+
+  /** Carga la lista del tipo de entidad activo (sin disparar la búsqueda/alerta) solo para armar las sugerencias. */
+  private loadMaterialsForSuggestions(): void {
+    if (this.entityType === 'material') {
+      this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+        next: (response) => {
+          this.materials = response.data.map((m: Material) => ({
+            id: m.id, code: m.strCode || 'N/A', name: m.name, supplier: 'N/A',
+            location: m.location, stockMin: m.stockMin, stockMax: m.stockMax,
+            balance: m.currentStock || 0, price: m.price, measureUnit: m.measurementUnit,
+            entityType: 'material'
+          }));
+          this.filterNameSuggestions();
+        },
+        error: () => {}
+      });
+    } else if (this.entityType === 'composite') {
+      this.materialService.getTransformedMaterials().subscribe({
+        next: (response: any) => {
+          this.materials = response.map((m: any) => ({
+            id: m.strId, code: m.strCode || 'N/A', name: m.strName, supplier: 'N/A',
+            location: m.strLocation, stockMin: m.ingMinStock, stockMax: m.ingMaxStock,
+            balance: m.ingQuantity || 0, price: m.fltPrice, measureUnit: m.strUnitMeasure,
+            entityType: 'composite'
+          }));
+          this.filterNameSuggestions();
+        },
+        error: () => {}
+      });
+    } else if (this.entityType === 'product') {
+      this.http.get<any>(`${this.baseUrl}/products`).subscribe({
+        next: (response) => {
+          const products = response.data || response;
+          this.materials = products.map((p: any) => ({
+            id: p.strId, code: p.strCode || 'N/A', name: p.strName, supplier: 'N/A',
+            location: p.strLocation, stockMin: p.ingStockMin, stockMax: p.ingStockMax,
+            balance: p.ingQuantity || 0, price: p.fltPrice, measureUnit: p.strMeasurementUnit,
+            entityType: 'product'
+          }));
+          this.filterNameSuggestions();
+        },
+        error: () => {}
+      });
+    }
+  }
+
+  /** El usuario elige una sugerencia del select con filtro: selecciona directo, sin pasar por performSearch(). */
+  selectNameSuggestion(material: any): void {
+    this.searchTerm = material.name;
+    this.showNameSuggestions = false;
+    this.nameSuggestions = [];
+    this.selectMaterial(material);
   }
 
   loadSuppliers(): void {
