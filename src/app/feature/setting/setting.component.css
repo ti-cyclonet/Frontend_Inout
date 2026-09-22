@@ -49,6 +49,38 @@
   padding: 20px;
 }
 
+/* Acordeón de "Parámetros del Período" / "Plan de Producción" */
+.settings-accordion .accordion-item {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.settings-accordion .accordion-item + .accordion-item {
+  margin-top: 0.75rem;
+}
+
+.settings-accordion .accordion-button {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+}
+
+.settings-accordion .accordion-button:not(.collapsed) {
+  background-color: #eef2ff;
+  color: #374151;
+  box-shadow: inset 0 -1px 0 #e2e8f0;
+}
+
+.settings-accordion .accordion-button:focus {
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.settings-accordion .accordion-body {
+  background-color: white;
+}
+
 .card-title {
   font-size: 1.6rem;
   font-weight: 700;
