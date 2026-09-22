@@ -26,6 +26,16 @@ export class SettingComponent implements OnInit {
   nuevoSubperiodoForm: FormGroup;
   editPeriodoForm: FormGroup;
   periodoEnEdicion: any = null;
+
+  // Plan de producción: unidades planeadas por producto, asociadas al
+  // período/subperíodo activo. Reemplaza el campo suelto "Unidades que
+  // planeas producir al mes" que antes se re-adivinaba en cada creación de
+  // producto — ahora es un valor único por producto+período, configurado
+  // acá, y consultado desde el formulario de productos.
+  productionPlans: any[] = [];
+  loadingProductionPlans = false;
+  savingPlanProductId: string | null = null;
+  private planSaveTimers: Map<string, any> = new Map();
   
   filtroNombre: string = '';
   filtroTipo: string = '';
@@ -121,6 +131,10 @@ export class SettingComponent implements OnInit {
           this.periodoVistaParametrosId = this.periodoActivo.id;
           this.periodoVistaParametros = this.periodoActivo;
           this.loadParametrosVista(this.periodoActivo.id);
+        }
+
+        if (this.periodoActivo) {
+          this.loadProductionPlans();
         }
       },
       error: () => {
@@ -248,6 +262,51 @@ export class SettingComponent implements OnInit {
         this.loading = false;
         const mensaje = error?.error?.message || 'No se pudo actualizar el período';
         Swal.fire('Error', mensaje, 'error');
+      }
+    });
+  }
+
+  loadProductionPlans(): void {
+    if (!this.periodoActivo) {
+      this.productionPlans = [];
+      return;
+    }
+    this.loadingProductionPlans = true;
+    this.http.get<any[]>(`${this.baseUrl}/production-plans`, { params: { periodId: this.periodoActivo.id } }).subscribe({
+      next: (plans) => {
+        this.productionPlans = plans;
+        this.loadingProductionPlans = false;
+      },
+      error: () => {
+        this.productionPlans = [];
+        this.loadingProductionPlans = false;
+      }
+    });
+  }
+
+  /** Autoguarda con debounce corto: evita un POST por cada tecla mientras el usuario escribe. */
+  onPlanUnitsChange(item: any, value: number): void {
+    item.plannedMonthlyUnits = value;
+    const existing = this.planSaveTimers.get(item.productId);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => this.savePlan(item), 600);
+    this.planSaveTimers.set(item.productId, timer);
+  }
+
+  private savePlan(item: any): void {
+    if (!this.periodoActivo) return;
+    this.savingPlanProductId = item.productId;
+    this.http.post(`${this.baseUrl}/production-plans`, {
+      productId: item.productId,
+      periodId: this.periodoActivo.id,
+      plannedMonthlyUnits: +item.plannedMonthlyUnits || 0
+    }).subscribe({
+      next: () => {
+        if (this.savingPlanProductId === item.productId) this.savingPlanProductId = null;
+      },
+      error: () => {
+        if (this.savingPlanProductId === item.productId) this.savingPlanProductId = null;
+        Swal.fire('Error', 'No se pudo guardar el plan de producción', 'error');
       }
     });
   }

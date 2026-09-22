@@ -401,11 +401,15 @@
               </h5>
 
               <div class="form-group pricing-units-field">
-                <label>Unidades que planeas producir al mes *</label>
-                <input type="number" class="form-control" min="1"
-                       [ngModel]="estimatedMonthlyUnits" [ngModelOptions]="{standalone: true}"
-                       (ngModelChange)="onEstimatedUnitsChange($event)" />
-                <small class="text-muted">Se usa para prorratear tus costos indirectos mensuales (arriendo, servicios, nómina) entre las unidades de este producto.</small>
+                <label>Unidades planeadas al mes</label>
+                <div *ngIf="loadingProductionPlan" class="text-muted" style="font-size: 0.85rem;">Cargando plan de producción…</div>
+                <div *ngIf="!loadingProductionPlan && !productionPlanUnavailable">
+                  <span class="cost-highlight">{{ plannedMonthlyUnits | number: '1.0-0' }}</span>
+                  <small class="text-muted d-block">Configurado en <strong>Settings &gt; Plan de Producción</strong> para el período activo. Se usa para prorratear tus costos indirectos mensuales (arriendo, servicios, nómina) entre las unidades de este producto.</small>
+                </div>
+                <div *ngIf="!loadingProductionPlan && productionPlanUnavailable" class="pricing-error">
+                  {{ isEditMode ? 'No se pudo cargar el plan de producción del período activo.' : 'El costo indirecto se calculará después de guardar el producto: configura sus unidades planeadas en Settings > Plan de Producción.' }}
+                </div>
               </div>
 
               <div class="form-group pricing-units-field">
@@ -431,7 +435,7 @@
                   <strong>{{ formatCurrency(directLaborCost) }}</strong>
                 </div>
                 <div class="pricing-row" [title]="overheadBreakdown ? ('Arriendo: ' + formatCurrency(overheadBreakdown.arriendo) + ' · Agua: ' + formatCurrency(overheadBreakdown.agua) + ' · Energía: ' + formatCurrency(overheadBreakdown.energia) + ' · Gas: ' + formatCurrency(overheadBreakdown.gas) + ' · Internet: ' + formatCurrency(overheadBreakdown.internet) + ' · Nómina: ' + formatCurrency(overheadBreakdown.nomina)) : ''">
-                  <span>Costo indirecto por unidad <small class="text-muted">({{ formatCurrency(overheadTotal) }}/mes ÷ {{ estimatedMonthlyUnits }} und.)</small></span>
+                  <span>Costo indirecto por unidad <small class="text-muted">({{ formatCurrency(overheadTotal) }}/mes ÷ {{ plannedMonthlyUnits }} und.)</small></span>
                   <strong>{{ formatCurrency(indirectCostPerUnit) }}</strong>
                 </div>
                 <div class="pricing-row subtotal">
