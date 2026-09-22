@@ -401,11 +401,16 @@
               </h5>
 
               <div class="form-group pricing-units-field">
-                <label>Unidades planeadas al mes</label>
+                <label class="d-flex align-items-center gap-2">
+                  Unidades planeadas al mes
+                  <button type="button" class="btn-desc-toggle" (click)="showUnidadesDesc = !showUnidadesDesc" [title]="showUnidadesDesc ? 'Ocultar descripción' : 'Mostrar descripción'">
+                    <svg width="14" height="14" fill="currentColor"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showUnidadesDesc ? 'eye-slash' : 'eye')" /></svg>
+                  </button>
+                </label>
                 <div *ngIf="loadingProductionPlan" class="text-muted" style="font-size: 0.85rem;">Cargando plan de producción…</div>
                 <div *ngIf="!loadingProductionPlan && !productionPlanUnavailable">
                   <span class="cost-highlight">{{ plannedMonthlyUnits | number: '1.0-0' }}</span>
-                  <small class="text-muted d-block">Configurado en <strong>Settings &gt; Plan de Producción</strong> para el período activo. Se usa para prorratear tus costos indirectos mensuales (arriendo, servicios, nómina) entre las unidades de este producto.</small>
+                  <small class="text-muted d-block" *ngIf="showUnidadesDesc">Configurado en <strong>Settings &gt; Plan de Producción</strong> para el período activo. Se usa para prorratear tus costos indirectos mensuales (arriendo, servicios, nómina) entre las unidades de este producto.</small>
                 </div>
                 <div *ngIf="!loadingProductionPlan && productionPlanUnavailable" class="pricing-error">
                   {{ isEditMode ? 'No se pudo cargar el plan de producción del período activo.' : 'El costo indirecto se calculará después de guardar el producto: configura sus unidades planeadas en Settings > Plan de Producción.' }}
@@ -413,10 +418,15 @@
               </div>
 
               <div class="form-group pricing-units-field">
-                <label>Mano de obra directa por unidad (opcional)</label>
+                <label class="d-flex align-items-center gap-2">
+                  Mano de obra directa por unidad (opcional)
+                  <button type="button" class="btn-desc-toggle" (click)="showLaborDesc = !showLaborDesc" [title]="showLaborDesc ? 'Ocultar descripción' : 'Mostrar descripción'">
+                    <svg width="14" height="14" fill="currentColor"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (showLaborDesc ? 'eye-slash' : 'eye')" /></svg>
+                  </button>
+                </label>
                 <input type="number" class="form-control" min="0" step="0.01"
                        [(ngModel)]="directLaborCost" [ngModelOptions]="{standalone: true}" placeholder="0" />
-                <small class="text-muted">Costo trazable solo a este producto (ej. horas de un operario dedicado a fabricarlo). Distinto de la nómina indirecta, que ya está incluida en el costo indirecto de abajo.</small>
+                <small class="text-muted" *ngIf="showLaborDesc">Costo trazable solo a este producto (ej. horas de un operario dedicado a fabricarlo). Distinto de la nómina indirecta, que ya está incluida en el costo indirecto de abajo.</small>
               </div>
 
               <div *ngIf="loadingPricing" class="pricing-loading">Cargando parámetros del periodo activo…</div>
