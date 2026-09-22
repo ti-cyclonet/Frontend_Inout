@@ -1655,6 +1655,61 @@
   color: #374151;
 }
 
+/* Sesión opcional de cliente en el checkout */
+.client-session-box {
+  margin: 0.75rem 0;
+}
+
+.client-session-link {
+  font-size: 0.9rem;
+  color: #0066CC;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.client-session-link:hover {
+  text-decoration: underline;
+}
+
+.client-login-form {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.client-login-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.client-session-active {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.85rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  color: #065f46;
+}
+
+.client-session-active a {
+  color: #0066CC;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  margin-left: auto;
+}
+
 /* Cart items in checkout */
 .checkout-items {
   display: flex;
