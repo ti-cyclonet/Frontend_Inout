@@ -79,8 +79,12 @@ export class ProductFormComponent implements OnInit {
   editingComposition: number | null = null;
   tempQuantity: number = 0;
 
-  // Cálculo discriminado de precio sugerido (costo materiales + indirecto + margen)
+  // Cálculo discriminado de precio sugerido (costo materiales + mano de obra directa + indirecto + margen)
   estimatedMonthlyUnits: number = 1;
+  /** Mano de obra DIRECTA por unidad (opcional): costo trazable a este
+   * producto puntual, distinto de la nómina indirecta que ya está en el
+   * overhead prorrateado. Default 0 para no forzar su uso. */
+  directLaborCost: number = 0;
   overheadTotal: number = 0;
   overheadBreakdown: { arriendo: number; agua: number; energia: number; gas: number; internet: number; nomina: number } | null = null;
   marginPercent: number = 0;
@@ -148,6 +152,7 @@ export class ProductFormComponent implements OnInit {
       strLocation: this.productData.strLocation,
       categoryId: this.productData.intCategoryId
     });
+    this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
 
     if (this.productData.images && this.productData.images.length > 0) {
       this.productImages = this.productData.images.map((img: any) => ({
@@ -467,9 +472,9 @@ export class ProductFormComponent implements OnInit {
     return this.overheadTotal / this.estimatedMonthlyUnits;
   }
 
-  /** Costo total por unidad: materiales + indirecto prorrateado. */
+  /** Costo total por unidad: materiales + mano de obra directa (si aplica) + indirecto prorrateado. */
   get totalUnitCost(): number {
-    return this.getTotalCost() + this.indirectCostPerUnit;
+    return this.getTotalCost() + (this.directLaborCost || 0) + this.indirectCostPerUnit;
   }
 
   /** Precio sugerido = costo total + margen de ganancia configurado. Es el
@@ -546,6 +551,7 @@ export class ProductFormComponent implements OnInit {
       strDescription: formData.strDescription,
       fltPrice: +formData.fltPrice,
       fltCost: this.totalUnitCost,
+      fltDirectLaborCost: +this.directLaborCost || 0,
       strMeasurementUnit: formData.strMeasurementUnit,
       ingStockMin: +formData.ingStockMin,
       ingStockMax: +formData.ingStockMax,
