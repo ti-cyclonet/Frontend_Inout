@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { SalesDashboardComponent } from '../sales/dashboard/sales-dashboard.component';
 import { SalesListComponent } from '../sales/list/sales-list.component';
 import { SaleFormComponent } from '../sales/form/sale-form.component';
 import { OrdersComponent } from '../orders/orders.component';
-import { CustomersComponent } from '../customers/customers.component';
 
 @Component({
   selector: 'app-commercial',
@@ -16,8 +16,7 @@ import { CustomersComponent } from '../customers/customers.component';
     SalesDashboardComponent,
     SalesListComponent,
     SaleFormComponent,
-    OrdersComponent,
-    CustomersComponent
+    OrdersComponent
   ],
   template: `
     <div class="commercial-container">
@@ -33,9 +32,6 @@ import { CustomersComponent } from '../customers/customers.component';
         </button>
         <button class="tab-button" [class.active]="activeTab === 'orders'" (click)="activeTab = 'orders'">
           Pedidos
-        </button>
-        <button class="tab-button" [class.active]="activeTab === 'customers'" (click)="activeTab = 'customers'">
-          Clientes
         </button>
       </div>
 
@@ -53,11 +49,6 @@ import { CustomersComponent } from '../customers/customers.component';
         <!-- Pedidos -->
         <div *ngIf="activeTab === 'orders'">
           <app-orders></app-orders>
-        </div>
-
-        <!-- Clientes -->
-        <div *ngIf="activeTab === 'customers'">
-          <app-customers [embedded]="true"></app-customers>
         </div>
       </div>
 
@@ -125,9 +116,11 @@ import { CustomersComponent } from '../customers/customers.component';
   `]
 })
 export class CommercialComponent {
-  activeTab: 'dashboard' | 'sales' | 'orders' | 'customers' = 'dashboard';
+  activeTab: 'dashboard' | 'sales' | 'orders' = 'dashboard';
   showSaleModal = false;
   refreshTrigger = 0;
+
+  constructor(private router: Router) {}
 
   openSaleModal(): void {
     this.showSaleModal = true;
@@ -142,7 +135,8 @@ export class CommercialComponent {
     this.activeTab = 'orders';
   }
 
+  /** Los clientes ahora se registran/gestionan desde el módulo de Usuarios (rol Cliente). */
   goToCustomers(): void {
-    this.activeTab = 'customers';
+    this.router.navigate(['/users']);
   }
 }

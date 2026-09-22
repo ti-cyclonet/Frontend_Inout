@@ -100,11 +100,11 @@ export default class LayoutComponent implements OnInit {
           })) || []
         ) || [];
 
-        // Agregar enlace estático de Módulo Comercial (Ventas + Pedidos + Clientes unificado)
+        // Agregar enlace estático de Módulo Comercial (Ventas + Pedidos unificado)
         const commercialEntry: OptionMenu = {
           id: 'commercial',
           name: 'Comercial',
-          description: 'Ventas, Pedidos y Clientes',
+          description: 'Ventas y Pedidos',
           url: '/commercial',
           icon: 'shop',
           type: 'main_menu',
