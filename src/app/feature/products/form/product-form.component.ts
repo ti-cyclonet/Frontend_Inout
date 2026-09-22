@@ -80,7 +80,14 @@ export class ProductFormComponent implements OnInit {
   tempQuantity: number = 0;
 
   // Cálculo discriminado de precio sugerido (costo materiales + mano de obra directa + indirecto + margen)
-  estimatedMonthlyUnits: number = 1;
+  /** Unidades planeadas al mes para ESTE producto, en el período activo.
+   * Ya no se edita aquí: se configura en Settings > Plan de Producción
+   * (asociado al período/subperíodo activo) y se consulta de solo lectura. */
+  plannedMonthlyUnits: number = 0;
+  loadingProductionPlan = false;
+  /** true cuando el producto es nuevo (aún sin guardar): no existe un plan
+   * de producción posible todavía porque no hay productId. */
+  productionPlanUnavailable = false;
   /** Mano de obra DIRECTA por unidad (opcional): costo trazable a este
    * producto puntual, distinto de la nómina indirecta que ya está en el
    * overhead prorrateado. Default 0 para no forzar su uso. */
@@ -290,6 +297,7 @@ export class ProductFormComponent implements OnInit {
       this.currentStep++;
       if (this.currentStep === 4) {
         this.loadPricingData();
+        this.loadProductionPlanUnits();
       }
     }
   }
@@ -466,10 +474,12 @@ export class ProductFormComponent implements OnInit {
     return this.compositions.reduce((total, comp) => total + this.getCompositionCost(comp), 0);
   }
 
-  /** Costo indirecto (arriendo, servicios, nómina) prorrateado por unidad. */
+  /** Costo indirecto (arriendo, servicios, nómina) prorrateado por unidad,
+   * usando las unidades planeadas configuradas en Settings > Plan de
+   * Producción para este producto en el período activo. */
   get indirectCostPerUnit(): number {
-    if (!this.overheadTotal || !this.estimatedMonthlyUnits || this.estimatedMonthlyUnits <= 0) return 0;
-    return this.overheadTotal / this.estimatedMonthlyUnits;
+    if (!this.overheadTotal || !this.plannedMonthlyUnits || this.plannedMonthlyUnits <= 0) return 0;
+    return this.overheadTotal / this.plannedMonthlyUnits;
   }
 
   /** Costo total por unidad: materiales + mano de obra directa (si aplica) + indirecto prorrateado. */
@@ -508,8 +518,44 @@ export class ProductFormComponent implements OnInit {
     });
   }
 
-  onEstimatedUnitsChange(value: number): void {
-    this.estimatedMonthlyUnits = value > 0 ? value : 1;
+  /** Trae las unidades planeadas (Settings > Plan de Producción) para este
+   * producto en el período activo. Solo tiene sentido en modo edición: un
+   * producto nuevo aún no tiene id con el que buscar su plan. */
+  loadProductionPlanUnits(): void {
+    if (!this.isEditMode || !this.productData?.strId) {
+      this.productionPlanUnavailable = true;
+      this.plannedMonthlyUnits = 0;
+      return;
+    }
+
+    this.loadingProductionPlan = true;
+    this.productionPlanUnavailable = false;
+
+    this.http.get<any>(`${environment.apiUrl}/periods/active/current`).subscribe({
+      next: (activePeriod) => {
+        if (!activePeriod?.id) {
+          this.loadingProductionPlan = false;
+          this.productionPlanUnavailable = true;
+          return;
+        }
+        this.http.get<any>(`${environment.apiUrl}/production-plans/product/${this.productData.strId}`, {
+          params: { periodId: activePeriod.id }
+        }).subscribe({
+          next: (plan) => {
+            this.plannedMonthlyUnits = plan?.plannedMonthlyUnits || 0;
+            this.loadingProductionPlan = false;
+          },
+          error: () => {
+            this.loadingProductionPlan = false;
+            this.productionPlanUnavailable = true;
+          }
+        });
+      },
+      error: () => {
+        this.loadingProductionPlan = false;
+        this.productionPlanUnavailable = true;
+      }
+    });
   }
 
   /** Aplica el precio sugerido tal cual al campo Precio. */
