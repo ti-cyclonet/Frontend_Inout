@@ -20,6 +20,7 @@ export class ProductsListComponent implements OnInit {
   categories: Category[] = [];
   showModal = false;
   editingProduct: any = null;
+  selectedViewProduct: any = null;
   Math = Math;
   loading = false;
 
@@ -101,6 +102,19 @@ export class ProductsListComponent implements OnInit {
   openEditModal(product: any): void {
     this.editingProduct = product;
     this.showModal = true;
+  }
+
+  viewProduct(product: any): void {
+    this.selectedViewProduct = product;
+  }
+
+  closeViewModal(): void {
+    this.selectedViewProduct = null;
+  }
+
+  editFromViewModal(product: any): void {
+    this.closeViewModal();
+    this.openEditModal(product);
   }
 
   onProductCreated(): void {

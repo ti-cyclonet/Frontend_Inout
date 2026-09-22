@@ -326,6 +326,56 @@
   color: #155724;
 }
 
+/* Modal Ver Producto (mismo patrón que Materiales) */
+.view-images {
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.75rem;
+}
+
+.view-images-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+}
+
+.view-image-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.view-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.view-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.view-detail-item.full {
+  grid-column: 1 / -1;
+}
+
+.view-label {
+  font-size: 0.65rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.view-value {
+  font-size: 0.85rem;
+  color: #212529;
+}
+
 .action-buttons {
   display: flex;
   gap: 0.25rem;
