@@ -8,6 +8,7 @@ import { CategoryService, Category } from '../../../shared/services/category/cat
 import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialComposition, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
+import { convertUnits } from '../../../shared/utils/unit-conversion.util';
 
 @Component({
   selector: 'app-material-composition',
@@ -349,11 +350,19 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     });
   }
 
+  /** Convierte una cantidad de receta (unidad de DESCARGA del material) a su
+   * unidad de MEDIDA (la del stock), para poder sumar/restar/costear correctamente. */
+  private toStockUnit(material: Material | undefined, quantity: number): number {
+    if (!material) return quantity;
+    const dischargeUnit = material.dischargeUnit || material.measurementUnit;
+    return convertUnits(quantity, dischargeUnit, material.measurementUnit);
+  }
+
   private updateMaterialsStock(): void {
     this.compositions.forEach(comp => {
       const material = this.availableMaterials.find(m => m.id === comp.componentMaterialId);
       if (material) {
-        const newStock = (material.currentStock || 0) - comp.quantity;
+        const newStock = (material.currentStock || 0) - this.toStockUnit(material, comp.quantity);
         material.currentStock = Math.max(0, newStock);
       }
     });
@@ -365,21 +374,33 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       if (additional > 0) {
         const material = this.availableMaterials.find(m => m.id === comp.componentMaterialId);
         if (material) {
-          const newStock = (material.currentStock || 0) - additional;
+          const newStock = (material.currentStock || 0) - this.toStockUnit(material, additional);
           material.currentStock = Math.max(0, newStock);
         }
       }
     });
   }
 
+  /** Cantidad efectiva de una línea (según si se está editando o no). */
+  getCompositionQuantity(comp: MaterialComposition): number {
+    return this.editingMaterialId ? (this.additionalQuantities.get(comp.id) || 0) : comp.quantity;
+  }
+
+  /** Costo de una línea, convirtiendo su cantidad (unidad de descarga) a la
+   * unidad de medida en la que está expresado el precio del componente. */
+  getCompositionCost(comp: MaterialComposition): number {
+    const materialCost = comp.componentMaterial?.price || 0;
+    return materialCost * this.toStockUnit(comp.componentMaterial, this.getCompositionQuantity(comp));
+  }
+
+  /** Unidad en la que se entiende la cantidad de una línea de receta:
+   * la de descarga del componente (o su unidad de medida si no tiene). */
+  getCompositionUnit(comp: MaterialComposition): string {
+    return comp.componentMaterial?.dischargeUnit || comp.componentMaterial?.measurementUnit || '';
+  }
+
   getTotalCost(): number {
-    return this.compositions.reduce((total, comp) => {
-      const materialCost = comp.componentMaterial?.price || 0;
-      const quantity = this.editingMaterialId 
-        ? (this.additionalQuantities.get(comp.id) || 0)
-        : comp.quantity;
-      return total + (materialCost * quantity);
-    }, 0);
+    return this.compositions.reduce((total, comp) => total + this.getCompositionCost(comp), 0);
   }
 
   getTotalQuantity(): number {
@@ -605,7 +626,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
 
   checkStockWarning(material: Material): boolean {
     const quantity = this.selectedMaterials.get(material.id) || 0;
-    const remainingStock = (material.currentStock || 0) - quantity;
+    const remainingStock = (material.currentStock || 0) - this.toStockUnit(material, quantity);
     return remainingStock < (material.stockMin || 0);
   }
 

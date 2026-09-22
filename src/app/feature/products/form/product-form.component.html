@@ -232,8 +232,11 @@
                   </div>
                 </div>
                 <div class="material-quantity" *ngIf="selectedMaterials.has(material.id)">
-                  <input type="number" class="form-control quantity-input" [value]="selectedMaterials.get(material.id)"
-                    (input)="updateQuantity(material.id, +$any($event.target).value)" min="0.01" step="0.01" />
+                  <div class="input-group input-group-sm">
+                    <input type="number" class="form-control quantity-input" [value]="selectedMaterials.get(material.id)"
+                      (input)="updateQuantity(material.id, +$any($event.target).value)" min="0.01" step="0.01" />
+                    <span class="input-group-text">{{ material.dischargeUnit || material.measurementUnit }}</span>
+                  </div>
                   <div class="stock-warning" *ngIf="checkStockWarning(material)">
                     ⚠️ Deberá recargar el material
                   </div>
@@ -293,13 +296,13 @@
                   </td>
                   <td class="ingredient-quantity">
                     <span *ngIf="editingComposition !== comp.id">
-                      {{ formatNumber(comp.quantity) }} {{ comp.componentMaterial?.measurementUnit }}
+                      {{ formatNumber(comp.quantity) }} {{ comp.componentMaterial?.dischargeUnit || comp.componentMaterial?.measurementUnit }}
                     </span>
                     <input *ngIf="editingComposition === comp.id" type="number" class="form-control edit-input"
                       [(ngModel)]="tempQuantity" [ngModelOptions]="{standalone: true}" min="0.01" step="0.01" />
                   </td>
                   <td class="ingredient-cost">
-                    {{ formatCurrency((comp.componentMaterial?.price || 0) * comp.quantity) }}
+                    {{ formatCurrency(getCompositionCost(comp)) }}
                   </td>
                   <td>
                     <div class="action-buttons">
