@@ -400,6 +400,33 @@
 
       <hr>
 
+      <!-- Sesión opcional de cliente: NO es obligatoria para comprar -->
+      <div class="client-session-box">
+        <ng-container *ngIf="!clientLoggedIn">
+          <a href="javascript:void(0)" class="client-session-link" (click)="showClientLogin ? closeClientLogin() : openClientLogin()">
+            {{ showClientLogin ? 'Prefiero seguir como invitado' : '¿Ya tienes cuenta? Inicia sesión' }}
+          </a>
+          <div class="client-login-form" *ngIf="showClientLogin">
+            <div class="form-field">
+              <label>Correo</label>
+              <input type="email" [(ngModel)]="clientLoginData.email" placeholder="tu@correo.com" (keyup.enter)="clientLogin()">
+            </div>
+            <div class="form-field">
+              <label>Contraseña</label>
+              <input type="password" [(ngModel)]="clientLoginData.password" placeholder="••••••••" (keyup.enter)="clientLogin()">
+            </div>
+            <p class="client-login-error" *ngIf="clientLoginError">{{ clientLoginError }}</p>
+            <button type="button" class="btn-checkout-primary" [disabled]="clientLoginLoading" (click)="clientLogin()">
+              {{ clientLoginLoading ? 'Ingresando...' : 'Iniciar sesión' }}
+            </button>
+          </div>
+        </ng-container>
+        <div class="client-session-active" *ngIf="clientLoggedIn">
+          ✅ Sesión iniciada como <strong>{{ clientEmail }}</strong>
+          <a href="javascript:void(0)" (click)="clientLogout()">Cerrar sesión</a>
+        </div>
+      </div>
+
       <!-- Customer Data -->
       <h3 class="checkout-subtitle">📋 Tus Datos</h3>
       <div class="checkout-form">
@@ -410,6 +437,10 @@
         <div class="form-field">
           <label>Teléfono / WhatsApp *</label>
           <input type="tel" [(ngModel)]="checkoutData.customerPhone" placeholder="+57 300 123 4567">
+        </div>
+        <div class="form-field">
+          <label>Correo</label>
+          <input type="email" [(ngModel)]="checkoutData.customerEmail" placeholder="Opcional" [disabled]="clientLoggedIn">
         </div>
         <div class="form-field">
           <label>Dirección de entrega</label>

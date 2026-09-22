@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
+import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 interface Product {
   strId: string;
@@ -82,11 +83,28 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   // Cart
   cart: { product: Product; quantity: number }[] = [];
   showCheckout = false;
-  checkoutData = { customerName: '', customerPhone: '', customerAddress: '', notes: '' };
+  checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: '', notes: '' };
   checkoutSending = false;
   orderSuccess: any = null;
 
+  // Sesión opcional de cliente (rol clienteInout) en ESTE marketplace. No es
+  // obligatoria: el checkout de invitado (arriba) sigue funcionando igual.
+  // Se guarda en una clave de sessionStorage propia (no "authToken", esa es
+  // la del staff) para no chocar con una sesión de administrador abierta en
+  // el mismo navegador.
+  showClientLogin = false;
+  clientLoginData = { email: '', password: '' };
+  clientLoginLoading = false;
+  clientLoginError = '';
+  clientLoggedIn = false;
+  clientEmail = '';
+  private clientToken: string | null = null;
+  private get clientTokenKey(): string {
+    return `marketplace_client_token_${this.tenantId}`;
+  }
+
   private baseUrl = environment.apiUrl;
+  private authorizaUrl = environment.auth.authorizaUrl;
 
   constructor(
     private route: ActivatedRoute,
@@ -230,6 +248,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   loadTenantData(tenantId: string): void {
+    this.checkExistingClientSession();
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/products/tenant/${tenantId}`).toPromise(),
       this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise().catch(() => ({ businessSector: 'general' })),
@@ -1000,6 +1019,98 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.showCheckout = false;
   }
 
+  // ═══════ SESIÓN OPCIONAL DE CLIENTE (rol clienteInout) ═══════
+
+  /** Restaura la sesión de cliente si hay un token guardado válido para ESTE tenant. */
+  private checkExistingClientSession(): void {
+    if (typeof window === 'undefined') return;
+    const token = sessionStorage.getItem(this.clientTokenKey);
+    if (!token) return;
+
+    const payload = decodeJwtPayload(token);
+    const isValid = payload?.rol === 'clienteInout'
+      && payload?.tenantId === this.tenantId
+      && (!payload?.exp || payload.exp * 1000 > Date.now());
+
+    if (isValid) {
+      this.clientToken = token;
+      this.clientEmail = payload.email || '';
+      this.clientLoggedIn = true;
+      this.checkoutData.customerEmail = this.clientEmail;
+    } else {
+      sessionStorage.removeItem(this.clientTokenKey);
+    }
+  }
+
+  openClientLogin(): void {
+    this.showClientLogin = true;
+    this.clientLoginError = '';
+  }
+
+  closeClientLogin(): void {
+    this.showClientLogin = false;
+  }
+
+  /** Login opcional: usa las mismas credenciales de Authoriza (no es
+   * obligatorio para comprar). fetch() directo, NO HttpClient: el
+   * interceptor global reemplazaría el header Authorization por el token de
+   * staff si hay una sesión de administrador abierta en el mismo navegador. */
+  clientLogin(): void {
+    if (!this.clientLoginData.email.trim() || !this.clientLoginData.password) {
+      this.clientLoginError = 'Ingresa tu correo y contraseña.';
+      return;
+    }
+
+    this.clientLoginLoading = true;
+    this.clientLoginError = '';
+
+    fetch(`${this.authorizaUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: this.clientLoginData.email.trim(),
+        password: this.clientLoginData.password,
+        applicationName: 'Inout',
+      }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.message || 'Credenciales inválidas');
+        return data;
+      })
+      .then((data: any) => {
+        const token = data.access_token || data.token;
+        const payload = token ? decodeJwtPayload(token) : null;
+
+        if (!token || payload?.rol !== 'clienteInout') {
+          throw new Error('Esta cuenta no tiene un rol de cliente en InOut.');
+        }
+        if (payload?.tenantId !== this.tenantId) {
+          throw new Error('Esta cuenta no está registrada como cliente de este negocio.');
+        }
+
+        sessionStorage.setItem(this.clientTokenKey, token);
+        this.clientToken = token;
+        this.clientEmail = payload.email || this.clientLoginData.email.trim();
+        this.clientLoggedIn = true;
+        this.checkoutData.customerEmail = this.clientEmail;
+        this.clientLoginLoading = false;
+        this.showClientLogin = false;
+        this.clientLoginData = { email: '', password: '' };
+      })
+      .catch((err) => {
+        this.clientLoginLoading = false;
+        this.clientLoginError = err?.message || 'No se pudo iniciar sesión.';
+      });
+  }
+
+  clientLogout(): void {
+    if (typeof window !== 'undefined') sessionStorage.removeItem(this.clientTokenKey);
+    this.clientToken = null;
+    this.clientLoggedIn = false;
+    this.clientEmail = '';
+  }
+
   submitOrder(): void {
     if (!this.checkoutData.customerName.trim() || !this.checkoutData.customerPhone.trim()) {
       Swal.fire({ icon: 'warning', title: 'Datos requeridos', text: 'Ingresa tu nombre y teléfono para continuar.' });
@@ -1014,6 +1125,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       customerName: this.checkoutData.customerName.trim(),
       customerPhone: this.checkoutData.customerPhone.trim(),
       customerAddress: this.checkoutData.customerAddress.trim() || undefined,
+      customerEmail: this.checkoutData.customerEmail.trim() || undefined,
       items: this.cart.map(item => ({
         productId: item.product.strId,
         productName: item.product.strName,
@@ -1027,24 +1139,44 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       total: Number(subtotal),
     };
 
-    this.http.post<any>(`${this.baseUrl}/orders/marketplace`, payload).subscribe({
-      next: (response) => {
-        this.checkoutSending = false;
-        this.orderSuccess = response;
-        this.cart = [];
-        this.checkoutData = { customerName: '', customerPhone: '', customerAddress: '', notes: '' };
+    const onSuccess = (response: any) => {
+      this.checkoutSending = false;
+      this.orderSuccess = response;
+      this.cart = [];
+      this.checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: this.clientEmail, notes: '' };
 
-        // If WhatsApp is available, offer to notify
-        if (response.whatsapp) {
-          const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}`);
-          window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
-        }
-      },
-      error: (err) => {
-        this.checkoutSending = false;
-        Swal.fire({ icon: 'error', title: 'Error', text: err.error?.message || 'No se pudo crear el pedido. Intenta de nuevo.' });
+      if (response.whatsapp) {
+        const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}`);
+        window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
       }
-    });
+    };
+
+    const onError = (message?: string) => {
+      this.checkoutSending = false;
+      Swal.fire({ icon: 'error', title: 'Error', text: message || 'No se pudo crear el pedido. Intenta de nuevo.' });
+    };
+
+    if (this.clientLoggedIn && this.clientToken) {
+      // Comprando con sesión iniciada: fetch() directo (ver nota en
+      // clientLogin) para que el interceptor global no reemplace el token.
+      fetch(`${this.baseUrl}/orders/marketplace/authenticated`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.clientToken}` },
+        body: JSON.stringify(payload),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.message || 'No se pudo crear el pedido.');
+          return data;
+        })
+        .then(onSuccess)
+        .catch((err) => onError(err?.message));
+    } else {
+      this.http.post<any>(`${this.baseUrl}/orders/marketplace`, payload).subscribe({
+        next: onSuccess,
+        error: (err) => onError(err.error?.message),
+      });
+    }
   }
 
   // ═══════ SLUG EDITOR ═══════
