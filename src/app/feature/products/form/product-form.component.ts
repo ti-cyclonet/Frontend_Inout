@@ -136,7 +136,8 @@ export class ProductFormComponent implements OnInit {
       ingStockMin: [0, [Validators.required, Validators.min(0)]],
       ingStockMax: [0, [Validators.required, Validators.min(1)]],
       strLocation: ['', Validators.required],
-      categoryId: [null, Validators.required]
+      categoryId: [null, Validators.required],
+      marketplaceVisible: [true]
     });
   }
 
@@ -160,7 +161,8 @@ export class ProductFormComponent implements OnInit {
       ingStockMin: this.productData.ingStockMin,
       ingStockMax: this.productData.ingStockMax,
       strLocation: this.productData.strLocation,
-      categoryId: this.productData.intCategoryId
+      categoryId: this.productData.intCategoryId,
+      marketplaceVisible: this.productData.blnMarketplaceVisible !== false
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
 
@@ -618,7 +620,8 @@ export class ProductFormComponent implements OnInit {
           quantity: +comp.quantity
         })),
       images: this.productImages,
-      categoryId: +formData.categoryId
+      categoryId: +formData.categoryId,
+      blnMarketplaceVisible: formData.marketplaceVisible !== false
     };
 
     const request = this.isEditMode && this.productData?.strId

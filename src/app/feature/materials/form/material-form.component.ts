@@ -99,7 +99,8 @@ export class MaterialFormComponent implements OnInit, OnChanges {
       stockMax: [0, [Validators.required, Validators.min(1)]],
       currentStock: [0, [Validators.min(0)]],
       ubicacion: ['', Validators.required],
-      
+      marketplaceVisible: [true],
+
       // Step 3: Status
       status: ['active', Validators.required]
     });
@@ -190,7 +191,8 @@ export class MaterialFormComponent implements OnInit, OnChanges {
             stockMax: material.ingMaxStock || material.stockMax,
             currentStock: material.ingQuantity || material.currentStock,
             ubicacion: material.strLocation || material.ubicacion,
-            status: material.strStatus || material.status
+            status: material.strStatus || material.status,
+            marketplaceVisible: material.blnMarketplaceVisible !== false
           });
           
           if (material.images) {
@@ -287,6 +289,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         ingQuantity: parseInt(formData.currentStock) || 0,
         strLocation: formData.ubicacion,
         strStatus: formData.status,
+        blnMarketplaceVisible: formData.marketplaceVisible !== false,
         images: imagesToSend
       };
 

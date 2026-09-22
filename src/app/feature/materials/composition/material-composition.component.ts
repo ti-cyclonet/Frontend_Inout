@@ -40,7 +40,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     stockMin: 0,
     stockMax: 100,
     quantityToGenerate: 1,
-    categoryId: null as number | null
+    categoryId: null as number | null,
+    marketplaceVisible: true
   };
   
   // Form state
@@ -286,7 +287,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       ingMinStock: Number(this.newMaterial.stockMin),
       ingMaxStock: Number(this.newMaterial.stockMax),
       strLocation: this.newMaterial.ubicacion,
-      strStatus: 'Active'
+      strStatus: 'Active',
+      blnMarketplaceVisible: this.newMaterial.marketplaceVisible !== false
     };
 
     // Solo incluir categoryId si tiene valor
@@ -453,7 +455,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       stockMin: 0,
       stockMax: 100,
       quantityToGenerate: 1,
-      categoryId: null
+      categoryId: null,
+      marketplaceVisible: true
     };
     this.compositions = [];
     this.selectedMaterials.clear();
@@ -786,7 +789,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
           stockMin: data.ingMinStock,
           stockMax: data.ingMaxStock,
           quantityToGenerate: data.ingQuantity,
-          categoryId: data.categoryId
+          categoryId: data.categoryId,
+          marketplaceVisible: data.blnMarketplaceVisible !== false
         };
         this.useDifferentDischargeUnit = data.strDischargeUnit !== data.strUnitMeasure;
         
