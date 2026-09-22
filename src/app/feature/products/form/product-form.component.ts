@@ -85,6 +85,9 @@ export class ProductFormComponent implements OnInit {
    * (asociado al período/subperíodo activo) y se consulta de solo lectura. */
   plannedMonthlyUnits: number = 0;
   loadingProductionPlan = false;
+  /** Mostrar/ocultar el texto explicativo de cada campo (toggle de ojito). */
+  showUnidadesDesc = true;
+  showLaborDesc = true;
   /** true cuando el producto es nuevo (aún sin guardar): no existe un plan
    * de producción posible todavía porque no hay productId. */
   productionPlanUnavailable = false;

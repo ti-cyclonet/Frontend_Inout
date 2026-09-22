@@ -608,7 +608,7 @@
 }
 
 .pricing-units-field {
-  max-width: 320px;
+  width: 100%;
   margin-bottom: 1rem;
 }
 
@@ -617,6 +617,21 @@
   margin-top: 0.35rem;
   font-size: 0.78rem;
   line-height: 1.3;
+}
+
+.btn-desc-toggle {
+  background: none;
+  border: none;
+  padding: 2px;
+  line-height: 1;
+  color: #8a94a3;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-desc-toggle:hover {
+  color: #0066CC;
 }
 
 .pricing-loading,
