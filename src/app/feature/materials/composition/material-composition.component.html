@@ -696,19 +696,22 @@
                           class="material-quantity"
                           *ngIf="selectedMaterials.has(material.id)"
                         >
-                          <input
-                            type="number"
-                            class="form-control quantity-input"
-                            [value]="selectedMaterials.get(material.id)"
-                            (input)="
-                              updateQuantity(
-                                material.id,
-                                +$any($event.target).value
-                              )
-                            "
-                            min="0.01"
-                            step="0.01"
-                          />
+                          <div class="input-group input-group-sm">
+                            <input
+                              type="number"
+                              class="form-control quantity-input"
+                              [value]="selectedMaterials.get(material.id)"
+                              (input)="
+                                updateQuantity(
+                                  material.id,
+                                  +$any($event.target).value
+                                )
+                              "
+                              min="0.01"
+                              step="0.01"
+                            />
+                            <span class="input-group-text">{{ material.dischargeUnit || material.measurementUnit }}</span>
+                          </div>
                           <div
                             class="stock-warning"
                             *ngIf="checkStockWarning(material)"
@@ -799,7 +802,7 @@
                         <td class="ingredient-quantity">
                           <span *ngIf="editingComposition !== comp.id">
                             {{ formatNumber(comp.quantity) }}
-                            {{ comp.componentMaterial?.measurementUnit }}
+                            {{ getCompositionUnit(comp) }}
                           </span>
                           <input
                             *ngIf="editingComposition === comp.id"
@@ -820,14 +823,10 @@
                             step="0.01"
                             placeholder="0.00"
                           />
+                          <small class="text-muted">{{ getCompositionUnit(comp) }}</small>
                         </td>
                         <td class="ingredient-cost">
-                          {{
-                            formatCurrency(
-                              (comp.componentMaterial?.price || 0) *
-                                (editingMaterialId ? (additionalQuantities.get(comp.id) || 0) : comp.quantity)
-                            )
-                          }}
+                          {{ formatCurrency(getCompositionCost(comp)) }}
                         </td>
                         <td>
                           <div class="action-buttons">
@@ -896,11 +895,11 @@
                       <div class="ingredient-card-body">
                         <div class="ingredient-card-field">
                           <span class="ingredient-card-label">Cant. Base</span>
-                          <span class="ingredient-card-value" *ngIf="editingComposition !== comp.id">{{ formatNumber(comp.quantity) }} {{ comp.componentMaterial?.measurementUnit }}</span>
+                          <span class="ingredient-card-value" *ngIf="editingComposition !== comp.id">{{ formatNumber(comp.quantity) }} {{ getCompositionUnit(comp) }}</span>
                           <input *ngIf="editingComposition === comp.id" type="number" class="form-control edit-input" [(ngModel)]="tempQuantity" min="0.01" step="0.01" />
                         </div>
                         <div class="ingredient-card-field" *ngIf="editingMaterialId">
-                          <span class="ingredient-card-label">Cant. Adicional</span>
+                          <span class="ingredient-card-label">Cant. Adicional ({{ getCompositionUnit(comp) }})</span>
                           <input type="number" class="form-control edit-input"
                             [value]="additionalQuantities.get(comp.id) || 0"
                             (input)="additionalQuantities.set(comp.id, +$any($event.target).value)"
@@ -908,7 +907,7 @@
                         </div>
                         <div class="ingredient-card-field">
                           <span class="ingredient-card-label">Costo</span>
-                          <span class="ingredient-card-value cost">{{ formatCurrency((comp.componentMaterial?.price || 0) * (editingMaterialId ? (additionalQuantities.get(comp.id) || 0) : comp.quantity)) }}</span>
+                          <span class="ingredient-card-value cost">{{ formatCurrency(getCompositionCost(comp)) }}</span>
                         </div>
                       </div>
                     </div>
@@ -1026,7 +1025,7 @@
                     <div class="review-fields">
                       <div class="review-field full" *ngFor="let comp of compositions">
                         <span class="review-label">{{ comp.componentMaterial?.name }}</span>
-                        <span class="review-value">{{ formatNumber(comp.quantity) }} {{ comp.componentMaterial?.measurementUnit }}</span>
+                        <span class="review-value">{{ formatNumber(comp.quantity) }} {{ getCompositionUnit(comp) }}</span>
                       </div>
                     </div>
                   </div>

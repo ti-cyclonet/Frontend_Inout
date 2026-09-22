@@ -841,12 +841,12 @@
                   <tbody>
                     <tr *ngFor="let ing of productIngredients">
                       <td>{{ ing.name }}</td>
-                      <td class="text-center">{{ formatNumber(ing.quantity) }}{{ ing.unit }}</td>
-                      <td class="text-center">{{ formatNumber(ing.stock) }}{{ ing.unit }}</td>
-                      <td class="text-center">{{ formatNumber(ing.quantity * productEntryData.quantity) }}{{ ing.unit }}</td>
+                      <td class="text-center">{{ formatNumber(ing.quantity) }} {{ ing.unit }}</td>
+                      <td class="text-center">{{ formatNumber(ing.stock) }} {{ ing.stockUnit }}</td>
+                      <td class="text-center">{{ formatNumber(ing.quantityInStockUnit * productEntryData.quantity) }} {{ ing.stockUnit }}</td>
                       <td class="text-center">
-                        <span *ngIf="ing.stock >= (ing.quantity * productEntryData.quantity)" class="badge bg-success">&#10003; Disponible</span>
-                        <span *ngIf="ing.stock < (ing.quantity * productEntryData.quantity)" class="badge bg-danger">&#9888; Insuficiente</span>
+                        <span *ngIf="ing.stock >= (ing.quantityInStockUnit * productEntryData.quantity)" class="badge bg-success">&#10003; Disponible</span>
+                        <span *ngIf="ing.stock < (ing.quantityInStockUnit * productEntryData.quantity)" class="badge bg-danger">&#9888; Insuficiente</span>
                       </td>
                     </tr>
                   </tbody>

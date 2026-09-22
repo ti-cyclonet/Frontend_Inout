@@ -752,7 +752,13 @@ export class KardexComponent implements OnInit {
           name: ing.name,
           quantity: ing.quantity,
           unit: ing.unit,
+          // quantityInStockUnit: la cantidad de receta (unidad de descarga)
+          // ya convertida a la unidad de medida del stock (backend). Se usa
+          // para costear y comparar contra el stock disponible; si el
+          // backend no la trae (ambiente sin actualizar), se asume 1:1.
+          quantityInStockUnit: ing.quantityInStockUnit ?? ing.quantity,
           stock: ing.stock,
+          stockUnit: ing.stockUnit || ing.unit,
           unitPrice: ing.unitPrice,
           type: ing.type
         }));
@@ -782,8 +788,9 @@ export class KardexComponent implements OnInit {
   calculateProductCost(): void {
     let totalCost = 0;
     this.productIngredients.forEach(ing => {
-      const cost = ing.quantity * ing.unitPrice;
-      console.log(`${ing.name}: ${ing.quantity} × ${ing.unitPrice} = ${cost}`);
+      // unitPrice está por unidad de MEDIDA (stock), no de descarga.
+      const cost = ing.quantityInStockUnit * ing.unitPrice;
+      console.log(`${ing.name}: ${ing.quantityInStockUnit} ${ing.stockUnit} × ${ing.unitPrice} = ${cost}`);
       totalCost += cost;
     });
     this.productEntryData.unitCost = totalCost;
@@ -794,7 +801,7 @@ export class KardexComponent implements OnInit {
     if (this.productStep === 1) {
       const hasDate = !!this.productEntryData.date;
       const hasQuantity = this.productEntryData.quantity > 0;
-      const hasStock = this.productIngredients.every(ing => ing.stock >= (ing.quantity * this.productEntryData.quantity));
+      const hasStock = this.productIngredients.every(ing => ing.stock >= (ing.quantityInStockUnit * this.productEntryData.quantity));
       return hasDate && hasQuantity && hasStock;
     }
     return false;

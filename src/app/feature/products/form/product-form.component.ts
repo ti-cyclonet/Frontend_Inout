@@ -9,6 +9,7 @@ import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import { environment } from '../../../../environments/environment';
+import { convertUnits } from '../../../shared/utils/unit-conversion.util';
 import Swal from 'sweetalert2';
 
 interface ExtendedMaterial extends Material {
@@ -212,6 +213,7 @@ export class ProductFormComponent implements OnInit {
               description: m.strDescription,
               price: m.fltPrice,
               measurementUnit: m.strUnitMeasure,
+              dischargeUnit: m.strDischargeUnit,
               currentStock: m.ingQuantity,
               stockMin: m.ingMinStock,
               stockMax: m.ingMaxStock,
@@ -438,15 +440,25 @@ export class ProductFormComponent implements OnInit {
 
   checkStockWarning(material: ExtendedMaterial): boolean {
     const quantity = this.selectedMaterials.get(material.id) || 0;
-    const remainingStock = (material.currentStock || 0) - quantity;
+    // La cantidad se ingresa en la unidad de DESCARGA del material; el stock
+    // vive en su unidad de MEDIDA. Se convierte antes de comparar.
+    const dischargeUnit = material.dischargeUnit || material.measurementUnit;
+    const quantityInStockUnit = convertUnits(quantity, dischargeUnit, material.measurementUnit);
+    const remainingStock = (material.currentStock || 0) - quantityInStockUnit;
     return remainingStock < (material.stockMin || 0);
   }
 
+  /** Costo de una línea de composición, convirtiendo la cantidad (unidad de
+   * descarga) a la unidad de medida en la que está expresado el precio. */
+  getCompositionCost(comp: ProductComposition): number {
+    const price = comp.componentMaterial?.price || 0;
+    const dischargeUnit = comp.componentMaterial?.dischargeUnit || comp.componentMaterial?.measurementUnit;
+    const quantityInStockUnit = convertUnits(comp.quantity, dischargeUnit, comp.componentMaterial?.measurementUnit);
+    return price * quantityInStockUnit;
+  }
+
   getTotalCost(): number {
-    return this.compositions.reduce((total, comp) => {
-      const materialCost = comp.componentMaterial?.price || 0;
-      return total + (materialCost * comp.quantity);
-    }, 0);
+    return this.compositions.reduce((total, comp) => total + this.getCompositionCost(comp), 0);
   }
 
   /** Costo indirecto (arriendo, servicios, nómina) prorrateado por unidad. */
