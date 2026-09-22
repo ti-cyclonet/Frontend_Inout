@@ -202,20 +202,14 @@
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" title="Ver">
+                <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" title="Ver" (click)="viewProduct(product)">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
-                <button
-                  class="btn btn-sm btn-outline-secondary"
-                  title="Editar"
-                  (click)="openEditModal(product)"
-                >
+                <button class="btn btn-sm btn-outline-primary d-md-none" title="Ver" (click)="viewProduct(product)">
                   <svg viewBox="0 0 16 16">
-                    <use
-                      xlink:href="./assets/icons/bootstrap-icons.svg#pencil"
-                    />
+                    <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
                 <button
@@ -336,12 +330,9 @@
             <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
           </svg>
         </button>
-        <button
-          class="btn btn-sm btn-outline-secondary"
-          (click)="openEditModal(product)"
-        >
+        <button class="btn btn-sm btn-outline-primary" (click)="viewProduct(product)">
           <svg viewBox="0 0 16 16">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" />
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
           </svg>
         </button>
         <button
@@ -365,6 +356,82 @@
     <p>Crea tu primer producto para comenzar.</p>
   </div>
 </div>
+
+<!-- Modal Ver Producto -->
+<div class="modal fade" [class.show]="selectedViewProduct" [style.display]="selectedViewProduct ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" *ngIf="selectedViewProduct">
+      <div class="modal-header py-2" style="border-bottom: 1px solid orange;">
+        <h6 class="modal-title mb-0">
+          <span class="text-primary fw-bold">{{ selectedViewProduct.strName }}</span>
+          <span style="color: #ff8000"> ●</span>
+        </h6>
+        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="view-images mb-3" *ngIf="selectedViewProduct.images && selectedViewProduct.images.length > 0">
+          <div class="view-images-scroll">
+            <img
+              *ngFor="let img of selectedViewProduct.images"
+              [src]="img.strImageUrl || img.url"
+              [alt]="selectedViewProduct.strName"
+              class="view-image-thumb">
+          </div>
+        </div>
+        <div class="view-detail-grid">
+          <div class="view-detail-item">
+            <span class="view-label">Código</span>
+            <span class="view-value fw-bold">{{ selectedViewProduct.strCode || 'N/A' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Unidad de Medida</span>
+            <span class="view-value">{{ selectedViewProduct.strMeasurementUnit }}</span>
+          </div>
+          <div class="view-detail-item full">
+            <span class="view-label">Descripción</span>
+            <span class="view-value">{{ selectedViewProduct.strDescription || 'Sin descripción' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock Actual</span>
+            <span class="view-value fw-bold">{{ (selectedViewProduct.ingQuantity || 0) | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Precio</span>
+            <span class="view-value">${{ selectedViewProduct.fltPrice | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock Mín.</span>
+            <span class="view-value">{{ (selectedViewProduct.ingStockMin || 0) | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Stock Máx.</span>
+            <span class="view-value">{{ (selectedViewProduct.ingStockMax || 0) | numberFormat:2 }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Ubicación</span>
+            <span class="view-value">{{ selectedViewProduct.strLocation || 'N/A' }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Estado</span>
+            <span class="status-badge" [ngClass]="'status-' + selectedViewProduct.strStatus">{{ selectedViewProduct.strStatus }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2" style="border-top: 1px solid orange;">
+        <button class="btn btn-sm btn-outline-primary" (click)="goToKardex(selectedViewProduct)">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" /></svg>
+          Kardex
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="editFromViewModal(selectedViewProduct)">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg>
+          Editar
+        </button>
+        <button class="btn btn-sm btn-secondary" (click)="closeViewModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="selectedViewProduct" *ngIf="selectedViewProduct"></div>
 
 <!-- Modal -->
 <div
