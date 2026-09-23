@@ -6,6 +6,7 @@ import { ProductsService } from '../../../shared/services/products.service';
 import { SalesService, CreateSaleDto } from '../../../shared/services/sales.service';
 import { KardexService } from '../../../shared/services/kardex.service';
 import { StockService } from '../../../shared/services/stock.service';
+import { StockAlertsService } from '../../../shared/services/stock-alerts.service';
 import { CompositionService } from '../../../shared/services/composition.service';
 import { Customer } from '../../../shared/model/customer.model';
 
@@ -69,7 +70,7 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService) {}
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -237,7 +238,11 @@ export class SaleFormComponent implements OnInit {
         
         // Registrar movimientos en kardex
         this.registerKardexMovements(response, this.orderData.items);
-        
+
+        // La venta descuenta stock del producto: refrescar el badge de
+        // alertas (sidebar) sin esperar a que se recargue la página.
+        this.stockAlertsService.refreshAlerts();
+
         this.loading = false;
         this.saleCreated.emit();
         this.resetForm();

@@ -740,3 +740,23 @@
   .products-table th:nth-child(6) { width: 90px; }    /* Precio - reducido */
   .products-table th:nth-child(8) { width: 120px; }   /* Acciones - reducido */
 }
+
+/* Low Stock Highlight (mismo estilo que Materiales) */
+.products-table tr.row-low-stock,
+.products-table tr.row-low-stock td {
+  background-color: #fff5f5 !important;
+}
+
+.products-table tr.row-low-stock:hover,
+.products-table tr.row-low-stock:hover td {
+  background-color: #fee2e2 !important;
+}
+
+.product-card.card-low-stock {
+  background: #fef8f8 !important;
+  border-color: #fecaca !important;
+}
+
+.product-card.card-low-stock:hover {
+  border-color: #fca5a5 !important;
+}

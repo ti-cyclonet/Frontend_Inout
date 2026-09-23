@@ -6,6 +6,7 @@ import { ProductService } from '../../../shared/services/product.service';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
 import { WarehousesService } from '../../../shared/services/warehouses.service';
+import { StockAlertsService } from '../../../shared/services/stock-alerts.service';
 import { Material } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import { environment } from '../../../../environments/environment';
@@ -107,7 +108,8 @@ export class ProductFormComponent implements OnInit {
     private productService: ProductService,
     private materialService: MaterialService,
     private categoryService: CategoryService,
-    private warehousesService: WarehousesService
+    private warehousesService: WarehousesService,
+    private stockAlertsService: StockAlertsService
   ) {}
 
   ngOnInit(): void {
@@ -632,6 +634,9 @@ export class ProductFormComponent implements OnInit {
       next: () => {
         Swal.fire('Éxito', `Producto ${this.isEditMode ? 'actualizado' : 'creado'} correctamente`, 'success');
         this.productCreated.emit();
+        // Crear/editar un producto puede cambiar su stock o sus mínimos/máximos:
+        // refrescar el badge de alertas sin esperar a recargar la página.
+        this.stockAlertsService.refreshAlerts();
         this.saving = false;
       },
       error: (error) => {

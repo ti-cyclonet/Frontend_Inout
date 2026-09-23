@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { OrderFormComponent } from './form/order-form.component';
 import { InvoiceService } from '../../shared/services/invoice.service';
 import { DocumentsService } from '../../shared/services/documents.service';
+import { StockAlertsService } from '../../shared/services/stock-alerts.service';
 
 interface OrderItem {
   productId: string;
@@ -66,7 +67,8 @@ export class OrdersComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private invoiceService: InvoiceService,
-    private documentsService: DocumentsService
+    private documentsService: DocumentsService,
+    private stockAlertsService: StockAlertsService
   ) {}
 
   ngOnInit(): void {
@@ -130,6 +132,9 @@ export class OrdersComponent implements OnInit {
         Swal.fire({ icon: 'success', title: 'Estado actualizado', text: `Pedido avanzó a: ${this.getStatusLabel(next)}`, timer: 1500, showConfirmButton: false });
         this.loadOrders();
         this.loadStats();
+        // Entregar un pedido descuenta stock real del producto: refrescar
+        // el badge de alertas (sidebar) sin esperar a recargar la página.
+        this.stockAlertsService.refreshAlerts();
       },
       error: (err) => {
         Swal.fire({ icon: 'error', title: 'Error', text: err.error?.message || 'No se pudo actualizar el estado' });
@@ -148,7 +153,7 @@ export class OrdersComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: 'CANCELLED' }).subscribe({
-          next: () => { this.loadOrders(); this.loadStats(); },
+          next: () => { this.loadOrders(); this.loadStats(); this.stockAlertsService.refreshAlerts(); },
           error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo cancelar', 'error'); }
         });
       }
