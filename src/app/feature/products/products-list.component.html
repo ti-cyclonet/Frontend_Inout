@@ -127,7 +127,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let product of products">
+          <tr *ngFor="let product of products" [class.row-low-stock]="getStockStatusClass(product) === 'stock-low'">
             <td>
               <input type="checkbox" />
             </td>
@@ -236,7 +236,7 @@
     class="cards-container"
     *ngIf="viewMode === 'cards' && products.length > 0 && !loading"
   >
-    <div class="product-card" *ngFor="let product of products">
+    <div class="product-card" *ngFor="let product of products" [class.card-low-stock]="getStockStatusClass(product) === 'stock-low'">
       <div class="card-image">
         <!-- Loading state -->
         <div class="image-loading" *ngIf="isImageLoading(product.strId)">

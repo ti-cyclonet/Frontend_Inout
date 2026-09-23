@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProductService } from '../../shared/services/product.service';
 import { CategoryService, Category } from '../../shared/services/category/category.service';
+import { StockAlertsService } from '../../shared/services/stock-alerts.service';
 import { ProductFormComponent } from './form/product-form.component';
 import { NumberFormatPipe } from '../../shared/pipes/number-format.pipe';
 import Swal from 'sweetalert2';
@@ -45,7 +46,8 @@ export class ProductsListComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private categoryService: CategoryService,
-    private router: Router
+    private router: Router,
+    private stockAlertsService: StockAlertsService
   ) {}
 
   ngOnInit(): void {
@@ -136,6 +138,7 @@ export class ProductsListComponent implements OnInit {
           next: () => {
             Swal.fire('Eliminado', 'Producto eliminado correctamente', 'success');
             this.loadProducts();
+            this.stockAlertsService.refreshAlerts();
           },
           error: () => {
             Swal.fire('Error', 'No se pudo eliminar el producto', 'error');
