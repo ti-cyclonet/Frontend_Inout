@@ -123,12 +123,15 @@
       </div>
 
       <div class="form-group">
-        <label>Dirección de entrega *</label>
+        <label>Dirección de entrega</label>
         <div class="address-row">
           <input type="text" [(ngModel)]="form.address" name="address" class="form-control"
             placeholder="Calle, número, barrio, ciudad" (ngModelChange)="onAddressChange()" />
           <button type="button" class="btn-loc" (click)="useMyLocation()" title="Marcar mi ubicación como punto de recogida">📍</button>
         </div>
+        <small class="hint" *ngIf="!form.address?.trim() && !originCoords">
+          Si aún no tienes la dirección exacta del cliente, marca 📍 tu ubicación como punto de recogida y podrás publicar igual: el domiciliario coordinará el destino directamente.
+        </small>
         <small class="hint" *ngIf="originCoords">
           🏪 Punto de recogida capturado ({{ originCoords.lat | number:'1.4-4' }}, {{ originCoords.lng | number:'1.4-4' }})
         </small>
