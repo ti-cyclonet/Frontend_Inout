@@ -802,12 +802,17 @@ export class DeliveryRequestComponent implements OnDestroy {
     );
   }
 
+  /** La dirección de entrega es deseable pero no siempre se conoce de
+   * antemano (ej. el restaurante aún no tiene la dirección exacta del
+   * cliente): basta con tener AL MENOS un punto geográfico — la dirección de
+   * entrega escrita, o el punto de recogida capturado por GPS — para poder
+   * publicar. El domiciliario puede coordinar el destino exacto luego. */
   canSubmit(): boolean {
     return (
       !!this.form.categoryId &&
       !!this.form.title?.trim() &&
       !!this.form.description?.trim() &&
-      !!this.form.address?.trim()
+      (!!this.form.address?.trim() || !!this.originCoords)
     );
   }
 
@@ -820,9 +825,9 @@ export class DeliveryRequestComponent implements OnDestroy {
       categoryId: this.form.categoryId,
       title: this.form.title.trim(),
       description: this.form.description.trim(),
-      address: this.form.address?.trim(),
       isUrgent: !!this.form.isUrgent,
     };
+    if (this.form.address?.trim()) payload.address = this.form.address.trim();
     if (this.form.budgetMin != null) payload.budgetMin = Number(this.form.budgetMin);
     if (this.form.budgetMax != null) payload.budgetMax = Number(this.form.budgetMax);
     // Coordenadas del DESTINO (geocodificadas desde la dirección de entrega),
