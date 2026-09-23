@@ -73,6 +73,9 @@ export class DeliveryRequestComponent implements OnDestroy {
   selectedRequest: ShotraRequestDetail | null = null;
   loadingDetail = false;
 
+  // Vista ampliada de una foto de oferta
+  previewImageUrl: string | null = null;
+
   // Contrato de la solicitud abierta (si existe) + flujo de cierre
   contract: ShotraContract | null = null;
   showConfirmForm = false;
@@ -1276,6 +1279,14 @@ export class DeliveryRequestComponent implements OnDestroy {
   canManageProposals(): boolean {
     const s = this.selectedRequest?.status;
     return s === 'PUBLISHED' || s === 'IN_PROPOSALS';
+  }
+
+  openImagePreview(url: string): void {
+    this.previewImageUrl = url;
+  }
+
+  closeImagePreview(): void {
+    this.previewImageUrl = null;
   }
 
   formatCurrency(value: number | undefined): string {
