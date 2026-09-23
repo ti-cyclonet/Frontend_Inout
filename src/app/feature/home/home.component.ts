@@ -19,7 +19,7 @@ Chart.register(...registerables);
 export class HomeComponent implements OnInit, AfterViewInit {
   @ViewChild('inventoryChart') inventoryChartRef!: ElementRef;
   @ViewChild('salesChart') salesChartRef!: ElementRef;
-  @ViewChild('stockChart') stockChartRef!: ElementRef;
+  @ViewChild('stockGaugeChart') stockGaugeChartRef!: ElementRef;
   @ViewChild('salesTrendChart') salesTrendChartRef!: ElementRef;
   @ViewChild('inventoryTrendChart') inventoryTrendChartRef!: ElementRef;
   @ViewChild('profitChart') profitChartRef!: ElementRef;
@@ -105,8 +105,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.createInventoryChart();
     this.createSalesChart();
     this.createInventoryTrendChart();
-    this.createStockChart();
+    this.createStockGaugeChart();
     this.createProfitChart();
+  }
+
+  /** % de productos con stock por encima del mínimo, para el resumen operativo. */
+  get stockHealthPercent(): number {
+    const total = this.chartData.products.length;
+    if (total === 0) return 0;
+    return Math.round(((total - this.metrics.lowStockProducts) / total) * 100);
   }
 
   createInventoryChart(): void {
@@ -348,27 +355,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.charts.push(chart);
   }
 
-  createStockChart(): void {
-    const lowStock = this.chartData.products.filter((p: any) => 
-      Number(p.ingQuantity || 0) < Number(p.ingStockMin || 0) && Number(p.ingStockMin || 0) > 0).length;
-    
-    const normalStock = this.chartData.products.length - lowStock;
+  /** Gauge de salud de inventario: % de productos con stock por encima del
+   * mínimo, mostrado como anillo con el porcentaje al centro (vía CSS). */
+  createStockGaugeChart(): void {
+    const percent = this.stockHealthPercent;
 
-    const chart = new Chart(this.stockChartRef.nativeElement, {
-      type: 'pie',
+    const chart = new Chart(this.stockGaugeChartRef.nativeElement, {
+      type: 'doughnut',
       data: {
-        labels: ['Stock Normal', 'Stock Bajo'],
+        labels: ['Stock saludable', 'Resto'],
         datasets: [{
-          data: [normalStock, lowStock],
-          backgroundColor: ['#4facfe', '#f5576c'],
+          data: [percent, 100 - percent],
+          backgroundColor: ['#38ef7d', '#eef0f2'],
           borderWidth: 0
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '78%',
         plugins: {
-          legend: { position: 'bottom' }
+          legend: { display: false },
+          tooltip: { enabled: false }
         }
       }
     });
