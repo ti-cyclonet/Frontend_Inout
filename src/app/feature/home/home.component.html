@@ -120,16 +120,72 @@
 
     <div class="charts-grid">
       <div class="chart-card">
+        <h6>Top 5 Productos Más Vendidos</h6>
+        <div class="chart-wrapper">
+          <canvas #salesChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
         <h6>Distribución de Inventario</h6>
         <div class="chart-wrapper">
           <canvas #inventoryChart></canvas>
         </div>
       </div>
+    </div>
+
+    <!-- Resumen operativo: gauge de stock, rentabilidad y resumen -->
+    <div class="summary-grid">
+      <div class="chart-card">
+        <h6>Salud de Stock</h6>
+        <div class="gauge-container">
+          <canvas #stockGaugeChart></canvas>
+          <div class="gauge-label">
+            <span class="gauge-percent">{{ stockHealthPercent }}%</span>
+            <span class="gauge-caption">saludable</span>
+          </div>
+        </div>
+        <p class="gauge-footnote">{{ metrics.productsCount - metrics.lowStockProducts }} de {{ metrics.productsCount }} productos</p>
+      </div>
 
       <div class="chart-card">
-        <h6>Top 5 Productos Más Vendidos</h6>
-        <div class="chart-wrapper">
-          <canvas #salesChart></canvas>
+        <h6>Rentabilidad por Categoría</h6>
+        <div class="chart-wrapper-small">
+          <canvas #profitChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h6>Resumen Operativo</h6>
+        <div class="op-summary-list">
+          <div class="op-summary-item">
+            <div class="op-summary-icon">
+              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" /></svg>
+            </div>
+            <span class="op-summary-label">Materiales</span>
+            <span class="op-summary-value">{{ metrics.materialsCount }}</span>
+          </div>
+          <div class="op-summary-item">
+            <div class="op-summary-icon">
+              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#box2-fill" /></svg>
+            </div>
+            <span class="op-summary-label">Productos</span>
+            <span class="op-summary-value">{{ metrics.productsCount }}</span>
+          </div>
+          <div class="op-summary-item">
+            <div class="op-summary-icon">
+              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#receipt" /></svg>
+            </div>
+            <span class="op-summary-label">Ventas realizadas</span>
+            <span class="op-summary-value">{{ formatNumber(metrics.salesCount) }}</span>
+          </div>
+          <div class="op-summary-item" *ngIf="metrics.lowStockProducts > 0">
+            <div class="op-summary-icon">
+              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" /></svg>
+            </div>
+            <span class="op-summary-label">Alertas de stock bajo</span>
+            <span class="op-summary-value op-summary-warning">{{ metrics.lowStockProducts }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -139,22 +195,6 @@
         <h6>Evolución del Valor de Inventario</h6>
         <div class="chart-wrapper-large">
           <canvas #inventoryTrendChart></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h6>Estado de Stock</h6>
-        <div class="chart-wrapper">
-          <canvas #stockChart></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h6>Rentabilidad por Categoría</h6>
-        <div class="chart-wrapper">
-          <canvas #profitChart></canvas>
         </div>
       </div>
     </div>
