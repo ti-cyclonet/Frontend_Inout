@@ -278,6 +278,15 @@
           </div>
           <div class="offer-desc">{{ p.description }}</div>
           <div class="offer-time" *ngIf="p.estimatedTime">⏱ {{ p.estimatedTime }}</div>
+          <div class="offer-images" *ngIf="p.images?.length">
+            <img
+              *ngFor="let img of p.images"
+              [src]="img.imageUrl"
+              [alt]="img.title"
+              class="offer-image-thumb"
+              (click)="openImagePreview(img.imageUrl)"
+            />
+          </div>
         </div>
         <div class="offer-side">
           <div class="offer-price">{{ formatCurrency(p.price) }}</div>
@@ -490,3 +499,8 @@
     </div>
   </div>
 </aside>
+
+<!-- Vista ampliada de una foto de oferta -->
+<div class="image-preview-overlay" *ngIf="previewImageUrl" (click)="closeImagePreview()">
+  <img [src]="previewImageUrl" class="image-preview-full" alt="" />
+</div>

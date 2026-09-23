@@ -363,6 +363,8 @@ export interface ShotraProposal {
     averageRating?: number;
     completedJobs?: number;
   };
+  // Hasta 3 fotos que el domiciliario eligió mostrar en esta oferta puntual.
+  images?: { id: string; imageUrl: string; title: string }[];
 }
 
 export interface ShotraRequestDetail extends ShotraRequest {
