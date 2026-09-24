@@ -8,6 +8,7 @@ import { CategoryService, Category } from '../../../shared/services/category/cat
 import { WarehousesService, Warehouse } from '../../../shared/services/warehouses.service';
 import { Material, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
+import { UNIT_OPTIONS, getDischargeUnitOptions } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 
 @Component({
@@ -29,6 +30,9 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   currentStep = 1;
   totalSteps = 5;
   isEditMode = false;
+  unitOptions = UNIT_OPTIONS;
+  /** Solo unidades de la misma familia que la de medida, sin incluirla. */
+  dischargeUnitOptions: { value: string; label: string }[] = [];
   /** Reventa (presentación + precio). Vive en el paso 2; ver isStepValid(2). */
   resaleConfig: ResaleConfig = resaleConfigFrom();
   @ViewChild(ResalePricingComponent) resalePricing?: ResalePricingComponent;
@@ -54,6 +58,15 @@ export class MaterialFormComponent implements OnInit, OnChanges {
     private router: Router
   ) {
     this.materialForm = this.createForm();
+    // Al cambiar la unidad de medida, la de descarga se limita a sus
+    // relacionadas (ej. m -> km, cm, mm…); si la elegida deja de ser válida, se limpia.
+    this.materialForm.get('measurementUnit')?.valueChanges.subscribe((unit: string) => {
+      this.dischargeUnitOptions = getDischargeUnitOptions(unit);
+      const discharge = this.materialForm.get('dischargeUnit');
+      if (discharge?.value && !this.dischargeUnitOptions.some(o => o.value === discharge.value)) {
+        discharge.setValue('', { emitEvent: false });
+      }
+    });
   }
 
   ngOnInit(): void {

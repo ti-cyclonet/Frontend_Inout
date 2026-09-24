@@ -70,26 +70,7 @@
                 formControlName="measurementUnit"
                 [class.is-invalid]="materialForm.get('measurementUnit')?.invalid && materialForm.get('measurementUnit')?.touched">
                 <option value="">Seleccionar unidad</option>
-                <option value="kg">Kilogramos (kg)</option>
-                <option value="g">Gramos (g)</option>
-                <option value="mg">Miligramos (mg)</option>
-                <option value="lb">Libras (lb)</option>
-                <option value="oz">Onzas (oz)</option>
-                <option value="l">Litros (l)</option>
-                <option value="ml">Mililitros (ml)</option>
-                <option value="gal">Galones (gal)</option>
-                <option value="m">Metros (m)</option>
-                <option value="cm">Centímetros (cm)</option>
-                <option value="mm">Milímetros (mm)</option>
-                <option value="in">Pulgadas (in)</option>
-                <option value="ft">Pies (ft)</option>
-                <option value="m2">Metros cuadrados (m²)</option>
-                <option value="m3">Metros cúbicos (m³)</option>
-                <option value="units">Unidades</option>
-                <option value="pcs">Piezas</option>
-                <option value="box">Cajas</option>
-                <option value="pack">Paquetes</option>
-                <option value="doz">Docenas</option>
+                <option *ngFor="let u of unitOptions" [value]="u.value">{{ u.label }}</option>
               </select>
               <div class="invalid-feedback">{{ getFieldError('measurementUnit') }}</div>
             </div>
@@ -108,27 +89,10 @@
                 class="form-select"
                 formControlName="dischargeUnit">
                 <option value="">Seleccionar unidad</option>
-                <option value="kg">Kilogramos (kg)</option>
-                <option value="g">Gramos (g)</option>
-                <option value="mg">Miligramos (mg)</option>
-                <option value="lb">Libras (lb)</option>
-                <option value="oz">Onzas (oz)</option>
-                <option value="l">Litros (l)</option>
-                <option value="ml">Mililitros (ml)</option>
-                <option value="gal">Galones (gal)</option>
-                <option value="m">Metros (m)</option>
-                <option value="cm">Centímetros (cm)</option>
-                <option value="mm">Milímetros (mm)</option>
-                <option value="in">Pulgadas (in)</option>
-                <option value="ft">Pies (ft)</option>
-                <option value="m2">Metros cuadrados (m²)</option>
-                <option value="m3">Metros cúbicos (m³)</option>
-                <option value="units">Unidades</option>
-                <option value="pcs">Piezas</option>
-                <option value="box">Cajas</option>
-                <option value="pack">Paquetes</option>
-                <option value="doz">Docenas</option>
+                <option *ngFor="let u of dischargeUnitOptions" [value]="u.value">{{ u.label }}</option>
               </select>
+              <small class="text-muted d-block mt-1" *ngIf="!materialForm.get('measurementUnit')?.value">Primero selecciona la unidad de medida.</small>
+              <small class="text-muted d-block mt-1" *ngIf="materialForm.get('measurementUnit')?.value && dischargeUnitOptions.length === 0">Esta unidad de medida no tiene unidades relacionadas para descarga.</small>
             </div>
             
             <div class="form-group full-width">
