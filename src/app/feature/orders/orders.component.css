@@ -58,7 +58,7 @@
 .btn-action.delete:hover { background: #fee2e2; }
 
 /* Kanban */
-.kanban-content { flex: 1; overflow-x: auto; }
+.kanban-content { flex: 1; overflow-x: auto; padding: 0.75rem 1rem; }
 .kanban-board { display: flex; gap: 0.75rem; min-height: 400px; padding-bottom: 1rem; }
 .kanban-column { min-width: 200px; flex: 1; display: flex; flex-direction: column; background: #f9fafb; border-radius: 10px; overflow: hidden; }
 .kanban-header { padding: 0.6rem 0.75rem; background: white; border-top: 3px solid; display: flex; justify-content: space-between; align-items: center; }

@@ -5,29 +5,6 @@
     <button class="btn-create" (click)="openCreateModal()" type="button">+ Nuevo Pedido</button>
   </div>
 
-  <!-- KANBAN -->
-  <div class="kanban-content">
-    <div class="kanban-board">
-      <div class="kanban-column" *ngFor="let status of kanbanStatuses">
-        <div class="kanban-header" [style.border-top-color]="getStatusColor(status)">
-          <span class="kanban-title">{{ getStatusLabel(status) }}</span>
-          <span class="kanban-count">{{ getOrdersByStatus(status).length }}</span>
-        </div>
-        <div class="kanban-cards">
-          <div class="kanban-card" *ngFor="let order of getOrdersByStatus(status)" (click)="selectOrder(order)">
-            <div class="card-code">{{ order.orderCode }}</div>
-            <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
-            <div class="card-total">{{ formatCurrency(order.total) }}</div>
-            <div class="card-actions">
-              <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
-            </div>
-          </div>
-          <div class="kanban-empty" *ngIf="getOrdersByStatus(status).length === 0">Sin pedidos</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- History: Invoiced & Cancelled -->
   <div class="orders-history" *ngIf="getCompletedOrders().length > 0">
     <div class="history-header" (click)="showHistory = !showHistory">
@@ -41,6 +18,35 @@
         <span class="history-total">{{ formatCurrency(order.total) }}</span>
         <span class="history-date">{{ formatDate(order.updatedAt || order.createdAt) }}</span>
         <span class="history-status" [style.background]="getStatusColor(order.status)">{{ getStatusLabel(order.status) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KANBAN -->
+  <div class="orders-history kanban-section">
+    <div class="history-header" (click)="showKanban = !showKanban">
+      <h6 class="history-title">🗂️ Seguimiento de Pedidos</h6>
+      <span class="history-toggle">{{ showKanban ? '▲' : '▼' }}</span>
+    </div>
+    <div class="kanban-content" *ngIf="showKanban">
+      <div class="kanban-board">
+        <div class="kanban-column" *ngFor="let status of kanbanStatuses">
+          <div class="kanban-header" [style.border-top-color]="getStatusColor(status)">
+            <span class="kanban-title">{{ getStatusLabel(status) }}</span>
+            <span class="kanban-count">{{ getOrdersByStatus(status).length }}</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card" *ngFor="let order of getOrdersByStatus(status)" (click)="selectOrder(order)">
+              <div class="card-code">{{ order.orderCode }}</div>
+              <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
+              <div class="card-total">{{ formatCurrency(order.total) }}</div>
+              <div class="card-actions">
+                <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
+              </div>
+            </div>
+            <div class="kanban-empty" *ngIf="getOrdersByStatus(status).length === 0">Sin pedidos</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

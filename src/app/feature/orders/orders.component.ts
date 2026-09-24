@@ -209,7 +209,8 @@ export class OrdersComponent implements OnInit {
   }
 
   kanbanStatuses = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED'];
-  showHistory = false;
+  showHistory = true;
+  showKanban = true;
 
   // Modal methods
   openCreateModal(): void {
