@@ -42,6 +42,7 @@
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
               <div class="card-actions">
                 <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
+                <button class="btn-sm-cancel" *ngIf="canCancel(order)" (click)="$event.stopPropagation(); cancelOrder(order)" type="button" title="Cancelar pedido">✕ Cancelar</button>
               </div>
             </div>
             <div class="kanban-empty" *ngIf="getOrdersByStatus(status).length === 0">Sin pedidos</div>
@@ -105,6 +106,12 @@
           </div>
         </div>
 
+        <!-- Cancellation reason -->
+        <div class="detail-notes detail-cancellation" *ngIf="selectedOrder.status === 'CANCELLED' && selectedOrder.cancellationReason">
+          <h4 class="detail-section-title">Motivo de cancelación</h4>
+          <p class="notes-text">{{ selectedOrder.cancellationReason }}</p>
+        </div>
+
         <!-- Notes -->
         <div class="detail-notes" *ngIf="selectedOrder.notes">
           <h4 class="detail-section-title">Notas</h4>
@@ -127,7 +134,7 @@
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' || selectedOrder.status === 'DELIVERED'" (click)="generateDeliveryNote(selectedOrder)" type="button" title="Nota de entrega">📋 Remisión</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status !== 'DRAFT' && selectedOrder.status !== 'CANCELLED'" (click)="generateInvoicePdf(selectedOrder)" type="button">📄 Factura</button>
         <button class="btn-detail-action advance" *ngIf="getNextStatus(selectedOrder.status)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(getNextStatus(selectedOrder.status)!) }}</button>
-        <button class="btn-detail-action cancel" *ngIf="selectedOrder.status !== 'INVOICED' && selectedOrder.status !== 'CANCELLED'" (click)="cancelOrder(selectedOrder)" type="button">✕ Cancelar</button>
+        <button class="btn-detail-action cancel" *ngIf="canCancel(selectedOrder)" (click)="cancelOrder(selectedOrder)" type="button">✕ Cancelar</button>
       </div>
     </div>
   </div>

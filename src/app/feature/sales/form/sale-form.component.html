@@ -60,9 +60,10 @@
                 autocomplete="off"
                 [ngModelOptions]="{standalone: true}">
               <div class="select-dropdown" *ngIf="showProductDropdown">
-                <div class="select-option" *ngFor="let product of filteredProducts" (mousedown)="selectProduct(product)">
+                <div class="select-option" *ngFor="let product of filteredProducts" (mousedown)="selectProduct(product)" [class.out-of-stock]="product.stock <= 0">
                   <strong>{{ product.name }}</strong>
-                  <small>{{ formatCurrency(product.price) }} - Stock: {{ product.stock || 'N/A' }}</small>
+                  <small *ngIf="product.stock > 0">{{ formatCurrency(product.price) }} - Stock: {{ product.stock }}</small>
+                  <small *ngIf="product.stock <= 0" class="stock-empty">{{ formatCurrency(product.price) }} - Sin stock</small>
                 </div>
                 <div class="select-option no-results" *ngIf="filteredProducts.length === 0">
                   No se encontraron productos

@@ -134,6 +134,10 @@
 .select-option:hover { background-color: #f8f9fa; }
 .select-option.no-results { color: #6b7280; cursor: default; font-style: italic; }
 .select-option.no-results:hover { background-color: transparent; }
+
+/* Productos sin stock: seleccionables (el borrador se permite) pero marcados */
+.select-option .stock-empty { color: #dc3545; font-weight: 600; }
+
 .select-option strong { display: block; color: #1f2937; font-size: 0.875rem; }
 .select-option small { display: block; color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; }
 

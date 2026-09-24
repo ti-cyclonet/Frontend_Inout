@@ -6,6 +6,7 @@ import { ProductsService } from '../../../shared/services/products.service';
 import { Customer } from '../../../shared/model/customer.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import Swal from 'sweetalert2';
 
 interface OrderItem {
   productId: string;
@@ -107,7 +108,9 @@ export class OrderFormComponent implements OnInit {
           id: product.strId,
           name: product.strName,
           price: product.fltPrice,
-          stock: product.ingQuantity
+          // Stock DISPONIBLE (descontando lo reservado por otros pedidos
+          // confirmados): es lo que el backend exige al confirmar.
+          stock: Math.max(0, Number(product.ingQuantity || 0) - Number(product.ingReservedStock || 0))
         }));
         this.filteredProducts = this.products;
       },
@@ -182,6 +185,25 @@ export class OrderFormComponent implements OnInit {
   addItem(): void {
     if (!this.canAddItem()) return;
 
+    // Un borrador sin stock se permite (sirve como cotización), pero no se
+    // podrá confirmar hasta que haya stock disponible: se advierte aquí.
+    const product = this.products.find(p => p.id === this.currentItem.productId);
+    if (product) {
+      const inCart = this.orderData.items
+        .filter(i => i.productId === product.id)
+        .reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+      const requested = inCart + Number(this.currentItem.quantity);
+      if (requested > product.stock) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Stock insuficiente',
+          html: `<b>${product.name}</b><br>Disponible: ${product.stock} — solicitado: ${requested}.` +
+            `<br>El pedido se guardará como <b>borrador</b>, pero no podrá confirmarse hasta que haya stock.`,
+          confirmButtonText: 'Entendido'
+        });
+      }
+    }
+
     const item: OrderItem = {
       productId: this.currentItem.productId,
       productName: this.currentItem.product,
@@ -243,7 +265,7 @@ export class OrderFormComponent implements OnInit {
         this.loading = false;
         console.error('Error creating order:', error);
         const errorMessage = error.error?.message || 'Error al crear el pedido';
-        alert(errorMessage);
+        Swal.fire({ icon: 'error', title: 'Error', text: errorMessage, confirmButtonText: 'Cerrar' });
       }
     });
   }

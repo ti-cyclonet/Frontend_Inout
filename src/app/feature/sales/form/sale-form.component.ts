@@ -9,9 +9,11 @@ import { StockService } from '../../../shared/services/stock.service';
 import { StockAlertsService } from '../../../shared/services/stock-alerts.service';
 import { CompositionService } from '../../../shared/services/composition.service';
 import { Customer } from '../../../shared/model/customer.model';
+import Swal from 'sweetalert2';
 
 interface OrderItem {
   id: string;
+  productId: string;
   product: string;
   quantity: number;
   unitPrice: number;
@@ -60,6 +62,7 @@ export class SaleFormComponent implements OnInit {
   };
   
   currentItem = {
+    productId: '',
     product: '',
     quantity: 1,
     unitPrice: 0
@@ -96,7 +99,9 @@ export class SaleFormComponent implements OnInit {
           id: product.strId,
           name: product.strName,
           price: product.fltPrice,
-          stock: product.ingQuantity
+          // Stock DISPONIBLE: lo reservado por pedidos confirmados no se puede
+          // vender (el backend valida con la misma regla).
+          stock: Math.max(0, Number(product.ingQuantity || 0) - Number(product.ingReservedStock || 0))
         }));
         this.filteredProducts = this.products;
       },
@@ -163,6 +168,17 @@ export class SaleFormComponent implements OnInit {
   }
 
   selectProduct(product: Product): void {
+    if (product.stock <= 0) {
+      this.showProductDropdown = false;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Producto sin stock',
+        text: `"${product.name}" no tiene stock disponible. No se puede vender.`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+    this.currentItem.productId = product.id;
     this.currentItem.product = product.name;
     this.currentItem.unitPrice = product.price || 0;
     this.productSearchTerm = product.name;
@@ -175,11 +191,39 @@ export class SaleFormComponent implements OnInit {
               this.currentItem.unitPrice > 0);
   }
 
+  /** Unidades de un producto que ya están en el carrito. */
+  private quantityInCart(productId: string): number {
+    return this.orderData.items
+      .filter(i => i.productId === productId)
+      .reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+  }
+
   addItem(): void {
     if (!this.canAddItem()) return;
-    
+
+    const product = this.products.find(p => p.id === this.currentItem.productId);
+    if (!product) {
+      Swal.fire({ icon: 'warning', title: 'Producto no válido', text: 'Selecciona un producto de la lista.', confirmButtonText: 'Entendido' });
+      return;
+    }
+    const inCart = this.quantityInCart(product.id);
+    const requested = inCart + Number(this.currentItem.quantity);
+    if (requested > product.stock) {
+      const remaining = Math.max(0, product.stock - inCart);
+      Swal.fire({
+        icon: 'error',
+        title: 'Stock insuficiente',
+        html: `<b>${product.name}</b><br>Disponible: ${product.stock}` +
+          (inCart > 0 ? ` (ya tienes ${inCart} en la venta)` : '') +
+          `<br>Solo puedes agregar ${remaining} unidad(es) más.`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
     const item: OrderItem = {
       id: Date.now().toString(),
+      productId: product.id,
       product: this.currentItem.product,
       quantity: this.currentItem.quantity,
       unitPrice: this.currentItem.unitPrice,
@@ -204,6 +248,7 @@ export class SaleFormComponent implements OnInit {
 
   resetCurrentItem(): void {
     this.currentItem = {
+      productId: '',
       product: '',
       quantity: 1,
       unitPrice: 0
@@ -221,12 +266,13 @@ export class SaleFormComponent implements OnInit {
     
     const saleData: CreateSaleDto = {
       strTenantId: 'default-tenant',
-      strProductId: this.getProductIdByName(this.orderData.items[0]?.product || ''),
+      strProductId: this.orderData.items[0]?.productId,
       dtmDate: new Date().toISOString().split('T')[0],
       fltQuantity: Number(this.orderData.items[0]?.quantity) || 0,
       fltUnitPrice: Number(this.orderData.items[0]?.unitPrice) || 0,
       customerName: this.orderData.customerName,
-      items: this.orderData.items,
+      // productId por ítem: el backend valida y descuenta stock de TODOS
+      items: this.orderData.items.map(i => ({ ...i, productName: i.product })),
       subtotal: Number(this.orderData.subtotal),
       tax: Number(this.orderData.tax),
       total: Number(this.orderData.total)
@@ -240,8 +286,9 @@ export class SaleFormComponent implements OnInit {
         this.registerKardexMovements(response, this.orderData.items);
 
         // La venta descuenta stock del producto: refrescar el badge de
-        // alertas (sidebar) sin esperar a que se recargue la página.
+        // alertas (sidebar) y el stock mostrado en el buscador.
         this.stockAlertsService.refreshAlerts();
+        this.loadProducts();
 
         this.loading = false;
         this.saleCreated.emit();
@@ -252,25 +299,23 @@ export class SaleFormComponent implements OnInit {
         console.error('Error creating sale:', error);
         
         const errorMessage = error.error?.message || 'Error al crear la venta';
-        
-        if (typeof (window as any).Swal !== 'undefined') {
-          if (errorMessage.includes('Stock insuficiente') || errorMessage.includes('insuficiente')) {
-            (window as any).Swal.fire({
-              icon: 'error',
-              title: 'Stock Insuficiente',
-              text: 'No hay suficiente stock del producto para realizar esta venta',
-              confirmButtonText: 'Entendido'
-            });
-          } else {
-            (window as any).Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: errorMessage,
-              confirmButtonText: 'Cerrar'
-            });
-          }
+
+        if (errorMessage.includes('insuficiente')) {
+          // El backend lista cada producto sin stock con disponible/solicitado
+          Swal.fire({
+            icon: 'error',
+            title: 'Stock insuficiente',
+            text: errorMessage,
+            confirmButtonText: 'Entendido'
+          });
+          this.loadProducts();
         } else {
-          alert(errorMessage);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: errorMessage,
+            confirmButtonText: 'Cerrar'
+          });
         }
       }
     });
@@ -313,7 +358,7 @@ export class SaleFormComponent implements OnInit {
 
   registerKardexMovements(sale: any, items: OrderItem[]): void {
     items.forEach(item => {
-      const productId = this.getProductIdByName(item.product);
+      const productId = item.productId;
       
       const movement = {
         entityId: productId,

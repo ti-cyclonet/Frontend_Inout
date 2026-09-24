@@ -103,6 +103,12 @@
 .select-option:hover { background-color: #f0f7ff; }
 .select-option.no-results { color: #6b7280; cursor: default; font-style: italic; }
 .select-option.no-results:hover { background-color: transparent; }
+
+/* Productos sin stock disponible: visibles pero no seleccionables */
+.select-option.out-of-stock { opacity: 0.6; cursor: not-allowed; }
+.select-option.out-of-stock:hover { background-color: #fff5f5; }
+.select-option .stock-empty { color: #dc3545; font-weight: 600; }
+
 .select-option strong { display: block; color: #1f2937; font-size: 0.85rem; }
 .select-option small { display: block; color: #6b7280; font-size: 0.75rem; margin-top: 0.15rem; }
 
