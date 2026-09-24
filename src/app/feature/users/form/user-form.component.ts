@@ -134,11 +134,17 @@ export class UserFormComponent {
   isStepValid(step: number): boolean {
     if (step === 1) return this.userForm.valid;
     if (step === 2) {
+      const isRoleValid = !!this.selectedRoleId;
+      // Usuario existente: los formularios de datos personales quedan
+      // deshabilitados (ver populateFormWithUserData) y un control
+      // deshabilitado no es ni .valid ni .invalid en Angular — por eso no se
+      // evalúan aquí, solo importa que haya un rol seleccionado.
+      if (this.userExists) return isRoleValid;
+
       const isDocValid = this.documentForm.valid;
       const isPersonValid = this.basicDataForm.value.strPersonType === 'N'
         ? this.naturalForm.valid
         : this.legalForm.valid;
-      const isRoleValid = !!this.selectedRoleId;
       return isDocValid && isPersonValid && isRoleValid;
     }
     return true;
@@ -166,19 +172,35 @@ export class UserFormComponent {
         // 2. Check if exists in Authoriza (real user)
         this.customersService.checkEmailExists(email).subscribe({
           next: (data: any) => {
-            this.checking = false;
-            if (data.exists) {
-              // User already exists in Authoriza — load their data
-              this.userExists = true;
-              this.loadedUserData = data;
-              if (data.basicData) this.populateFormWithUserData(data);
-              this.currentStep++;
-            } else {
+            if (!data.exists) {
               // User doesn't exist — will be created fresh
+              this.checking = false;
               this.userExists = false;
               this.loadedUserData = null;
+              this.unlockPersonalDataForms();
               this.currentStep++;
+              return;
             }
+
+            // Ya existe en Authoriza: traer su info completa para precargar
+            // el formulario (solo lectura) y que solo falte elegir el rol.
+            this.customersService.getUserDetailsByEmail(email).subscribe({
+              next: (details: any) => {
+                this.checking = false;
+                this.userExists = true;
+                this.loadedUserData = { ...data, ...details };
+                this.populateFormWithUserData(this.loadedUserData);
+                this.currentStep++;
+              },
+              error: () => {
+                // No se pudo traer el detalle: igual es un usuario existente,
+                // se continúa sin precargar (tocará completar los datos igual).
+                this.checking = false;
+                this.userExists = true;
+                this.loadedUserData = data;
+                this.currentStep++;
+              }
+            });
           },
           error: () => {
             // If check fails, allow proceeding (user will be created)
@@ -204,9 +226,15 @@ export class UserFormComponent {
     }
 
     if (userData.documentType) {
+      const isLegal = userData.basicData?.strPersonType === 'J';
+      const rawNumber: string = userData.documentType.strDocumentNumber || '';
+      // Para persona jurídica el NIT se guarda como "numero-dv" (ver onSubmit);
+      // se separa solo para mostrarlo igual que en el formulario de captura.
+      const [number, dv] = isLegal && rawNumber.includes('-') ? rawNumber.split('-') : [rawNumber, ''];
       this.documentForm.patchValue({
         strDocumentType: userData.documentType.strDocumentType || 'CC',
-        strDocumentNumber: userData.documentType.strDocumentNumber || ''
+        strDocumentNumber: number,
+        strDocumentDV: dv
       });
     }
 
@@ -216,7 +244,8 @@ export class UserFormComponent {
         secondName: userData.naturalPersonData.secondName || '',
         firstSurname: userData.naturalPersonData.firstSurname || '',
         secondSurname: userData.naturalPersonData.secondSurname || '',
-        birthDate: userData.naturalPersonData.birthDate || '',
+        // El input es type="date": necesita "YYYY-MM-DD", no un ISO completo.
+        birthDate: userData.naturalPersonData.birthDate ? String(userData.naturalPersonData.birthDate).slice(0, 10) : '',
         maritalStatus: userData.naturalPersonData.maritalStatus || '',
         sex: userData.naturalPersonData.sex || '',
         phone: userData.naturalPersonData.phone || ''
@@ -232,6 +261,24 @@ export class UserFormComponent {
         contactPhone: userData.legalEntityData.contactPhone || ''
       });
     }
+
+    // Es un usuario ya registrado: los datos personales quedan de solo
+    // lectura (se muestran para confirmar identidad) y lo único que falta
+    // es elegir el rol — isStepValid(2) ya no depende de estos formularios
+    // porque un FormGroup/-Control deshabilitado siempre se considera válido.
+    this.basicDataForm.get('strPersonType')?.disable();
+    this.documentForm.disable();
+    this.naturalForm.disable();
+    this.legalForm.disable();
+  }
+
+  /** Reactiva los formularios de datos personales (caso de usuario nuevo, o
+   * si el admin retrocede desde un correo existente hacia uno nuevo). */
+  private unlockPersonalDataForms(): void {
+    this.basicDataForm.get('strPersonType')?.enable();
+    this.documentForm.enable();
+    this.naturalForm.enable();
+    this.legalForm.enable();
   }
 
   onSubmit() {

@@ -53,9 +53,14 @@
         <div class="form-step" *ngIf="currentStep === 2">
           <div class="step-header">
             <h3>Información Personal</h3>
-            <p>Complete los datos personales del usuario</p>
+            <p *ngIf="!userExists">Complete los datos personales del usuario</p>
+            <p *ngIf="userExists">Este correo ya está registrado en Authoriza. Confirma que es la persona correcta y asígnale un rol.</p>
           </div>
-          
+
+          <div class="alert alert-info mb-0" role="alert" *ngIf="userExists" style="margin-bottom: 1rem;">
+            Usuario existente: solo falta asignar el rol.
+          </div>
+
           <div [formGroup]="basicDataForm" class="form-grid">
             <div class="form-group full-width">
               <label>Tipo de Persona *</label>
