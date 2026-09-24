@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -116,6 +116,14 @@ import { OrdersComponent } from '../orders/orders.component';
   `]
 })
 export class CommercialComponent {
+  // <app-sale-form> vive siempre montado en el DOM (el modal solo lo
+  // oculta/muestra con display:none, no con *ngIf), así que su ngOnInit —y
+  // por tanto loadCustomers()/loadProducts()— solo corre una vez al cargar
+  // la página. Sin este refresco explícito al abrir, un cliente (rol
+  // clienteInout) o producto creado DESPUÉS de esa carga inicial no
+  // aparecía hasta recargar toda la página.
+  @ViewChild(SaleFormComponent) saleForm?: SaleFormComponent;
+
   activeTab: 'dashboard' | 'sales' | 'orders' = 'dashboard';
   showSaleModal = false;
   refreshTrigger = 0;
@@ -124,6 +132,8 @@ export class CommercialComponent {
 
   openSaleModal(): void {
     this.showSaleModal = true;
+    this.saleForm?.loadCustomers();
+    this.saleForm?.loadProducts();
   }
 
   onSaleCreated(): void {
