@@ -127,12 +127,26 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   showRegisterPassword = false;
   /** Documento legal abierto en el visor (términos / tratamiento de datos). */
   legalDoc: LegalDocument | null = null;
+  /** Catálogo de Authoriza (document_types) para persona natural. */
   readonly documentTypes = [
     { value: 'CC', label: 'Cédula de ciudadanía' },
     { value: 'CE', label: 'Cédula de extranjería' },
-    { value: 'PA', label: 'Pasaporte' },
-    { value: 'PPT', label: 'Permiso por protección temporal' },
+    { value: 'PP', label: 'Pasaporte' },
   ];
+
+  private get clientProfileKey(): string {
+    return `${this.clientTokenKey}_profile`;
+  }
+
+  /** El pedido se muestra si compra como invitado o ya inició sesión; mientras
+   * inicia sesión o crea su cuenta, el resto del checkout queda oculto. */
+  get showOrderForm(): boolean {
+    return this.clientLoggedIn || this.accountMode === 'guest';
+  }
+
+  get orderConsentsAccepted(): boolean {
+    return this.orderConsents.terms && this.orderConsents.habeasData;
+  }
 
   private baseUrl = environment.apiUrl;
   private authorizaUrl = environment.auth.authorizaUrl;
@@ -1117,9 +1131,41 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.clientEmail = payload.email || '';
       this.clientLoggedIn = true;
       this.checkoutData.customerEmail = this.clientEmail;
+      try {
+        const profile = JSON.parse(sessionStorage.getItem(this.clientProfileKey) || 'null');
+        this.prefillFromProfile(profile);
+      } catch { /* perfil corrupto: se ignora */ }
+      this.prefillFromLastOrder();
     } else {
       sessionStorage.removeItem(this.clientTokenKey);
+      sessionStorage.removeItem(this.clientProfileKey);
     }
+  }
+
+  /** Precarga nombre/teléfono con los datos de la cuenta (Authoriza). Solo
+   * llena campos vacíos: no pisa lo que el cliente ya escribió. */
+  private prefillFromProfile(profile: any): void {
+    if (!profile) return;
+    const fullName = [profile.firstName, profile.secondName, profile.firstSurname, profile.secondSurname]
+      .filter(Boolean).join(' ').trim();
+    if (!this.checkoutData.customerName.trim() && fullName) this.checkoutData.customerName = fullName;
+    if (!this.checkoutData.customerPhone.trim() && profile.phone) this.checkoutData.customerPhone = profile.phone;
+  }
+
+  /** Dirección (y nombre/teléfono más recientes) de su último pedido en esta tienda. */
+  private prefillFromLastOrder(): void {
+    if (!this.clientToken) return;
+    fetch(`${this.baseUrl}/orders/marketplace/me/last-contact`, {
+      headers: { Authorization: `Bearer ${this.clientToken}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((last: any) => {
+        if (!last) return;
+        if (last.customerAddress && !this.checkoutData.customerAddress.trim()) this.checkoutData.customerAddress = last.customerAddress;
+        if (last.customerPhone && !this.checkoutData.customerPhone.trim()) this.checkoutData.customerPhone = last.customerPhone;
+        if (last.customerName && !this.checkoutData.customerName.trim()) this.checkoutData.customerName = last.customerName;
+      })
+      .catch(() => { /* sin historial: se deja el formulario como está */ });
   }
 
   setAccountMode(mode: 'guest' | 'login' | 'register'): void {
@@ -1174,27 +1220,26 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.authInfo = result.message || 'Te enviamos un código a tu correo.';
       return;
     }
-    this.applyClientToken(result?.access_token);
+    this.applyClientToken(result?.access_token, result?.profile);
   }
 
-  private applyClientToken(token: string): void {
+  private applyClientToken(token: string, profile?: any): void {
     const payload = token ? decodeJwtPayload(token) : null;
     if (!token || payload?.rol !== 'clienteInout' || payload?.tenantId !== this.tenantId) {
       this.authError = 'No se pudo abrir tu sesión de cliente en esta tienda.';
       return;
     }
     sessionStorage.setItem(this.clientTokenKey, token);
+    if (profile) sessionStorage.setItem(this.clientProfileKey, JSON.stringify(profile));
     this.clientToken = token;
     this.clientEmail = payload.email || this.verifyEmail;
     this.clientLoggedIn = true;
     this.checkoutData.customerEmail = this.clientEmail;
-    // Prellenar los datos del pedido con lo que dio al registrarse
-    if (!this.checkoutData.customerName && this.registerData.firstName) {
-      this.checkoutData.customerName = `${this.registerData.firstName} ${this.registerData.firstSurname}`.trim();
-    }
-    if (!this.checkoutData.customerPhone && this.registerData.phone) {
-      this.checkoutData.customerPhone = this.registerData.phone;
-    }
+    // Precargar el pedido con los datos guardados de la cuenta y su último pedido
+    this.prefillFromProfile(profile || {
+      firstName: this.registerData.firstName, firstSurname: this.registerData.firstSurname, phone: this.registerData.phone,
+    });
+    this.prefillFromLastOrder();
     // Aceptó estas mismas versiones al crear/vincular su cuenta
     if (this.accountConsents.terms && this.accountConsents.habeasData) {
       this.orderConsents = { terms: true, habeasData: true };
@@ -1259,6 +1304,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.authError = 'Completa nombre, apellido, teléfono y correo.';
       return;
     }
+    if (!d.documentType || !/^[A-Za-z0-9-]{4,20}$/.test(d.documentNumber.replace(/[\s.]/g, ''))) {
+      this.authError = 'Indica tu tipo y número de documento.';
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       this.authError = 'Ingresa un correo válido.';
       return;
@@ -1284,8 +1333,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         password: d.password,
         firstName: d.firstName.trim(),
         firstSurname: d.firstSurname.trim(),
-        documentType: d.documentNumber.trim() ? d.documentType : undefined,
-        documentNumber: d.documentNumber.trim() || undefined,
+        documentType: d.documentType,
+        documentNumber: d.documentNumber.replace(/[\s.]/g, ''),
         phone: d.phone.trim(),
         ...this.consentPayload(),
       });
@@ -1314,7 +1363,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.authError = '';
     try {
       const result = await this.authPost('verify', { email: this.verifyEmail, code });
-      this.applyClientToken(result?.access_token);
+      this.applyClientToken(result?.access_token, result?.profile);
     } catch (err: any) {
       this.authError = err?.message || 'No se pudo confirmar el código.';
     } finally {
@@ -1333,7 +1382,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   clientLogout(): void {
-    if (typeof window !== 'undefined') sessionStorage.removeItem(this.clientTokenKey);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(this.clientTokenKey);
+      sessionStorage.removeItem(this.clientProfileKey);
+    }
     this.clientToken = null;
     this.clientLoggedIn = false;
     this.clientEmail = '';

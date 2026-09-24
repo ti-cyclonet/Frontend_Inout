@@ -1633,7 +1633,7 @@
   background: white;
   border-radius: 16px;
   width: 90%;
-  max-width: 500px;
+  max-width: 640px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 2rem;
@@ -2373,4 +2373,22 @@
   .account-grid { grid-template-columns: 1fr; }
   .account-tabs button { font-size: 0.78rem; padding: 0.5rem 0.2rem; }
   .code-input { font-size: 1.3rem; letter-spacing: 0.4rem; }
+}
+
+.order-consents-hint {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #b45309;
+}
+
+.account-pending-note {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #4b5563;
+  text-align: center;
 }
