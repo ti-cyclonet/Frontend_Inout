@@ -61,7 +61,7 @@
                 [ngModelOptions]="{standalone: true}">
               <div class="select-dropdown" *ngIf="showProductDropdown">
                 <div class="select-option" *ngFor="let product of filteredProducts" (mousedown)="selectProduct(product)" [class.out-of-stock]="product.stock <= 0">
-                  <strong>{{ product.name }}</strong>
+                  <strong>{{ product.name }}</strong> <span class="item-type-tag" *ngIf="product.itemType !== 'product'">Reventa</span>
                   <small *ngIf="product.stock > 0">{{ formatCurrency(product.price) }} - Stock: {{ product.stock }}</small>
                   <small *ngIf="product.stock <= 0" class="stock-empty">{{ formatCurrency(product.price) }} - Sin stock</small>
                 </div>

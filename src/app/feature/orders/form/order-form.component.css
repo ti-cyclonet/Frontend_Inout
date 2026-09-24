@@ -347,3 +347,16 @@
   .form-actions { flex-direction: column; align-items: stretch; }
   .table-header, .table-row { grid-template-columns: 2fr 1fr 1fr 1fr 40px; gap: 0.5rem; font-size: 0.75rem; }
 }
+
+/* Materiales de reventa en el buscador de productos */
+.item-type-tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #b45309;
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: middle;
+}

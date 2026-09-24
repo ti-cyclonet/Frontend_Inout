@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
-import { ProductsService } from '../../../shared/services/products.service';
+import { ProductsService, SellableItem } from '../../../shared/services/products.service';
 import { Customer } from '../../../shared/model/customer.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 interface OrderItem {
   productId: string;
   productName: string;
+  itemType: SellableItem['itemType'];
   quantity: number;
   unitPrice: number;
   subtotal: number;
@@ -28,12 +29,7 @@ interface OrderForm {
   total: number;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-}
+type Product = SellableItem;
 
 @Component({
   selector: 'app-order-form',
@@ -67,6 +63,7 @@ export class OrderFormComponent implements OnInit {
 
   currentItem = {
     productId: '',
+    itemType: 'product' as SellableItem['itemType'],
     product: '',
     quantity: 1,
     unitPrice: 0
@@ -101,17 +98,12 @@ export class OrderFormComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.productsService.getProducts().subscribe({
-      next: (response: any) => {
-        const products = response.data || response;
-        this.products = products.map((product: any) => ({
-          id: product.strId,
-          name: product.strName,
-          price: product.fltPrice,
-          // Stock DISPONIBLE (descontando lo reservado por otros pedidos
-          // confirmados): es lo que el backend exige al confirmar.
-          stock: Math.max(0, Number(product.ingQuantity || 0) - Number(product.ingReservedStock || 0))
-        }));
+    // Productos + materiales de reventa, con stock DISPONIBLE (descontando
+    // lo reservado por otros pedidos confirmados): es lo que el backend exige
+    // al confirmar.
+    this.productsService.getSellableItems().subscribe({
+      next: (items) => {
+        this.products = items;
         this.filteredProducts = this.products;
       },
       error: (error) => {
@@ -170,6 +162,7 @@ export class OrderFormComponent implements OnInit {
 
   selectProduct(product: Product): void {
     this.currentItem.productId = product.id;
+    this.currentItem.itemType = product.itemType;
     this.currentItem.product = product.name;
     this.currentItem.unitPrice = product.price || 0;
     this.productSearchTerm = product.name;
@@ -206,6 +199,7 @@ export class OrderFormComponent implements OnInit {
 
     const item: OrderItem = {
       productId: this.currentItem.productId,
+      itemType: this.currentItem.itemType,
       productName: this.currentItem.product,
       quantity: this.currentItem.quantity,
       unitPrice: this.currentItem.unitPrice,
@@ -230,7 +224,7 @@ export class OrderFormComponent implements OnInit {
   }
 
   resetCurrentItem(): void {
-    this.currentItem = { productId: '', product: '', quantity: 1, unitPrice: 0 };
+    this.currentItem = { productId: '', itemType: 'product', product: '', quantity: 1, unitPrice: 0 };
     this.productSearchTerm = '';
   }
 

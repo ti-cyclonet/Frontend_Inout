@@ -945,16 +945,15 @@
                       min="1"
                     />
                   </div>
-                  <div class="summary-row">
-                    <label>
-                      <input
-                        type="checkbox"
-                        [(ngModel)]="newMaterial.marketplaceVisible"
-                      />
-                      Incluir en el catálogo del MarketPlace
-                    </label>
-                  </div>
                 </div>
+                <!-- Reventa: presentación, precio sugerido y visibilidad en el MarketPlace -->
+                <app-resale-pricing
+                  class="d-block mt-3"
+                  [config]="resaleConfig"
+                  [unitCost]="getResaleUnitCost()"
+                  [unitMeasure]="newMaterial.measurementUnit"
+                  [currentStock]="getResultingStock()">
+                </app-resale-pricing>
               </div>
             </div>
 

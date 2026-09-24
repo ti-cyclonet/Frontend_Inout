@@ -16,6 +16,10 @@ interface Product {
   strLocation: string;
   intCategoryId: number;
   strStatus: string;
+  /** 'product' o material de reventa ('material' | 'material_t'), vendido por presentación. */
+  itemType?: 'product' | 'material' | 'material_t';
+  ingQuantity?: number;
+  ingReservedStock?: number;
   views?: number;
   sales?: number;
   rating?: number;
@@ -252,10 +256,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/products/tenant/${tenantId}`).toPromise(),
       this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise().catch(() => ({ businessSector: 'general' })),
-      this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}`).toPromise().catch(() => null)
-    ]).then(([productsResponse, contractResponse, configResponse]) => {
+      this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}`).toPromise().catch(() => null),
+      // Materiales de reventa visibles (precio/stock por presentación)
+      this.http.get<any[]>(`${this.baseUrl}/products/tenant/${tenantId}/resale`).toPromise().catch(() => [])
+    ]).then(([productsResponse, contractResponse, configResponse, resaleResponse]) => {
       this.products = (productsResponse.data || []).map((product: any) => ({
         ...product,
+        itemType: 'product',
         views: Math.floor(Math.random() * 500) + 50,
         sales: Math.floor(Math.random() * 100) + 10,
         rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
@@ -272,6 +279,18 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           );
         }
       }
+
+      // Los materiales de reventa NO dependen de la selección de productos del
+      // MarketPlace: su visibilidad se configura en el propio material.
+      const resaleItems: Product[] = (resaleResponse || []).map((item: any) => ({
+        ...item,
+        intCategoryId: item.categoryId,
+        views: Math.floor(Math.random() * 500) + 50,
+        sales: Math.floor(Math.random() * 100) + 10,
+        rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
+        image: item.images && item.images.length > 0 ? item.images[0].strImageUrl : null
+      }));
+      this.products = [...this.products, ...resaleItems];
 
       // Load display mode from config
       if (configResponse && configResponse.displayMode) {
@@ -574,12 +593,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   setupCarousel(): void {
     // Filtrar productos según configuración guardada
+    // (los materiales de reventa no dependen de esa selección)
     let productsToUse = this.products;
     if (this.selectedProductIds.size > 0) {
-      productsToUse = this.products.filter(p => this.selectedProductIds.has(p.strId));
+      productsToUse = this.products.filter(p => this.isResale(p) || this.selectedProductIds.has(p.strId));
     } else if (this.selectedProductIds.size === 0 && this.tenantId !== 'home') {
-      // Si no hay productos seleccionados, no mostrar ninguno
-      productsToUse = [];
+      // Si no hay productos seleccionados, no mostrar ninguno (salvo reventa)
+      productsToUse = this.products.filter(p => this.isResale(p));
     }
     
     this.carouselProducts = this.getRandomProducts(4, productsToUse);
@@ -980,8 +1000,35 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   // ═══════ CART & CHECKOUT ═══════
+  isResale(product: Product): boolean {
+    return !!product.itemType && product.itemType !== 'product';
+  }
+
+  /** Stock disponible (para reventa, en presentaciones); null si no se conoce. */
+  getAvailableStock(product: Product): number | null {
+    if (product.ingQuantity === undefined || product.ingQuantity === null) return null;
+    return Math.max(0, Number(product.ingQuantity) - Number(product.ingReservedStock || 0));
+  }
+
+  private warnStock(product: Product, available: number): void {
+    Swal.fire({
+      icon: 'warning',
+      title: available > 0 ? 'Stock insuficiente' : 'Sin stock',
+      text: available > 0
+        ? `Solo hay ${available} unidad(es) disponibles de ${product.strName}.`
+        : `${product.strName} no tiene stock disponible por ahora.`,
+      confirmButtonText: 'Entendido'
+    });
+  }
+
   addToCart(product: Product): void {
     const existing = this.cart.find(item => item.product.strId === product.strId);
+    const available = this.getAvailableStock(product);
+    const wanted = (existing?.quantity || 0) + 1;
+    if (available !== null && wanted > available) {
+      this.warnStock(product, available);
+      return;
+    }
     if (existing) {
       existing.quantity++;
     } else {
@@ -997,6 +1044,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   updateCartQuantity(productId: string, qty: number): void {
     const item = this.cart.find(i => i.product.strId === productId);
     if (item) {
+      const available = this.getAvailableStock(item.product);
+      if (available !== null && qty > available) {
+        this.warnStock(item.product, available);
+        item.quantity = Math.max(1, available);
+        return;
+      }
       item.quantity = Math.max(1, qty);
     }
   }
@@ -1128,6 +1181,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       customerEmail: this.checkoutData.customerEmail.trim() || undefined,
       items: this.cart.map(item => ({
         productId: item.product.strId,
+        itemType: item.product.itemType || 'product',
         productName: item.product.strName,
         quantity: Number(item.quantity),
         unitPrice: Number(item.product.fltPrice),

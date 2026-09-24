@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
-import { ProductsService } from '../../../shared/services/products.service';
+import { ProductsService, SellableItem } from '../../../shared/services/products.service';
 import { SalesService, CreateSaleDto } from '../../../shared/services/sales.service';
 import { KardexService } from '../../../shared/services/kardex.service';
 import { StockService } from '../../../shared/services/stock.service';
@@ -14,6 +14,7 @@ import Swal from 'sweetalert2';
 interface OrderItem {
   id: string;
   productId: string;
+  itemType: SellableItem['itemType'];
   product: string;
   quantity: number;
   unitPrice: number;
@@ -28,12 +29,7 @@ interface OrderForm {
   total: number;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-}
+type Product = SellableItem;
 
 @Component({
   selector: 'app-sale-form',
@@ -91,28 +87,17 @@ export class SaleFormComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.productsService.getProducts().subscribe({
-      next: (response: any) => {
-        console.log('Products loaded:', response);
-        const products = response.data || response;
-        this.products = products.map((product: any) => ({
-          id: product.strId,
-          name: product.strName,
-          price: product.fltPrice,
-          // Stock DISPONIBLE: lo reservado por pedidos confirmados no se puede
-          // vender (el backend valida con la misma regla).
-          stock: Math.max(0, Number(product.ingQuantity || 0) - Number(product.ingReservedStock || 0))
-        }));
+    // Productos + materiales de reventa, con stock DISPONIBLE (lo reservado
+    // por pedidos confirmados no se puede vender; el backend valida igual).
+    this.productsService.getSellableItems().subscribe({
+      next: (items) => {
+        this.products = items;
         this.filteredProducts = this.products;
       },
       error: (error) => {
         console.error('Error loading products:', error);
-        // Fallback con productos mock
-        this.products = [
-          { id: '550e8400-e29b-41d4-a716-446655440000', name: 'AREPA CON TODO', price: 17000, stock: 5 },
-          { id: '550e8400-e29b-41d4-a716-446655440001', name: 'PATACÓN CON TODO', price: 20000, stock: 3 }
-        ];
-        this.filteredProducts = this.products;
+        this.products = [];
+        this.filteredProducts = [];
       }
     });
   }
@@ -224,6 +209,7 @@ export class SaleFormComponent implements OnInit {
     const item: OrderItem = {
       id: Date.now().toString(),
       productId: product.id,
+      itemType: product.itemType,
       product: this.currentItem.product,
       quantity: this.currentItem.quantity,
       unitPrice: this.currentItem.unitPrice,

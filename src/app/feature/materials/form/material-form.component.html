@@ -192,17 +192,14 @@
               <div class="invalid-feedback">{{ getFieldError('stockMax') }}</div>
             </div>
 
+            <!-- Reventa: presentación, precio sugerido y visibilidad en el MarketPlace -->
             <div class="form-group full-width">
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  id="marketplaceVisible"
-                  class="form-check-input"
-                  formControlName="marketplaceVisible">
-                <label class="form-check-label" for="marketplaceVisible">
-                  Incluir en el catálogo del MarketPlace
-                </label>
-              </div>
+              <app-resale-pricing
+                [config]="resaleConfig"
+                [unitCost]="+(materialForm.get('price')?.value || 0)"
+                [unitMeasure]="materialForm.get('measurementUnit')?.value || ''"
+                [currentStock]="+(materialForm.get('currentStock')?.value || 0)">
+              </app-resale-pricing>
             </div>
           </div>
         </div>

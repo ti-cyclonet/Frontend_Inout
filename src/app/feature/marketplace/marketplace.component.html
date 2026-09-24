@@ -178,11 +178,14 @@
             <div class="product-card-modern" *ngFor="let product of filteredProducts" 
                  [class.selected-product]="isAdminMode && isProductSelected(product.strId)">
               <!-- Checkbox de selección en modo admin -->
-              <div *ngIf="isAdminMode" class="product-selection">
+              <div *ngIf="isAdminMode && !isResale(product)" class="product-selection">
                 <input type="checkbox" 
                        class="form-check-input" 
                        [checked]="isProductSelected(product.strId)"
                        (change)="toggleProductSelection(product.strId)">
+              </div>
+              <div *ngIf="isAdminMode && isResale(product)" class="product-selection resale-note" title="La visibilidad se configura en el material (sección Reventa)">
+                Reventa
               </div>
               
               <div class="product-image-modern">
@@ -193,6 +196,7 @@
               
               <div class="product-info-modern">
                 <h3>{{ product.strName }}</h3>
+                <span class="resale-tag" *ngIf="isResale(product)">Reventa</span>
                 <p class="description">{{ product.strDescription }}</p>
                 
                 <div class="product-meta-modern">
