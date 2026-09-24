@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
+import { LEGAL_VERSIONS, LegalDocKey, LegalDocument, buildLegalDocument } from './legal/marketplace-legal';
 import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 interface Product {
@@ -96,16 +97,42 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   // Se guarda en una clave de sessionStorage propia (no "authToken", esa es
   // la del staff) para no chocar con una sesión de administrador abierta en
   // el mismo navegador.
-  showClientLogin = false;
   clientLoginData = { email: '', password: '' };
-  clientLoginLoading = false;
-  clientLoginError = '';
   clientLoggedIn = false;
   clientEmail = '';
   private clientToken: string | null = null;
   private get clientTokenKey(): string {
     return `marketplace_client_token_${this.tenantId}`;
   }
+
+  // Cuenta de cliente en el checkout: invitado (default), iniciar sesión o
+  // crear cuenta. El correo SIEMPRE se confirma con un código antes de que
+  // la cuenta quede vinculada al negocio (Authoriza: rol clienteInout).
+  accountMode: 'guest' | 'login' | 'register' = 'guest';
+  /** form: formulario · verify: código de correo · join: cuenta existente que aún no es cliente de este negocio */
+  authStep: 'form' | 'verify' | 'join' = 'form';
+  authLoading = false;
+  authError = '';
+  authInfo = '';
+  registerData = {
+    firstName: '', firstSurname: '', documentType: 'CC', documentNumber: '',
+    phone: '', email: '', password: '', confirmPassword: '',
+  };
+  /** Aceptación para crear/vincular la cuenta. */
+  accountConsents = { terms: false, habeasData: false };
+  /** Aceptación para el pedido (obligatoria también como invitado). */
+  orderConsents = { terms: false, habeasData: false };
+  verifyEmail = '';
+  verifyCode = '';
+  showRegisterPassword = false;
+  /** Documento legal abierto en el visor (términos / tratamiento de datos). */
+  legalDoc: LegalDocument | null = null;
+  readonly documentTypes = [
+    { value: 'CC', label: 'Cédula de ciudadanía' },
+    { value: 'CE', label: 'Cédula de extranjería' },
+    { value: 'PA', label: 'Pasaporte' },
+    { value: 'PPT', label: 'Permiso por protección temporal' },
+  ];
 
   private baseUrl = environment.apiUrl;
   private authorizaUrl = environment.auth.authorizaUrl;
@@ -1095,66 +1122,214 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     }
   }
 
-  openClientLogin(): void {
-    this.showClientLogin = true;
-    this.clientLoginError = '';
+  setAccountMode(mode: 'guest' | 'login' | 'register'): void {
+    this.accountMode = mode;
+    this.authStep = 'form';
+    this.authError = '';
+    this.authInfo = '';
   }
 
-  closeClientLogin(): void {
-    this.showClientLogin = false;
+  openLegal(key: LegalDocKey): void {
+    this.legalDoc = buildLegalDocument(key, { businessName: this.businessName });
   }
 
-  /** Login opcional: usa las mismas credenciales de Authoriza (no es
-   * obligatorio para comprar). fetch() directo, NO HttpClient: el
-   * interceptor global reemplazaría el header Authorization por el token de
-   * staff si hay una sesión de administrador abierta en el mismo navegador. */
-  clientLogin(): void {
-    if (!this.clientLoginData.email.trim() || !this.clientLoginData.password) {
-      this.clientLoginError = 'Ingresa tu correo y contraseña.';
+  closeLegal(): void {
+    this.legalDoc = null;
+  }
+
+  /** POST a los endpoints públicos de clientes del MarketPlace en Authoriza.
+   * fetch() directo, NO HttpClient: el interceptor global reemplazaría el
+   * header Authorization por el token de staff si hay una sesión de
+   * administrador abierta en el mismo navegador. */
+  private async authPost(path: string, body: any): Promise<any> {
+    const res = await fetch(`${this.authorizaUrl}/auth/marketplace/client/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: this.tenantId, ...body }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err: any = new Error(data?.message || 'No se pudo completar la solicitud.');
+      err.code = data?.code;
+      throw err;
+    }
+    return data;
+  }
+
+  private consentPayload() {
+    return {
+      acceptTerms: true,
+      acceptHabeasData: true,
+      termsVersion: LEGAL_VERSIONS.terms,
+      habeasDataVersion: LEGAL_VERSIONS.habeasData,
+    };
+  }
+
+  /** Respuesta de login/registro/verificación: pide código o abre la sesión. */
+  private handleAuthResult(result: any, email: string): void {
+    if (result?.verificationRequired) {
+      this.verifyEmail = email;
+      this.verifyCode = '';
+      this.authStep = 'verify';
+      this.authInfo = result.message || 'Te enviamos un código a tu correo.';
+      return;
+    }
+    this.applyClientToken(result?.access_token);
+  }
+
+  private applyClientToken(token: string): void {
+    const payload = token ? decodeJwtPayload(token) : null;
+    if (!token || payload?.rol !== 'clienteInout' || payload?.tenantId !== this.tenantId) {
+      this.authError = 'No se pudo abrir tu sesión de cliente en esta tienda.';
+      return;
+    }
+    sessionStorage.setItem(this.clientTokenKey, token);
+    this.clientToken = token;
+    this.clientEmail = payload.email || this.verifyEmail;
+    this.clientLoggedIn = true;
+    this.checkoutData.customerEmail = this.clientEmail;
+    // Prellenar los datos del pedido con lo que dio al registrarse
+    if (!this.checkoutData.customerName && this.registerData.firstName) {
+      this.checkoutData.customerName = `${this.registerData.firstName} ${this.registerData.firstSurname}`.trim();
+    }
+    if (!this.checkoutData.customerPhone && this.registerData.phone) {
+      this.checkoutData.customerPhone = this.registerData.phone;
+    }
+    // Aceptó estas mismas versiones al crear/vincular su cuenta
+    if (this.accountConsents.terms && this.accountConsents.habeasData) {
+      this.orderConsents = { terms: true, habeasData: true };
+    }
+    this.authStep = 'form';
+    this.authError = '';
+    this.authInfo = '';
+    this.clientLoginData = { email: '', password: '' };
+    this.registerData.password = '';
+    this.registerData.confirmPassword = '';
+    Swal.fire({ icon: 'success', title: '¡Listo!', text: `Sesión iniciada como ${this.clientEmail}`, timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+  }
+
+  async clientLogin(): Promise<void> {
+    const email = this.clientLoginData.email.trim();
+    if (!email || !this.clientLoginData.password) {
+      this.authError = 'Ingresa tu correo y contraseña.';
+      return;
+    }
+    this.authLoading = true;
+    this.authError = '';
+    try {
+      const result = await this.authPost('login', { email, password: this.clientLoginData.password });
+      this.handleAuthResult(result, email);
+    } catch (err: any) {
+      if (err?.code === 'NOT_A_CLIENT') {
+        // Tiene cuenta en CycloNet, pero no es cliente de ESTA tienda
+        this.accountConsents = { terms: false, habeasData: false };
+        this.authStep = 'join';
+        this.authInfo = err.message;
+      } else {
+        this.authError = err?.message || 'No se pudo iniciar sesión.';
+      }
+    } finally {
+      this.authLoading = false;
+    }
+  }
+
+  /** Vincula una cuenta existente a esta tienda (prueba su contraseña + acepta términos). */
+  async joinStore(): Promise<void> {
+    if (!this.accountConsents.terms || !this.accountConsents.habeasData) {
+      this.authError = 'Debes aceptar los Términos y la autorización de tratamiento de datos.';
+      return;
+    }
+    const email = this.clientLoginData.email.trim();
+    this.authLoading = true;
+    this.authError = '';
+    try {
+      const result = await this.authPost('register', { email, password: this.clientLoginData.password, ...this.consentPayload() });
+      this.handleAuthResult(result, email);
+    } catch (err: any) {
+      this.authError = err?.message || 'No se pudo vincular tu cuenta.';
+    } finally {
+      this.authLoading = false;
+    }
+  }
+
+  async clientRegister(): Promise<void> {
+    const d = this.registerData;
+    const email = d.email.trim().toLowerCase();
+    if (!d.firstName.trim() || !d.firstSurname.trim() || !d.phone.trim() || !email) {
+      this.authError = 'Completa nombre, apellido, teléfono y correo.';
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.authError = 'Ingresa un correo válido.';
+      return;
+    }
+    if (d.password.length < 8) {
+      this.authError = 'La contraseña debe tener al menos 8 caracteres.';
+      return;
+    }
+    if (d.password !== d.confirmPassword) {
+      this.authError = 'Las contraseñas no coinciden.';
+      return;
+    }
+    if (!this.accountConsents.terms || !this.accountConsents.habeasData) {
+      this.authError = 'Debes aceptar los Términos y la autorización de tratamiento de datos.';
       return;
     }
 
-    this.clientLoginLoading = true;
-    this.clientLoginError = '';
-
-    fetch(`${this.authorizaUrl}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: this.clientLoginData.email.trim(),
-        password: this.clientLoginData.password,
-        applicationName: 'Inout',
-      }),
-    })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.message || 'Credenciales inválidas');
-        return data;
-      })
-      .then((data: any) => {
-        const token = data.access_token || data.token;
-        const payload = token ? decodeJwtPayload(token) : null;
-
-        if (!token || payload?.rol !== 'clienteInout') {
-          throw new Error('Esta cuenta no tiene un rol de cliente en InOut.');
-        }
-        if (payload?.tenantId !== this.tenantId) {
-          throw new Error('Esta cuenta no está registrada como cliente de este negocio.');
-        }
-
-        sessionStorage.setItem(this.clientTokenKey, token);
-        this.clientToken = token;
-        this.clientEmail = payload.email || this.clientLoginData.email.trim();
-        this.clientLoggedIn = true;
-        this.checkoutData.customerEmail = this.clientEmail;
-        this.clientLoginLoading = false;
-        this.showClientLogin = false;
-        this.clientLoginData = { email: '', password: '' };
-      })
-      .catch((err) => {
-        this.clientLoginLoading = false;
-        this.clientLoginError = err?.message || 'No se pudo iniciar sesión.';
+    this.authLoading = true;
+    this.authError = '';
+    try {
+      const result = await this.authPost('register', {
+        email,
+        password: d.password,
+        firstName: d.firstName.trim(),
+        firstSurname: d.firstSurname.trim(),
+        documentType: d.documentNumber.trim() ? d.documentType : undefined,
+        documentNumber: d.documentNumber.trim() || undefined,
+        phone: d.phone.trim(),
+        ...this.consentPayload(),
       });
+      this.handleAuthResult(result, email);
+    } catch (err: any) {
+      if (err?.code === 'EMAIL_ALREADY_REGISTERED') {
+        // Ya tiene cuenta (quizá de otra tienda o app de CycloNet): que inicie sesión
+        this.setAccountMode('login');
+        this.clientLoginData.email = email;
+        this.authInfo = err.message;
+      } else {
+        this.authError = err?.message || 'No se pudo crear la cuenta.';
+      }
+    } finally {
+      this.authLoading = false;
+    }
+  }
+
+  async verifyClientCode(): Promise<void> {
+    const code = (this.verifyCode || '').replace(/\D/g, '');
+    if (code.length !== 6) {
+      this.authError = 'Ingresa el código de 6 dígitos.';
+      return;
+    }
+    this.authLoading = true;
+    this.authError = '';
+    try {
+      const result = await this.authPost('verify', { email: this.verifyEmail, code });
+      this.applyClientToken(result?.access_token);
+    } catch (err: any) {
+      this.authError = err?.message || 'No se pudo confirmar el código.';
+    } finally {
+      this.authLoading = false;
+    }
+  }
+
+  async resendClientCode(): Promise<void> {
+    this.authError = '';
+    try {
+      const result = await this.authPost('resend-code', { email: this.verifyEmail });
+      this.authInfo = result?.message || 'Te enviamos un nuevo código.';
+    } catch (err: any) {
+      this.authError = err?.message || 'No se pudo reenviar el código.';
+    }
   }
 
   clientLogout(): void {
@@ -1162,11 +1337,20 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.clientToken = null;
     this.clientLoggedIn = false;
     this.clientEmail = '';
+    this.setAccountMode('guest');
   }
 
   submitOrder(): void {
     if (!this.checkoutData.customerName.trim() || !this.checkoutData.customerPhone.trim()) {
       Swal.fire({ icon: 'warning', title: 'Datos requeridos', text: 'Ingresa tu nombre y teléfono para continuar.' });
+      return;
+    }
+    if (!this.orderConsents.terms || !this.orderConsents.habeasData) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta tu autorización',
+        text: 'Para hacer el pedido debes aceptar los Términos y Condiciones y autorizar el tratamiento de tus datos personales.',
+      });
       return;
     }
 
@@ -1191,6 +1375,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       subtotal: Number(subtotal),
       tax: 0,
       total: Number(subtotal),
+      ...this.consentPayload(),
     };
 
     const onSuccess = (response: any) => {
