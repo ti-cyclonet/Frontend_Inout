@@ -165,6 +165,22 @@
   margin-bottom: 1rem;
 }
 
+/* Variantes de columnas fijas para filas puntuales (documento, fecha/estado
+   civil/sexo). Antes se fijaban con [style]/[style.grid-template-columns] en
+   línea, lo que ganaba siempre sobre la media query de abajo y dejaba estas
+   filas sin colapsar a una columna en móvil. */
+.grid-doc-natural {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid-doc-legal {
+  grid-template-columns: 2fr 3fr 1fr;
+}
+
+.grid-3col {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .form-group.full-width {
   grid-column: 1 / -1;
 }
@@ -375,7 +391,10 @@
     padding: 1rem;
   }
 
-  .form-grid {
+  .form-grid,
+  .grid-doc-natural,
+  .grid-doc-legal,
+  .grid-3col {
     grid-template-columns: 1fr;
     gap: 1rem;
   }

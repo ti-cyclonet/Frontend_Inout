@@ -68,7 +68,9 @@
 
           <hr style="border: 2px solid #6f42c1; margin: 20px 0;">
 
-          <div [formGroup]="documentForm" class="form-grid" [style.grid-template-columns]="basicDataForm.value.strPersonType === 'J' ? '2fr 3fr 1fr' : '1fr 1fr'">
+          <div [formGroup]="documentForm" class="form-grid"
+               [class.grid-doc-legal]="basicDataForm.value.strPersonType === 'J'"
+               [class.grid-doc-natural]="basicDataForm.value.strPersonType !== 'J'">
             <div class="form-group">
               <label>Tipo de Documento *</label>
               <select formControlName="strDocumentType" class="form-select" [disabled]="basicDataForm.value.strPersonType === 'J'">
@@ -124,7 +126,7 @@
                 <input formControlName="secondSurname" placeholder="Segundo Apellido" class="form-control" />
               </div>
             </div>
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="form-grid grid-3col">
               <div class="form-group">
                 <label>Fecha de Nacimiento *</label>
                 <input type="date" formControlName="birthDate" class="form-control" [class.is-invalid]="naturalForm.get('birthDate')?.invalid && naturalForm.get('birthDate')?.touched" />
