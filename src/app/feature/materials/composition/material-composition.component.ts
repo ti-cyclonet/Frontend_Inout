@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+﻿import { Component, OnInit, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,11 +9,12 @@ import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialComposition, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import { convertUnits } from '../../../shared/utils/unit-conversion.util';
+import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 
 @Component({
   selector: 'app-material-composition',
   standalone: true,
-  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent],
+  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent],
   templateUrl: './material-composition.component.html',
   styleUrl: './material-composition.component.css'
 })
@@ -44,6 +45,12 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     marketplaceVisible: true
   };
   
+  /** Reventa (presentación + precio). Vive en el paso 4; ver canProceedToNextStep(). */
+  resaleConfig: ResaleConfig = resaleConfigFrom();
+  /** Costo unitario guardado del material en edición (respaldo si no hay cantidades nuevas). */
+  private storedUnitCost = 0;
+  @ViewChild(ResalePricingComponent) resalePricing?: ResalePricingComponent;
+
   // Form state
   selectedMaterialId: number | null = null;
   quantity: number = 1;
@@ -258,7 +265,9 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       case 3:
         return true; // Materials selection
       case 4:
-        return true; // Stock config
+        // Stock config + reventa (si está activa, debe estar completa y con
+        // precio >= sugerido; el componente está montado en este paso)
+        return !this.resalePricing?.validationError();
       default:
         return false;
     }
@@ -288,7 +297,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       ingMaxStock: Number(this.newMaterial.stockMax),
       strLocation: this.newMaterial.ubicacion,
       strStatus: 'Active',
-      blnMarketplaceVisible: this.newMaterial.marketplaceVisible !== false
+      // Reventa: incluye blnMarketplaceVisible (solo aplica si es de reventa)
+      ...resaleConfigPayload(this.resaleConfig),
     };
 
     // Solo incluir categoryId si tiene valor
@@ -417,6 +427,18 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     return this.compositions.reduce((total, comp) => total + comp.quantity, 0);
   }
 
+  /** Stock que tendrá el material compuesto al guardar (para la sección de reventa). */
+  getResultingStock(): number {
+    return this.editingMaterialId
+      ? Number(this.newMaterial.quantityToGenerate || 0) + this.getTotalQuantity()
+      : this.getTotalQuantity();
+  }
+
+  /** Costo por unidad de medida para el precio de reventa. */
+  getResaleUnitCost(): number {
+    return this.getUnitPrice() || this.storedUnitCost;
+  }
+
   getUnitPrice(): number {
     const totalCost = this.getTotalCost();
     const totalQuantity = this.getTotalQuantity();
@@ -458,6 +480,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       categoryId: null,
       marketplaceVisible: true
     };
+    this.resaleConfig = resaleConfigFrom();
+    this.storedUnitCost = 0;
     this.compositions = [];
     this.selectedMaterials.clear();
     this.additionalQuantities.clear();
@@ -792,6 +816,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
           categoryId: data.categoryId,
           marketplaceVisible: data.blnMarketplaceVisible !== false
         };
+        this.resaleConfig = resaleConfigFrom(data);
+        this.storedUnitCost = Number(data.fltPrice) || 0;
         this.useDifferentDischargeUnit = data.strDischargeUnit !== data.strUnitMeasure;
         
         // Map images to the correct format

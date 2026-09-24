@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,11 +8,12 @@ import { CategoryService, Category } from '../../../shared/services/category/cat
 import { WarehousesService, Warehouse } from '../../../shared/services/warehouses.service';
 import { Material, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
+import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 
 @Component({
   selector: 'app-material-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent, ResalePricingComponent],
   templateUrl: './material-form.component.html',
   styleUrls: ['./material-form.component.css']
 })
@@ -28,6 +29,9 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   currentStep = 1;
   totalSteps = 5;
   isEditMode = false;
+  /** Reventa (presentación + precio). Vive en el paso 2; ver isStepValid(2). */
+  resaleConfig: ResaleConfig = resaleConfigFrom();
+  @ViewChild(ResalePricingComponent) resalePricing?: ResalePricingComponent;
   materialImages: MaterialImage[] = [];
   categories: Category[] = [];
   locationOptions: { value: string; label: string }[] = [];
@@ -72,6 +76,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         this.loadMaterial();
       } else {
         this.isEditMode = false;
+        this.resaleConfig = resaleConfigFrom();
         this.materialForm.reset({
           price: 0,
           stockMin: 0,
@@ -194,6 +199,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
             status: material.strStatus || material.status,
             marketplaceVisible: material.blnMarketplaceVisible !== false
           });
+          this.resaleConfig = resaleConfigFrom(material);
           
           if (material.images) {
             this.materialImages = material.images.map((img: any) => ({
@@ -255,7 +261,10 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         return this.materialForm.get('price')?.valid && 
                this.materialForm.get('stockMin')?.valid && 
                this.materialForm.get('stockMax')?.valid && 
-               this.materialForm.get('ubicacion')?.valid || false;
+               this.materialForm.get('ubicacion')?.valid &&
+               // La sección de reventa (si está activa) debe estar completa y
+               // con precio >= sugerido; está montada mientras se ve el paso 2.
+               !this.resalePricing?.validationError() || false;
       case 3:
         return true; // Category is optional
       case 4:
@@ -289,7 +298,8 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         ingQuantity: parseInt(formData.currentStock) || 0,
         strLocation: formData.ubicacion,
         strStatus: formData.status,
-        blnMarketplaceVisible: formData.marketplaceVisible !== false,
+        // Reventa: incluye blnMarketplaceVisible (solo aplica a materiales de reventa)
+        ...resaleConfigPayload(this.resaleConfig),
         images: imagesToSend
       };
 
@@ -314,6 +324,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
               status: 'active'
             });
             this.materialImages = [];
+            this.resaleConfig = resaleConfigFrom();
             this.currentStep = 1;
             this.useDifferentDischargeUnit = false;
             

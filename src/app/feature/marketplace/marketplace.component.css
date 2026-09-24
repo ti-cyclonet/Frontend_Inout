@@ -2152,3 +2152,24 @@
     font-size: 1.2rem;
   }
 }
+
+/* Materiales de reventa (su visibilidad se configura en el material) */
+.resale-tag {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.product-selection.resale-note {
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
