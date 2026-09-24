@@ -202,7 +202,7 @@
                 </div>
                 <div class="material-name">
                   <strong>{{ material.name }}</strong>
-                  <small class="text-muted d-block">{{ material.measurementUnit }}</small>
+                  <small class="text-muted d-block">{{ stockUnit(material) }}<ng-container *ngIf="hasDischargeUnit(material)"> · compra en {{ material.measurementUnit }}</ng-container></small>
                 </div>
               </div>
             </td>
@@ -215,13 +215,13 @@
             <td class="text-center col-stock">
               <div class="stock-info">
                 <span class="stock-value" [ngClass]="getStockStatusClass(material)">
-                  {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}
+                  {{ inStockUnit(material, material.ingQuantity || material.currentStock) | numberFormat:2 }}
                 </span>
-                <small class="text-muted d-block">Min: {{ (material.ingMinStock || material.stockMin || 0) | numberFormat:2 }} | Max: {{ (material.ingMaxStock || material.stockMax || 0) | numberFormat:2 }}</small>
+                <small class="text-muted d-block">Min: {{ inStockUnit(material, material.ingMinStock || material.stockMin) | numberFormat:2 }} | Max: {{ inStockUnit(material, material.ingMaxStock || material.stockMax) | numberFormat:2 }}</small>
               </div>
             </td>
             <td class="text-center col-price">
-              <span class="price-value">${{ material.price | numberFormat:2 }}</span>
+              <span class="price-value">${{ material.price | numberFormat:2 }}<small class="text-muted" *ngIf="hasDischargeUnit(material)">/{{ material.measurementUnit }}</small></span>
             </td>
             <td class="text-center col-status">
               <span class="status-badge" [ngClass]="'status-' + material.status">
@@ -282,8 +282,8 @@
         </div>
         <div class="mobile-list-text">
           <strong>{{ material.name }}</strong>
-          <small class="text-muted">{{ material['strCode'] || '' }} · {{ material.measurementUnit }}</small>
-          <small [ngClass]="getStockStatusClass(material)">Stock: {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}</small>
+          <small class="text-muted">{{ material['strCode'] || '' }} · {{ stockUnit(material) }}</small>
+          <small [ngClass]="getStockStatusClass(material)">Stock: {{ inStockUnit(material, material.ingQuantity || material.currentStock) | numberFormat:2 }}</small>
         </div>
       </div>
       <svg viewBox="0 0 16 16" width="16" height="16" fill="#6c757d">
@@ -353,22 +353,22 @@
           <div class="stat">
             <label>Stock Actual</label>
             <span class="value" [ngClass]="getStockStatusClass(material)">
-              {{ (material.ingQuantity || material.currentStock || 0) | numberFormat:2 }}
+              {{ inStockUnit(material, material.ingQuantity || material.currentStock) | numberFormat:2 }}
             </span>
           </div>
           <div class="stat">
             <label>Unidad</label>
-            <span class="value">{{ material.measurementUnit }}</span>
+            <span class="value">{{ stockUnit(material) }}<small class="text-muted" *ngIf="hasDischargeUnit(material)"> (compra en {{ material.measurementUnit }})</small></span>
           </div>
           <div class="stat">
             <label>Stock Mínimo</label>
             <span class="value">
-              {{ (material.ingMinStock || material.stockMin || 0) | numberFormat:2 }}
+              {{ inStockUnit(material, material.ingMinStock || material.stockMin) | numberFormat:2 }}
             </span>
           </div>
           <div class="stat">
             <label>Precio</label>
-            <span class="value">${{ material.price | numberFormat:2 }}</span>
+            <span class="value">${{ material.price | numberFormat:2 }}<small class="text-muted" *ngIf="hasDischargeUnit(material)">/{{ material.measurementUnit }}</small></span>
           </div>
         </div>
         
@@ -478,6 +478,10 @@
             <span class="view-label">Unidad de Medida</span>
             <span class="view-value">{{ selectedViewMaterial.measurementUnit }}</span>
           </div>
+          <div class="view-detail-item" *ngIf="hasDischargeUnit(selectedViewMaterial)">
+            <span class="view-label">Unidad de Descarga (stock)</span>
+            <span class="view-value">{{ stockUnit(selectedViewMaterial) }}</span>
+          </div>
           <div class="view-detail-item full">
             <span class="view-label">Descripción</span>
             <span class="view-value">{{ selectedViewMaterial.description || 'Sin descripción' }}</span>
@@ -485,20 +489,20 @@
           <div class="view-detail-item">
             <span class="view-label">Stock Actual</span>
             <span class="view-value fw-bold" [ngClass]="getStockStatusClass(selectedViewMaterial)">
-              {{ (selectedViewMaterial.ingQuantity || selectedViewMaterial.currentStock || 0) | numberFormat:2 }}
+              {{ inStockUnit(selectedViewMaterial, selectedViewMaterial.ingQuantity || selectedViewMaterial.currentStock) | numberFormat:2 }}
             </span>
           </div>
           <div class="view-detail-item">
             <span class="view-label">Precio</span>
-            <span class="view-value">${{ selectedViewMaterial.price | numberFormat:2 }}</span>
+            <span class="view-value">${{ selectedViewMaterial.price | numberFormat:2 }}<small class="text-muted" *ngIf="hasDischargeUnit(selectedViewMaterial)">/{{ selectedViewMaterial.measurementUnit }}</small></span>
           </div>
           <div class="view-detail-item">
             <span class="view-label">Stock Mín.</span>
-            <span class="view-value">{{ (selectedViewMaterial.ingMinStock || selectedViewMaterial.stockMin || 0) | numberFormat:2 }}</span>
+            <span class="view-value">{{ inStockUnit(selectedViewMaterial, selectedViewMaterial.ingMinStock || selectedViewMaterial.stockMin) | numberFormat:2 }}</span>
           </div>
           <div class="view-detail-item">
             <span class="view-label">Stock Máx.</span>
-            <span class="view-value">{{ (selectedViewMaterial.ingMaxStock || selectedViewMaterial.stockMax || 0) | numberFormat:2 }}</span>
+            <span class="view-value">{{ inStockUnit(selectedViewMaterial, selectedViewMaterial.ingMaxStock || selectedViewMaterial.stockMax) | numberFormat:2 }}</span>
           </div>
           <div class="view-detail-item">
             <span class="view-label">Ubicación</span>

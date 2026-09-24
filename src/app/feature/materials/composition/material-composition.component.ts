@@ -8,7 +8,7 @@ import { CategoryService, Category } from '../../../shared/services/category/cat
 import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialComposition, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
-import { convertUnits } from '../../../shared/utils/unit-conversion.util';
+import { convertUnits, UNIT_OPTIONS, getDischargeUnitOptions } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 
 @Component({
@@ -45,6 +45,20 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     marketplaceVisible: true
   };
   
+  unitOptions = UNIT_OPTIONS;
+
+  /** Unidades de descarga válidas: misma familia que la de medida, sin incluirla. */
+  get dischargeUnitOptions(): { value: string; label: string }[] {
+    return getDischargeUnitOptions(this.newMaterial.measurementUnit);
+  }
+
+  onMeasurementUnitChange(unit: string): void {
+    this.newMaterial.measurementUnit = unit;
+    if (this.newMaterial.dischargeUnit && !getDischargeUnitOptions(unit).some(o => o.value === this.newMaterial.dischargeUnit)) {
+      this.newMaterial.dischargeUnit = '';
+    }
+  }
+
   /** Reventa (presentación + precio). Vive en el paso 4; ver canProceedToNextStep(). */
   resaleConfig: ResaleConfig = resaleConfigFrom();
   /** Costo unitario guardado del material en edición (respaldo si no hay cantidades nuevas). */

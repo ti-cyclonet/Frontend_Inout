@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
+import { convertUnits } from '../../../shared/utils/unit-conversion.util';
 import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
 import { WarehousesService } from '../../../shared/services/warehouses.service';
@@ -184,6 +185,27 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     
     if (currentStock < minStock) return 'low';
     return 'normal';
+  }
+
+  /** Tiene unidad de descarga distinta a la de medida (compra en kg, stock en g). */
+  hasDischargeUnit(material: any): boolean {
+    const measure = material?.measurementUnit || material?.strUnitMeasure;
+    const discharge = material?.dischargeUnit || material?.strDischargeUnit;
+    return !!discharge && discharge !== measure;
+  }
+
+  /** Unidad en que se muestra el stock: la de descarga si existe, si no la de medida. */
+  stockUnit(material: any): string {
+    return this.hasDischargeUnit(material)
+      ? (material.dischargeUnit || material.strDischargeUnit)
+      : (material?.measurementUnit || material?.strUnitMeasure || '');
+  }
+
+  /** El stock se guarda en unidad de medida; se muestra convertido a la de descarga. */
+  inStockUnit(material: any, value: any): number {
+    const qty = parseFloat(value || 0) || 0;
+    if (!this.hasDischargeUnit(material)) return qty;
+    return convertUnits(qty, material.measurementUnit || material.strUnitMeasure, this.stockUnit(material));
   }
 
   getStockStatusClass(material: any): string {
