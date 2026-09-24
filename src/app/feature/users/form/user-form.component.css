@@ -400,14 +400,17 @@
   }
 
   .form-actions {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
     padding: 1rem;
   }
 
   .left-actions, .right-actions {
     justify-content: center;
+    flex-shrink: 0;
   }
 }
 

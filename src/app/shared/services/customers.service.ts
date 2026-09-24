@@ -42,6 +42,13 @@ export class CustomersService {
     return this.http.post<any>(`${this.authorizaUrl}/auth/check-email`, { email });
   }
 
+  /** Resumen de identidad (nombre/documento) de un usuario existente en
+   * Authoriza, para precargar el formulario y solo pedir el rol a asignar.
+   * A diferencia de checkEmailExists (público), este requiere sesión. */
+  getUserDetailsByEmail(email: string): Observable<any> {
+    return this.http.get<any>(`${this.authorizaUrl}/users/lookup-by-email`, { params: { email } });
+  }
+
   /** Get available roles for a contract */
   getRoleAvailability(contractId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.authorizaUrl}/user-roles/availability/${contractId}`);
