@@ -404,31 +404,122 @@
 
       <hr>
 
-      <!-- Sesión opcional de cliente: NO es obligatoria para comprar -->
-      <div class="client-session-box">
-        <ng-container *ngIf="!clientLoggedIn">
-          <a href="javascript:void(0)" class="client-session-link" (click)="showClientLogin ? closeClientLogin() : openClientLogin()">
-            {{ showClientLogin ? 'Prefiero seguir como invitado' : '¿Ya tienes cuenta? Inicia sesión' }}
-          </a>
-          <div class="client-login-form" *ngIf="showClientLogin">
-            <div class="form-field">
-              <label>Correo</label>
-              <input type="email" [(ngModel)]="clientLoginData.email" placeholder="tu@correo.com" (keyup.enter)="clientLogin()">
-            </div>
-            <div class="form-field">
-              <label>Contraseña</label>
-              <input type="password" [(ngModel)]="clientLoginData.password" placeholder="••••••••" (keyup.enter)="clientLogin()">
-            </div>
-            <p class="client-login-error" *ngIf="clientLoginError">{{ clientLoginError }}</p>
-            <button type="button" class="btn-checkout-primary" [disabled]="clientLoginLoading" (click)="clientLogin()">
-              {{ clientLoginLoading ? 'Ingresando...' : 'Iniciar sesión' }}
-            </button>
-          </div>
-        </ng-container>
+      <!-- Cuenta de cliente: invitado (default), iniciar sesión o crear cuenta -->
+      <div class="account-box">
         <div class="client-session-active" *ngIf="clientLoggedIn">
-          ✅ Sesión iniciada como <strong>{{ clientEmail }}</strong>
+          ✅ Comprando como <strong>{{ clientEmail }}</strong>
           <a href="javascript:void(0)" (click)="clientLogout()">Cerrar sesión</a>
         </div>
+
+        <ng-container *ngIf="!clientLoggedIn">
+          <div class="account-tabs" role="tablist" aria-label="Cómo quieres comprar">
+            <button type="button" role="tab" [class.active]="accountMode === 'guest'" [attr.aria-selected]="accountMode === 'guest'" (click)="setAccountMode('guest')">Invitado</button>
+            <button type="button" role="tab" [class.active]="accountMode === 'login'" [attr.aria-selected]="accountMode === 'login'" (click)="setAccountMode('login')">Iniciar sesión</button>
+            <button type="button" role="tab" [class.active]="accountMode === 'register'" [attr.aria-selected]="accountMode === 'register'" (click)="setAccountMode('register')">Crear cuenta</button>
+          </div>
+
+          <p class="account-hint" *ngIf="accountMode === 'guest'">
+            Compra sin registrarte. Con una cuenta en <strong>{{ businessName || 'esta tienda' }}</strong> tus datos quedan guardados para tus próximos pedidos.
+          </p>
+
+          <p class="account-info" *ngIf="accountMode !== 'guest' && authInfo">{{ authInfo }}</p>
+
+          <!-- Confirmación de correo (registro o cuenta sin confirmar) -->
+          <div class="account-panel" *ngIf="accountMode !== 'guest' && authStep === 'verify'">
+            <h4 class="account-panel-title">Confirma tu correo</h4>
+            <p class="account-panel-text">Escribe el código de 6 dígitos que enviamos a <strong>{{ verifyEmail }}</strong>. Vence en 30 minutos.</p>
+            <input class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                   placeholder="••••••" [(ngModel)]="verifyCode" (keyup.enter)="verifyClientCode()" aria-label="Código de verificación">
+            <p class="account-error" *ngIf="authError">{{ authError }}</p>
+            <button type="button" class="btn-account" [disabled]="authLoading" (click)="verifyClientCode()">
+              {{ authLoading ? 'Confirmando…' : 'Confirmar correo' }}
+            </button>
+            <div class="account-links">
+              <a href="javascript:void(0)" (click)="resendClientCode()">Reenviar código</a>
+              <a href="javascript:void(0)" (click)="authStep = 'form'; authError = ''; authInfo = ''">Usar otro correo</a>
+            </div>
+          </div>
+
+          <!-- Iniciar sesión -->
+          <div class="account-panel" *ngIf="accountMode === 'login' && authStep === 'form'">
+            <div class="account-field">
+              <label for="mkLoginEmail">Correo</label>
+              <input id="mkLoginEmail" type="email" autocomplete="email" [(ngModel)]="clientLoginData.email" placeholder="tu@correo.com" (keyup.enter)="clientLogin()">
+            </div>
+            <div class="account-field">
+              <label for="mkLoginPass">Contraseña</label>
+              <input id="mkLoginPass" type="password" autocomplete="current-password" [(ngModel)]="clientLoginData.password" placeholder="Tu contraseña" (keyup.enter)="clientLogin()">
+            </div>
+            <p class="account-error" *ngIf="authError">{{ authError }}</p>
+            <button type="button" class="btn-account" [disabled]="authLoading" (click)="clientLogin()">
+              {{ authLoading ? 'Ingresando…' : 'Iniciar sesión' }}
+            </button>
+            <div class="account-links">
+              <span>¿No tienes cuenta?</span>
+              <a href="javascript:void(0)" (click)="setAccountMode('register')">Créala aquí</a>
+            </div>
+          </div>
+
+          <!-- Cuenta existente que aún no es cliente de esta tienda -->
+          <div class="account-panel" *ngIf="accountMode === 'login' && authStep === 'join'">
+            <h4 class="account-panel-title">Únete a {{ businessName || 'esta tienda' }}</h4>
+            <p class="account-panel-text">Usaremos tu cuenta <strong>{{ clientLoginData.email }}</strong>. Para ser cliente de esta tienda debes aceptar:</p>
+            <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: accountConsents, id: 'join' }"></ng-container>
+            <p class="account-error" *ngIf="authError">{{ authError }}</p>
+            <button type="button" class="btn-account" [disabled]="authLoading" (click)="joinStore()">
+              {{ authLoading ? 'Vinculando…' : 'Unirme y continuar' }}
+            </button>
+          </div>
+
+          <!-- Crear cuenta -->
+          <div class="account-panel" *ngIf="accountMode === 'register' && authStep === 'form'">
+            <div class="account-grid">
+              <div class="account-field">
+                <label for="mkRegName">Nombre *</label>
+                <input id="mkRegName" type="text" autocomplete="given-name" [(ngModel)]="registerData.firstName" placeholder="Tu nombre">
+              </div>
+              <div class="account-field">
+                <label for="mkRegSurname">Apellido *</label>
+                <input id="mkRegSurname" type="text" autocomplete="family-name" [(ngModel)]="registerData.firstSurname" placeholder="Tu apellido">
+              </div>
+              <div class="account-field">
+                <label for="mkRegDocType">Tipo de documento</label>
+                <select id="mkRegDocType" [(ngModel)]="registerData.documentType">
+                  <option *ngFor="let t of documentTypes" [value]="t.value">{{ t.label }}</option>
+                </select>
+              </div>
+              <div class="account-field">
+                <label for="mkRegDoc">Número de documento</label>
+                <input id="mkRegDoc" type="text" inputmode="numeric" [(ngModel)]="registerData.documentNumber" placeholder="Opcional">
+              </div>
+              <div class="account-field">
+                <label for="mkRegPhone">Teléfono / WhatsApp *</label>
+                <input id="mkRegPhone" type="tel" autocomplete="tel" [(ngModel)]="registerData.phone" placeholder="+57 300 123 4567">
+              </div>
+              <div class="account-field">
+                <label for="mkRegEmail">Correo *</label>
+                <input id="mkRegEmail" type="email" autocomplete="email" [(ngModel)]="registerData.email" placeholder="tu@correo.com">
+              </div>
+              <div class="account-field">
+                <label for="mkRegPass">Contraseña *</label>
+                <input id="mkRegPass" [type]="showRegisterPassword ? 'text' : 'password'" autocomplete="new-password" [(ngModel)]="registerData.password" placeholder="Mínimo 8 caracteres">
+              </div>
+              <div class="account-field">
+                <label for="mkRegPass2">Confirmar contraseña *</label>
+                <input id="mkRegPass2" [type]="showRegisterPassword ? 'text' : 'password'" autocomplete="new-password" [(ngModel)]="registerData.confirmPassword" placeholder="Repite la contraseña">
+              </div>
+            </div>
+            <label class="consent-row small">
+              <input type="checkbox" [(ngModel)]="showRegisterPassword"> Mostrar contraseña
+            </label>
+            <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: accountConsents, id: 'reg' }"></ng-container>
+            <p class="account-error" *ngIf="authError">{{ authError }}</p>
+            <button type="button" class="btn-account" [disabled]="authLoading" (click)="clientRegister()">
+              {{ authLoading ? 'Creando cuenta…' : 'Crear cuenta' }}
+            </button>
+            <p class="account-footnote">Te enviaremos un código para confirmar tu correo.</p>
+          </div>
+        </ng-container>
       </div>
 
       <!-- Customer Data -->
@@ -460,9 +551,51 @@
         💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
       </div>
 
+      <div class="order-consents">
+        <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: orderConsents, id: 'order' }"></ng-container>
+      </div>
+
       <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending">
         {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Casillas de aceptación (cuenta y pedido) -->
+<ng-template #consentChecks let-c let-id="id">
+  <label class="consent-row">
+    <input type="checkbox" [(ngModel)]="c.terms" [attr.id]="id + 'Terms'">
+    <span>Acepto los <a href="javascript:void(0)" (click)="$event.preventDefault(); openLegal('terms')">Términos y Condiciones</a>.</span>
+  </label>
+  <label class="consent-row">
+    <input type="checkbox" [(ngModel)]="c.habeasData" [attr.id]="id + 'Data'">
+    <span>Autorizo el <a href="javascript:void(0)" (click)="$event.preventDefault(); openLegal('habeasData')">tratamiento de mis datos personales</a> (Ley 1581 de 2012).</span>
+  </label>
+</ng-template>
+
+<!-- Visor de documentos legales -->
+<div class="legal-overlay" *ngIf="legalDoc" (click)="closeLegal()">
+  <div class="legal-modal" role="dialog" aria-modal="true" [attr.aria-label]="legalDoc.title" (click)="$event.stopPropagation()">
+    <div class="legal-header">
+      <div>
+        <h3>{{ legalDoc.title }}</h3>
+        <small>{{ businessName }} · Versión {{ legalDoc.version }}</small>
+      </div>
+      <button type="button" class="legal-close" (click)="closeLegal()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="legal-body">
+      <p class="legal-intro">{{ legalDoc.intro }}</p>
+      <section *ngFor="let sec of legalDoc.sections">
+        <h4>{{ sec.heading }}</h4>
+        <p *ngFor="let para of sec.paragraphs">{{ para }}</p>
+        <ul *ngIf="sec.items?.length">
+          <li *ngFor="let item of sec.items">{{ item }}</li>
+        </ul>
+      </section>
+    </div>
+    <div class="legal-footer">
+      <button type="button" class="btn-account" (click)="closeLegal()">Entendido</button>
     </div>
   </div>
 </div>
