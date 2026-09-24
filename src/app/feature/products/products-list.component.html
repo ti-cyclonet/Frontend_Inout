@@ -114,21 +114,21 @@
       <table class="table products-table">
         <thead>
           <tr>
-            <th class="checkbox-col">
+            <th class="checkbox-col hide-mobile">
               <input type="checkbox" />
             </th>
             <th>Nombre</th>
             <th class="d-none d-md-table-cell">Código</th>
             <th class="d-none d-md-table-cell">Descripción</th>
-            <th class="text-center">Stock</th>
-            <th class="text-center">Precio</th>
+            <th class="text-center hide-mobile">Stock</th>
+            <th class="text-center hide-mobile">Precio</th>
             <th class="text-center hide-mobile">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let product of products" [class.row-low-stock]="getStockStatusClass(product) === 'stock-low'">
-            <td>
+            <td class="hide-mobile">
               <input type="checkbox" />
             </td>
             <td>
@@ -171,7 +171,7 @@
             <td class="d-none d-md-table-cell">
               <span class="description-text">{{ product.strDescription }}</span>
             </td>
-            <td class="text-center">
+            <td class="text-center hide-mobile">
               <div class="stock-info">
                 <span
                   class="stock-value"
@@ -185,7 +185,7 @@
                 >
               </div>
             </td>
-            <td class="text-center">
+            <td class="text-center hide-mobile">
               <span class="price-value"
                 >${{ product.fltPrice | numberFormat: 2 }}</span
               >
