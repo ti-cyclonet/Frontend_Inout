@@ -734,11 +734,10 @@
     display: none !important;
   }
 
-  .products-table th:nth-child(2) { width: 150px; }   /* Nombre - reducido */
-  .products-table th:nth-child(3) { width: 100px; }   /* Código - reducido */
-  .products-table th:nth-child(5) { width: 100px; }   /* Stock - reducido */
-  .products-table th:nth-child(6) { width: 90px; }    /* Precio - reducido */
-  .products-table th:nth-child(8) { width: 120px; }   /* Acciones - reducido */
+  /* En móvil solo quedan visibles Nombre y Acciones (ver .hide-mobile arriba),
+     así se evita el scroll horizontal por columnas que no caben. */
+  .products-table th:nth-child(2) { width: auto; }    /* Nombre - ocupa el espacio disponible */
+  .products-table th:nth-child(8) { width: 120px; }   /* Acciones */
 }
 
 /* Low Stock Highlight (mismo estilo que Materiales) */
