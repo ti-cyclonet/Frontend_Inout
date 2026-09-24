@@ -27,6 +27,8 @@ interface Order {
   items: OrderItem[];
   notes: string;
   deliveryDate: string;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
   subtotal: number;
   tax: number;
   discount: number;
@@ -137,26 +139,62 @@ export class OrdersComponent implements OnInit {
         this.stockAlertsService.refreshAlerts();
       },
       error: (err) => {
-        Swal.fire({ icon: 'error', title: 'Error', text: err.error?.message || 'No se pudo actualizar el estado' });
+        const msg = err.error?.message || 'No se pudo actualizar el estado';
+        // Al confirmar, el backend rechaza si no hay stock disponible y lista
+        // cada producto con su disponible/solicitado.
+        const sinStock = msg.includes('insuficiente');
+        Swal.fire({
+          icon: sinStock ? 'warning' : 'error',
+          title: sinStock ? 'No se puede confirmar: stock insuficiente' : 'Error',
+          text: msg,
+        });
       }
     });
   }
 
+  canCancel(order: Order): boolean {
+    return order.status !== 'INVOICED' && order.status !== 'CANCELLED';
+  }
+
+  /** Cancela con confirmación y motivo obligatorio (queda guardado en el pedido). */
   cancelOrder(order: Order): void {
+    const stockNote = order.status === 'DELIVERED'
+      ? 'El stock entregado se devolverá al inventario.'
+      : order.status !== 'DRAFT'
+        ? 'Se liberará el stock reservado por este pedido.'
+        : '';
+
     Swal.fire({
-      title: '¿Cancelar pedido?',
-      text: `Se cancelará el pedido ${order.orderCode}`,
+      title: `¿Cancelar pedido ${order.orderCode}?`,
+      html: `Cliente: <b>${order.customerName || 'Sin cliente'}</b><br>Esta acción no se puede deshacer.` +
+        (stockNote ? `<br><small>${stockNote}</small>` : ''),
       icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'Motivo de la cancelación',
+      inputPlaceholder: 'Ej.: el cliente desistió de la compra',
+      inputAttributes: { maxlength: '500' },
       showCancelButton: true,
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'No'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: 'CANCELLED' }).subscribe({
-          next: () => { this.loadOrders(); this.loadStats(); this.stockAlertsService.refreshAlerts(); },
-          error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo cancelar', 'error'); }
-        });
+      confirmButtonText: 'Sí, cancelar pedido',
+      cancelButtonText: 'No, volver',
+      confirmButtonColor: '#dc3545',
+      inputValidator: (value) => {
+        const reason = (value || '').trim();
+        if (reason.length < 5) return 'Escribe el motivo de la cancelación (mínimo 5 caracteres)';
+        return null;
       }
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      const reason = String(result.value || '').trim();
+      this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: 'CANCELLED', reason }).subscribe({
+        next: () => {
+          Swal.fire({ icon: 'success', title: 'Pedido cancelado', text: `${order.orderCode} fue cancelado.`, timer: 1500, showConfirmButton: false });
+          if (this.selectedOrder?.id === order.id) this.selectedOrder = null;
+          this.loadOrders();
+          this.loadStats();
+          this.stockAlertsService.refreshAlerts();
+        },
+        error: (err) => { Swal.fire('Error', err.error?.message || 'No se pudo cancelar', 'error'); }
+      });
     });
   }
 

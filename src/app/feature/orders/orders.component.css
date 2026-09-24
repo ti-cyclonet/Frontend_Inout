@@ -70,9 +70,12 @@
 .card-code { font-size: 0.7rem; font-weight: 600; color: #0066CC; }
 .card-customer { font-size: 0.75rem; color: #374151; margin-top: 0.2rem; }
 .card-total { font-size: 0.8rem; font-weight: 700; color: #1f2937; margin-top: 0.3rem; }
-.card-actions { margin-top: 0.4rem; }
+.card-actions { margin-top: 0.4rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .btn-sm-advance { font-size: 0.65rem; padding: 0.2rem 0.5rem; border: 1px solid #2563eb; color: #2563eb; background: transparent; border-radius: 4px; cursor: pointer; }
 .btn-sm-advance:hover { background: #2563eb; color: white; }
+.btn-sm-cancel { font-size: 0.65rem; padding: 0.2rem 0.5rem; border: 1px solid #dc3545; color: #dc3545; background: transparent; border-radius: 4px; cursor: pointer; }
+.btn-sm-cancel:hover { background: #dc3545; color: white; }
+.detail-cancellation .notes-text { border-left-color: #dc3545; }
 .kanban-empty { text-align: center; color: #9ca3af; font-size: 0.75rem; padding: 1.5rem 0; }
 
 /* Empty text */

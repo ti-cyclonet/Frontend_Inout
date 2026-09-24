@@ -333,6 +333,14 @@ export class UsersListComponent implements OnInit, OnChanges {
     return [user.firstName, user.firstSurname].filter(Boolean).join(' ') || 'Sin nombre';
   }
 
+  /** Rol(es) del usuario en el contrato de InOut, con la misma etiqueta del selector del modal. */
+  getRoleLabel(user: any): string {
+    return (user.roles || [])
+      .map((r: any) => r.description || r.name)
+      .filter(Boolean)
+      .join(', ');
+  }
+
   removeUser(user: any): void {
     if (!user?.dependencyId) return;
     if (!confirm('¿Estás seguro de que deseas quitar a este usuario del equipo? Perderá su acceso a la aplicación y su cupo de rol quedará libre.')) {

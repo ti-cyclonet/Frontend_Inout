@@ -216,10 +216,11 @@
 }
 
 /* Column widths */
-.col-name { width: 25%; }
-.col-email { width: 25%; }
-.col-phone { width: 14%; }
-.col-document { width: 18%; }
+.col-name { width: 22%; }
+.col-email { width: 22%; }
+.col-phone { width: 12%; }
+.col-document { width: 14%; }
+.col-role { width: 12%; }
 .col-status { width: 10%; }
 .col-actions { width: 8%; }
 
@@ -254,6 +255,17 @@
 }
 
 /* Status badge */
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #e7f1ff;
+  color: #0066cc;
+  white-space: nowrap;
+}
+
 .status-badge {
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
