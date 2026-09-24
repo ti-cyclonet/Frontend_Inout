@@ -20,7 +20,7 @@
           </div>
         </div>
       </div>
-      
+
       <nav class="categories-nav">
         <button class="category-btn" 
                 *ngFor="let category of getVisibleCategories()" 
@@ -187,27 +187,27 @@
               <div *ngIf="isAdminMode && isResale(product)" class="product-selection resale-note" title="La visibilidad se configura en el material (sección Reventa)">
                 Reventa
               </div>
-              
+
               <div class="product-image-modern">
                 <img *ngIf="product.image && !hasImageError(product.strId)" [src]="product.image" [alt]="product.strName" (error)="onImageError($event, product)">
                 <div *ngIf="!product.image || hasImageError(product.strId)" class="placeholder-modern">📦</div>
                 <div class="product-badge" *ngIf="product.rating && product.rating >= 4.5">⭐ Destacado</div>
               </div>
-              
+
               <div class="product-info-modern">
                 <h3>{{ product.strName }}</h3>
                 <span class="resale-tag" *ngIf="isResale(product)">Reventa</span>
                 <p class="description">{{ product.strDescription }}</p>
-                
+
                 <div class="product-meta-modern">
                   <div class="rating">⭐ {{ product.rating }}/5</div>
                   <div class="location">📍 {{ product.strLocation }}</div>
                 </div>
-                
+
                 <div class="price-section">
                   <div class="current-price">{{ formatCurrency(product.fltPrice) }}</div>
                 </div>
-                
+
                 <div class="product-actions-modern">
                   <button class="btn-add-cart" (click)="addToCart(product)">Agregar al carrito</button>
                   <button class="btn-details" (click)="openProductDetails(product)">Ver detalles</button>
@@ -250,7 +250,7 @@
             </div>
           </div>
         </div>
-        
+
         <div *ngIf="filteredProducts.length === 0" class="no-products-modern">
           <div class="empty-icon">🔍</div>
           <h3>No se encontraron productos</h3>
@@ -265,7 +265,7 @@
 <div class="product-modal-overlay" *ngIf="selectedProduct" (click)="closeProductDetails()">
   <div class="product-modal-card" (click)="$event.stopPropagation()">
     <button class="modal-close" (click)="closeProductDetails()">&times;</button>
-    
+
     <div class="modal-content-grid">
       <!-- Imagen del Producto -->
       <div class="modal-image-section">
@@ -278,19 +278,19 @@
           <span class="rating-value">{{ selectedProduct.rating }}/5</span>
         </div>
       </div>
-      
+
       <!-- Información del Producto -->
       <div class="modal-info-section">
         <div class="modal-header-info">
           <h2>{{ selectedProduct.strName }}</h2>
           <div class="modal-price">{{ formatCurrency(selectedProduct.fltPrice) }}</div>
         </div>
-        
+
         <div class="modal-description">
           <h3>📝 Descripción</h3>
           <p>{{ selectedProduct.strDescription }}</p>
         </div>
-        
+
         <div class="modal-details">
           <div class="detail-item">
             <span class="detail-icon">📍</span>
@@ -314,7 +314,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Información del Proveedor -->
         <div class="modal-provider" *ngIf="providerInfo">
           <h3>🏪 Información del Proveedor</h3>
@@ -342,7 +342,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="modal-actions">
           <button class="btn-modal-cart" (click)="addToCart(selectedProduct!); closeProductDetails()">Agregar al Carrito</button>
           <button class="btn-modal-contact" *ngIf="providerInfo?.phone">
@@ -483,14 +483,14 @@
                 <input id="mkRegSurname" type="text" autocomplete="family-name" [(ngModel)]="registerData.firstSurname" placeholder="Tu apellido">
               </div>
               <div class="account-field">
-                <label for="mkRegDocType">Tipo de documento</label>
+                <label for="mkRegDocType">Tipo de documento *</label>
                 <select id="mkRegDocType" [(ngModel)]="registerData.documentType">
                   <option *ngFor="let t of documentTypes" [value]="t.value">{{ t.label }}</option>
                 </select>
               </div>
               <div class="account-field">
-                <label for="mkRegDoc">Número de documento</label>
-                <input id="mkRegDoc" type="text" inputmode="numeric" [(ngModel)]="registerData.documentNumber" placeholder="Opcional">
+                <label for="mkRegDoc">Número de documento *</label>
+                <input id="mkRegDoc" type="text" inputmode="numeric" [(ngModel)]="registerData.documentNumber" placeholder="Sin puntos">
               </div>
               <div class="account-field">
                 <label for="mkRegPhone">Teléfono / WhatsApp *</label>
@@ -522,42 +522,47 @@
         </ng-container>
       </div>
 
-      <!-- Customer Data -->
-      <h3 class="checkout-subtitle">📋 Tus Datos</h3>
-      <div class="checkout-form">
-        <div class="form-field">
-          <label>Nombre completo *</label>
-          <input type="text" [(ngModel)]="checkoutData.customerName" placeholder="Tu nombre">
+      <ng-container *ngIf="showOrderForm">
+        <!-- Customer Data -->
+        <h3 class="checkout-subtitle">📋 Tus Datos</h3>
+        <div class="checkout-form">
+          <div class="form-field">
+            <label>Nombre completo *</label>
+            <input type="text" [(ngModel)]="checkoutData.customerName" placeholder="Tu nombre">
+          </div>
+          <div class="form-field">
+            <label>Teléfono / WhatsApp *</label>
+            <input type="tel" [(ngModel)]="checkoutData.customerPhone" placeholder="+57 300 123 4567">
+          </div>
+          <div class="form-field">
+            <label>Correo</label>
+            <input type="email" [(ngModel)]="checkoutData.customerEmail" placeholder="Opcional" [disabled]="clientLoggedIn">
+          </div>
+          <div class="form-field">
+            <label>Dirección de entrega</label>
+            <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Opcional">
+          </div>
+          <div class="form-field">
+            <label>Notas</label>
+            <textarea [(ngModel)]="checkoutData.notes" placeholder="Instrucciones especiales..." rows="2"></textarea>
+          </div>
         </div>
-        <div class="form-field">
-          <label>Teléfono / WhatsApp *</label>
-          <input type="tel" [(ngModel)]="checkoutData.customerPhone" placeholder="+57 300 123 4567">
-        </div>
-        <div class="form-field">
-          <label>Correo</label>
-          <input type="email" [(ngModel)]="checkoutData.customerEmail" placeholder="Opcional" [disabled]="clientLoggedIn">
-        </div>
-        <div class="form-field">
-          <label>Dirección de entrega</label>
-          <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Opcional">
-        </div>
-        <div class="form-field">
-          <label>Notas</label>
-          <textarea [(ngModel)]="checkoutData.notes" placeholder="Instrucciones especiales..." rows="2"></textarea>
-        </div>
-      </div>
 
-      <div class="checkout-payment-info">
-        💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
-      </div>
+        <div class="checkout-payment-info">
+          💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
+        </div>
 
-      <div class="order-consents">
-        <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: orderConsents, id: 'order' }"></ng-container>
-      </div>
+        <div class="order-consents">
+          <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: orderConsents, id: 'order' }"></ng-container>
+        </div>
 
-      <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending">
-        {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
-      </button>
+        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || !orderConsentsAccepted"
+                [title]="orderConsentsAccepted ? '' : 'Acepta los Términos y el tratamiento de datos para continuar'">
+          {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
+        </button>
+        <p class="order-consents-hint" *ngIf="!orderConsentsAccepted">Marca las dos casillas para habilitar el pedido.</p>
+      </ng-container>
+      <p class="account-pending-note" *ngIf="!showOrderForm">Completa el inicio de sesión o el registro para continuar con tu pedido, o elige <strong>Invitado</strong>.</p>
     </div>
   </div>
 </div>
