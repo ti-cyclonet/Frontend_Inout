@@ -2392,3 +2392,115 @@
   color: #4b5563;
   text-align: center;
 }
+
+/* ═══════ Sesión del cliente junto al carrito ═══════ */
+.session-chip-wrap { position: relative; display: inline-flex; align-items: center; }
+.session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.3rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+}
+.session-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff7000;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.session-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-login {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #ff7000;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #e65c00;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.session-login:hover { background: #fff4e5; }
+.session-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1200;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+.session-menu strong { font-size: 0.85rem; color: #1f2937; }
+.session-menu small { font-size: 0.78rem; color: #6b7280; word-break: break-all; }
+.session-menu button {
+  margin-top: 0.5rem;
+  padding: 0.45rem;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ═══════ Checkout con sesión ═══════ */
+.client-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+}
+.client-summary-main { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.client-summary-label { font-size: 0.85rem; color: #065f46; }
+.client-summary-main strong { font-size: 1rem; color: #064e3b; letter-spacing: 0.01em; }
+.client-summary small { color: #047857; font-size: 0.8rem; }
+.client-summary a { align-self: flex-start; color: #0066cc; font-size: 0.8rem; text-decoration: underline; cursor: pointer; }
+
+.optional-tag { font-weight: 400; color: #9ca3af; }
+.cart-empty-note { margin: 0 0 1rem; padding: 0.85rem; text-align: center; font-size: 0.85rem; color: #6b7280; background: #f9fafb; border-radius: 10px; }
+
+/* Geolocalización de la entrega */
+.geo-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.btn-geo {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-geo:hover:not(:disabled) { border-color: #ff7000; color: #e65c00; }
+.btn-geo:disabled { opacity: 0.6; cursor: wait; }
+.geo-link { font-size: 0.8rem; font-weight: 600; color: #0066cc; }
+.geo-accuracy { font-size: 0.75rem; color: #6b7280; }
+.geo-clear { font-size: 0.78rem; color: #b91c1c; }
+.geo-error { display: block; margin-top: 0.3rem; color: #b45309; font-size: 0.78rem; }
+
+@media (max-width: 520px) {
+  .session-name { display: none; }
+  .session-chip { padding: 0.2rem; }
+}
