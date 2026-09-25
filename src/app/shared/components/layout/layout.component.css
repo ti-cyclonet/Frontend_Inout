@@ -23,6 +23,10 @@
   overflow-y: auto;
   flex: 1;
   background-color: #e8e8e8;
+  /* Margen inferior para que el final de cada página no quede pegado al
+     footer ni tapado por el botón flotante de Domicilios (fixed, abajo a
+     la derecha) al terminar el scroll. */
+  padding-bottom: 5rem;
 }
 
 .main-content.reduced-width {
