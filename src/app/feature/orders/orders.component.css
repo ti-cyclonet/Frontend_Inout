@@ -1,7 +1,9 @@
 .orders-container { height: 100%; display: flex; flex-direction: column; padding: 0.5rem; }
 
 /* Header */
-.orders-header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.25rem; margin-bottom: 0.75rem; }
+.orders-header { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0.25rem; margin-bottom: 0.4rem; }
+/* La tarjeta de seguimiento va justo debajo del encabezado (sin el margen superior de las secciones) */
+.orders-history.kanban-section { margin-top: 0; }
 .orders-title { margin: 0; font-size: 0.9rem; font-weight: 600; color: #374151; }
 
 /* Tabs */
