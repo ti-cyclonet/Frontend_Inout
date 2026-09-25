@@ -145,6 +145,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   verifyEmail = '';
   verifyCode = '';
   showRegisterPassword = false;
+  /** Datos de la cuenta del cliente con sesión (Authoriza), para el pedido. */
+  clientProfile: any = null;
+  /** Menú de la sesión junto al carrito. */
+  sessionMenuOpen = false;
+  /** Ubicación exacta de entrega capturada con el GPS del navegador. */
+  deliveryLocation: { lat: number; lng: number; accuracy: number } | null = null;
+  geoLoading = false;
+  geoError = '';
+
   /** Documento legal abierto en el visor (términos / tratamiento de datos). */
   legalDoc: LegalDocument | null = null;
   /** Catálogo de Authoriza (document_types) para persona natural. */
@@ -162,6 +171,67 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
    * inicia sesión o crea su cuenta, el resto del checkout queda oculto. */
   get showOrderForm(): boolean {
     return this.clientLoggedIn || this.accountMode === 'guest';
+  }
+
+  /** Nombre completo del cliente con sesión, en mayúsculas (o su correo). */
+  get clientDisplayName(): string {
+    const p = this.clientProfile;
+    const full = p ? [p.firstName, p.secondName, p.firstSurname, p.secondSurname].filter(Boolean).join(' ').trim() : '';
+    return (full || this.checkoutData.customerName || this.clientEmail || '').toUpperCase();
+  }
+
+  get clientFirstName(): string {
+    const first = this.clientProfile?.firstName || this.clientDisplayName.split(' ')[0] || 'Mi cuenta';
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  }
+
+  /** Con sesión solo se pide teléfono si la cuenta no tiene uno. */
+  get clientNeedsPhone(): boolean {
+    return this.clientLoggedIn && !this.clientProfile?.phone;
+  }
+
+  get deliveryMapsLink(): string | null {
+    const l = this.deliveryLocation;
+    return l ? `https://www.google.com/maps?q=${l.lat},${l.lng}` : null;
+  }
+
+  /** Captura la ubicación exacta del comprador (requiere su permiso y HTTPS). */
+  captureDeliveryLocation(): void {
+    this.geoError = '';
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.geoError = 'Tu navegador no permite obtener la ubicación.';
+      return;
+    }
+    this.geoLoading = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.deliveryLocation = {
+          lat: Number(pos.coords.latitude.toFixed(7)),
+          lng: Number(pos.coords.longitude.toFixed(7)),
+          accuracy: Math.round(pos.coords.accuracy),
+        };
+        this.geoLoading = false;
+      },
+      (err) => {
+        this.geoLoading = false;
+        this.geoError = err.code === err.PERMISSION_DENIED
+          ? 'No diste permiso para usar tu ubicación. Puedes escribir la dirección.'
+          : 'No pudimos obtener tu ubicación. Intenta de nuevo o escribe la dirección.';
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  }
+
+  clearDeliveryLocation(): void {
+    this.deliveryLocation = null;
+    this.geoError = '';
+  }
+
+  /** Abre el checkout en "Iniciar sesión" (desde el encabezado), aunque el carrito esté vacío. */
+  openAccountLogin(): void {
+    this.setAccountMode('login');
+    this.showCheckout = true;
+    this.orderSuccess = null;
   }
 
   get orderConsentsAccepted(): boolean {
@@ -1151,10 +1221,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.clientEmail = payload.email || '';
       this.clientLoggedIn = true;
       this.checkoutData.customerEmail = this.clientEmail;
+      let profile: any = null;
       try {
-        const profile = JSON.parse(sessionStorage.getItem(this.clientProfileKey) || 'null');
-        this.prefillFromProfile(profile);
-      } catch { /* perfil corrupto: se ignora */ }
+        profile = JSON.parse(sessionStorage.getItem(this.clientProfileKey) || 'null');
+      } catch { /* perfil corrupto: se vuelve a pedir */ }
+      if (profile) this.prefillFromProfile(profile);
+      else this.fetchClientProfile();
       this.prefillFromLastOrder();
     } else {
       sessionStorage.removeItem(this.clientTokenKey);
@@ -1166,10 +1238,26 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
    * llena campos vacíos: no pisa lo que el cliente ya escribió. */
   private prefillFromProfile(profile: any): void {
     if (!profile) return;
+    this.clientProfile = profile;
     const fullName = [profile.firstName, profile.secondName, profile.firstSurname, profile.secondSurname]
       .filter(Boolean).join(' ').trim();
     if (!this.checkoutData.customerName.trim() && fullName) this.checkoutData.customerName = fullName;
     if (!this.checkoutData.customerPhone.trim() && profile.phone) this.checkoutData.customerPhone = profile.phone;
+  }
+
+  /** Perfil de la cuenta desde Authoriza (sesiones abiertas antes de guardar el perfil). */
+  private fetchClientProfile(): void {
+    if (!this.clientToken) return;
+    fetch(`${this.authorizaUrl}/auth/marketplace/client/me`, {
+      headers: { Authorization: `Bearer ${this.clientToken}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((profile: any) => {
+        if (!profile) return;
+        sessionStorage.setItem(this.clientProfileKey, JSON.stringify(profile));
+        this.prefillFromProfile(profile);
+      })
+      .catch(() => { /* sin perfil: se usan los datos del último pedido */ });
   }
 
   /** Dirección (y nombre/teléfono más recientes) de su último pedido en esta tienda. */
@@ -1285,8 +1373,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       const result = await this.authPost('login', { email, password: this.clientLoginData.password });
       this.handleAuthResult(result, email);
     } catch (err: any) {
-      if (err?.code === 'NOT_A_CLIENT') {
-        // Tiene cuenta en CycloNet, pero no es cliente de ESTA tienda
+      if (err?.code === 'NOT_A_CLIENT' || err?.code === 'CONSENT_REQUIRED') {
+        // NOT_A_CLIENT: tiene cuenta en CycloNet pero no es cliente de ESTA
+        // tienda. CONSENT_REQUIRED: es cliente (lo creó el negocio) pero no ha
+        // aceptado los términos de la tienda. En ambos casos se aceptan una
+        // vez y se continúa con la misma contraseña.
         this.accountConsents = { terms: false, habeasData: false };
         this.authStep = 'join';
         this.authInfo = err.message;
@@ -1426,15 +1517,26 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.clientToken = null;
     this.clientLoggedIn = false;
     this.clientEmail = '';
+    this.clientProfile = null;
+    this.sessionMenuOpen = false;
     this.setAccountMode('guest');
   }
 
   submitOrder(): void {
+    if (this.cart.length === 0) return;
+    // Con sesión, nombre/teléfono/correo vienen de la cuenta
+    if (this.clientLoggedIn) {
+      this.checkoutData.customerName = this.clientDisplayName;
+      if (this.clientProfile?.phone) this.checkoutData.customerPhone = this.clientProfile.phone;
+      this.checkoutData.customerEmail = this.clientEmail;
+    }
     if (!this.checkoutData.customerName.trim() || !this.checkoutData.customerPhone.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Datos requeridos', text: 'Ingresa tu nombre y teléfono para continuar.' });
+      Swal.fire({ icon: 'warning', title: 'Datos requeridos', text: this.clientLoggedIn ? 'Ingresa tu teléfono para continuar.' : 'Ingresa tu nombre y teléfono para continuar.' });
       return;
     }
-    if (!this.orderConsents.terms || !this.orderConsents.habeasData) {
+    // Invitado: aceptación obligatoria con el pedido. Con sesión ya se aceptó
+    // al registrarse o al iniciar sesión.
+    if (!this.clientLoggedIn && (!this.orderConsents.terms || !this.orderConsents.habeasData)) {
       Swal.fire({
         icon: 'warning',
         title: 'Falta tu autorización',
@@ -1464,7 +1566,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       subtotal: Number(subtotal),
       tax: 0,
       total: Number(subtotal),
-      ...this.consentPayload(),
+      ...(this.clientLoggedIn ? {} : this.consentPayload()),
+      ...(this.deliveryLocation ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
     };
 
     const onSuccess = (response: any) => {
@@ -1472,6 +1575,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.orderSuccess = response;
       this.cart = [];
       this.checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: this.clientEmail, notes: '' };
+      this.deliveryLocation = null;
+      if (this.clientLoggedIn) {
+        this.prefillFromProfile(this.clientProfile);
+        this.prefillFromLastOrder();
+      }
 
       if (response.whatsapp) {
         const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}`);

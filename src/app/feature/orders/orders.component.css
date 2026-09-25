@@ -419,3 +419,19 @@
     display: none;
   }
 }
+
+/* Contacto y ubicación de entrega en el detalle del pedido */
+.detail-delivery {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #374151;
+}
+.detail-delivery .detail-label { display: inline-block; min-width: 72px; }
+.detail-delivery a { color: #0066cc; font-weight: 600; }

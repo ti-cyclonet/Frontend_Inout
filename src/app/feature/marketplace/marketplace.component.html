@@ -14,7 +14,20 @@
           </div>
         </div>
         <div class="user-actions">
-          <span class="user-greeting" *ngIf="cart.length === 0">¡Bienvenido!</span>
+          <span class="user-greeting" *ngIf="cart.length === 0 && !clientLoggedIn && tenantId !== 'home'">¡Bienvenido!</span>
+          <!-- Sesión del cliente (rol clienteInout) -->
+          <div class="session-chip-wrap" *ngIf="tenantId !== 'home'">
+            <button type="button" class="session-chip" *ngIf="clientLoggedIn" (click)="sessionMenuOpen = !sessionMenuOpen" [attr.aria-expanded]="sessionMenuOpen" title="Mi cuenta">
+              <span class="session-avatar">{{ clientFirstName.charAt(0) }}</span>
+              <span class="session-name">{{ clientFirstName }}</span>
+            </button>
+            <button type="button" class="session-login" *ngIf="!clientLoggedIn" (click)="openAccountLogin()">Ingresar</button>
+            <div class="session-menu" *ngIf="clientLoggedIn && sessionMenuOpen">
+              <strong>{{ clientDisplayName }}</strong>
+              <small>{{ clientEmail }}</small>
+              <button type="button" (click)="clientLogout()">Cerrar sesión</button>
+            </div>
+          </div>
           <div class="cart-icon" (click)="openCheckout()" style="cursor: pointer;">
             🛒 <span class="cart-count">{{ getCartCount() }}</span>
           </div>
@@ -380,37 +393,48 @@
     <div *ngIf="!orderSuccess">
       <h2 class="checkout-title">🛒 Tu Pedido</h2>
 
-      <!-- Cart Items -->
-      <div class="checkout-items">
-        <div class="checkout-item" *ngFor="let item of cart">
-          <div class="item-info">
-            <strong>{{ item.product.strName }}</strong>
-            <span class="item-price">{{ formatCurrency(item.product.fltPrice) }}</span>
+      <!-- ===== Con sesión: datos de la cuenta, sin pedir nombre/teléfono/correo ni aceptación ===== -->
+      <ng-container *ngIf="clientLoggedIn">
+        <div class="client-summary">
+          <div class="client-summary-main">
+            <span class="client-summary-label">Cliente:</span>
+            <strong>{{ clientDisplayName }}</strong>
           </div>
-          <div class="item-controls">
-            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity - 1)" type="button">−</button>
-            <span class="qty-value">{{ item.quantity }}</span>
-            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity + 1)" type="button">+</button>
-            <button class="remove-btn" (click)="removeFromCart(item.product.strId)" type="button">🗑</button>
-          </div>
-          <div class="item-subtotal">{{ formatCurrency(item.product.fltPrice * item.quantity) }}</div>
+          <small>{{ clientEmail }}<ng-container *ngIf="clientProfile?.phone"> · {{ clientProfile.phone }}</ng-container></small>
+          <a href="javascript:void(0)" (click)="clientLogout()">No soy yo · Cerrar sesión</a>
         </div>
-      </div>
 
-      <div class="checkout-total">
-        <span>Total</span>
-        <strong>{{ formatCurrency(getCartTotal()) }}</strong>
-      </div>
+        <div class="checkout-form">
+          <div class="form-field" *ngIf="clientNeedsPhone">
+            <label>Teléfono / WhatsApp *</label>
+            <input type="tel" [(ngModel)]="checkoutData.customerPhone" placeholder="+57 300 123 4567">
+          </div>
+          <ng-container *ngTemplateOutlet="deliveryAddress"></ng-container>
+          <div class="form-field">
+            <label>Notas</label>
+            <textarea [(ngModel)]="checkoutData.notes" placeholder="Instrucciones especiales..." rows="2"></textarea>
+          </div>
+        </div>
+
+        <h3 class="checkout-subtitle">🧾 Detalles del pedido</h3>
+        <ng-container *ngTemplateOutlet="cartItems"></ng-container>
+
+        <div class="checkout-payment-info">
+          💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
+        </div>
+        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || cart.length === 0">
+          {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
+        </button>
+      </ng-container>
+
+      <!-- ===== Sin sesión: invitado, iniciar sesión o crear cuenta ===== -->
+      <ng-container *ngIf="!clientLoggedIn">
+      <ng-container *ngTemplateOutlet="cartItems"></ng-container>
 
       <hr>
 
       <!-- Cuenta de cliente: invitado (default), iniciar sesión o crear cuenta -->
       <div class="account-box">
-        <div class="client-session-active" *ngIf="clientLoggedIn">
-          ✅ Comprando como <strong>{{ clientEmail }}</strong>
-          <a href="javascript:void(0)" (click)="clientLogout()">Cerrar sesión</a>
-        </div>
-
         <ng-container *ngIf="!clientLoggedIn">
           <div class="account-tabs" role="tablist" aria-label="Cómo quieres comprar">
             <button type="button" role="tab" [class.active]="accountMode === 'guest'" [attr.aria-selected]="accountMode === 'guest'" (click)="setAccountMode('guest')">Invitado</button>
@@ -564,10 +588,7 @@
             <label>Correo</label>
             <input type="email" [(ngModel)]="checkoutData.customerEmail" placeholder="Opcional" [disabled]="clientLoggedIn">
           </div>
-          <div class="form-field">
-            <label>Dirección de entrega</label>
-            <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Opcional">
-          </div>
+          <ng-container *ngTemplateOutlet="deliveryAddress"></ng-container>
           <div class="form-field">
             <label>Notas</label>
             <textarea [(ngModel)]="checkoutData.notes" placeholder="Instrucciones especiales..." rows="2"></textarea>
@@ -582,13 +603,14 @@
           <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: orderConsents, id: 'order' }"></ng-container>
         </div>
 
-        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || !orderConsentsAccepted"
+        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || !orderConsentsAccepted || cart.length === 0"
                 [title]="orderConsentsAccepted ? '' : 'Acepta los Términos y el tratamiento de datos para continuar'">
           {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
         </button>
         <p class="order-consents-hint" *ngIf="!orderConsentsAccepted">Marca las dos casillas para habilitar el pedido.</p>
       </ng-container>
       <p class="account-pending-note" *ngIf="!showOrderForm">Completa el inicio de sesión o el registro para continuar con tu pedido, o elige <strong>Invitado</strong>.</p>
+      </ng-container>
     </div>
   </div>
 </div>
@@ -630,3 +652,49 @@
     </div>
   </div>
 </div>
+
+<!-- Ítems del carrito + total (con y sin sesión) -->
+<ng-template #cartItems>
+  <p class="cart-empty-note" *ngIf="cart.length === 0">Tu carrito está vacío. Agrega productos para hacer tu pedido.</p>
+  <ng-container *ngIf="cart.length > 0">
+      <div class="checkout-items">
+        <div class="checkout-item" *ngFor="let item of cart">
+          <div class="item-info">
+            <strong>{{ item.product.strName }}</strong>
+            <span class="item-price">{{ formatCurrency(item.product.fltPrice) }}</span>
+          </div>
+          <div class="item-controls">
+            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity - 1)" type="button">−</button>
+            <span class="qty-value">{{ item.quantity }}</span>
+            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity + 1)" type="button">+</button>
+            <button class="remove-btn" (click)="removeFromCart(item.product.strId)" type="button">🗑</button>
+          </div>
+          <div class="item-subtotal">{{ formatCurrency(item.product.fltPrice * item.quantity) }}</div>
+        </div>
+      </div>
+
+      <div class="checkout-total">
+        <span>Total</span>
+        <strong>{{ formatCurrency(getCartTotal()) }}</strong>
+      </div>
+  </ng-container>
+</ng-template>
+
+<!-- Dirección de entrega + ubicación exacta por GPS -->
+<ng-template #deliveryAddress>
+  <div class="form-field">
+    <label>Dirección de entrega <small class="optional-tag">(opcional)</small></label>
+    <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Calle, número, barrio, referencias…">
+    <div class="geo-row">
+      <button type="button" class="btn-geo" (click)="captureDeliveryLocation()" [disabled]="geoLoading">
+        📍 {{ geoLoading ? 'Obteniendo ubicación…' : (deliveryLocation ? 'Actualizar mi ubicación' : 'Usar mi ubicación exacta') }}
+      </button>
+      <ng-container *ngIf="deliveryLocation">
+        <a class="geo-link" [href]="deliveryMapsLink" target="_blank" rel="noopener">Ver en mapa</a>
+        <span class="geo-accuracy">±{{ deliveryLocation.accuracy }} m</span>
+        <a href="javascript:void(0)" class="geo-clear" (click)="clearDeliveryLocation()">Quitar</a>
+      </ng-container>
+    </div>
+    <small class="geo-error" *ngIf="geoError">{{ geoError }}</small>
+  </div>
+</ng-template>

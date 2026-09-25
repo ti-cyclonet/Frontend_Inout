@@ -28,6 +28,11 @@ interface Order {
   notes: string;
   deliveryDate: string;
   cancellationReason?: string | null;
+  customerPhone?: string | null;
+  customerEmail?: string | null;
+  customerAddress?: string | null;
+  deliveryLatitude?: number | string | null;
+  deliveryLongitude?: number | string | null;
   cancelledAt?: string | null;
   subtotal: number;
   tax: number;
@@ -150,6 +155,14 @@ export class OrdersComponent implements OnInit {
         });
       }
     });
+  }
+
+  /** Enlace a Google Maps con la ubicación exacta que capturó el comprador. */
+  deliveryMapsLink(order: Order): string | null {
+    const lat = Number(order.deliveryLatitude);
+    const lng = Number(order.deliveryLongitude);
+    if (order.deliveryLatitude == null || order.deliveryLongitude == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return `https://www.google.com/maps?q=${lat},${lng}`;
   }
 
   canCancel(order: Order): boolean {

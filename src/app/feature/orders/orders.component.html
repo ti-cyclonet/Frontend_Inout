@@ -91,6 +91,13 @@
           </div>
         </div>
 
+        <!-- Contacto y entrega (pedidos del MarketPlace) -->
+        <div class="detail-delivery" *ngIf="selectedOrder.customerPhone || selectedOrder.customerAddress || deliveryMapsLink(selectedOrder)">
+          <div *ngIf="selectedOrder.customerPhone"><span class="detail-label">Teléfono</span> <a [href]="'tel:' + selectedOrder.customerPhone">{{ selectedOrder.customerPhone }}</a></div>
+          <div *ngIf="selectedOrder.customerAddress"><span class="detail-label">Dirección</span> {{ selectedOrder.customerAddress }}</div>
+          <div *ngIf="deliveryMapsLink(selectedOrder) as mapLink"><span class="detail-label">Ubicación</span> <a [href]="mapLink" target="_blank" rel="noopener">📍 Ver en mapa</a></div>
+        </div>
+
         <!-- Items (Comanda) -->
         <div class="detail-items" *ngIf="selectedOrder.items && selectedOrder.items.length > 0">
           <h4 class="detail-section-title">Items del Pedido</h4>
