@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, OnChanges, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
@@ -42,8 +42,12 @@ export class UsersListComponent implements OnInit, OnChanges {
   // Detail modal
   showDetailModal = false;
   selectedUser: any | null = null;
+  /** Rol de staff (Administrador, Operador…). El de cliente va aparte. */
   selectedUserRole = '';
   originalUserRole = '';
+  /** Además de su rol de staff, el usuario puede ser cliente del negocio (rol clienteInout). */
+  selectedIsClient = false;
+  originalIsClient = false;
   selectedUserSigner = false;
   originalUserSigner = false;
   savingRole = false;
@@ -105,9 +109,12 @@ export class UsersListComponent implements OnInit, OnChanges {
     this.selectedUserSigner = !!user.isAuthorizedSigner;
     this.originalUserSigner = this.selectedUserSigner;
 
-    const currentRole = (user.roles || [])[0];
-    this.selectedUserRole = currentRole?.id || '';
+    const roles: any[] = user.roles || [];
+    const staffRole = roles.find((r) => !this.isClientRoleName(r.name));
+    this.selectedUserRole = staffRole?.id || '';
     this.originalUserRole = this.selectedUserRole;
+    this.selectedIsClient = roles.some((r) => this.isClientRoleName(r.name));
+    this.originalIsClient = this.selectedIsClient;
 
     this.showDetailModal = true;
   }
@@ -117,82 +124,85 @@ export class UsersListComponent implements OnInit, OnChanges {
     this.selectedUser = null;
   }
 
-  saveUserChanges(): void {
+  /** Rol de cliente del MarketPlace (no es un rol de staff). */
+  isClientRoleName(name?: string): boolean {
+    return name === 'clienteInout';
+  }
+
+  /** Roles de staff disponibles para el selector (sin el de cliente). */
+  get staffRoles(): any[] {
+    return this.availableRoles.filter((item) => !this.isClientRoleName(item.role?.strName));
+  }
+
+  /** Cupo del rol de cliente en el contrato (para el interruptor). */
+  get clientRoleAvailability(): any | null {
+    return this.availableRoles.find((item) => this.isClientRoleName(item.role?.strName)) || null;
+  }
+
+  async saveUserChanges(): Promise<void> {
     if (!this.selectedUserAuthorizaId || !this.contractId) {
       Swal.fire({ icon: 'warning', title: 'Sin datos', text: 'No se pudo identificar al usuario en el sistema.', confirmButtonColor: '#0066CC' });
       return;
     }
 
     const roleChanged = this.selectedUserRole !== this.originalUserRole;
+    const clientChanged = this.selectedIsClient !== this.originalIsClient;
     const signerChanged = this.selectedUserSigner !== this.originalUserSigner;
 
-    if (!roleChanged && !signerChanged) {
+    if (!roleChanged && !clientChanged && !signerChanged) {
       Swal.fire({ icon: 'info', title: 'Sin cambios', text: 'No se detectaron cambios.', timer: 1500, showConfirmButton: false });
       return;
     }
 
-    this.savingRole = true;
     const userId = this.selectedUserAuthorizaId;
-
-    const applySignerChange = () => {
-      if (signerChanged && this.selectedDependencyId) {
-        this.customersService.updateSigner(this.selectedDependencyId, this.selectedUserSigner).subscribe({
-          next: () => this.finishSave(),
-          error: () => this.finishSave(),
-        });
-      } else {
-        this.finishSave();
-      }
-    };
-
-    if (!roleChanged) {
-      applySignerChange();
+    const contractId = this.contractId;
+    const clientRoleId = this.clientRoleAvailability?.role?.id as string | undefined;
+    if (clientChanged && !clientRoleId) {
+      Swal.fire({ icon: 'warning', title: 'Rol de cliente no disponible', text: 'El paquete de este negocio no incluye el rol de cliente.', confirmButtonColor: '#0066CC' });
       return;
     }
 
-    // Remove old role if it existed
-    const removeOld = this.originalUserRole
-      ? this.customersService.removeRole(userId, this.originalUserRole, this.contractId)
-      : new Observable<any>(sub => { sub.next(null); sub.complete(); });
-
-    removeOld.subscribe({
-      next: () => {
-        if (this.selectedUserRole) {
-          // Ensure dependency exists, then assign new role
-          const ensureDependency = this.tenantId
-            ? this.customersService.createUserDependency(this.tenantId, userId)
-            : new Observable<any>(sub => { sub.next(null); sub.complete(); });
-
-          ensureDependency.subscribe({
-            next: () => this.assignNewRole(userId, applySignerChange),
-            error: () => this.assignNewRole(userId, applySignerChange), // dependency may already exist
-          });
-        } else {
-          applySignerChange();
-        }
-      },
-      error: () => {
-        // If remove fails, try assigning anyway
-        if (this.selectedUserRole) {
-          this.assignNewRole(userId, applySignerChange);
-        } else {
-          this.savingRole = false;
+    this.savingRole = true;
+    try {
+      // Asignar cualquier rol requiere que el usuario dependa del negocio
+      if ((roleChanged && this.selectedUserRole) || (clientChanged && this.selectedIsClient)) {
+        if (this.tenantId) {
+          await firstValueFrom(this.customersService.createUserDependency(this.tenantId, userId)).catch(() => null); // puede existir ya
         }
       }
-    });
-  }
 
-  private assignNewRole(userId: string, then: () => void): void {
-    this.customersService.assignRole(userId, this.selectedUserRole, this.contractId!).subscribe({
-      next: () => {
+      // Rol de staff: se reemplaza el anterior (el de cliente no se toca)
+      if (roleChanged) {
+        if (this.originalUserRole) {
+          await firstValueFrom(this.customersService.removeRole(userId, this.originalUserRole, contractId)).catch(() => null);
+        }
+        if (this.selectedUserRole) {
+          await firstValueFrom(this.customersService.assignRole(userId, this.selectedUserRole, contractId));
+        }
         this.originalUserRole = this.selectedUserRole;
-        then();
-      },
-      error: (err: any) => {
-        this.savingRole = false;
-        Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message || 'No se pudo asignar el rol', confirmButtonColor: '#0066CC' });
-      },
-    });
+      }
+
+      // Cliente del negocio: se agrega o se quita, independiente del rol de staff
+      if (clientChanged && clientRoleId) {
+        if (this.selectedIsClient) {
+          await firstValueFrom(this.customersService.assignRole(userId, clientRoleId, contractId));
+        } else {
+          await firstValueFrom(this.customersService.removeRole(userId, clientRoleId, contractId));
+        }
+        this.originalIsClient = this.selectedIsClient;
+      }
+
+      if (signerChanged && this.selectedDependencyId) {
+        await firstValueFrom(this.customersService.updateSigner(this.selectedDependencyId, this.selectedUserSigner)).catch(() => null);
+      }
+
+      this.finishSave();
+    } catch (err: any) {
+      this.savingRole = false;
+      this.loadRoles();
+      this.loadUsers();
+      Swal.fire({ icon: 'error', title: 'Error', text: err?.error?.message || 'No se pudieron guardar los cambios', confirmButtonColor: '#0066CC' });
+    }
   }
 
   private finishSave(): void {
@@ -333,12 +343,15 @@ export class UsersListComponent implements OnInit, OnChanges {
     return [user.firstName, user.firstSurname].filter(Boolean).join(' ') || 'Sin nombre';
   }
 
-  /** Rol(es) del usuario en el contrato de InOut, con la misma etiqueta del selector del modal. */
-  getRoleLabel(user: any): string {
+  /** Roles como insignias: primero los de staff y al final Cliente, con su propio color. */
+  getRoleBadges(user: any): { label: string; isClient: boolean }[] {
     return (user.roles || [])
-      .map((r: any) => r.description || r.name)
-      .filter(Boolean)
-      .join(', ');
+      .map((r: any) => ({
+        label: this.isClientRoleName(r.name) ? 'Cliente' : (r.description || r.name),
+        isClient: this.isClientRoleName(r.name),
+      }))
+      .filter((b: any) => !!b.label)
+      .sort((a: any, b: any) => Number(a.isClient) - Number(b.isClient));
   }
 
   removeUser(user: any): void {

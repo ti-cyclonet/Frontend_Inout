@@ -109,7 +109,9 @@
               <span class="text-muted">{{ user.documentType || '' }} {{ user.documentNumber || 'N/A' }}</span>
             </td>
             <td class="col-role hide-mobile">
-              <span class="role-badge" *ngIf="getRoleLabel(user) as role; else sinRol">{{ role }}</span>
+              <div class="role-badges" *ngIf="getRoleBadges(user).length; else sinRol">
+                <span class="role-badge" *ngFor="let b of getRoleBadges(user)" [class.role-badge-client]="b.isClient">{{ b.label }}</span>
+              </div>
               <ng-template #sinRol><span class="text-muted">Sin rol</span></ng-template>
             </td>
             <td class="text-center">
@@ -149,9 +151,8 @@
             <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#card-text" /></svg>
             {{ user.documentType }} {{ user.documentNumber }}
           </span>
-          <span class="card-detail" *ngIf="getRoleLabel(user) as role">
-            <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-badge" /></svg>
-            {{ role }}
+          <span class="card-detail role-badges" *ngIf="getRoleBadges(user).length">
+            <span class="role-badge" *ngFor="let b of getRoleBadges(user)" [class.role-badge-client]="b.isClient">{{ b.label }}</span>
           </span>
         </div>
       </div>
@@ -222,17 +223,34 @@
 
         <!-- Role Assignment -->
         <div class="detail-section">
-          <label class="detail-label">Rol Asignado</label>
+          <label class="detail-label">Rol en el equipo</label>
           <select class="form-select" [(ngModel)]="selectedUserRole">
-            <option value="">Sin rol asignado</option>
-            <option *ngFor="let item of availableRoles" 
+            <option value="">Sin rol de equipo</option>
+            <option *ngFor="let item of staffRoles" 
                     [value]="item.role.id" 
                     [disabled]="item.available <= 0 && item.role.id !== selectedUserRole"
                     [style.color]="(item.available <= 0 && item.role.id !== selectedUserRole) ? '#adb5bd' : 'inherit'">
               {{ item.role.strDescription1 || item.role.strName }} ({{ item.available }} disponibles)
             </option>
           </select>
-          <small class="text-muted">Define qué puede hacer el usuario en InOut</small>
+          <small class="text-muted">Define qué puede hacer el usuario en el panel de InOut</small>
+        </div>
+
+        <!-- Cliente del negocio: independiente del rol de equipo -->
+        <div class="detail-section" style="margin-top: 1rem;" *ngIf="clientRoleAvailability">
+          <label class="detail-label">Cliente del negocio</label>
+          <div class="signer-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="selectedIsClient"
+                     [disabled]="!selectedIsClient && !originalIsClient && clientRoleAvailability.available <= 0">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">{{ selectedIsClient ? 'Sí — también compra en el MarketPlace' : 'No' }}</span>
+          </div>
+          <small class="text-muted">
+            Un administrador u otro miembro del equipo también puede ser cliente
+            ({{ clientRoleAvailability.available }} cupos disponibles).
+          </small>
         </div>
 
         <!-- Signer Toggle -->

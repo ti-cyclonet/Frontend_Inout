@@ -735,3 +735,7 @@
     padding: 1rem;
   }
 }
+
+/* Varios roles por usuario (equipo + cliente) */
+.role-badges { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; }
+.role-badge-client { background: #d1e7dd; color: #0f5132; }
