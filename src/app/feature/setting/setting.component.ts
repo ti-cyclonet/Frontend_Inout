@@ -63,9 +63,12 @@ export class SettingComponent implements OnInit {
 
   // Preferencia de UI: mostrar/ocultar el botón flotante de Domicilios (Shotra).
   showDeliveryFab = true;
+  // Preferencia de UI: sugerir Shotra al pasar un pedido a Entregado.
+  suggestDeliveryOnDeliver = true;
 
   constructor(private fb: FormBuilder, private http: HttpClient, private uiPrefs: UiPrefsService) {
     this.showDeliveryFab = this.uiPrefs.getShowDeliveryFab();
+    this.suggestDeliveryOnDeliver = this.uiPrefs.getSuggestDeliveryOnDeliver();
     this.nuevoPeriodoForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       fechaInicio: ['', Validators.required],
@@ -101,6 +104,12 @@ export class SettingComponent implements OnInit {
   toggleDeliveryFab(): void {
     this.showDeliveryFab = !this.showDeliveryFab;
     this.uiPrefs.setShowDeliveryFab(this.showDeliveryFab);
+  }
+
+  /** Activa/desactiva la sugerencia de Shotra al marcar pedidos como Entregados. */
+  toggleSuggestDelivery(): void {
+    this.suggestDeliveryOnDeliver = !this.suggestDeliveryOnDeliver;
+    this.uiPrefs.setSuggestDeliveryOnDeliver(this.suggestDeliveryOnDeliver);
   }
 
   loadPeriodos(): void {
