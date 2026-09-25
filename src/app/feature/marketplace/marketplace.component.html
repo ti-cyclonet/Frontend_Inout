@@ -475,12 +475,20 @@
           <div class="account-panel" *ngIf="accountMode === 'register' && authStep === 'form'">
             <div class="account-grid">
               <div class="account-field">
-                <label for="mkRegName">Nombre *</label>
-                <input id="mkRegName" type="text" autocomplete="given-name" [(ngModel)]="registerData.firstName" placeholder="Tu nombre">
+                <label for="mkRegName">Primer nombre *</label>
+                <input id="mkRegName" type="text" autocomplete="given-name" [(ngModel)]="registerData.firstName" placeholder="Juan">
               </div>
               <div class="account-field">
-                <label for="mkRegSurname">Apellido *</label>
-                <input id="mkRegSurname" type="text" autocomplete="family-name" [(ngModel)]="registerData.firstSurname" placeholder="Tu apellido">
+                <label for="mkRegName2">Segundo nombre</label>
+                <input id="mkRegName2" type="text" autocomplete="additional-name" [(ngModel)]="registerData.secondName" placeholder="Opcional">
+              </div>
+              <div class="account-field">
+                <label for="mkRegSurname">Primer apellido *</label>
+                <input id="mkRegSurname" type="text" autocomplete="family-name" [(ngModel)]="registerData.firstSurname" placeholder="Pérez">
+              </div>
+              <div class="account-field">
+                <label for="mkRegSurname2">Segundo apellido</label>
+                <input id="mkRegSurname2" type="text" [(ngModel)]="registerData.secondSurname" placeholder="Opcional">
               </div>
               <div class="account-field">
                 <label for="mkRegDocType">Tipo de documento *</label>
@@ -491,6 +499,24 @@
               <div class="account-field">
                 <label for="mkRegDoc">Número de documento *</label>
                 <input id="mkRegDoc" type="text" inputmode="numeric" [(ngModel)]="registerData.documentNumber" placeholder="Sin puntos">
+              </div>
+              <div class="account-field">
+                <label for="mkRegBirth">Fecha de nacimiento *</label>
+                <input id="mkRegBirth" type="date" autocomplete="bday" [max]="maxBirthdate" [(ngModel)]="registerData.birthdate">
+              </div>
+              <div class="account-field">
+                <label for="mkRegGender">Sexo *</label>
+                <select id="mkRegGender" [(ngModel)]="registerData.gender">
+                  <option value="">Seleccionar</option>
+                  <option *ngFor="let g of genders" [value]="g.value">{{ g.label }}</option>
+                </select>
+              </div>
+              <div class="account-field">
+                <label for="mkRegCivil">Estado civil *</label>
+                <select id="mkRegCivil" [(ngModel)]="registerData.civilStatus">
+                  <option value="">Seleccionar</option>
+                  <option *ngFor="let c of civilStatuses" [value]="c.value">{{ c.label }}</option>
+                </select>
               </div>
               <div class="account-field">
                 <label for="mkRegPhone">Teléfono / WhatsApp *</label>
