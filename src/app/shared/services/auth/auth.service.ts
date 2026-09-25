@@ -22,7 +22,7 @@ export class AuthService {
     return this.http.post<any>(this.apiUrl, credentials);
   }
 
-  completeLogin(data: { email: string; applicationName: string; contractId: string }): Observable<any> {
+  completeLogin(data: { email: string; applicationName: string; contractId: string; selectionToken?: string }): Observable<any> {
     return this.http.post<any>(this.completeLoginUrl, data);
   }
 
