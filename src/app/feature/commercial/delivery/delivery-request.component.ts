@@ -22,6 +22,7 @@ import {
   CreateShotraRequest,
 } from '../../../shared/services/shotra/shotra.service';
 import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
+import { DeliveryLauncherService, DeliveryPrefill } from '../../../shared/services/delivery-launcher.service';
 import { Subscription } from 'rxjs';
 
 /**
@@ -48,6 +49,7 @@ export class DeliveryRequestComponent implements OnDestroy {
   // Visibilidad del FAB según preferencia de Configuración (localStorage).
   fabEnabled = true;
   private prefSub?: Subscription;
+  private launcherSub?: Subscription;
 
   // Selector de categoría estilo Shotra (bottom-sheet con buscador).
   showCategorySheet = false;
@@ -137,6 +139,7 @@ export class DeliveryRequestComponent implements OnDestroy {
   constructor(
     private shotra: ShotraService,
     private uiPrefs: UiPrefsService,
+    private deliveryLauncher: DeliveryLauncherService,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     this.fabEnabled = this.uiPrefs.getShowDeliveryFab();
@@ -146,6 +149,8 @@ export class DeliveryRequestComponent implements OnDestroy {
       this.fabEnabled = v;
       if (!v && this.open) this.closePanel();
     });
+    // Otros módulos (p. ej. Pedidos) pueden abrir una solicitud precargada.
+    this.launcherSub = this.deliveryLauncher.openRequest$.subscribe((prefill) => this.openPrefilledRequest(prefill));
   }
 
   /** Abre el panel de Shotra. La primera vez inicializa (perfil + datos). */
@@ -176,6 +181,7 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.stopChatPolling();
     this.stopBellPolling();
     this.prefSub?.unsubscribe();
+    this.launcherSub?.unsubscribe();
     this.destroyMap();
   }
 
@@ -526,6 +532,20 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.geocodeFailed = false;
     if (this.geocodeTimer) clearTimeout(this.geocodeTimer);
     this.showForm = true;
+  }
+
+  /** Abre el panel con una nueva solicitud ya diligenciada (desde Pedidos). */
+  openPrefilledRequest(prefill: DeliveryPrefill): void {
+    this.openPanel();
+    this.selectedRequest = null;
+    this.showNotifications = false;
+    this.openForm();
+    this.form.title = prefill.title.slice(0, 120);
+    this.form.description = prefill.description;
+    if (prefill.address?.trim()) {
+      this.form.address = prefill.address.trim();
+      this.onAddressChange(); // ubica el destino en el mini-mapa
+    }
   }
 
   /** Selecciona el tipo de entrega y cierra el bottom-sheet. */

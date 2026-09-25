@@ -8,6 +8,8 @@ import { OrderFormComponent } from './form/order-form.component';
 import { InvoiceService } from '../../shared/services/invoice.service';
 import { DocumentsService } from '../../shared/services/documents.service';
 import { StockAlertsService } from '../../shared/services/stock-alerts.service';
+import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service';
+import { DeliveryLauncherService } from '../../shared/services/delivery-launcher.service';
 
 interface OrderItem {
   productId: string;
@@ -75,7 +77,9 @@ export class OrdersComponent implements OnInit {
     private http: HttpClient,
     private invoiceService: InvoiceService,
     private documentsService: DocumentsService,
-    private stockAlertsService: StockAlertsService
+    private stockAlertsService: StockAlertsService,
+    private uiPrefs: UiPrefsService,
+    private deliveryLauncher: DeliveryLauncherService
   ) {}
 
   ngOnInit(): void {
@@ -134,6 +138,83 @@ export class OrdersComponent implements OnInit {
     const next = this.getNextStatus(order.status);
     if (!next) return;
 
+    // Al pasar a Entregado (última columna del tablero), sugerir contratar
+    // el domicilio con la extensión de Shotra (configurable en Configuración).
+    if (next === 'DELIVERED' && this.uiPrefs.getSuggestDeliveryOnDeliver()) {
+      this.suggestShotraDelivery(order, next);
+      return;
+    }
+    this.applyStatus(order, next);
+  }
+
+  /** Sugerencia de Shotra con instrucciones y "No volver a mostrar". */
+  private suggestShotraDelivery(order: Order, next: string): void {
+    let dontShowAgain = false;
+    Swal.fire({
+      title: '¿Necesitas un domiciliario?',
+      width: 560,
+      html: `
+        <div style="text-align:left;font-size:0.9rem;line-height:1.5;color:#374151;">
+          <p style="margin:0 0 0.6rem;">Puedes contratar la entrega de <strong>${order.orderCode}</strong> con <strong>Domicilios (Shotra)</strong>, sin salir de InOut:</p>
+          <ol style="margin:0 0 0.6rem;padding-left:1.2rem;">
+            <li>Pulsa <strong>Pedir domicilio con Shotra</strong>: se abre el panel con la solicitud ya diligenciada con los datos del pedido${order.customerAddress ? ' y la dirección del cliente' : ''}.</li>
+            <li>Elige el <strong>tipo de entrega</strong>, revisa la descripción y marca 📍 tu ubicación como <strong>punto de recogida</strong>.</li>
+            <li>Pulsa <strong>Publicar</strong>. Los domiciliarios cercanos te enviarán ofertas.</li>
+            <li>Acepta la oferta que prefieras y coordina por el <strong>chat</strong>.</li>
+            <li>Cuando el cliente reciba el pedido, <strong>cierra el trabajo</strong> en Shotra (medio de pago) y vuelve aquí para marcarlo como <strong>Entregado</strong>.</li>
+          </ol>
+          <p style="margin:0;font-size:0.8rem;color:#6b7280;">También puedes abrir Shotra en cualquier momento con el botón <strong>Domicilios</strong>, abajo a la derecha.</p>
+          <label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.9rem;font-size:0.82rem;cursor:pointer;">
+            <input type="checkbox" id="swal-dont-show-delivery" style="width:16px;height:16px;">
+            No volver a mostrar esta sugerencia (puedes reactivarla en Configuración)
+          </label>
+        </div>`,
+      icon: 'info',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: '🛵 Pedir domicilio con Shotra',
+      denyButtonText: 'Ya se entregó · Marcar Entregado',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#990000',
+      denyButtonColor: '#0f766e',
+      willClose: () => {
+        const box = document.getElementById('swal-dont-show-delivery') as HTMLInputElement | null;
+        dontShowAgain = !!box?.checked;
+      },
+    }).then((result) => {
+      if (dontShowAgain) this.uiPrefs.setSuggestDeliveryOnDeliver(false);
+
+      if (result.isConfirmed) {
+        // El pedido sigue en Listo hasta que realmente se entregue.
+        this.selectedOrder = null;
+        this.deliveryLauncher.openNewRequest(this.buildDeliveryPrefill(order));
+      } else if (result.isDenied) {
+        this.applyStatus(order, next);
+      }
+    });
+  }
+
+  /** Solicitud de domicilio precargada con los datos del pedido. */
+  private buildDeliveryPrefill(order: Order) {
+    const items = (order.items || []).map((i) => `${i.quantity} x ${i.productName}`).join(', ');
+    const map = this.deliveryMapsLink(order);
+    const lines = [
+      `Entrega del pedido ${order.orderCode}.`,
+      `Cliente: ${order.customerName || 'Sin nombre'}${order.customerPhone ? ` · Tel. ${order.customerPhone}` : ''}.`,
+      items ? `Productos: ${items}.` : '',
+      `Valor del pedido: ${this.formatCurrency(order.total)} (pago contra entrega).`,
+      order.customerAddress ? `Dirección: ${order.customerAddress}.` : '',
+      map ? `Ubicación exacta del cliente: ${map}` : '',
+      order.notes ? `Notas del cliente: ${order.notes}` : '',
+    ].filter(Boolean);
+    return {
+      title: `Entregar pedido ${order.orderCode}`,
+      description: lines.join('\n'),
+      address: order.customerAddress || undefined,
+    };
+  }
+
+  private applyStatus(order: Order, next: string): void {
     this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: next }).subscribe({
       next: () => {
         Swal.fire({ icon: 'success', title: 'Estado actualizado', text: `Pedido avanzó a: ${this.getStatusLabel(next)}`, timer: 1500, showConfirmButton: false });
