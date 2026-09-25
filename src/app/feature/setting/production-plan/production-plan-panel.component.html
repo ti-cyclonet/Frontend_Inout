@@ -1,0 +1,148 @@
+<div class="plan-panel">
+  <p class="plan-intro">
+    Unidades que planeas <strong>producir</strong> al mes por producto y <strong>presentaciones que planeas vender</strong> por material de reventa.
+    Se usan para prorratear el costo indirecto por unidad en el precio sugerido.
+  </p>
+
+  <!-- Resumen (sobre lo filtrado) -->
+  <div class="plan-summary" *ngIf="!loading && rows.length">
+    <div class="sum-card">
+      <span class="sum-label">Ítems</span>
+      <strong>{{ summary.items }}</strong>
+    </div>
+    <div class="sum-card ok">
+      <span class="sum-label">Con plan</span>
+      <strong>{{ summary.planned }}</strong>
+    </div>
+    <div class="sum-card warn">
+      <span class="sum-label">Sin plan</span>
+      <strong>{{ summary.unplanned }}</strong>
+    </div>
+    <div class="sum-card">
+      <span class="sum-label">Unidades / mes</span>
+      <strong>{{ formatNumber(summary.units) }}</strong>
+    </div>
+    <div class="sum-card value">
+      <span class="sum-label">Valor planeado / mes</span>
+      <strong>{{ formatCurrency(summary.value) }}</strong>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="plan-toolbar" *ngIf="rows.length">
+    <div class="plan-chips" role="tablist" aria-label="Tipo de ítem">
+      <button type="button" [class.active]="typeFilter === 'all'" (click)="typeFilter = 'all'; onFiltersChange()">Todos <span>{{ counts.all }}</span></button>
+      <button type="button" [class.active]="typeFilter === 'product'" (click)="typeFilter = 'product'; onFiltersChange()">Productos <span>{{ counts.product }}</span></button>
+      <button type="button" [class.active]="typeFilter === 'resale'" (click)="typeFilter = 'resale'; onFiltersChange()" [disabled]="!counts.resale">Reventa <span>{{ counts.resale }}</span></button>
+    </div>
+
+    <div class="plan-filters">
+      <div class="plan-search">
+        <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#search" /></svg>
+        <input type="search" [(ngModel)]="search" (ngModelChange)="onFiltersChange()" placeholder="Buscar por nombre, código o categoría" aria-label="Buscar en el plan">
+      </div>
+      <select class="form-select form-select-sm" [(ngModel)]="categoryFilter" (ngModelChange)="onFiltersChange()" aria-label="Categoría">
+        <option value="">Todas las categorías</option>
+        <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+        <option value="__none" *ngIf="hasUncategorized">Sin categoría</option>
+      </select>
+      <select class="form-select form-select-sm" [(ngModel)]="planFilter" (ngModelChange)="onFiltersChange()" aria-label="Estado del plan">
+        <option value="all">Con y sin plan</option>
+        <option value="planned">Solo con plan</option>
+        <option value="unplanned">Solo sin plan</option>
+      </select>
+      <select class="form-select form-select-sm" [(ngModel)]="sortBy" aria-label="Ordenar">
+        <option value="name">Orden: nombre</option>
+        <option value="units">Orden: más unidades</option>
+        <option value="value">Orden: mayor valor</option>
+        <option value="stock">Orden: menor stock</option>
+      </select>
+      <button type="button" class="btn-link-clear" *ngIf="hasActiveFilters" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+
+    <div class="plan-actions">
+      <div class="bulk">
+        <input type="number" min="0" step="1" class="form-control form-control-sm" [(ngModel)]="bulkUnits" placeholder="Unid./mes" aria-label="Unidades para aplicar a los filtrados">
+        <button type="button" class="btn-plan" (click)="applyBulk()" [disabled]="bulkUnits === null || bulkRunning || !filteredRows.length">
+          {{ bulkRunning ? 'Aplicando…' : 'Aplicar a ' + filteredRows.length + ' filtrados' }}
+        </button>
+      </div>
+      <div class="exports">
+        <button type="button" class="btn-plan" (click)="exportExcel()" [disabled]="!filteredRows.length">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-spreadsheet" /></svg>
+          Excel
+        </button>
+        <button type="button" class="btn-plan primary" (click)="exportPdf()" [disabled]="!filteredRows.length">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-pdf" /></svg>
+          Generar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="plan-state" *ngIf="loading">
+    <div class="spinner-border spinner-border-sm me-2" role="status"></div> Cargando plan de producción…
+  </div>
+  <div class="plan-state error" *ngIf="!loading && loadError">{{ loadError }} <button type="button" class="btn-link-clear" (click)="load()">Reintentar</button></div>
+  <div class="plan-state" *ngIf="!loading && !loadError && !rows.length">
+    No hay productos ni materiales de reventa todavía.
+  </div>
+  <div class="plan-state" *ngIf="!loading && rows.length && !filteredRows.length">
+    Ningún ítem coincide con los filtros. <button type="button" class="btn-link-clear" (click)="clearFilters()">Limpiar filtros</button>
+  </div>
+
+  <!-- Tabla (escritorio) -->
+  <div class="plan-table-wrap" *ngIf="!loading && filteredRows.length">
+    <table class="plan-table">
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th class="hide-sm">Categoría</th>
+          <th class="num hide-sm">Stock</th>
+          <th class="num hide-sm">Precio</th>
+          <th class="num units-col">Unidades / mes</th>
+          <th class="num">Valor planeado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of pagedRows" [class.unplanned]="!(row.plannedMonthlyUnits > 0)">
+          <td>
+            <div class="item-name">{{ row.productName }}</div>
+            <div class="item-meta">
+              <span class="type-badge" [class.resale]="isResale(row)">{{ typeLabel(row) }}</span>
+              <span *ngIf="row.productCode">{{ row.productCode }}</span>
+              <span *ngIf="row.measurementUnit">· {{ row.measurementUnit }}</span>
+            </div>
+          </td>
+          <td class="hide-sm">{{ row.categoryName || '—' }}</td>
+          <td class="num hide-sm" [class.low]="row.stock <= 0">{{ formatNumber(row.stock) }}</td>
+          <td class="num hide-sm">{{ formatCurrency(row.unitPrice) }}</td>
+          <td class="num units-col">
+            <div class="units-cell">
+              <input type="number" min="0" step="1" class="form-control form-control-sm"
+                     [ngModel]="row.plannedMonthlyUnits" (ngModelChange)="onUnitsChange(row, $event)"
+                     [attr.aria-label]="'Unidades por mes de ' + row.productName">
+              <span class="save-state" *ngIf="savingKeys.has(key(row))"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></span>
+              <span class="save-state saved" *ngIf="savedKeys.has(key(row))" title="Guardado">✓</span>
+            </div>
+            <small class="default-hint" *ngIf="row.isDefaultValue">Tomado del material</small>
+          </td>
+          <td class="num strong">{{ formatCurrency(row.plannedValue) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <div class="plan-pagination" *ngIf="!loading && filteredRows.length > pageSizes[0]">
+    <span>Mostrando {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filteredRows.length) }} de {{ filteredRows.length }}</span>
+    <div class="pager">
+      <select class="form-select form-select-sm" [(ngModel)]="pageSize" (ngModelChange)="page = 1" aria-label="Ítems por página">
+        <option *ngFor="let s of pageSizes" [ngValue]="s">{{ s }} por página</option>
+      </select>
+      <button type="button" class="btn-plan" (click)="goToPage(page - 1)" [disabled]="page <= 1">‹</button>
+      <span>{{ page }} / {{ totalPages }}</span>
+      <button type="button" class="btn-plan" (click)="goToPage(page + 1)" [disabled]="page >= totalPages">›</button>
+    </div>
+  </div>
+</div>

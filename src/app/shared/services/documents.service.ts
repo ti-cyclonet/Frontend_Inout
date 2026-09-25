@@ -428,6 +428,81 @@ export class DocumentsService {
   // HELPERS COMPARTIDOS
   // ═══════════════════════════════════════════════════════
 
+  // ═══════════════════════════════════════════════════════
+  // PLAN DE PRODUCCIÓN / VENTA DEL PERÍODO
+  // ═══════════════════════════════════════════════════════
+  async generateProductionPlan(data: {
+    periodName: string;
+    filterSummary?: string;
+    rows: {
+      type: string; name: string; code: string; category: string; unit: string;
+      stock: number; unitPrice: number; plannedUnits: number; plannedValue: number;
+    }[];
+  }): Promise<void> {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
+    // Horizontal: la tabla tiene muchas columnas
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    this.drawHeader(doc, 'PLAN DE PRODUCCIÓN Y VENTA', data.periodName);
+
+    const totalUnits = data.rows.reduce((sum, r) => sum + (r.plannedUnits || 0), 0);
+    const totalValue = data.rows.reduce((sum, r) => sum + (r.plannedValue || 0), 0);
+    const planned = data.rows.filter((r) => r.plannedUnits > 0).length;
+
+    let y = 50;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(55, 65, 81);
+    doc.text(`Período: ${data.periodName}`, 15, y);
+    doc.text(`Ítems con plan: ${planned} de ${data.rows.length}`, pageWidth - 15, y, { align: 'right' });
+    if (data.filterSummary) {
+      y += 6;
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Filtros: ${data.filterSummary}`, 15, y);
+    }
+
+    autoTable(doc, {
+      startY: y + 6,
+      head: [['#', 'Tipo', 'Código', 'Ítem', 'Categoría', 'Unidad', 'Stock', 'Precio', 'Unid. / mes', 'Valor planeado']],
+      body: data.rows.map((r, i) => [
+        (i + 1).toString(),
+        r.type,
+        r.code || '-',
+        r.name,
+        r.category || '-',
+        r.unit || '-',
+        this.formatNumber(r.stock),
+        this.formatCurrency(r.unitPrice),
+        this.formatNumber(r.plannedUnits),
+        this.formatCurrency(r.plannedValue),
+      ]),
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        6: { halign: 'right' },
+        7: { halign: 'right' },
+        8: { halign: 'right', fontStyle: 'bold' },
+        9: { halign: 'right' },
+      },
+      ...this.getTableStyles(),
+    });
+
+    this.drawTotals(doc, [
+      { label: 'Unidades planeadas:', value: this.formatNumber(totalUnits) },
+      { label: 'Valor planeado / mes:', value: this.formatCurrency(totalValue), bold: true },
+    ]);
+
+    this.drawFooter(doc);
+    const safeName = (data.periodName || 'periodo').replace(/[^A-Za-z0-9_-]+/g, '_');
+    doc.save(`Plan_Produccion_${safeName}.pdf`);
+  }
+
+  private formatNumber(value: number): string {
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(value || 0);
+  }
+
   private drawHeader(doc: any, title: string, code: string): void {
     const pageWidth = doc.internal.pageSize.getWidth();
 
