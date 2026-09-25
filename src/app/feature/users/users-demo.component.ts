@@ -4,11 +4,12 @@ import { ActivatedRoute } from '@angular/router';
 import { UsersDashboardComponent } from './dashboard/users-dashboard.component';
 import { UsersListComponent } from './list/users-list.component';
 import { UserFormComponent } from './form/user-form.component';
+import { PotentialCustomersComponent } from './potential/potential-customers.component';
 
 @Component({
   selector: 'app-users-demo',
   standalone: true,
-  imports: [CommonModule, UsersDashboardComponent, UsersListComponent, UserFormComponent],
+  imports: [CommonModule, UsersDashboardComponent, UsersListComponent, UserFormComponent, PotentialCustomersComponent],
   template: `
     <div class="demo-container">
       <div class="demo-header">
@@ -27,11 +28,18 @@ import { UserFormComponent } from './form/user-form.component';
           (click)="activeTab = 'list'">
           Usuarios
         </button>
+        <button
+          class="tab-button"
+          [class.active]="activeTab === 'leads'"
+          (click)="activeTab = 'leads'">
+          Clientes potenciales
+        </button>
       </div>
       
       <div class="demo-content">
         <app-users-dashboard *ngIf="activeTab === 'dashboard'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-users-dashboard>
         <app-users-list *ngIf="activeTab === 'list'" [refreshTrigger]="refreshTrigger" (openCreateModal)="showCreateModal = true"></app-users-list>
+        <app-potential-customers *ngIf="activeTab === 'leads'"></app-potential-customers>
       </div>
       
       <app-user-form *ngIf="showCreateModal" (userCreated)="onUserCreated()" (formCancelled)="showCreateModal = false"></app-user-form>
@@ -56,7 +64,11 @@ import { UserFormComponent } from './form/user-form.component';
       background: white;
       border-bottom: 1px solid #e9ecef;
       padding: 0 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+
+    .demo-tabs::-webkit-scrollbar { display: none; }
     
     .tab-button {
       padding: 1rem 1.5rem;
@@ -67,6 +79,8 @@ import { UserFormComponent } from './form/user-form.component';
       cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: all 0.2s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     
     .tab-button:hover {
@@ -94,7 +108,7 @@ import { UserFormComponent } from './form/user-form.component';
   `]
 })
 export class UsersDemoComponent {
-  activeTab: 'dashboard' | 'list' = 'dashboard';
+  activeTab: 'dashboard' | 'list' | 'leads' = 'dashboard';
   refreshTrigger = 0;
   showCreateModal = false;
   

@@ -1,0 +1,124 @@
+<div class="leads-container">
+  <!-- Header -->
+  <div class="leads-header">
+    <div class="leads-title">
+      <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-lines-fill" /></svg>
+      /Clientes Potenciales
+    </div>
+    <div class="leads-actions">
+      <button type="button" class="btn-leads" (click)="load()" [disabled]="loading">Actualizar</button>
+      <button type="button" class="btn-leads" (click)="exportCsv()" [disabled]="filteredLeads.length === 0">
+        <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#download" /></svg>
+        Exportar CSV
+      </button>
+    </div>
+  </div>
+
+  <p class="leads-intro">
+    Personas que compraron en tu MarketPlace como invitadas. Invítalas a crear su cuenta para que queden como clientes de tu negocio.
+  </p>
+
+  <!-- Resumen + filtros -->
+  <div class="leads-toolbar">
+    <div class="leads-chips" role="tablist" aria-label="Filtrar por estado">
+      <button type="button" [class.active]="statusFilter === 'POTENTIAL'" (click)="statusFilter = 'POTENTIAL'">
+        Potenciales <span>{{ potentialCount }}</span>
+      </button>
+      <button type="button" [class.active]="statusFilter === 'CONVERTED'" (click)="statusFilter = 'CONVERTED'">
+        Ya registrados <span>{{ convertedCount }}</span>
+      </button>
+      <button type="button" [class.active]="statusFilter === 'all'" (click)="statusFilter = 'all'">
+        Todos <span>{{ leads.length }}</span>
+      </button>
+    </div>
+    <div class="leads-search">
+      <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#search" /></svg>
+      <input type="search" [(ngModel)]="search" placeholder="Buscar por nombre, teléfono, correo…" aria-label="Buscar clientes potenciales">
+    </div>
+  </div>
+
+  <div class="leads-state" *ngIf="loading">Cargando clientes potenciales…</div>
+  <div class="leads-state error" *ngIf="!loading && error">{{ error }}</div>
+
+  <div class="leads-state" *ngIf="!loading && !error && filteredLeads.length === 0">
+    <strong>No hay clientes potenciales{{ search ? ' que coincidan con la búsqueda' : '' }}.</strong>
+    <span *ngIf="!search">Aparecen aquí cuando alguien compra como invitado en tu MarketPlace.</span>
+  </div>
+
+  <!-- Tabla (escritorio) -->
+  <div class="leads-table-wrap" *ngIf="!loading && !error && filteredLeads.length > 0">
+    <table class="leads-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Teléfono</th>
+          <th>Correo</th>
+          <th>Dirección</th>
+          <th>Estado</th>
+          <th>Última compra</th>
+          <th class="text-center">Invitar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let lead of filteredLeads">
+          <td>
+            <div class="lead-name">
+              <div class="lead-avatar">{{ displayName(lead).charAt(0).toUpperCase() }}</div>
+              <div>
+                <strong>{{ displayName(lead) }}</strong>
+                <small *ngIf="lead.documentNumber">{{ lead.documentType }} {{ lead.documentNumber }}</small>
+              </div>
+            </div>
+          </td>
+          <td>{{ lead.phone || '—' }}</td>
+          <td class="cell-wrap">{{ lead.email || '—' }}</td>
+          <td class="cell-wrap">{{ lead.address || '—' }}</td>
+          <td>
+            <span class="lead-badge" [class.converted]="lead.status === 'CONVERTED'">
+              {{ lead.status === 'CONVERTED' ? 'Registrado' : 'Potencial' }}
+            </span>
+          </td>
+          <td>{{ lead.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="text-center">
+            <a *ngIf="lead.status === 'POTENTIAL' && whatsappLink(lead) as link" class="btn-whatsapp" [href]="link" target="_blank" rel="noopener" title="Invitar por WhatsApp">
+              <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#whatsapp" /></svg>
+              Invitar
+            </a>
+            <span *ngIf="lead.status === 'CONVERTED'" class="text-muted">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tarjetas (móvil) -->
+  <div class="leads-cards" *ngIf="!loading && !error && filteredLeads.length > 0">
+    <div class="lead-card" *ngFor="let lead of filteredLeads">
+      <div class="lead-card-top">
+        <div class="lead-name">
+          <div class="lead-avatar">{{ displayName(lead).charAt(0).toUpperCase() }}</div>
+          <strong>{{ displayName(lead) }}</strong>
+        </div>
+        <span class="lead-badge" [class.converted]="lead.status === 'CONVERTED'">
+          {{ lead.status === 'CONVERTED' ? 'Registrado' : 'Potencial' }}
+        </span>
+      </div>
+      <div class="lead-card-detail" *ngIf="lead.phone">
+        <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#telephone" /></svg>{{ lead.phone }}
+      </div>
+      <div class="lead-card-detail" *ngIf="lead.email">
+        <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#envelope" /></svg>{{ lead.email }}
+      </div>
+      <div class="lead-card-detail" *ngIf="lead.address">
+        <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#geo-alt" /></svg>{{ lead.address }}
+      </div>
+      <div class="lead-card-footer">
+        <small>{{ lead.updatedAt | date:'dd/MM/yyyy HH:mm' }}</small>
+        <a *ngIf="lead.status === 'POTENTIAL' && whatsappLink(lead) as link" class="btn-whatsapp" [href]="link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#whatsapp" /></svg>
+          Invitar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

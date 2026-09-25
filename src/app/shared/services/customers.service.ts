@@ -33,6 +33,11 @@ export class CustomersService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
+  /** Clientes potenciales (invitados del MarketPlace) del negocio en sesión. */
+  getPotentialCustomers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.authorizaUrl}/potential-users/mine`);
+  }
+
   getUserByEmail(email: string): Observable<any> {
     return this.http.get<any>(`${this.authorizaUrl}/potential-users/by-email/${email}`);
   }
