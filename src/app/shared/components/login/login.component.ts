@@ -110,7 +110,9 @@ export class LoginComponent {
     const completeLoginDTO = {
       email: this.loginForm.get('username')?.value,
       applicationName: NAME_APP_SHORT,
-      contractId: this.selectedContractId
+      contractId: this.selectedContractId,
+      // Emitido por /auth/login tras validar la contraseña (Authoriza lo exige)
+      selectionToken: this.pendingLoginResponse?.selectionToken
     };
 
     this.authService.completeLogin(completeLoginDTO).subscribe(response => {
