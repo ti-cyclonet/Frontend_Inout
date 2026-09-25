@@ -115,9 +115,29 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   authError = '';
   authInfo = '';
   registerData = {
-    firstName: '', firstSurname: '', documentType: 'CC', documentNumber: '',
+    firstName: '', secondName: '', firstSurname: '', secondSurname: '',
+    documentType: 'CC', documentNumber: '', birthdate: '', gender: '', civilStatus: '',
     phone: '', email: '', password: '', confirmPassword: '',
   };
+  /** Mismos códigos que Authoriza usa en el registro de InOut y de Shotra. */
+  readonly genders = [
+    { value: 'M', label: 'Masculino' },
+    { value: 'F', label: 'Femenino' },
+    { value: 'O', label: 'Otro' },
+  ];
+  readonly civilStatuses = [
+    { value: 'S', label: 'Soltero/a' },
+    { value: 'C', label: 'Casado/a' },
+    { value: 'U', label: 'Unión libre' },
+    { value: 'D', label: 'Divorciado/a' },
+    { value: 'V', label: 'Viudo/a' },
+  ];
+  /** Fecha máxima de nacimiento para el selector (18 años cumplidos hoy). */
+  readonly maxBirthdate = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 18);
+    return d.toISOString().slice(0, 10);
+  })();
   /** Aceptación para crear/vincular la cuenta. */
   accountConsents = { terms: false, habeasData: false };
   /** Aceptación para el pedido (obligatoria también como invitado). */
@@ -1308,6 +1328,18 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.authError = 'Indica tu tipo y número de documento.';
       return;
     }
+    if (!d.birthdate) {
+      this.authError = 'Indica tu fecha de nacimiento.';
+      return;
+    }
+    if (d.birthdate > this.maxBirthdate) {
+      this.authError = 'Debes ser mayor de 18 años para crear una cuenta.';
+      return;
+    }
+    if (!d.gender || !d.civilStatus) {
+      this.authError = 'Selecciona tu sexo y tu estado civil.';
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       this.authError = 'Ingresa un correo válido.';
       return;
@@ -1332,7 +1364,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         email,
         password: d.password,
         firstName: d.firstName.trim(),
+        secondName: d.secondName.trim() || undefined,
         firstSurname: d.firstSurname.trim(),
+        secondSurname: d.secondSurname.trim() || undefined,
+        birthdate: d.birthdate,
+        gender: d.gender,
+        civilStatus: d.civilStatus,
         documentType: d.documentType,
         documentNumber: d.documentNumber.replace(/[\s.]/g, ''),
         phone: d.phone.trim(),
