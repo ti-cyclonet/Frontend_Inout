@@ -150,33 +150,73 @@ export class OrdersComponent implements OnInit {
   /** Sugerencia de Shotra con instrucciones y "No volver a mostrar". */
   private suggestShotraDelivery(order: Order, next: string): void {
     let dontShowAgain = false;
+    const esc = (v: any) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>
+    )[c]);
+    const icon = (name: string) =>
+      `<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#${name}"></use></svg>`;
+    const itemsCount = (order.items || []).reduce((n, i) => n + Number(i.quantity || 0), 0);
+    const steps = [
+      { icon: 'truck', title: 'Pide el domicilio', text: 'Se abre Shotra con la solicitud ya diligenciada con los datos de este pedido.' },
+      { icon: 'geo-alt-fill', title: 'Marca la recogida', text: 'Elige el tipo de entrega y marca 📍 tu ubicación como punto de recogida.' },
+      { icon: 'megaphone', title: 'Publica', text: 'Los domiciliarios cercanos te envían sus ofertas.' },
+      { icon: 'chat-dots', title: 'Acepta y coordina', text: 'Acepta la oferta que prefieras y coordina por el chat.' },
+      { icon: 'check2-circle', title: 'Cierra la entrega', text: 'Cierra el trabajo en Shotra y marca aquí el pedido como Entregado.' },
+    ];
+
     Swal.fire({
-      title: '¿Necesitas un domiciliario?',
-      width: 560,
+      width: 620,
+      showCloseButton: true,
+      customClass: {
+        popup: 'shotra-suggest-popup',
+        actions: 'shotra-suggest-actions',
+        confirmButton: 'shotra-btn shotra-btn-primary',
+        denyButton: 'shotra-btn shotra-btn-secondary',
+        cancelButton: 'shotra-btn shotra-btn-ghost',
+      },
+      buttonsStyling: false,
       html: `
-        <div style="text-align:left;font-size:0.9rem;line-height:1.5;color:#374151;">
-          <p style="margin:0 0 0.6rem;">Puedes contratar la entrega de <strong>${order.orderCode}</strong> con <strong>Domicilios (Shotra)</strong>, sin salir de InOut:</p>
-          <ol style="margin:0 0 0.6rem;padding-left:1.2rem;">
-            <li>Pulsa <strong>Pedir domicilio con Shotra</strong>: se abre el panel con la solicitud ya diligenciada con los datos del pedido${order.customerAddress ? ' y la dirección del cliente' : ''}.</li>
-            <li>Elige el <strong>tipo de entrega</strong>, revisa la descripción y marca 📍 tu ubicación como <strong>punto de recogida</strong>.</li>
-            <li>Pulsa <strong>Publicar</strong>. Los domiciliarios cercanos te enviarán ofertas.</li>
-            <li>Acepta la oferta que prefieras y coordina por el <strong>chat</strong>.</li>
-            <li>Cuando el cliente reciba el pedido, <strong>cierra el trabajo</strong> en Shotra (medio de pago) y vuelve aquí para marcarlo como <strong>Entregado</strong>.</li>
+        <div class="shotra-suggest">
+          <div class="ss-header">
+            <img src="assets/img/logo_shotra.png" alt="Shotra" class="ss-logo">
+            <div>
+              <h3 class="ss-title">¿Necesitas un domiciliario?</h3>
+              <p class="ss-subtitle">Contrata la entrega con <strong>Domicilios (Shotra)</strong> sin salir de InOut.</p>
+            </div>
+          </div>
+
+          <div class="ss-order">
+            <div class="ss-order-code">${icon('box-seam')} <span>${esc(order.orderCode)}</span></div>
+            <div class="ss-order-grid">
+              <div><span class="ss-label">${icon('person-fill')} Cliente</span><span class="ss-value">${esc(order.customerName || 'Sin nombre')}</span></div>
+              <div><span class="ss-label">${icon('cash-coin')} Valor</span><span class="ss-value">${esc(this.formatCurrency(order.total))}</span></div>
+              <div><span class="ss-label">${icon('tag-fill')} Productos</span><span class="ss-value">${itemsCount} und.</span></div>
+              <div class="ss-wide"><span class="ss-label">${icon('geo-alt-fill')} Entrega</span><span class="ss-value">${order.customerAddress ? esc(order.customerAddress) : '<em>Sin dirección: el domiciliario la coordina con el cliente</em>'}</span></div>
+            </div>
+          </div>
+
+          <p class="ss-section">Cómo funciona</p>
+          <ol class="ss-steps">
+            ${steps.map((st, i) => `
+              <li class="ss-step">
+                <span class="ss-step-num">${i + 1}</span>
+                <span class="ss-step-icon">${icon(st.icon)}</span>
+                <span class="ss-step-text"><strong>${st.title}</strong>${st.text}</span>
+              </li>`).join('')}
           </ol>
-          <p style="margin:0;font-size:0.8rem;color:#6b7280;">También puedes abrir Shotra en cualquier momento con el botón <strong>Domicilios</strong>, abajo a la derecha.</p>
-          <label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.9rem;font-size:0.82rem;cursor:pointer;">
-            <input type="checkbox" id="swal-dont-show-delivery" style="width:16px;height:16px;">
-            No volver a mostrar esta sugerencia (puedes reactivarla en Configuración)
+
+          <p class="ss-tip">${icon('truck')}<span>También puedes abrir Shotra cuando quieras con el botón <strong>Domicilios</strong>, abajo a la derecha.</span></p>
+
+          <label class="ss-dont-show">
+            <input type="checkbox" id="swal-dont-show-delivery">
+            <span>No volver a mostrar esta sugerencia <em>(se reactiva en Configuración)</em></span>
           </label>
         </div>`,
-      icon: 'info',
       showCancelButton: true,
       showDenyButton: true,
       confirmButtonText: '🛵 Pedir domicilio con Shotra',
-      denyButtonText: 'Ya se entregó · Marcar Entregado',
+      denyButtonText: '✓ Ya se entregó',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#990000',
-      denyButtonColor: '#0f766e',
       willClose: () => {
         const box = document.getElementById('swal-dont-show-delivery') as HTMLInputElement | null;
         dontShowAgain = !!box?.checked;

@@ -47,3 +47,56 @@ footer {
 .swal2-container {
   z-index: 20000 !important;
 }
+
+/* ═══════ Sugerencia de Domicilios (Shotra) al entregar un pedido ═══════
+   SweetAlert se monta en <body>, fuera del componente: estilos globales
+   con prefijo propio. Colores planos (sin degradados). */
+.shotra-suggest-popup { padding: 1.25rem 1.25rem 1rem !important; border-radius: 16px !important; }
+.shotra-suggest { text-align: left; color: #1f2937; font-size: 0.9rem; }
+.shotra-suggest svg { fill: currentColor; flex-shrink: 0; }
+
+.ss-header { display: flex; align-items: center; gap: 0.9rem; padding-bottom: 0.9rem; border-bottom: 1px solid #f1e3e3; }
+.ss-logo { width: 52px; height: 52px; border-radius: 14px; background: #990000; padding: 6px; object-fit: contain; flex-shrink: 0; }
+.ss-title { margin: 0; font-size: 1.25rem; font-weight: 800; color: #1f2937; }
+.ss-subtitle { margin: 0.2rem 0 0; font-size: 0.85rem; color: #6b7280; }
+
+.ss-order { margin-top: 1rem; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+.ss-order-code { display: flex; align-items: center; gap: 0.45rem; padding: 0.55rem 0.9rem; background: #f3f4f6; font-weight: 700; color: #0066cc; font-size: 0.88rem; }
+.ss-order-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; padding: 0.8rem 0.9rem; }
+.ss-order-grid > div { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.ss-order-grid .ss-wide { grid-column: 1 / -1; }
+.ss-label { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #9ca3af; }
+.ss-label svg { width: 12px; height: 12px; }
+.ss-value { font-size: 0.88rem; font-weight: 600; color: #1f2937; word-break: break-word; }
+.ss-value em { font-weight: 400; color: #6b7280; }
+
+.ss-section { margin: 1.1rem 0 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #990000; }
+.ss-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.ss-step { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.75rem; border: 1px solid #f1e3e3; border-radius: 10px; background: #fffafa; }
+.ss-step-num { width: 22px; height: 22px; border-radius: 50%; background: #990000; color: #ffffff; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ss-step-icon { width: 34px; height: 34px; border-radius: 9px; background: #fde8e8; color: #990000; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ss-step-text { display: flex; flex-direction: column; font-size: 0.83rem; color: #4b5563; line-height: 1.35; }
+.ss-step-text strong { color: #1f2937; font-size: 0.86rem; }
+
+.ss-tip { display: flex; align-items: center; gap: 0.5rem; margin: 0.9rem 0 0; padding: 0.6rem 0.8rem; border-radius: 10px; background: #eff6ff; color: #1e40af; font-size: 0.8rem; }
+.ss-tip svg { color: #1e40af; }
+
+.ss-dont-show { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.9rem; font-size: 0.82rem; color: #374151; cursor: pointer; }
+.ss-dont-show input { width: 16px; height: 16px; accent-color: #990000; }
+.ss-dont-show em { font-style: normal; color: #9ca3af; }
+
+.shotra-suggest-actions { width: 100%; display: grid !important; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 1rem 0 0 !important; padding: 0 !important; }
+.shotra-btn { border: none; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: background-color 0.15s; }
+.shotra-btn-primary { background: #990000; color: #ffffff; }
+.shotra-btn-primary:hover { background: #7a0000; }
+.shotra-btn-secondary { background: #0f766e; color: #ffffff; }
+.shotra-btn-secondary:hover { background: #0b5d57; }
+.shotra-btn-ghost { grid-column: 1 / -1; background: transparent; color: #6b7280; font-weight: 600; padding: 0.45rem; }
+.shotra-btn-ghost:hover { color: #1f2937; background: #f3f4f6; }
+
+@media (max-width: 560px) {
+  .ss-order-grid { grid-template-columns: 1fr 1fr; }
+  .shotra-suggest-actions { grid-template-columns: 1fr; }
+  .ss-title { font-size: 1.1rem; }
+}
+
