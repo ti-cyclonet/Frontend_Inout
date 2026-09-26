@@ -1,0 +1,209 @@
+<div class="pf-container">
+  <!-- Sub-vistas -->
+  <div class="pf-header">
+    <div class="pf-views" role="tablist" aria-label="Cartera">
+      <button type="button" [class.active]="view === 'summary'" (click)="setView('summary')">Resumen</button>
+      <button type="button" [class.active]="view === 'receivables'" (click)="setView('receivables')">Cuentas por cobrar</button>
+      <button type="button" [class.active]="view === 'credits'" (click)="setView('credits')">
+        Créditos <span class="pf-badge" *ngIf="summary?.credit?.pendingRequests">{{ summary.credit.pendingRequests }}</span>
+      </button>
+    </div>
+    <button type="button" class="pf-btn" (click)="refresh()">Actualizar</button>
+  </div>
+
+  <!-- ═══════ RESUMEN ═══════ -->
+  <ng-container *ngIf="view === 'summary'">
+    <div class="pf-state" *ngIf="loadingSummary">Cargando cartera…</div>
+    <ng-container *ngIf="!loadingSummary && summary">
+      <div class="pf-kpis">
+        <div class="kpi">
+          <span class="kpi-label">Cartera total</span>
+          <strong>{{ formatCurrency(summary.total) }}</strong>
+          <small>{{ summary.openCount }} cuenta(s) abiertas</small>
+        </div>
+        <div class="kpi danger">
+          <span class="kpi-label">Vencida</span>
+          <strong>{{ formatCurrency(summary.overdue) }}</strong>
+          <small>{{ summary.overdueCount }} cuenta(s)</small>
+        </div>
+        <div class="kpi ok">
+          <span class="kpi-label">Al día</span>
+          <strong>{{ formatCurrency(summary.current) }}</strong>
+          <small>{{ summary.dueSoonCount }} vence(n) en 7 días</small>
+        </div>
+        <div class="kpi info">
+          <span class="kpi-label">Uso del crédito</span>
+          <strong>{{ summary.credit.utilization }}%</strong>
+          <small>{{ summary.credit.activeAccounts }} cliente(s) · cupo {{ formatCurrency(summary.credit.totalLimit) }}</small>
+        </div>
+      </div>
+
+      <div class="pf-grid">
+        <div class="pf-card">
+          <h4>Antigüedad de la cartera</h4>
+          <div class="aging" *ngIf="summary.total > 0; else noDebt">
+            <div class="aging-row" *ngFor="let b of [
+              { label: 'Al día', value: summary.aging.current, cls: 'a0' },
+              { label: '1 – 30 días', value: summary.aging.d1_30, cls: 'a1' },
+              { label: '31 – 60 días', value: summary.aging.d31_60, cls: 'a2' },
+              { label: '61 – 90 días', value: summary.aging.d61_90, cls: 'a3' },
+              { label: 'Más de 90 días', value: summary.aging.d90_plus, cls: 'a4' }
+            ]">
+              <span class="aging-label">{{ b.label }}</span>
+              <div class="aging-bar"><div [class]="'aging-fill ' + b.cls" [style.width.%]="b.value > 0 ? agingPercent(b.value) : 0"></div></div>
+              <span class="aging-value">{{ formatCurrency(b.value) }}</span>
+            </div>
+          </div>
+          <ng-template #noDebt><p class="pf-empty">No hay cartera pendiente. 🎉</p></ng-template>
+        </div>
+
+        <div class="pf-card">
+          <h4>Clientes con mayor saldo</h4>
+          <table class="pf-table" *ngIf="summary.topDebtors.length; else noDebtors">
+            <thead><tr><th>Cliente</th><th class="num">Saldo</th><th class="num">Vencido</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let d of summary.topDebtors" class="clickable" (click)="openCustomerReceivables(d.customerName)">
+                <td>{{ d.customerName }} <small>({{ d.count }})</small></td>
+                <td class="num">{{ formatCurrency(d.balance) }}</td>
+                <td class="num" [class.text-danger]="d.overdue > 0">{{ formatCurrency(d.overdue) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #noDebtors><p class="pf-empty">Sin clientes con saldo.</p></ng-template>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ═══════ CUENTAS POR COBRAR ═══════ -->
+  <ng-container *ngIf="view === 'receivables'">
+    <div class="pf-toolbar">
+      <div class="pf-chips">
+        <button type="button" [class.active]="receivableStatus === 'OPEN'" (click)="receivableStatus = 'OPEN'; loadReceivables()">Abiertas</button>
+        <button type="button" [class.active]="receivableStatus === 'OVERDUE'" (click)="receivableStatus = 'OVERDUE'; loadReceivables()">Vencidas</button>
+        <button type="button" [class.active]="receivableStatus === 'PAGADA'" (click)="receivableStatus = 'PAGADA'; loadReceivables()">Pagadas</button>
+        <button type="button" [class.active]="receivableStatus === 'ANULADA'" (click)="receivableStatus = 'ANULADA'; loadReceivables()">Anuladas</button>
+        <button type="button" [class.active]="receivableStatus === ''" (click)="receivableStatus = ''; loadReceivables()">Todas</button>
+      </div>
+      <div class="pf-search">
+        <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#search" /></svg>
+        <input type="search" [(ngModel)]="receivableSearch" placeholder="Buscar cliente o documento" aria-label="Buscar cuentas por cobrar">
+      </div>
+    </div>
+
+    <div class="pf-state" *ngIf="loadingReceivables">Cargando cuentas por cobrar…</div>
+    <div class="pf-state" *ngIf="!loadingReceivables && !filteredReceivables.length">No hay cuentas por cobrar con este filtro.</div>
+
+    <div class="pf-table-wrap" *ngIf="!loadingReceivables && filteredReceivables.length">
+      <table class="pf-table">
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Cliente</th>
+            <th class="hide-sm">Emisión</th>
+            <th>Vence</th>
+            <th class="num hide-sm">Valor</th>
+            <th class="num hide-sm">Abonado</th>
+            <th class="num">Saldo</th>
+            <th>Estado</th>
+            <th class="actions-col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of filteredReceivables">
+            <td><strong>{{ r.documentCode }}</strong><small class="d-block">{{ r.sourceType === 'SALE' ? 'Venta directa' : 'Pedido' }}</small></td>
+            <td>{{ r.customerName }}</td>
+            <td class="hide-sm">{{ r.issueDate | date:'dd/MM/yyyy' }}</td>
+            <td>{{ r.dueDate | date:'dd/MM/yyyy' }}<small class="d-block" [class.text-danger]="r.isOverdue">{{ dueHint(r) }}</small></td>
+            <td class="num hide-sm">{{ formatCurrency(r.amount) }}</td>
+            <td class="num hide-sm">{{ formatCurrency(r.paidAmount) }}</td>
+            <td class="num strong">{{ formatCurrency(r.balance) }}</td>
+            <td><span class="st" [ngClass]="statusClass(r)">{{ statusLabel(r) }}</span></td>
+            <td class="actions-col">
+              <button type="button" class="pf-btn primary sm" *ngIf="canOperate && (r.status === 'PENDIENTE' || r.status === 'PARCIAL')" (click)="registerPayment(r)">Abonar</button>
+              <button type="button" class="pf-btn sm" (click)="viewReceivable(r)">Ver</button>
+              <button type="button" class="pf-btn danger sm" *ngIf="isAdmin && r.status === 'PENDIENTE' && !r.paidAmount" (click)="voidReceivable(r)">Anular</button>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="strong">Total ({{ filteredReceivables.length }})</td>
+            <td class="num hide-sm">{{ formatCurrency(receivablesTotals.amount) }}</td>
+            <td class="num hide-sm">{{ formatCurrency(receivablesTotals.paid) }}</td>
+            <td class="num strong">{{ formatCurrency(receivablesTotals.balance) }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ═══════ CRÉDITOS ═══════ -->
+  <ng-container *ngIf="view === 'credits'">
+    <div class="pf-toolbar">
+      <div class="pf-chips">
+        <button type="button" [class.active]="accountFilter === 'all'" (click)="accountFilter = 'all'">Todos <span>{{ accountCounts.all }}</span></button>
+        <button type="button" [class.active]="accountFilter === 'inProgress'" (click)="accountFilter = 'inProgress'">En trámite <span>{{ accountCounts.inProgress }}</span></button>
+        <button type="button" [class.active]="accountFilter === 'approved'" (click)="accountFilter = 'approved'">Activos <span>{{ accountCounts.approved }}</span></button>
+        <button type="button" [class.active]="accountFilter === 'rejected'" (click)="accountFilter = 'rejected'">Rechazados <span>{{ accountCounts.rejected }}</span></button>
+        <button type="button" [class.active]="accountFilter === 'suspended'" (click)="accountFilter = 'suspended'">Suspendidos <span>{{ accountCounts.suspended }}</span></button>
+      </div>
+      <div class="pf-toolbar-right">
+        <div class="pf-search">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#search" /></svg>
+          <input type="search" [(ngModel)]="accountSearch" placeholder="Buscar cliente" aria-label="Buscar créditos">
+        </div>
+        <button type="button" class="pf-btn primary" *ngIf="canOperate" (click)="newRequest()">+ Nueva solicitud</button>
+      </div>
+    </div>
+
+    <p class="pf-flow">
+      <span class="fs">1 · Solicitud</span> → <span class="fs">2 · Validación</span> → <span class="fs">3 · Asignación de cupo</span> → <span class="fs">4 · Aprobación (administrador)</span>
+    </p>
+
+    <div class="pf-state" *ngIf="loadingAccounts">Cargando créditos…</div>
+    <div class="pf-state" *ngIf="!loadingAccounts && !filteredAccounts.length">No hay créditos con este filtro.</div>
+
+    <div class="pf-accounts" *ngIf="!loadingAccounts && filteredAccounts.length">
+      <div class="acc-card" *ngFor="let a of filteredAccounts" [class.suspended]="a.suspended">
+        <div class="acc-top">
+          <div>
+            <strong>{{ a.customerName }}</strong>
+            <small class="d-block">{{ a.customerEmail }}</small>
+          </div>
+          <div class="acc-badges">
+            <span class="req" [ngClass]="'req-' + a.requestStatus">{{ requestLabels[a.requestStatus] }}</span>
+            <span class="req req-SUSPENDED" *ngIf="a.suspended">Suspendido</span>
+          </div>
+        </div>
+
+        <div class="acc-steps" *ngIf="isInProgress(a)" aria-label="Avance del trámite">
+          <span *ngFor="let s of [1,2,3,4]" [class.done]="step(a) >= s"></span>
+        </div>
+
+        <div class="acc-grid">
+          <div><span>Cupo aprobado</span><strong>{{ formatCurrency(a.approvedLimit) }}</strong></div>
+          <div><span>Disponible</span><strong>{{ formatCurrency(a.available) }}</strong></div>
+          <div><span>Condición de pago</span><strong>{{ a.approvedTermDays ? a.approvedTermDays + ' días' : '—' }}</strong></div>
+          <div><span>Saldo</span><strong [class.text-danger]="a.overdueCount > 0">{{ formatCurrency(a.outstanding) }}<small *ngIf="a.overdueCount"> · {{ a.overdueCount }} vencida(s)</small></strong></div>
+        </div>
+        <p class="acc-request" *ngIf="isInProgress(a)">
+          En trámite: {{ formatCurrency(a.requestedAmount) }} a {{ a.requestedTermDays }} días
+          <ng-container *ngIf="a.requestStatus === 'CUPO_ASIGNADO'"> · propuesto {{ formatCurrency(a.proposedLimit) }} a {{ a.proposedTermDays }} días</ng-container>
+        </p>
+
+        <div class="acc-actions">
+          <button type="button" class="pf-btn primary sm" *ngIf="canOperate && a.requestStatus === 'SOLICITADA'" (click)="validateRequest(a)">Validar</button>
+          <button type="button" class="pf-btn primary sm" *ngIf="canOperate && a.requestStatus === 'VALIDADA'" (click)="assignLimit(a)">Asignar cupo</button>
+          <button type="button" class="pf-btn success sm" *ngIf="isAdmin && a.requestStatus === 'CUPO_ASIGNADO'" (click)="decide(a)">Aprobar / Rechazar</button>
+          <span class="acc-wait" *ngIf="!isAdmin && a.requestStatus === 'CUPO_ASIGNADO'">Pendiente de aprobación de un administrador</span>
+          <button type="button" class="pf-btn sm" *ngIf="canOperate && !isInProgress(a)" (click)="newRequest(a)">Solicitar ajuste</button>
+          <button type="button" class="pf-btn sm" *ngIf="isAdmin && a.approvedLimit > 0" (click)="toggleSuspend(a)">{{ a.suspended ? 'Reactivar' : 'Suspender' }}</button>
+          <button type="button" class="pf-btn sm" (click)="openCustomerReceivables(a.customerName)" *ngIf="a.outstanding > 0">Ver cartera</button>
+          <button type="button" class="pf-btn sm" (click)="showHistory(a)">Historial</button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

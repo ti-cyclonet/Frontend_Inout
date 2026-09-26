@@ -6,6 +6,7 @@ import { SalesDashboardComponent } from '../sales/dashboard/sales-dashboard.comp
 import { SalesListComponent } from '../sales/list/sales-list.component';
 import { SaleFormComponent } from '../sales/form/sale-form.component';
 import { OrdersComponent } from '../orders/orders.component';
+import { PortfolioComponent } from './portfolio/portfolio.component';
 
 @Component({
   selector: 'app-commercial',
@@ -16,7 +17,8 @@ import { OrdersComponent } from '../orders/orders.component';
     SalesDashboardComponent,
     SalesListComponent,
     SaleFormComponent,
-    OrdersComponent
+    OrdersComponent,
+    PortfolioComponent
   ],
   template: `
     <div class="commercial-container">
@@ -32,6 +34,9 @@ import { OrdersComponent } from '../orders/orders.component';
         </button>
         <button class="tab-button" [class.active]="activeTab === 'orders'" (click)="activeTab = 'orders'">
           Pedidos
+        </button>
+        <button class="tab-button" [class.active]="activeTab === 'portfolio'" (click)="activeTab = 'portfolio'">
+          Cartera
         </button>
       </div>
 
@@ -49,6 +54,11 @@ import { OrdersComponent } from '../orders/orders.component';
         <!-- Pedidos -->
         <div *ngIf="activeTab === 'orders'">
           <app-orders></app-orders>
+        </div>
+
+        <!-- Cartera: cuentas por cobrar y créditos de clientes -->
+        <div *ngIf="activeTab === 'portfolio'">
+          <app-portfolio></app-portfolio>
         </div>
       </div>
 
@@ -84,7 +94,11 @@ import { OrdersComponent } from '../orders/orders.component';
       background: white;
       border-bottom: 1px solid #e9ecef;
       padding: 0 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+
+    .commercial-tabs::-webkit-scrollbar { display: none; }
 
     .tab-button {
       padding: 1rem 1.5rem;
@@ -124,7 +138,7 @@ export class CommercialComponent {
   // aparecía hasta recargar toda la página.
   @ViewChild(SaleFormComponent) saleForm?: SaleFormComponent;
 
-  activeTab: 'dashboard' | 'sales' | 'orders' = 'dashboard';
+  activeTab: 'dashboard' | 'sales' | 'orders' | 'portfolio' = 'dashboard';
   showSaleModal = false;
   refreshTrigger = 0;
 

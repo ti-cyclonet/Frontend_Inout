@@ -426,3 +426,39 @@
   font-weight: 600;
   vertical-align: middle;
 }
+
+/* ===== Forma de pago ===== */
+.payment-section { margin: 1rem 0; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #ffffff; }
+.payment-title { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.6rem; }
+.payment-types { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.payment-type {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.85rem;
+  border: 1.5px solid #d1d5db; border-radius: 10px; background: #ffffff; cursor: pointer; text-align: left;
+}
+.payment-type svg { fill: #6b7280; flex-shrink: 0; }
+.payment-type span { display: flex; flex-direction: column; }
+.payment-type strong { font-size: 0.9rem; color: #1f2937; }
+.payment-type small { font-size: 0.75rem; color: #6b7280; }
+.payment-type.active { border-color: #0066cc; background: #eff6ff; }
+.payment-type.active svg { fill: #0066cc; }
+.payment-type.disabled { opacity: 0.5; cursor: not-allowed; }
+
+.payment-methods { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+.method-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem;
+  border: 1px solid #d1d5db; border-radius: 999px; background: #ffffff; color: #374151; font-size: 0.8rem; cursor: pointer;
+}
+.method-chip svg { fill: currentColor; }
+.method-chip.active { border-color: #0066cc; background: #0066cc; color: #ffffff; }
+
+.credit-box { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.75rem; padding: 0.7rem; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; }
+.credit-box div { display: flex; flex-direction: column; }
+.credit-box span { font-size: 0.7rem; color: #166534; text-transform: uppercase; letter-spacing: 0.03em; }
+.credit-box strong { font-size: 0.9rem; color: #14532d; }
+.credit-warning { margin: 0.5rem 0 0; font-size: 0.8rem; color: #b91c1c; }
+.credit-hint { display: flex; align-items: center; gap: 0.35rem; margin: 0.6rem 0 0; font-size: 0.78rem; color: #6b7280; }
+.credit-hint svg { fill: currentColor; flex-shrink: 0; }
+
+@media (max-width: 576px) {
+  .credit-box { grid-template-columns: 1fr 1fr; }
+}
