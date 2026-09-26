@@ -10,6 +10,7 @@ import { DocumentsService } from '../../shared/services/documents.service';
 import { StockAlertsService } from '../../shared/services/stock-alerts.service';
 import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service';
 import { DeliveryLauncherService } from '../../shared/services/delivery-launcher.service';
+import { CreditService, CreditEligibility, PAYMENT_METHODS, paymentMethodLabel } from '../../shared/services/credit.service';
 
 interface OrderItem {
   productId: string;
@@ -34,6 +35,8 @@ interface Order {
   customerEmail?: string | null;
   customerAddress?: string | null;
   deliveryLatitude?: number | string | null;
+  paymentType?: string | null;
+  paymentMethod?: string | null;
   deliveryLongitude?: number | string | null;
   cancelledAt?: string | null;
   subtotal: number;
@@ -79,7 +82,8 @@ export class OrdersComponent implements OnInit {
     private documentsService: DocumentsService,
     private stockAlertsService: StockAlertsService,
     private uiPrefs: UiPrefsService,
-    private deliveryLauncher: DeliveryLauncherService
+    private deliveryLauncher: DeliveryLauncherService,
+    private creditService: CreditService
   ) {}
 
   ngOnInit(): void {
@@ -144,7 +148,67 @@ export class OrdersComponent implements OnInit {
       this.suggestShotraDelivery(order, next);
       return;
     }
+    // Facturar: elegir forma de pago (contado o crédito)
+    if (next === 'INVOICED') {
+      this.askInvoicePayment(order, next);
+      return;
+    }
     this.applyStatus(order, next);
+  }
+
+  paymentLabel(order: Order): string {
+    if (!order.paymentType) return '';
+    return order.paymentType === 'CREDITO' ? 'Crédito' : `Contado · ${paymentMethodLabel(order.paymentMethod)}`;
+  }
+
+  /** Forma de pago al facturar. A crédito valida cupo y mora en el backend. */
+  private askInvoicePayment(order: Order, next: string): void {
+    const open = (credit: CreditEligibility | null) => {
+      const money = (v: number) => this.formatCurrency(v);
+      const total = Number(order.total) || 0;
+      const creditOk = !!credit?.eligible && total <= (credit?.available || 0) + 0.005;
+      const creditReason = !order.customerId
+        ? 'El pedido no tiene un cliente registrado (compra de invitado).'
+        : !credit ? 'No se pudo consultar el crédito del cliente.'
+        : !credit.eligible ? credit.reason
+        : total > credit.available ? `Cupo insuficiente: disponible ${money(credit.available)}.` : '';
+      const methods = PAYMENT_METHODS.map((m) => `<option value="${m.value}">${m.label}</option>`).join('');
+      Swal.fire({
+        title: `Facturar ${order.orderCode}`,
+        width: 520,
+        html: `
+          <div class="invoice-pay">
+            <p class="ip-total">Total a facturar <strong>${money(total)}</strong></p>
+            <label class="ip-option"><input type="radio" name="ip-type" value="CONTADO" checked> <span><strong>Contado</strong> — medio de pago:
+              <select id="ip-method" class="swal2-select ip-select">${methods}</select></span></label>
+            <label class="ip-option ${creditOk ? '' : 'disabled'}"><input type="radio" name="ip-type" value="CREDITO" ${creditOk ? '' : 'disabled'}> <span><strong>Crédito</strong>${
+              credit && credit.approvedLimit > 0
+                ? ` — ${credit.termDays} días · disponible ${money(credit.available)}`
+                : ''
+            }${creditOk ? '' : `<small>${creditReason}</small>`}</span></label>
+          </div>`,
+        showCancelButton: true,
+        confirmButtonText: 'Facturar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#0066CC',
+        preConfirm: () => {
+          const type = (document.querySelector('input[name="ip-type"]:checked') as HTMLInputElement)?.value || 'CONTADO';
+          const method = (document.getElementById('ip-method') as HTMLSelectElement)?.value || 'EFECTIVO';
+          return { paymentType: type, paymentMethod: type === 'CONTADO' ? method : undefined };
+        },
+      }).then((res) => {
+        if (res.isConfirmed && res.value) this.applyStatus(order, next, res.value);
+      });
+    };
+
+    if (!order.customerId) {
+      open(null);
+      return;
+    }
+    this.creditService.eligibility(order.customerId).subscribe({
+      next: (info) => open(info),
+      error: () => open(null),
+    });
   }
 
   /** Sugerencia de Shotra con instrucciones y "No volver a mostrar". */
@@ -254,8 +318,8 @@ export class OrdersComponent implements OnInit {
     };
   }
 
-  private applyStatus(order: Order, next: string): void {
-    this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: next }).subscribe({
+  private applyStatus(order: Order, next: string, extra: Record<string, any> = {}): void {
+    this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: next, ...extra }).subscribe({
       next: () => {
         Swal.fire({ icon: 'success', title: 'Estado actualizado', text: `Pedido avanzó a: ${this.getStatusLabel(next)}`, timer: 1500, showConfirmButton: false });
         this.loadOrders();

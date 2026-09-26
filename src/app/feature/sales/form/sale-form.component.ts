@@ -9,6 +9,7 @@ import { StockService } from '../../../shared/services/stock.service';
 import { StockAlertsService } from '../../../shared/services/stock-alerts.service';
 import { CompositionService } from '../../../shared/services/composition.service';
 import { Customer } from '../../../shared/model/customer.model';
+import { CreditService, CreditEligibility, PAYMENT_METHODS, PaymentType } from '../../../shared/services/credit.service';
 import Swal from 'sweetalert2';
 
 interface OrderItem {
@@ -23,6 +24,8 @@ interface OrderItem {
 
 interface OrderForm {
   customerName: string;
+  /** userId del cliente en Authoriza (necesario para crédito). */
+  customerId: string;
   items: OrderItem[];
   subtotal: number;
   tax: number;
@@ -49,7 +52,15 @@ export class SaleFormComponent implements OnInit {
   customerSearchTerm = '';
   productSearchTerm = '';
   
+  // Forma de pago
+  readonly paymentMethods = PAYMENT_METHODS;
+  paymentType: PaymentType = 'CONTADO';
+  paymentMethod = 'EFECTIVO';
+  creditInfo: CreditEligibility | null = null;
+  loadingCredit = false;
+
   orderData: OrderForm = {
+    customerId: '',
     customerName: '',
     items: [],
     subtotal: 0,
@@ -69,7 +80,7 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService) {}
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -124,6 +135,11 @@ export class SaleFormComponent implements OnInit {
   }
 
   filterCustomers(): void {
+    if (this.orderData.customerId && this.customerSearchTerm !== this.orderData.customerName) {
+      this.orderData.customerId = '';
+      this.creditInfo = null;
+      this.paymentType = 'CONTADO';
+    }
     const query = this.customerSearchTerm.toLowerCase();
     if (query) {
       this.filteredCustomers = this.customers.filter(customer => {
@@ -148,8 +164,62 @@ export class SaleFormComponent implements OnInit {
 
   selectCustomer(customer: Customer): void {
     this.orderData.customerName = this.getCustomerDisplayName(customer);
+    this.orderData.customerId = customer.id || '';
     this.customerSearchTerm = this.orderData.customerName;
     this.showCustomerDropdown = false;
+    this.loadCreditInfo();
+  }
+
+  /** Crédito del cliente seleccionado: cupo, disponible, plazo y si puede comprar a crédito. */
+  private loadCreditInfo(): void {
+    this.creditInfo = null;
+    if (!this.orderData.customerId) {
+      this.paymentType = 'CONTADO';
+      return;
+    }
+    this.loadingCredit = true;
+    this.creditService.eligibility(this.orderData.customerId).subscribe({
+      next: (info) => {
+        this.creditInfo = info;
+        this.loadingCredit = false;
+        if (!info.eligible && this.paymentType === 'CREDITO') this.paymentType = 'CONTADO';
+      },
+      error: () => {
+        this.loadingCredit = false;
+        this.paymentType = 'CONTADO';
+      },
+    });
+  }
+
+  setPaymentType(type: PaymentType): void {
+    if (type === 'CREDITO' && !this.canUseCredit) return;
+    this.paymentType = type;
+  }
+
+  /** ¿El cliente seleccionado puede comprar a crédito (sin mirar el total)? */
+  get canUseCredit(): boolean {
+    return !!this.orderData.customerId && !!this.creditInfo?.eligible;
+  }
+
+  /** Motivo por el que no se puede vender a crédito (para mostrarlo). */
+  get creditBlockReason(): string | null {
+    if (!this.orderData.customerId) return 'Selecciona un cliente registrado para vender a crédito.';
+    if (this.loadingCredit) return null;
+    if (this.creditInfo && !this.creditInfo.eligible) return this.creditInfo.reason;
+    return null;
+  }
+
+  /** A crédito, el total no puede superar el cupo disponible. */
+  get exceedsCredit(): boolean {
+    return this.paymentType === 'CREDITO' && !!this.creditInfo && this.orderData.total > this.creditInfo.available + 0.005;
+  }
+
+  /** Fecha de vencimiento según la condición de pago del cliente. */
+  get creditDueDate(): Date | null {
+    if (!this.creditInfo?.termDays) return null;
+    const d = new Date();
+    d.setDate(d.getDate() + this.creditInfo.termDays);
+    return d;
   }
 
   selectProduct(product: Product): void {
@@ -242,7 +312,9 @@ export class SaleFormComponent implements OnInit {
   }
 
   canSubmit(): boolean {
-    return !!(this.orderData.customerName && this.orderData.items.length > 0);
+    if (!(this.orderData.customerName && this.orderData.items.length > 0)) return false;
+    if (this.paymentType === 'CREDITO') return this.canUseCredit && !this.exceedsCredit;
+    return !!this.paymentMethod;
   }
 
   onSubmit(): void {
@@ -257,6 +329,9 @@ export class SaleFormComponent implements OnInit {
       fltQuantity: Number(this.orderData.items[0]?.quantity) || 0,
       fltUnitPrice: Number(this.orderData.items[0]?.unitPrice) || 0,
       customerName: this.orderData.customerName,
+      customerId: this.orderData.customerId || undefined,
+      paymentType: this.paymentType,
+      paymentMethod: this.paymentType === 'CONTADO' ? this.paymentMethod : undefined,
       // productId por ítem: el backend valida y descuenta stock de TODOS
       items: this.orderData.items.map(i => ({ ...i, productName: i.product })),
       subtotal: Number(this.orderData.subtotal),
@@ -328,7 +403,11 @@ export class SaleFormComponent implements OnInit {
   }
 
   resetForm(): void {
+    this.paymentType = 'CONTADO';
+    this.paymentMethod = 'EFECTIVO';
+    this.creditInfo = null;
     this.orderData = {
+      customerId: '',
       customerName: '',
       items: [],
       subtotal: 0,

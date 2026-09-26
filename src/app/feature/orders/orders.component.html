@@ -47,6 +47,7 @@
         <span class="history-customer">{{ order.customerName || 'Sin cliente' }}</span>
         <span class="history-total">{{ formatCurrency(order.total) }}</span>
         <span class="history-date">{{ formatDate(order.updatedAt || order.createdAt) }}</span>
+        <span class="history-pay" *ngIf="order.paymentType" [class.credit]="order.paymentType === 'CREDITO'">{{ paymentLabel(order) }}</span>
         <span class="history-status" [style.background]="getStatusColor(order.status)">{{ getStatusLabel(order.status) }}</span>
       </div>
     </div>

@@ -36,10 +36,14 @@ export interface CreateSaleDto {
   fltQuantity: number;
   fltUnitPrice: number;
   customerName?: string;
+  /** userId del cliente en Authoriza (obligatorio para vender a crédito). */
+  customerId?: string;
   items?: any;
   subtotal?: number;
   tax?: number;
   total?: number;
+  paymentType?: 'CONTADO' | 'CREDITO';
+  paymentMethod?: string;
 }
 
 @Injectable({

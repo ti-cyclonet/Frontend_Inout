@@ -437,3 +437,7 @@
 }
 .detail-delivery .detail-label { display: inline-block; min-width: 72px; }
 .detail-delivery a { color: #0066cc; font-weight: 600; }
+
+/* Forma de pago en el historial */
+.history-pay { font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 10px; background: #e7f1ff; color: #0066cc; white-space: nowrap; }
+.history-pay.credit { background: #fff4e5; color: #b45309; }
