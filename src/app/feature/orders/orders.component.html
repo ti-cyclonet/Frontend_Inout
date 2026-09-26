@@ -23,6 +23,7 @@
               <div class="card-code">{{ order.orderCode }}</div>
               <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
+              <div class="card-credit" *ngIf="order.requestedPaymentType === 'CREDITO' && !order.paymentType">💳 Pide crédito</div>
               <div class="card-actions">
                 <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
                 <button class="btn-sm-cancel" *ngIf="canCancel(order)" (click)="$event.stopPropagation(); cancelOrder(order)" type="button" title="Cancelar pedido">✕ Cancelar</button>

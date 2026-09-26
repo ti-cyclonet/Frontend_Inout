@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
-import { CreditService, PAYMENT_METHODS, paymentMethodLabel } from '../../../shared/services/credit.service';
+import { CreditService, CreditSettings, PAYMENT_METHODS, paymentMethodLabel } from '../../../shared/services/credit.service';
+import { DocumentsService } from '../../../shared/services/documents.service';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 
-type View = 'summary' | 'receivables' | 'credits';
+type View = 'summary' | 'receivables' | 'credits' | 'settings';
 
 const REQUEST_LABELS: Record<string, string> = {
   SOLICITADA: 'Solicitada',
@@ -62,10 +63,20 @@ export class PortfolioComponent implements OnInit {
   accountFilter: 'all' | 'inProgress' | 'approved' | 'rejected' | 'suspended' = 'all';
   accountSearch = '';
 
+  settings: CreditSettings | null = null;
+  settingsForm: CreditSettings = { lateInterestMonthlyRate: 0, graceDays: 0, remindersEnabled: false, reminderDaysBefore: 3, overdueReminderEveryDays: 7 };
+  savingSettings = false;
+  /** Teléfono y correo de los clientes (para WhatsApp y recordatorios). */
+  private customersById = new Map<string, any>();
+
   readonly requestLabels = REQUEST_LABELS;
   readonly paymentMethods = PAYMENT_METHODS;
 
-  constructor(private creditService: CreditService, private customersService: CustomersService) {}
+  constructor(
+    private creditService: CreditService,
+    private customersService: CustomersService,
+    private documentsService: DocumentsService,
+  ) {}
 
   ngOnInit(): void {
     const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken');
@@ -73,6 +84,11 @@ export class PortfolioComponent implements OnInit {
     this.isAdmin = ['adminInout', 'admin'].includes(role);
     this.canOperate = this.isAdmin || ['operatorInout', 'operator'].includes(role);
     this.loadSummary();
+    this.loadSettings();
+    this.customersService.getCustomers().subscribe({
+      next: (list: any[]) => (list || []).forEach((c) => c.id && this.customersById.set(c.id, c)),
+      error: () => {},
+    });
   }
 
   setView(v: View): void {
@@ -80,6 +96,7 @@ export class PortfolioComponent implements OnInit {
     if (v === 'summary') this.loadSummary();
     if (v === 'receivables') this.loadReceivables();
     if (v === 'credits') this.loadAccounts();
+    if (v === 'settings') this.loadSettings();
   }
 
   refresh(): void {
@@ -162,8 +179,11 @@ export class PortfolioComponent implements OnInit {
       html: `
         <div class="pf-form">
           <p class="pf-form-head"><strong>${esc(r.documentCode)}</strong> · ${esc(r.customerName)}<br>
-            <span>Saldo pendiente: <strong>${this.formatCurrency(r.balance)}</strong></span></p>
-          <label>Valor del abono *<input id="pf-amount" type="number" min="0.01" step="0.01" class="swal2-input" value="${r.balance}"></label>
+            <span>Saldo capital: <strong>${this.formatCurrency(r.balance)}</strong></span>
+            ${r.interestPending > 0 ? `<br><span>Intereses de mora: <strong>${this.formatCurrency(r.interestPending)}</strong></span>
+              <br><span>Total adeudado: <strong>${this.formatCurrency(r.totalDue)}</strong></span>` : ''}</p>
+          ${r.interestPending > 0 ? '<p class="pf-note">El abono se aplica primero a los intereses de mora y luego al capital.</p>' : ''}
+          <label>Valor del abono *<input id="pf-amount" type="number" min="0.01" step="0.01" class="swal2-input" value="${r.totalDue}"></label>
           <label>Medio de pago *<select id="pf-method" class="swal2-select">${methods}</select></label>
           <label>Referencia<input id="pf-ref" class="swal2-input" maxlength="100" placeholder="N° de transacción, recibo…"></label>
           <label>Fecha<input id="pf-date" type="date" class="swal2-input" value="${today}" max="${today}"></label>
@@ -176,7 +196,7 @@ export class PortfolioComponent implements OnInit {
       preConfirm: () => {
         const amount = Number((document.getElementById('pf-amount') as HTMLInputElement).value);
         if (!(amount > 0)) { Swal.showValidationMessage('Ingresa un valor mayor a cero.'); return false; }
-        if (amount > r.balance + 0.005) { Swal.showValidationMessage('El abono no puede superar el saldo.'); return false; }
+        if (amount > r.totalDue + 0.005) { Swal.showValidationMessage('El abono no puede superar el total adeudado.'); return false; }
         return {
           amount,
           method: (document.getElementById('pf-method') as HTMLSelectElement).value,
@@ -189,7 +209,15 @@ export class PortfolioComponent implements OnInit {
     if (!res.isConfirmed || !res.value) return;
     this.creditService.registerPayment(r.id, res.value).subscribe({
       next: (updated: any) => {
-        Swal.fire({ icon: 'success', title: updated.status === 'PAGADA' ? '¡Cuenta saldada!' : 'Abono registrado', timer: 1500, showConfirmButton: false });
+        Swal.fire({
+          icon: 'success',
+          title: updated.status === 'PAGADA' ? '¡Cuenta saldada!' : 'Abono registrado',
+          text: updated.interestPortion > 0
+            ? `${this.formatCurrency(updated.interestPortion)} a intereses y ${this.formatCurrency(updated.capitalPortion)} a capital.`
+            : undefined,
+          timer: 2200,
+          showConfirmButton: false,
+        });
         this.loadReceivables();
       },
       error: (err) => Swal.fire('Error', err?.error?.message || 'No se pudo registrar el abono', 'error'),
@@ -201,6 +229,7 @@ export class PortfolioComponent implements OnInit {
       next: (detail) => {
         const payments = (detail.payments || []).map((p: any) => `
           <tr><td>${esc(p.paymentDate)}</td><td>${esc(paymentMethodLabel(p.method))}</td><td>${esc(p.reference || '—')}</td>
+          <td class="num">${this.formatCurrency(p.interestPortion)}</td><td class="num">${this.formatCurrency(p.capitalPortion)}</td>
           <td class="num">${this.formatCurrency(p.amount)}</td></tr>`).join('');
         Swal.fire({
           title: esc(detail.documentCode),
@@ -213,12 +242,15 @@ export class PortfolioComponent implements OnInit {
                 <div><span>Emisión</span><strong>${esc(detail.issueDate)}</strong></div>
                 <div><span>Vence</span><strong>${esc(detail.dueDate)} (${detail.termDays} días)</strong></div>
                 <div><span>Valor</span><strong>${this.formatCurrency(detail.amount)}</strong></div>
-                <div><span>Saldo</span><strong>${this.formatCurrency(detail.balance)}</strong></div>
+                <div><span>Saldo capital</span><strong>${this.formatCurrency(detail.balance)}</strong></div>
+                ${detail.interestPending > 0 || detail.interestPaid > 0 ? `
+                <div><span>Intereses pendientes</span><strong>${this.formatCurrency(detail.interestPending)}</strong></div>
+                <div><span>Intereses pagados</span><strong>${this.formatCurrency(detail.interestPaid)}</strong></div>` : ''}
               </div>
               ${detail.voidReason ? `<p class="pf-void">Anulada: ${esc(detail.voidReason)}</p>` : ''}
               <h4>Abonos</h4>
               ${payments
-                ? `<table class="pf-table"><thead><tr><th>Fecha</th><th>Medio</th><th>Referencia</th><th class="num">Valor</th></tr></thead><tbody>${payments}</tbody></table>`
+                ? `<table class="pf-table"><thead><tr><th>Fecha</th><th>Medio</th><th>Referencia</th><th class="num">A interés</th><th class="num">A capital</th><th class="num">Valor</th></tr></thead><tbody>${payments}</tbody></table>`
                 : '<p class="pf-empty">Sin abonos todavía.</p>'}
             </div>`,
           confirmButtonText: 'Cerrar',
@@ -226,6 +258,123 @@ export class PortfolioComponent implements OnInit {
         });
       },
       error: () => Swal.fire('Error', 'No se pudo cargar el detalle', 'error'),
+    });
+  }
+
+  /** Recordatorio de pago por correo (plantilla de Authoriza). */
+  remind(r: any): void {
+    this.creditService.remind(r.id).subscribe({
+      next: (res) => res.sent
+        ? Swal.fire({ icon: 'success', title: 'Recordatorio enviado', text: `Se envió a ${res.email}.`, timer: 1800, showConfirmButton: false })
+        : Swal.fire('No se envió', res.reason || 'No se pudo enviar el recordatorio.', 'info'),
+      error: (err) => Swal.fire('Error', err?.error?.message || 'No se pudo enviar el recordatorio', 'error'),
+    });
+  }
+
+  /** Recordatorio por WhatsApp (abre el chat con el mensaje listo). */
+  whatsappLink(r: any): string | null {
+    const phone = (this.customersById.get(r.customerId)?.phone || '').replace(/\D/g, '');
+    if (phone.length < 7) return null;
+    const number = phone.length === 10 && phone.startsWith('3') ? `57${phone}` : phone;
+    const status = r.isOverdue ? `está vencida hace ${r.daysOverdue} día(s)` : r.daysToDue === 0 ? 'vence hoy' : `vence el ${r.dueDate}`;
+    const msg = `Hola ${r.customerName.split(' ')[0]}, te recordamos que tu factura ${r.documentCode} ${status}. ` +
+      `Saldo a pagar: ${this.formatCurrency(r.totalDue ?? r.balance)}. ¡Gracias!`;
+    return `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
+  }
+
+  /** Estado de cuenta del cliente en PDF. */
+  downloadStatement(customerId: string, customerName: string): void {
+    this.creditService.statement(customerId).subscribe({
+      next: async (st) => {
+        const docByReceivable = new Map((st.receivables || []).map((r: any) => [r.id, r.documentCode]));
+        await this.documentsService.generateAccountStatement({
+          customerName,
+          credit: st.account ? {
+            approvedLimit: st.account.approvedLimit, available: st.account.available,
+            termDays: st.account.approvedTermDays, outstanding: st.account.outstanding, suspended: st.account.suspended,
+          } : null,
+          lateInterestMonthlyRate: this.settings?.lateInterestMonthlyRate || 0,
+          receivables: st.receivables || [],
+          payments: (st.payments || []).map((p: any) => ({
+            ...p, documentCode: docByReceivable.get(p.receivableId) || '', method: paymentMethodLabel(p.method),
+          })),
+        });
+      },
+      error: () => Swal.fire('Error', 'No se pudo generar el estado de cuenta', 'error'),
+    });
+  }
+
+  async exportReceivablesExcel(): Promise<void> {
+    const rows = this.filteredReceivables;
+    if (!rows.length) return;
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Cartera');
+    ws.addRow([`Cuentas por cobrar — ${new Date().toLocaleDateString('es-CO')}`]).font = { bold: true, size: 13 };
+    ws.addRow([]);
+    const header = ws.addRow(['Documento', 'Origen', 'Cliente', 'Emisión', 'Vence', 'Días vencida', 'Valor', 'Abonado', 'Saldo', 'Intereses', 'Total a pagar', 'Estado']);
+    header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    header.eachCell((c) => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0066CC' } }; });
+    rows.forEach((r) => ws.addRow([
+      r.documentCode, r.sourceType === 'SALE' ? 'Venta' : 'Pedido', r.customerName, r.issueDate, r.dueDate,
+      r.daysOverdue || 0, r.amount, r.paidAmount, r.balance, r.interestPending || 0, r.totalDue ?? r.balance, this.statusLabel(r),
+    ]));
+    const t = ws.addRow(['TOTAL', '', '', '', '', '',
+      rows.reduce((s, r) => s + r.amount, 0), rows.reduce((s, r) => s + r.paidAmount, 0), rows.reduce((s, r) => s + r.balance, 0),
+      rows.reduce((s, r) => s + (r.interestPending || 0), 0), rows.reduce((s, r) => s + (r.totalDue ?? r.balance), 0), '']);
+    t.font = { bold: true };
+    [16, 10, 32, 12, 12, 12, 14, 14, 14, 14, 16, 16].forEach((w, i) => (ws.getColumn(i + 1).width = w));
+    [7, 8, 9, 10, 11].forEach((c) => (ws.getColumn(c).numFmt = '"$"#,##0'));
+    const buffer = await wb.xlsx.writeBuffer();
+    const url = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Cartera_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ═══════════════ Configuración ═══════════════
+  loadSettings(): void {
+    this.creditService.getSettings().subscribe({
+      next: (s) => {
+        this.settings = s;
+        this.settingsForm = {
+          lateInterestMonthlyRate: Number(s.lateInterestMonthlyRate) || 0,
+          graceDays: s.graceDays || 0,
+          remindersEnabled: !!s.remindersEnabled,
+          reminderDaysBefore: s.reminderDaysBefore || 3,
+          overdueReminderEveryDays: s.overdueReminderEveryDays || 7,
+        };
+      },
+      error: () => {},
+    });
+  }
+
+  saveSettings(): void {
+    const f = this.settingsForm;
+    const rate = Number(f.lateInterestMonthlyRate);
+    if (!(rate >= 0 && rate <= 10)) {
+      Swal.fire('Revisa la tasa', 'La tasa de mora mensual debe estar entre 0 % y 10 %.', 'warning');
+      return;
+    }
+    this.savingSettings = true;
+    this.creditService.updateSettings({
+      lateInterestMonthlyRate: rate,
+      graceDays: Math.max(0, Math.round(Number(f.graceDays) || 0)),
+      remindersEnabled: !!f.remindersEnabled,
+      reminderDaysBefore: Math.min(30, Math.max(1, Math.round(Number(f.reminderDaysBefore) || 3))),
+      overdueReminderEveryDays: Math.min(60, Math.max(1, Math.round(Number(f.overdueReminderEveryDays) || 7))),
+    }).subscribe({
+      next: (s) => {
+        this.settings = s;
+        this.savingSettings = false;
+        Swal.fire({ icon: 'success', title: 'Configuración guardada', timer: 1400, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingSettings = false;
+        Swal.fire('Error', err?.error?.message || 'No se pudo guardar la configuración', 'error');
+      },
     });
   }
 

@@ -441,3 +441,4 @@
 /* Forma de pago en el historial */
 .history-pay { font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 10px; background: #e7f1ff; color: #0066cc; white-space: nowrap; }
 .history-pay.credit { background: #fff4e5; color: #b45309; }
+.card-credit { display: inline-block; margin-top: 0.25rem; padding: 0.1rem 0.45rem; border-radius: 8px; background: #fff4e5; color: #b45309; font-size: 0.68rem; font-weight: 600; }

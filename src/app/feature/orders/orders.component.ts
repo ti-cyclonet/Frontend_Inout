@@ -37,6 +37,7 @@ interface Order {
   deliveryLatitude?: number | string | null;
   paymentType?: string | null;
   paymentMethod?: string | null;
+  requestedPaymentType?: string | null;
   deliveryLongitude?: number | string | null;
   cancelledAt?: string | null;
   subtotal: number;
@@ -167,6 +168,8 @@ export class OrdersComponent implements OnInit {
       const money = (v: number) => this.formatCurrency(v);
       const total = Number(order.total) || 0;
       const creditOk = !!credit?.eligible && total <= (credit?.available || 0) + 0.005;
+      // El cliente lo pidió a crédito en el MarketPlace: se preselecciona
+      const preferCredit = creditOk && order.requestedPaymentType === 'CREDITO';
       const creditReason = !order.customerId
         ? 'El pedido no tiene un cliente registrado (compra de invitado).'
         : !credit ? 'No se pudo consultar el crédito del cliente.'
@@ -179,9 +182,10 @@ export class OrdersComponent implements OnInit {
         html: `
           <div class="invoice-pay">
             <p class="ip-total">Total a facturar <strong>${money(total)}</strong></p>
-            <label class="ip-option"><input type="radio" name="ip-type" value="CONTADO" checked> <span><strong>Contado</strong> — medio de pago:
+            ${order.requestedPaymentType === 'CREDITO' ? '<p class="ip-requested">El cliente pidió este pedido <strong>a crédito</strong> desde el MarketPlace.</p>' : ''}
+            <label class="ip-option"><input type="radio" name="ip-type" value="CONTADO" ${preferCredit ? '' : 'checked'}> <span><strong>Contado</strong> — medio de pago:
               <select id="ip-method" class="swal2-select ip-select">${methods}</select></span></label>
-            <label class="ip-option ${creditOk ? '' : 'disabled'}"><input type="radio" name="ip-type" value="CREDITO" ${creditOk ? '' : 'disabled'}> <span><strong>Crédito</strong>${
+            <label class="ip-option ${creditOk ? '' : 'disabled'}"><input type="radio" name="ip-type" value="CREDITO" ${creditOk ? '' : 'disabled'} ${preferCredit ? 'checked' : ''}> <span><strong>Crédito</strong>${
               credit && credit.approvedLimit > 0
                 ? ` — ${credit.termDays} días · disponible ${money(credit.available)}`
                 : ''

@@ -149,6 +149,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   clientProfile: any = null;
   /** Menú de la sesión junto al carrito. */
   sessionMenuOpen = false;
+  /** Crédito del cliente con sesión en esta tienda (cupo, disponible, trámite). */
+  clientCredit: any = null;
+  /** Forma de pago elegida en el checkout con sesión. */
+  paymentPreference: 'CONTADO' | 'CREDITO' = 'CONTADO';
   /** Ubicación exacta de entrega capturada con el GPS del navegador. */
   deliveryLocation: { lat: number; lng: number; accuracy: number } | null = null;
   geoLoading = false;
@@ -1228,6 +1232,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (profile) this.prefillFromProfile(profile);
       else this.fetchClientProfile();
       this.prefillFromLastOrder();
+      this.loadClientCredit();
     } else {
       sessionStorage.removeItem(this.clientTokenKey);
       sessionStorage.removeItem(this.clientProfileKey);
@@ -1243,6 +1248,97 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       .filter(Boolean).join(' ').trim();
     if (!this.checkoutData.customerName.trim() && fullName) this.checkoutData.customerName = fullName;
     if (!this.checkoutData.customerPhone.trim() && profile.phone) this.checkoutData.customerPhone = profile.phone;
+  }
+
+  // ═══════ CRÉDITO DEL CLIENTE EN LA TIENDA ═══════
+
+  /** Crédito del cliente con sesión: cupo, disponible, plazo y estado del trámite. */
+  private loadClientCredit(): void {
+    if (!this.clientToken) return;
+    fetch(`${this.baseUrl}/credit/marketplace/me`, { headers: { Authorization: `Bearer ${this.clientToken}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((c) => {
+        this.clientCredit = c;
+        if (!this.canPayWithCredit) this.paymentPreference = 'CONTADO';
+      })
+      .catch(() => { this.clientCredit = null; });
+  }
+
+  /** Crédito aprobado, sin mora, y el total cabe en el cupo disponible. */
+  get canPayWithCredit(): boolean {
+    const e = this.clientCredit?.eligibility;
+    return !!e?.eligible && this.getCartTotal() <= (e.available || 0) + 0.005;
+  }
+
+  /** Texto de estado del crédito para el checkout (o null si no aplica). */
+  get creditStatusText(): string | null {
+    const c = this.clientCredit;
+    if (!c) return null;
+    const e = c.eligibility;
+    if (c.suspended) return 'Tu crédito en esta tienda está suspendido.';
+    if (e?.approvedLimit > 0 && !e.eligible) return e.reason;
+    if (e?.eligible && this.getCartTotal() > e.available) return `Tu pedido supera tu cupo disponible (${this.formatCurrency(e.available)}).`;
+    if (['SOLICITADA', 'VALIDADA', 'CUPO_ASIGNADO'].includes(c.requestStatus)) return 'Tu solicitud de crédito está en trámite. Te avisaremos cuando sea aprobada.';
+    if (c.requestStatus === 'RECHAZADA' && !(e?.approvedLimit > 0)) return `Tu solicitud de crédito no fue aprobada${c.rejectionReason ? ': ' + c.rejectionReason : ''}.`;
+    return null;
+  }
+
+  /** ¿Puede enviar una nueva solicitud (no tiene una en trámite)? */
+  get canRequestCredit(): boolean {
+    const c = this.clientCredit;
+    return !!c && !['SOLICITADA', 'VALIDADA', 'CUPO_ASIGNADO'].includes(c.requestStatus);
+  }
+
+  async requestCredit(): Promise<void> {
+    if (!this.clientToken) return;
+    const approved = this.clientCredit?.eligibility?.approvedLimit > 0;
+    const res = await Swal.fire({
+      title: approved ? 'Solicitar aumento de cupo' : 'Solicitar crédito',
+      html: `
+        <div class="pf-form">
+          <p class="pf-note">${this.businessName ? `<strong>${this.escapeHtml(this.businessName)}</strong> revisará` : 'El negocio revisará'} tu solicitud y te informará la decisión. Si es aprobada podrás pagar tus pedidos a crédito, dentro de tu cupo y plazo.</p>
+          <label>Cupo que solicitas *<input id="mc-amount" type="number" min="1" step="1000" class="swal2-input" placeholder="Ej.: 500000"></label>
+          <label>Plazo para pagar *
+            <select id="mc-term" class="swal2-select">
+              ${[8, 15, 30, 45, 60].map((d) => `<option value="${d}" ${d === 30 ? 'selected' : ''}>${d} días</option>`).join('')}
+            </select></label>
+          <label>Comentarios<textarea id="mc-notes" class="swal2-textarea" maxlength="1000" placeholder="Ej.: compro semanalmente para mi tienda"></textarea></label>
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Enviar solicitud',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e65c00',
+      preConfirm: () => {
+        const amount = Number((document.getElementById('mc-amount') as HTMLInputElement).value);
+        if (!(amount > 0)) { Swal.showValidationMessage('Indica el cupo que solicitas.'); return false; }
+        return {
+          requestedAmount: amount,
+          requestedTermDays: Number((document.getElementById('mc-term') as HTMLSelectElement).value),
+          notes: (document.getElementById('mc-notes') as HTMLTextAreaElement).value.trim() || undefined,
+          customerName: this.clientDisplayName || this.clientEmail,
+        };
+      },
+    });
+    if (!res.isConfirmed || !res.value) return;
+    try {
+      const r = await fetch(`${this.baseUrl}/credit/marketplace/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.clientToken}` },
+        body: JSON.stringify(res.value),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.message || 'No se pudo enviar la solicitud.');
+      Swal.fire({ icon: 'success', title: 'Solicitud enviada', text: 'Te avisaremos cuando el negocio la revise.', timer: 2200, showConfirmButton: false });
+      this.loadClientCredit();
+    } catch (err: any) {
+      Swal.fire('Error', err?.message || 'No se pudo enviar la solicitud.', 'error');
+    }
+  }
+
+  private escapeHtml(v: string): string {
+    return String(v ?? '').replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>
+    )[c]);
   }
 
   /** Perfil de la cuenta desde Authoriza (sesiones abiertas antes de guardar el perfil). */
@@ -1348,6 +1444,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       firstName: this.registerData.firstName, firstSurname: this.registerData.firstSurname, phone: this.registerData.phone,
     });
     this.prefillFromLastOrder();
+    this.loadClientCredit();
     // Aceptó estas mismas versiones al crear/vincular su cuenta
     if (this.accountConsents.terms && this.accountConsents.habeasData) {
       this.orderConsents = { terms: true, habeasData: true };
@@ -1518,6 +1615,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.clientLoggedIn = false;
     this.clientEmail = '';
     this.clientProfile = null;
+    this.clientCredit = null;
+    this.paymentPreference = 'CONTADO';
     this.sessionMenuOpen = false;
     this.setAccountMode('guest');
   }
@@ -1568,6 +1667,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       total: Number(subtotal),
       ...(this.clientLoggedIn ? {} : this.consentPayload()),
       ...(this.deliveryLocation ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
+      ...(this.clientLoggedIn ? { paymentPreference: this.canPayWithCredit && this.paymentPreference === 'CREDITO' ? 'CREDITO' : 'CONTADO' } : {}),
     };
 
     const onSuccess = (response: any) => {
@@ -1579,6 +1679,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (this.clientLoggedIn) {
         this.prefillFromProfile(this.clientProfile);
         this.prefillFromLastOrder();
+        this.loadClientCredit();
+        this.paymentPreference = 'CONTADO';
       }
 
       if (response.whatsapp) {

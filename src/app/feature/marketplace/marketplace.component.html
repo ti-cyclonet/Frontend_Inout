@@ -25,6 +25,12 @@
             <div class="session-menu" *ngIf="clientLoggedIn && sessionMenuOpen">
               <strong>{{ clientDisplayName }}</strong>
               <small>{{ clientEmail }}</small>
+              <small class="menu-credit" *ngIf="clientCredit?.eligibility?.approvedLimit > 0">
+                Crédito disponible: <strong>{{ formatCurrency(clientCredit.eligibility.available) }}</strong>
+              </small>
+              <a href="javascript:void(0)" class="menu-link" *ngIf="canRequestCredit" (click)="sessionMenuOpen = false; requestCredit()">
+                {{ clientCredit?.eligibility?.approvedLimit > 0 ? 'Solicitar aumento de cupo' : 'Solicitar crédito' }}
+              </a>
               <button type="button" (click)="clientLogout()">Cerrar sesión</button>
             </div>
           </div>
@@ -419,9 +425,23 @@
         <h3 class="checkout-subtitle">🧾 Detalles del pedido</h3>
         <ng-container *ngTemplateOutlet="cartItems"></ng-container>
 
-        <div class="checkout-payment-info">
-          💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
+        <!-- Forma de pago (con sesión): contra entrega o a crédito -->
+        <div class="pay-options">
+          <label class="pay-option" [class.active]="paymentPreference === 'CONTADO'">
+            <input type="radio" name="mkPay" value="CONTADO" [(ngModel)]="paymentPreference">
+            <span><strong>💵 Contra entrega</strong><small>Pagas cuando recibas tu pedido.</small></span>
+          </label>
+          <label class="pay-option" [class.active]="paymentPreference === 'CREDITO'" [class.disabled]="!canPayWithCredit" *ngIf="clientCredit?.eligibility?.approvedLimit > 0">
+            <input type="radio" name="mkPay" value="CREDITO" [(ngModel)]="paymentPreference" [disabled]="!canPayWithCredit">
+            <span><strong>💳 A crédito</strong>
+              <small>Disponible {{ formatCurrency(clientCredit.eligibility.available) }} · pagas a {{ clientCredit.eligibility.termDays }} días</small></span>
+          </label>
         </div>
+        <p class="credit-status" *ngIf="creditStatusText">{{ creditStatusText }}</p>
+        <a href="javascript:void(0)" class="credit-request-link" *ngIf="canRequestCredit" (click)="requestCredit()">
+          {{ clientCredit?.eligibility?.approvedLimit > 0 ? 'Solicitar aumento de cupo' : '¿Compras con frecuencia? Solicita crédito en esta tienda' }}
+        </a>
+
         <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || cart.length === 0">
           {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
         </button>
