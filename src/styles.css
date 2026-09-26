@@ -138,4 +138,5 @@ footer {
 .swal2-popup .pf-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid #f1f3f5; }
 .swal2-popup .pf-table .num { text-align: right; }
 .swal2-popup .pf-empty { color: #6b7280; font-size: 0.82rem; }
+.invoice-pay .ip-requested { margin: 0 0 0.7rem; padding: 0.5rem 0.7rem; border-radius: 8px; background: #fff4e5; color: #92400e; font-size: 0.82rem; }
 

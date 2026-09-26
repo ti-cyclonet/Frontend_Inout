@@ -2504,3 +2504,17 @@
   .session-name { display: none; }
   .session-chip { padding: 0.2rem; }
 }
+
+/* ═══════ Forma de pago y crédito del cliente ═══════ */
+.pay-options { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0 0.5rem; }
+.pay-option { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.7rem 0.85rem; border: 1.5px solid #e5e7eb; border-radius: 10px; cursor: pointer; }
+.pay-option input { margin-top: 0.2rem; accent-color: #e65c00; }
+.pay-option span { display: flex; flex-direction: column; gap: 0.1rem; }
+.pay-option strong { font-size: 0.9rem; color: #1f2937; }
+.pay-option small { font-size: 0.78rem; color: #6b7280; }
+.pay-option.active { border-color: #ff7000; background: #fff8f1; }
+.pay-option.disabled { opacity: 0.55; cursor: not-allowed; }
+.credit-status { margin: 0 0 0.4rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: #fffbeb; color: #92400e; font-size: 0.8rem; }
+.credit-request-link { display: inline-block; margin: 0 0 0.9rem; font-size: 0.83rem; font-weight: 600; color: #0066cc; cursor: pointer; }
+.session-menu .menu-credit { margin-top: 0.3rem; color: #065f46; }
+.session-menu .menu-link { margin-top: 0.35rem; font-size: 0.8rem; font-weight: 600; color: #0066cc; cursor: pointer; }

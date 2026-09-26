@@ -33,6 +33,17 @@ export interface CreditEligibility {
   reason: string | null;
 }
 
+export interface CreditSettings {
+  id?: string;
+  tenantId?: string;
+  lateInterestMonthlyRate: number;
+  graceDays: number;
+  remindersEnabled: boolean;
+  reminderDaysBefore: number;
+  overdueReminderEveryDays: number;
+  updatedAt?: string;
+}
+
 /** Crédito a clientes (flujo del cupo) y cartera (cuentas por cobrar y abonos). */
 @Injectable({ providedIn: 'root' })
 export class CreditService {
@@ -87,5 +98,17 @@ export class CreditService {
   }
   voidReceivable(id: string, reason: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/receivables/${id}/void`, { reason });
+  }
+  /** Envía por correo el recordatorio de pago de esa cuenta al cliente. */
+  remind(id: string): Observable<{ sent: boolean; email?: string; reason?: string }> {
+    return this.http.post<{ sent: boolean; email?: string; reason?: string }>(`${this.apiUrl}/receivables/${id}/remind`, {});
+  }
+
+  // Configuración: intereses de mora y recordatorios
+  getSettings(): Observable<CreditSettings> {
+    return this.http.get<CreditSettings>(`${this.apiUrl}/settings`);
+  }
+  updateSettings(data: Omit<CreditSettings, 'id' | 'tenantId' | 'updatedAt'>): Observable<CreditSettings> {
+    return this.http.patch<CreditSettings>(`${this.apiUrl}/settings`, data);
   }
 }

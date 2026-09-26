@@ -7,6 +7,7 @@
       <button type="button" [class.active]="view === 'credits'" (click)="setView('credits')">
         Créditos <span class="pf-badge" *ngIf="summary?.credit?.pendingRequests">{{ summary.credit.pendingRequests }}</span>
       </button>
+      <button type="button" [class.active]="view === 'settings'" (click)="setView('settings')">Configuración</button>
     </div>
     <button type="button" class="pf-btn" (click)="refresh()">Actualizar</button>
   </div>
@@ -24,7 +25,7 @@
         <div class="kpi danger">
           <span class="kpi-label">Vencida</span>
           <strong>{{ formatCurrency(summary.overdue) }}</strong>
-          <small>{{ summary.overdueCount }} cuenta(s)</small>
+          <small>{{ summary.overdueCount }} cuenta(s)<ng-container *ngIf="summary.interestPending > 0"> · + {{ formatCurrency(summary.interestPending) }} de mora</ng-container></small>
         </div>
         <div class="kpi ok">
           <span class="kpi-label">Al día</span>
@@ -85,9 +86,12 @@
         <button type="button" [class.active]="receivableStatus === 'ANULADA'" (click)="receivableStatus = 'ANULADA'; loadReceivables()">Anuladas</button>
         <button type="button" [class.active]="receivableStatus === ''" (click)="receivableStatus = ''; loadReceivables()">Todas</button>
       </div>
-      <div class="pf-search">
-        <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#search" /></svg>
-        <input type="search" [(ngModel)]="receivableSearch" placeholder="Buscar cliente o documento" aria-label="Buscar cuentas por cobrar">
+      <div class="pf-toolbar-right">
+        <div class="pf-search">
+          <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#search" /></svg>
+          <input type="search" [(ngModel)]="receivableSearch" placeholder="Buscar cliente o documento" aria-label="Buscar cuentas por cobrar">
+        </div>
+        <button type="button" class="pf-btn" (click)="exportReceivablesExcel()" [disabled]="!filteredReceivables.length">Excel</button>
       </div>
     </div>
 
@@ -117,11 +121,16 @@
             <td>{{ r.dueDate | date:'dd/MM/yyyy' }}<small class="d-block" [class.text-danger]="r.isOverdue">{{ dueHint(r) }}</small></td>
             <td class="num hide-sm">{{ formatCurrency(r.amount) }}</td>
             <td class="num hide-sm">{{ formatCurrency(r.paidAmount) }}</td>
-            <td class="num strong">{{ formatCurrency(r.balance) }}</td>
+            <td class="num strong">{{ formatCurrency(r.balance) }}<small class="d-block text-danger" *ngIf="r.interestPending > 0">+ {{ formatCurrency(r.interestPending) }} mora</small></td>
             <td><span class="st" [ngClass]="statusClass(r)">{{ statusLabel(r) }}</span></td>
             <td class="actions-col">
               <button type="button" class="pf-btn primary sm" *ngIf="canOperate && (r.status === 'PENDIENTE' || r.status === 'PARCIAL')" (click)="registerPayment(r)">Abonar</button>
               <button type="button" class="pf-btn sm" (click)="viewReceivable(r)">Ver</button>
+              <ng-container *ngIf="canOperate && (r.status === 'PENDIENTE' || r.status === 'PARCIAL')">
+                <button type="button" class="pf-btn sm" (click)="remind(r)" title="Enviar recordatorio por correo">Recordar</button>
+                <a class="pf-btn sm wa" *ngIf="whatsappLink(r) as wa" [href]="wa" target="_blank" rel="noopener" title="Recordar por WhatsApp">WhatsApp</a>
+              </ng-container>
+              <button type="button" class="pf-btn sm" (click)="downloadStatement(r.customerId, r.customerName)" title="Estado de cuenta del cliente (PDF)">Estado</button>
               <button type="button" class="pf-btn danger sm" *ngIf="isAdmin && r.status === 'PENDIENTE' && !r.paidAmount" (click)="voidReceivable(r)">Anular</button>
             </td>
           </tr>
@@ -201,8 +210,53 @@
           <button type="button" class="pf-btn sm" *ngIf="canOperate && !isInProgress(a)" (click)="newRequest(a)">Solicitar ajuste</button>
           <button type="button" class="pf-btn sm" *ngIf="isAdmin && a.approvedLimit > 0" (click)="toggleSuspend(a)">{{ a.suspended ? 'Reactivar' : 'Suspender' }}</button>
           <button type="button" class="pf-btn sm" (click)="openCustomerReceivables(a.customerName)" *ngIf="a.outstanding > 0">Ver cartera</button>
+          <button type="button" class="pf-btn sm" (click)="downloadStatement(a.customerId, a.customerName)">Estado de cuenta</button>
           <button type="button" class="pf-btn sm" (click)="showHistory(a)">Historial</button>
         </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ═══════ CONFIGURACIÓN ═══════ -->
+  <ng-container *ngIf="view === 'settings'">
+    <div class="pf-settings">
+      <div class="pf-card">
+        <h4>Intereses de mora</h4>
+        <p class="pf-muted">Se causan sobre el saldo de capital vencido, por día (tasa mensual ÷ 30), después de los días de gracia. Los abonos se aplican primero a los intereses y luego al capital.</p>
+        <div class="pf-fields">
+          <label>Tasa de mora mensual (%)
+            <input type="number" min="0" max="10" step="0.01" class="form-control form-control-sm" [(ngModel)]="settingsForm.lateInterestMonthlyRate" [disabled]="!isAdmin">
+          </label>
+          <label>Días de gracia
+            <input type="number" min="0" max="90" step="1" class="form-control form-control-sm" [(ngModel)]="settingsForm.graceDays" [disabled]="!isAdmin">
+          </label>
+        </div>
+        <p class="pf-legal">⚠️ La tasa no puede superar la <strong>tasa de usura</strong> vigente certificada por la Superintendencia Financiera de Colombia (1,5 veces el interés bancario corriente). Verifícala cada mes. Deja 0 para no cobrar intereses.</p>
+      </div>
+
+      <div class="pf-card">
+        <h4>Recordatorios automáticos</h4>
+        <p class="pf-muted">Todos los días a las 8:00 a. m. se envía un correo al cliente con el saldo, los intereses y la fecha de vencimiento. Se usa el correo registrado en su crédito.</p>
+        <label class="pf-switch">
+          <input type="checkbox" [(ngModel)]="settingsForm.remindersEnabled" [disabled]="!isAdmin">
+          Enviar recordatorios automáticos por correo
+        </label>
+        <div class="pf-fields" [class.disabled]="!settingsForm.remindersEnabled">
+          <label>Avisar antes del vencimiento (días)
+            <input type="number" min="1" max="30" step="1" class="form-control form-control-sm" [(ngModel)]="settingsForm.reminderDaysBefore" [disabled]="!isAdmin || !settingsForm.remindersEnabled">
+          </label>
+          <label>Repetir a cuentas vencidas cada (días)
+            <input type="number" min="1" max="60" step="1" class="form-control form-control-sm" [(ngModel)]="settingsForm.overdueReminderEveryDays" [disabled]="!isAdmin || !settingsForm.remindersEnabled">
+          </label>
+        </div>
+        <p class="pf-muted">También se avisa el día del vencimiento. Desde Cuentas por cobrar puedes enviar un recordatorio manual por correo o por WhatsApp.</p>
+      </div>
+
+      <div class="pf-settings-actions">
+        <span class="pf-muted" *ngIf="!isAdmin">Solo un administrador puede cambiar esta configuración.</span>
+        <button type="button" class="pf-btn primary" *ngIf="isAdmin" (click)="saveSettings()" [disabled]="savingSettings">
+          {{ savingSettings ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
       </div>
     </div>
   </ng-container>

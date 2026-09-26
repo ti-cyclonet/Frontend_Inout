@@ -479,6 +479,7 @@ export class DocumentsService {
         this.formatNumber(r.plannedUnits),
         this.formatCurrency(r.plannedValue),
       ]),
+      ...this.getTableStyles(),
       columnStyles: {
         0: { cellWidth: 10, halign: 'center' },
         6: { halign: 'right' },
@@ -486,7 +487,6 @@ export class DocumentsService {
         8: { halign: 'right', fontStyle: 'bold' },
         9: { halign: 'right' },
       },
-      ...this.getTableStyles(),
     });
 
     this.drawTotals(doc, [
@@ -497,6 +497,105 @@ export class DocumentsService {
     this.drawFooter(doc);
     const safeName = (data.periodName || 'periodo').replace(/[^A-Za-z0-9_-]+/g, '_');
     doc.save(`Plan_Produccion_${safeName}.pdf`);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ESTADO DE CUENTA DE CLIENTE (cartera)
+  // ═══════════════════════════════════════════════════════
+  async generateAccountStatement(data: {
+    customerName: string;
+    credit?: { approvedLimit: number; available: number; termDays: number; outstanding: number; suspended?: boolean } | null;
+    lateInterestMonthlyRate?: number;
+    receivables: {
+      documentCode: string; sourceType: string; issueDate: string; dueDate: string; amount: number;
+      paidAmount: number; balance: number; interestPending: number; status: string; daysOverdue: number;
+    }[];
+    payments: { paymentDate: string; documentCode: string; method: string; reference?: string | null; amount: number; interestPortion: number; capitalPortion: number }[];
+  }): Promise<void> {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    const today = new Date().toISOString().slice(0, 10);
+    this.drawHeader(doc, 'ESTADO DE CUENTA', today);
+
+    let y = 50;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(31, 41, 55);
+    doc.text(`Cliente: ${data.customerName}`, 15, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(55, 65, 81);
+    if (data.credit && data.credit.approvedLimit > 0) {
+      y += 6;
+      doc.text(
+        `Cupo: ${this.formatCurrency(data.credit.approvedLimit)} · Disponible: ${this.formatCurrency(data.credit.available)} · ` +
+        `Condición de pago: ${data.credit.termDays} días${data.credit.suspended ? ' · CRÉDITO SUSPENDIDO' : ''}`,
+        15, y,
+      );
+    }
+    if (data.lateInterestMonthlyRate) {
+      y += 6;
+      doc.text(`Interés de mora: ${data.lateInterestMonthlyRate}% mensual sobre saldos vencidos.`, 15, y);
+    }
+
+    const statusText = (r: any) =>
+      r.status === 'PAGADA' ? 'Pagada' : r.status === 'ANULADA' ? 'Anulada'
+        : r.daysOverdue > 0 ? `Vencida ${r.daysOverdue} d` : r.status === 'PARCIAL' ? 'Abonada' : 'Pendiente';
+
+    autoTable(doc, {
+      startY: y + 8,
+      head: [['Documento', 'Origen', 'Emisión', 'Vence', 'Valor', 'Abonado', 'Saldo', 'Interés', 'Estado']],
+      body: data.receivables.map((r) => [
+        r.documentCode,
+        r.sourceType === 'SALE' ? 'Venta' : 'Pedido',
+        this.formatDate(r.issueDate),
+        this.formatDate(r.dueDate),
+        this.formatCurrency(r.amount),
+        this.formatCurrency(r.paidAmount),
+        this.formatCurrency(r.balance),
+        this.formatCurrency(r.interestPending),
+        statusText(r),
+      ]),
+      ...this.getTableStyles(),
+      columnStyles: { 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right', fontStyle: 'bold' }, 7: { halign: 'right' } },
+      styles: { fontSize: 7.5 },
+    });
+
+    const open = data.receivables.filter((r) => r.status === 'PENDIENTE' || r.status === 'PARCIAL');
+    const capital = open.reduce((s, r) => s + r.balance, 0);
+    const interest = open.reduce((s, r) => s + r.interestPending, 0);
+    const overdue = open.filter((r) => r.daysOverdue > 0).reduce((s, r) => s + r.balance, 0);
+    this.drawTotals(doc, [
+      { label: 'Saldo capital:', value: this.formatCurrency(capital) },
+      { label: 'De ello vencido:', value: this.formatCurrency(overdue) },
+      { label: 'Intereses de mora:', value: this.formatCurrency(interest) },
+      { label: 'Total a pagar:', value: this.formatCurrency(capital + interest), bold: true },
+    ]);
+
+    if (data.payments.length) {
+      const startY = (doc as any).lastAutoTable.finalY + 45;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('Abonos recibidos', 15, startY - 4);
+      autoTable(doc, {
+        startY,
+        head: [['Fecha', 'Documento', 'Medio', 'Referencia', 'A intereses', 'A capital', 'Valor']],
+        body: data.payments.map((p) => [
+          this.formatDate(p.paymentDate), p.documentCode, p.method, p.reference || '-',
+          this.formatCurrency(p.interestPortion), this.formatCurrency(p.capitalPortion), this.formatCurrency(p.amount),
+        ]),
+        ...this.getTableStyles(),
+        columnStyles: { 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right', fontStyle: 'bold' } },
+        styles: { fontSize: 7.5 },
+      });
+    }
+
+    this.drawFooter(doc);
+    const safe = (data.customerName || 'cliente').replace(/[^A-Za-z0-9_-]+/g, '_');
+    doc.save(`Estado_de_cuenta_${safe}_${today}.pdf`);
   }
 
   private formatNumber(value: number): string {
