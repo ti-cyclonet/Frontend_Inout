@@ -391,7 +391,10 @@
       <h2>¡Pedido Confirmado!</h2>
       <p class="order-code">{{ orderSuccess.order?.orderCode }}</p>
       <p>Tu pedido ha sido recibido. Te contactaremos pronto para coordinar la entrega.</p>
-      <p class="payment-note">💵 Pago contra-entrega</p>
+      <p class="payment-note payment-note-credit" *ngIf="orderSuccess.order?.requestedPaymentType === 'CREDITO'; else cashNote">
+        💳 A crédito — se cargará a tu cupo al facturar el pedido
+      </p>
+      <ng-template #cashNote><p class="payment-note">💵 Pago contra-entrega</p></ng-template>
       <button class="btn-checkout-primary" (click)="closeCheckout()">Cerrar</button>
     </div>
 

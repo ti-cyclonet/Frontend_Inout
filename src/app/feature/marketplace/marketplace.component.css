@@ -1906,6 +1906,11 @@
   font-size: 0.85rem;
 }
 
+.payment-note-credit {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
 /* ═══════ SLUG EDITOR ═══════ */
 .slug-editor .input-group-text {
   font-size: 0.78rem;

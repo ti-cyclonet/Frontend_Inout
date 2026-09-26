@@ -1702,7 +1702,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       }
 
       if (response.whatsapp) {
-        const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}`);
+        const pago = response.order?.requestedPaymentType === 'CREDITO' ? ' - A crédito' : ' - Contra-entrega';
+        const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}${pago}`);
         window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
       }
     };
