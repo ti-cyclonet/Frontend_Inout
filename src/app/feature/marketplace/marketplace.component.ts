@@ -144,6 +144,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   orderConsents = { terms: false, habeasData: false };
   verifyEmail = '';
   verifyCode = '';
+  /** La cuenta aún no autorizó sus datos ante esta tienda: se piden junto con el código. */
+  verifyConsentRequired = false;
   showRegisterPassword = false;
   /** Datos de la cuenta del cliente con sesión (Authoriza), para el pedido. */
   clientProfile: any = null;
@@ -1420,6 +1422,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (result?.verificationRequired) {
       this.verifyEmail = email;
       this.verifyCode = '';
+      this.verifyConsentRequired = !!result.consentRequired;
+      if (this.verifyConsentRequired) this.accountConsents = { terms: false, habeasData: false };
       this.authStep = 'verify';
       this.authInfo = result.message || 'Te enviamos un código a tu correo.';
       return;
@@ -1584,12 +1588,26 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.authError = 'Ingresa el código de 6 dígitos.';
       return;
     }
+    if (this.verifyConsentRequired && (!this.accountConsents.terms || !this.accountConsents.habeasData)) {
+      this.authError = 'Debes aceptar los Términos y la autorización de tratamiento de datos.';
+      return;
+    }
     this.authLoading = true;
     this.authError = '';
     try {
-      const result = await this.authPost('verify', { email: this.verifyEmail, code });
+      const consents = this.verifyConsentRequired ? this.consentPayload() : {};
+      const result = await this.authPost('verify', { email: this.verifyEmail, code, ...consents });
+      this.verifyConsentRequired = false;
       this.applyClientToken(result?.access_token, result?.profile);
     } catch (err: any) {
+      if (err?.code === 'CONSENT_REQUIRED' && !this.verifyConsentRequired) {
+        // El código es válido pero falta la autorización ante esta tienda:
+        // se muestran los checks y se reintenta con el mismo código
+        this.verifyConsentRequired = true;
+        this.accountConsents = { terms: false, habeasData: false };
+        this.authError = 'Acepta los Términos y la autorización de datos de esta tienda para continuar.';
+        return;
+      }
       this.authError = err?.message || 'No se pudo confirmar el código.';
     } finally {
       this.authLoading = false;

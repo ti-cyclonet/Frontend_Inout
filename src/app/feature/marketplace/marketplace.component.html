@@ -474,8 +474,14 @@
             <p class="account-panel-text">Escribe el código de 6 dígitos que enviamos a <strong>{{ verifyEmail }}</strong>. Vence en 30 minutos.</p>
             <input class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
                    placeholder="••••••" [(ngModel)]="verifyCode" (keyup.enter)="verifyClientCode()" aria-label="Código de verificación">
+            <ng-container *ngIf="verifyConsentRequired">
+              <p class="account-panel-text">Para ser cliente de {{ businessName || 'esta tienda' }} debes aceptar:</p>
+              <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: accountConsents, id: 'verify' }"></ng-container>
+            </ng-container>
             <p class="account-error" *ngIf="authError">{{ authError }}</p>
-            <button type="button" class="btn-account" [disabled]="authLoading" (click)="verifyClientCode()">
+            <button type="button" class="btn-account"
+                    [disabled]="authLoading || (verifyConsentRequired && (!accountConsents.terms || !accountConsents.habeasData))"
+                    (click)="verifyClientCode()">
               {{ authLoading ? 'Confirmando…' : 'Confirmar correo' }}
             </button>
             <div class="account-links">
