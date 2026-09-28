@@ -128,6 +128,23 @@
               <small class="text-muted">Solo letras, números y guiones. Este será el enlace público de tu catálogo.</small>
               <div *ngIf="slugError" class="text-danger mt-1" style="font-size: 0.8rem;">{{ slugError }}</div>
               <div *ngIf="slugSuccess" class="text-success mt-1" style="font-size: 0.8rem;">{{ slugSuccess }}</div>
+
+              <!-- URL pública ya guardada: enlace completo + copiar -->
+              <div *ngIf="savedSlug" class="saved-url-box mt-2">
+                <span class="saved-url-label">Tu tienda está publicada en:</span>
+                <div class="saved-url-row">
+                  <a [href]="getStoreUrl()" target="_blank" rel="noopener" class="saved-url-link" [title]="getStoreUrl()">
+                    {{ getStoreUrl() }}
+                  </a>
+                  <button type="button" class="btn btn-sm saved-url-copy"
+                          [class.copied]="slugCopied"
+                          (click)="copyStoreUrl()"
+                          [title]="slugCopied ? 'Copiado' : 'Copiar enlace'">
+                    <i class="bi" [class.bi-clipboard]="!slugCopied" [class.bi-check2]="slugCopied"></i>
+                    <span class="ms-1">{{ slugCopied ? 'Copiado' : 'Copiar' }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <hr>

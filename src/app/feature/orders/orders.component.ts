@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -59,6 +59,26 @@ interface OrderStats {
   CANCELLED: number;
 }
 
+/** Tiempos por etapa y cola de producción (GET /orders/queue). */
+interface QueueInfo {
+  orderId: string;
+  stageDueAt: string | null;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
+  queuePosition: number | null;
+  waitMinutes: number | null;
+  estimatedStartAt: string | null;
+  estimatedReadyAt: string | null;
+}
+
+interface TimingSettings {
+  stageDurations: Record<string, number>;
+  productionCapacity: number;
+}
+
+/** Etapas del kanban que admiten duración (mismas que el backend). */
+const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED'];
+
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -66,7 +86,7 @@ interface OrderStats {
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.css'],
 })
-export class OrdersComponent implements OnInit {
+export class OrdersComponent implements OnInit, OnDestroy {
   activeTab: 'panel' | 'list' | 'kanban' = 'panel';
   orders: Order[] = [];
   stats: OrderStats = { total: 0, DRAFT: 0, CONFIRMED: 0, IN_PRODUCTION: 0, READY: 0, DELIVERED: 0, INVOICED: 0, CANCELLED: 0 };
@@ -76,6 +96,20 @@ export class OrdersComponent implements OnInit {
   filterStatus = 'all';
 
   private baseUrl = `${environment.apiUrl}/orders`;
+
+  // ─── Tiempos por etapa y cola ───
+  queueInfo = new Map<string, QueueInfo>();
+  timingSettings: TimingSettings = { stageDurations: {}, productionCapacity: 1 };
+  /** Reloj para los contadores de las tarjetas (se actualiza cada 30 s). */
+  now = Date.now();
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
+  showTimingModal = false;
+  timingSaving = false;
+  timingStages = TIMED_STAGES;
+  timingForm: { durations: Record<string, { hours: number | null; minutes: number | null }>; capacity: number } = {
+    durations: {},
+    capacity: 1,
+  };
 
   constructor(
     private http: HttpClient,
@@ -90,6 +124,118 @@ export class OrdersComponent implements OnInit {
   ngOnInit(): void {
     this.loadOrders();
     this.loadStats();
+    this.clockTimer = setInterval(() => { this.now = Date.now(); }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.clockTimer) clearInterval(this.clockTimer);
+  }
+
+  loadQueue(): void {
+    this.http.get<{ settings: TimingSettings; orders: QueueInfo[] }>(`${this.baseUrl}/queue`).subscribe({
+      next: (res) => {
+        this.timingSettings = res.settings || this.timingSettings;
+        this.queueInfo = new Map((res.orders || []).map((q) => [q.orderId, q]));
+        this.now = Date.now();
+      },
+      error: () => { /* el kanban funciona igual sin tiempos */ },
+    });
+  }
+
+  /** Contador de la etapa: tiempo restante o atraso. Null si la etapa no tiene duración. */
+  stageTimer(order: Order): { text: string; cls: string } | null {
+    const due = this.queueInfo.get(order.id)?.stageDueAt;
+    if (!due) return null;
+    const diff = Math.round((new Date(due).getTime() - this.now) / 60000);
+    if (diff < 0) return { text: `⚠ Atrasado ${this.formatMinutes(-diff)}`, cls: 'timer-late' };
+    const expected = this.timingSettings.stageDurations[order.status] || 0;
+    const warn = diff <= 10 || (expected > 0 && diff <= expected * 0.2);
+    return { text: `⏱ Vence en ${this.formatMinutes(diff)}`, cls: warn ? 'timer-warn' : 'timer-ok' };
+  }
+
+  /** Posición y estimados en la cola de producción. */
+  queueLabel(order: Order): string | null {
+    const q = this.queueInfo.get(order.id);
+    if (!q?.estimatedReadyAt) return null;
+    const ready = this.formatClock(q.estimatedReadyAt);
+    if (order.status === 'CONFIRMED' && q.queuePosition) {
+      const start = q.waitMinutes ? ` · inicia ~${this.formatClock(q.estimatedStartAt!)}` : ' · puede iniciar ya';
+      return `#${q.queuePosition} en cola${start} · listo ~${ready}`;
+    }
+    return order.status === 'IN_PRODUCTION' ? `Listo ~${ready}` : null;
+  }
+
+  /** Franja de entrega de un pedido programado: "📅 30 sep, 10:00 a. m.–11:00 a. m.". */
+  scheduleLabel(order: Order): string | null {
+    const q = this.queueInfo.get(order.id);
+    if (!q?.scheduledStart) return null;
+    const start = new Date(q.scheduledStart);
+    const day = start.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+    const from = start.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    const to = q.scheduledEnd ? new Date(q.scheduledEnd).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) : '';
+    return `📅 ${day}, ${from}${to ? '–' + to : ''}`;
+  }
+
+  formatMinutes(total: number): string {
+    const m = Math.max(0, Math.round(total));
+    if (m < 60) return `${m} min`;
+    const d = Math.floor(m / 1440);
+    const h = Math.floor((m % 1440) / 60);
+    const min = m % 60;
+    if (d > 0) return `${d} d ${h} h`;
+    return min ? `${h} h ${min} min` : `${h} h`;
+  }
+
+  /** Hora (y día si no es hoy) en formato local. */
+  formatClock(iso: string): string {
+    const d = new Date(iso);
+    const time = d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    return d.toDateString() === new Date(this.now).toDateString()
+      ? time
+      : `${d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} ${time}`;
+  }
+
+  openTimingModal(event?: Event): void {
+    event?.stopPropagation();
+    const durations: Record<string, { hours: number | null; minutes: number | null }> = {};
+    for (const stage of TIMED_STAGES) {
+      const total = this.timingSettings.stageDurations[stage] || 0;
+      durations[stage] = total ? { hours: Math.floor(total / 60), minutes: total % 60 } : { hours: null, minutes: null };
+    }
+    this.timingForm = { durations, capacity: this.timingSettings.productionCapacity || 1 };
+    this.showTimingModal = true;
+  }
+
+  saveTiming(): void {
+    const stageDurations: Record<string, number> = {};
+    for (const stage of TIMED_STAGES) {
+      const { hours, minutes } = this.timingForm.durations[stage] || { hours: null, minutes: null };
+      const total = (Number(hours) || 0) * 60 + (Number(minutes) || 0);
+      if (total > 0) stageDurations[stage] = total;
+    }
+    this.timingSaving = true;
+    this.http.patch<TimingSettings>(`${this.baseUrl}/settings/timing`, {
+      stageDurations,
+      productionCapacity: Number(this.timingForm.capacity) || 1,
+    }).subscribe({
+      next: (settings) => {
+        this.timingSaving = false;
+        this.timingSettings = settings;
+        this.showTimingModal = false;
+        this.loadQueue();
+        Swal.fire({
+          icon: 'success',
+          title: 'Tiempos guardados',
+          text: 'Se aplican a los pedidos desde su próximo cambio de etapa.',
+          timer: 2200,
+          showConfirmButton: false,
+        });
+      },
+      error: (err) => {
+        this.timingSaving = false;
+        Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err?.error?.message || 'Intenta de nuevo.' });
+      },
+    });
   }
 
   loadOrders(): void {
@@ -98,6 +244,7 @@ export class OrdersComponent implements OnInit {
       next: (res) => {
         this.orders = res.data || [];
         this.loading = false;
+        this.loadQueue();
       },
       error: () => { this.loading = false; }
     });
