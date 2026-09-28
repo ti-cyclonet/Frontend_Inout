@@ -7,6 +7,7 @@ import {
   OnInit,
   Output,
   PLATFORM_ID,
+  HostListener,
 } from '@angular/core';
 import { DESCRIPTION_APP } from '../../../config/config';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
@@ -105,6 +106,7 @@ export class HeaderComponent implements OnInit {
       this.userRol = sessionStorage.getItem('user_rol');
       this.userRolDescription = sessionStorage.getItem('user_rolDescription');
       this.userImage = sessionStorage.getItem('user_image');
+      this.refreshAvatar();
       
       // Obtener nombre del cliente desde el token
       this.getClientNameFromToken();
@@ -372,6 +374,26 @@ export class HeaderComponent implements OnInit {
         this.uploadingAvatar = false;
         this.showToast('Error: ' + (err.error?.message || 'No se pudo subir la foto'), 'danger', 'A', 1);
       },
+    });
+  }
+
+  /**
+   * El avatar de sessionStorage viene del login y no se entera si la foto se
+   * cambió en otra app: se consulta la vigente en Authoriza al cargar y al
+   * volver a la pestaña.
+   */
+  @HostListener('window:focus')
+  refreshAvatar(): void {
+    if (!isPlatformBrowser(this.platformId) || !sessionStorage.getItem('user_email')) return;
+    const base = environment.auth.authorizaUrl.replace(/\/auth\/?$/, '');
+    this.http.get<{ url: string | null }>(`${base}/users/me/avatar`).subscribe({
+      next: (res) => {
+        if (!res?.url || res.url === this.userImage) return;
+        this.userImage = res.url;
+        sessionStorage.setItem('user_image', res.url);
+        this.cdr.detectChanges();
+      },
+      error: () => { /* se conserva el avatar del login */ },
     });
   }
 
