@@ -9,7 +9,10 @@
   <div class="orders-history kanban-section">
     <div class="history-header" (click)="showKanban = !showKanban">
       <h6 class="history-title">🗂️ Seguimiento de Pedidos</h6>
-      <span class="history-toggle">{{ showKanban ? '▲' : '▼' }}</span>
+      <div class="kanban-header-actions">
+        <button class="btn-timing" type="button" (click)="openTimingModal($event)" title="Tiempos por etapa y capacidad de producción">⚙ Tiempos</button>
+        <span class="history-toggle">{{ showKanban ? '▲' : '▼' }}</span>
+      </div>
     </div>
     <div class="kanban-content" *ngIf="showKanban">
       <div class="kanban-board">
@@ -17,6 +20,7 @@
           <div class="kanban-header" [style.border-top-color]="getStatusColor(status)">
             <span class="kanban-title">{{ getStatusLabel(status) }}</span>
             <span class="kanban-count">{{ getOrdersByStatus(status).length }}</span>
+            <span class="kanban-sla" *ngIf="timingSettings.stageDurations[status]" title="Tiempo esperado en esta etapa">⏱ {{ formatMinutes(timingSettings.stageDurations[status]) }}</span>
           </div>
           <div class="kanban-cards">
             <div class="kanban-card" *ngFor="let order of getOrdersByStatus(status)" (click)="selectOrder(order)">
@@ -24,6 +28,9 @@
               <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
               <div class="card-credit" *ngIf="order.requestedPaymentType === 'CREDITO' && !order.paymentType">💳 Pide crédito</div>
+              <div class="card-schedule" *ngIf="scheduleLabel(order) as sched">{{ sched }}</div>
+              <div class="card-timer" *ngIf="stageTimer(order) as timer" [ngClass]="timer.cls">{{ timer.text }}</div>
+              <div class="card-queue" *ngIf="queueLabel(order) as q">{{ q }}</div>
               <div class="card-actions">
                 <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
                 <button class="btn-sm-cancel" *ngIf="canCancel(order)" (click)="$event.stopPropagation(); cancelOrder(order)" type="button" title="Cancelar pedido">✕ Cancelar</button>
@@ -32,6 +39,33 @@
             <div class="kanban-empty" *ngIf="getOrdersByStatus(status).length === 0">Sin pedidos</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuración de tiempos por etapa -->
+  <div class="timing-overlay" *ngIf="showTimingModal" (click)="showTimingModal = false">
+    <div class="timing-modal" (click)="$event.stopPropagation()">
+      <h6 class="timing-title">⏱ Tiempos por etapa</h6>
+      <p class="timing-help">
+        Opcional. Deja vacía una etapa para no controlarla. Las tarjetas muestran cuánto les queda o cuánto van atrasadas.
+        En <strong>En producción</strong> se usa el tiempo de fabricación del producto si es mayor.
+      </p>
+      <div class="timing-row" *ngFor="let stage of timingStages">
+        <label class="timing-label">{{ getStatusLabel(stage) }}</label>
+        <div class="timing-inputs">
+          <input type="number" min="0" class="timing-input" [(ngModel)]="timingForm.durations[stage].hours" placeholder="0" /> <span>h</span>
+          <input type="number" min="0" max="59" class="timing-input" [(ngModel)]="timingForm.durations[stage].minutes" placeholder="0" /> <span>min</span>
+        </div>
+      </div>
+      <div class="timing-row timing-capacity">
+        <label class="timing-label">Pedidos que se preparan a la vez</label>
+        <input type="number" min="1" max="100" class="timing-input" [(ngModel)]="timingForm.capacity" />
+      </div>
+      <p class="timing-help">Con la capacidad y el tiempo de producción se estima la espera de cada pedido en la cola.</p>
+      <div class="timing-actions">
+        <button type="button" class="btn-timing-cancel" (click)="showTimingModal = false">Cancelar</button>
+        <button type="button" class="btn-timing-save" [disabled]="timingSaving" (click)="saveTiming()">{{ timingSaving ? 'Guardando…' : 'Guardar' }}</button>
       </div>
     </div>
   </div>
