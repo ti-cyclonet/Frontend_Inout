@@ -47,6 +47,28 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   tenantId: string = '';
   businessName: string = '';
   businessSector: string = 'general';
+
+  // Banner promocional por tipo de negocio (título, subtítulo y emoji).
+  private readonly sectorBanners: Record<string, { title: string; subtitle: string; emoji: string }> = {
+    restaurant:   { title: '¡Antojos que llegan a tu mesa!',       subtitle: 'Pide tus platos favoritos y recíbelos calientes.', emoji: '🍽️' },
+    fashion:      { title: 'Renueva tu estilo',                    subtitle: 'Las últimas tendencias en moda, a un clic.',      emoji: '👗' },
+    hardware:     { title: 'Todo para tu proyecto',                subtitle: 'Herramientas y materiales al mejor precio.',      emoji: '🔧' },
+    beauty:       { title: 'Realza tu belleza',                    subtitle: 'Productos de cuidado personal y cosmética.',      emoji: '💄' },
+    electronics:  { title: 'Tecnología a tu alcance',              subtitle: 'Lo último en electrónica y gadgets.',            emoji: '📱' },
+    automotive:   { title: 'Tu vehículo en las mejores manos',     subtitle: 'Repuestos y accesorios para tu auto.',           emoji: '🚗' },
+    health:       { title: 'Cuida tu salud',                       subtitle: 'Productos y suministros para tu bienestar.',     emoji: '💊' },
+    sports:       { title: 'Da lo mejor de ti',                    subtitle: 'Equípate para tu deporte favorito.',            emoji: '⚽' },
+    home:         { title: 'Tu hogar como lo soñaste',             subtitle: 'Todo para decorar y equipar tu casa.',           emoji: '🏠' },
+    services:     { title: 'Servicios a tu medida',                subtitle: 'Soluciones profesionales para lo que necesites.', emoji: '💼' },
+    retail:       { title: 'Tu tienda de barrio, en línea',        subtitle: 'Lo que necesitas, cerca de ti.',                 emoji: '🛒' },
+    manufacturing:{ title: 'Fabricación a la medida',              subtitle: 'Productos hechos según tu pedido.',              emoji: '🏭' },
+    general:      { title: 'Compra fácil y seguro',                subtitle: 'Descubre nuestros productos y recíbelos donde estés.', emoji: '🛍️' },
+  };
+
+  /** Datos del banner promocional según el sector del negocio. */
+  get sectorBanner(): { title: string; subtitle: string; emoji: string } {
+    return this.sectorBanners[this.businessSector] || this.sectorBanners['general'];
+  }
   isAdminMode: boolean = false;
   selectedProductIds: Set<string> = new Set();
   products: Product[] = [];
@@ -770,6 +792,34 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         this.currentSlide = (this.currentSlide + 1) % this.carouselProducts.length;
       }, 3000);
     }
+  }
+
+  /** Reinicia el autoplay tras una interacción manual (para no saltar de inmediato). */
+  private restartCarouselAutoplay(): void {
+    if (typeof window === 'undefined' || this.carouselProducts.length === 0) return;
+    if (this.carouselInterval) clearInterval(this.carouselInterval);
+    this.startCarousel();
+  }
+
+  /** Ir a un slide específico (dots). */
+  goToSlide(index: number): void {
+    if (!this.carouselProducts.length) return;
+    this.currentSlide = (index + this.carouselProducts.length) % this.carouselProducts.length;
+    this.restartCarouselAutoplay();
+  }
+
+  /** Slide siguiente (flecha derecha). */
+  nextSlide(): void {
+    if (!this.carouselProducts.length) return;
+    this.currentSlide = (this.currentSlide + 1) % this.carouselProducts.length;
+    this.restartCarouselAutoplay();
+  }
+
+  /** Slide anterior (flecha izquierda). */
+  prevSlide(): void {
+    if (!this.carouselProducts.length) return;
+    this.currentSlide = (this.currentSlide - 1 + this.carouselProducts.length) % this.carouselProducts.length;
+    this.restartCarouselAutoplay();
   }
 
   ngOnDestroy(): void {
