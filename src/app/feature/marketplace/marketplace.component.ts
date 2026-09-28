@@ -78,6 +78,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   
   // Slug editor
   marketplaceSlug: string = '';
+  // Slug realmente persistido (para mostrar la URL pública ya guardada).
+  savedSlug: string = '';
+  slugCopied = false;
   slugSaving = false;
   slugError = '';
   slugSuccess = '';
@@ -1742,6 +1745,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       next: (config) => {
         if (config?.slug) {
           this.marketplaceSlug = config.slug;
+          this.savedSlug = config.slug;
         }
       },
       error: () => {}
@@ -1753,6 +1757,46 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return window.location.origin;
     }
     return 'https://app.cyclonet.com.co';
+  }
+
+  /** URL pública completa de la tienda ya guardada. */
+  getStoreUrl(): string {
+    return `${this.getBaseUrl()}/marketplace/${this.savedSlug}`;
+  }
+
+  /** Copia la URL pública al portapapeles con feedback temporal en el botón. */
+  copyStoreUrl(): void {
+    if (!this.savedSlug) return;
+    const url = this.getStoreUrl();
+
+    const done = () => {
+      this.slugCopied = true;
+      setTimeout(() => (this.slugCopied = false), 2000);
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(() => this.fallbackCopy(url, done));
+    } else {
+      this.fallbackCopy(url, done);
+    }
+  }
+
+  private fallbackCopy(text: string, done: () => void): void {
+    if (typeof document === 'undefined') return;
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      done();
+    } catch {
+      /* noop */
+    }
+    document.body.removeChild(ta);
   }
 
   onSlugInput(event: any): void {
@@ -1782,6 +1826,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         this.slugSaving = false;
         this.marketplaceSlug = response.slug;
+        this.savedSlug = response.slug;
         this.slugSuccess = `✓ URL guardada: ${this.getBaseUrl()}/marketplace/${response.slug}`;
       },
       error: (err) => {
