@@ -63,6 +63,8 @@ interface OrderStats {
 interface QueueInfo {
   orderId: string;
   stageDueAt: string | null;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
   queuePosition: number | null;
   waitMinutes: number | null;
   estimatedStartAt: string | null;
@@ -161,6 +163,17 @@ export class OrdersComponent implements OnInit, OnDestroy {
       return `#${q.queuePosition} en cola${start} · listo ~${ready}`;
     }
     return order.status === 'IN_PRODUCTION' ? `Listo ~${ready}` : null;
+  }
+
+  /** Franja de entrega de un pedido programado: "📅 30 sep, 10:00 a. m.–11:00 a. m.". */
+  scheduleLabel(order: Order): string | null {
+    const q = this.queueInfo.get(order.id);
+    if (!q?.scheduledStart) return null;
+    const start = new Date(q.scheduledStart);
+    const day = start.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+    const from = start.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    const to = q.scheduledEnd ? new Date(q.scheduledEnd).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) : '';
+    return `📅 ${day}, ${from}${to ? '–' + to : ''}`;
   }
 
   formatMinutes(total: number): string {

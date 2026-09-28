@@ -28,6 +28,7 @@
               <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
               <div class="card-credit" *ngIf="order.requestedPaymentType === 'CREDITO' && !order.paymentType">💳 Pide crédito</div>
+              <div class="card-schedule" *ngIf="scheduleLabel(order) as sched">{{ sched }}</div>
               <div class="card-timer" *ngIf="stageTimer(order) as timer" [ngClass]="timer.cls">{{ timer.text }}</div>
               <div class="card-queue" *ngIf="queueLabel(order) as q">{{ q }}</div>
               <div class="card-actions">
