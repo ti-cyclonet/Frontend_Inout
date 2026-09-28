@@ -74,6 +74,40 @@
         </div>
       </section>
 
+      <!-- Franja de beneficios (estilo marketplace) -->
+      <section class="benefits-strip" *ngIf="tenantId !== 'home'">
+        <div class="benefits-track">
+          <div class="benefit-card">
+            <div class="benefit-icon">🚚</div>
+            <div class="benefit-text">
+              <strong>Envío disponible</strong>
+              <span>Coordina la entrega a tu ubicación</span>
+            </div>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">💳</div>
+            <div class="benefit-text">
+              <strong>Medios de pago</strong>
+              <span>Paga de contado o a crédito</span>
+            </div>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">🕑</div>
+            <div class="benefit-text">
+              <strong>Pedidos programados</strong>
+              <span>Elige fecha y franja horaria</span>
+            </div>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">✅</div>
+            <div class="benefit-text">
+              <strong>Compra segura</strong>
+              <span>Confirmación por WhatsApp</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Featured Products -->
       <section class="featured-section">
         <div class="featured-container">
@@ -242,6 +276,7 @@
 
                 <div class="price-section">
                   <div class="current-price">{{ formatCurrency(product.fltPrice) }}</div>
+                  <div class="ml-shipping" *ngIf="product.fltPrice >= 50000">Envío disponible</div>
                 </div>
 
                 <div class="product-actions-modern">
