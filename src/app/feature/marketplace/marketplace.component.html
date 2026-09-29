@@ -76,12 +76,12 @@
           <button type="button" class="carousel-arrow carousel-arrow-prev"
                   *ngIf="carouselProducts.length > 1"
                   (click)="prevSlide()" aria-label="Anterior">
-            <i class="bi bi-chevron-left"></i>
+            <span aria-hidden="true">‹</span>
           </button>
           <button type="button" class="carousel-arrow carousel-arrow-next"
                   *ngIf="carouselProducts.length > 1"
                   (click)="nextSlide()" aria-label="Siguiente">
-            <i class="bi bi-chevron-right"></i>
+            <span aria-hidden="true">›</span>
           </button>
 
           <!-- Dots -->
@@ -142,7 +142,7 @@
       </section>
 
       <!-- Featured Products -->
-      <section class="featured-section">
+      <section class="featured-section" *ngIf="featuredProducts.length > 0">
         <div class="featured-container">
           <h2 class="featured-title">⭐ Productos Destacados</h2>
           <div class="featured-carousel">
@@ -374,6 +374,14 @@
         </div>
       </section>
     </main>
+
+    <!-- Tienda impulsada por InOut -->
+    <footer class="mk-footer">
+      <a href="https://www.cyclonet.com.co/inout/" target="_blank" rel="noopener" title="Conoce InOut">
+        <span>Tienda impulsada por</span>
+        <img src="assets/img/logo_inout_marketplace.png" alt="InOut" width="72" height="28" loading="lazy">
+      </a>
+    </footer>
   </div>
 </div>
 

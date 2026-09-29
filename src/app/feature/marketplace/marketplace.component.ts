@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -61,6 +61,11 @@ interface MarketStats {
   styleUrls: ['./marketplace.component.css', './marketplace-checkout.css']
 })
 export class MarketplaceComponent implements OnInit, OnDestroy {
+  /** Tema visual por sector: los estilos leen :host([data-sector="…"]). En
+   * el host (no en un div interno) para que los modales también lo hereden. */
+  @HostBinding('attr.data-sector') get sectorAttr(): string {
+    return this.businessSector || 'general';
+  }
   tenantId: string = '';
   businessName: string = '';
   businessSector: string = 'general';
