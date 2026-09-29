@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { PaymentVoucherUploadComponent } from './payment-voucher-upload.component';
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
+import { formatCop } from '../../../shared/utils/currency.util';
 
 /** Cada cuánto se refresca el seguimiento mientras el pedido sigue en curso. */
 const REFRESH_MS = 60_000;
@@ -136,8 +137,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     return this.order?.scheduledStart ? formatScheduleRange(this.order.scheduledStart, this.order.scheduledEnd) : null;
   }
 
+  /** Formato de pesos de los pedidos: "$2.362.200". */
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
+    return formatCop(value);
   }
 
   formatDate(iso: string | null, withTime = false): string {

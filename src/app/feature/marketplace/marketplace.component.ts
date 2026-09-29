@@ -12,6 +12,7 @@ import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-upload.component';
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
+import { formatCop } from '../../shared/utils/currency.util';
 
 /** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
 interface PlanChoice {
@@ -753,14 +754,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Pesos enteros sin decimales; con centavos, siempre dos ("$22.805,80", no "$22.805,8"). */
+  /** Formato de pesos de los pedidos: "$2.362.200". */
   formatCurrency(value: number): string {
-    const n = Number(value) || 0;
-    const decimals = Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2;
-    return '$' + new Intl.NumberFormat('es-CO', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(n);
+    return formatCop(value);
   }
 
   formatNumber(value: number): string {

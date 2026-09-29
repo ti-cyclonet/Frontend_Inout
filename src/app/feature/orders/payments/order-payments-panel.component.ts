@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, planLabel } from '../../marketplace/order-tracking/order-labels';
+import { formatCop } from '../../../shared/utils/currency.util';
 
 interface OrderPayment {
   id: string;
@@ -141,8 +142,9 @@ export class OrderPaymentsPanelComponent implements OnChanges {
     });
   }
 
+  /** Formato de pesos de los pedidos: "$2.362.200". */
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
+    return formatCop(value);
   }
 
   formatDate(iso: string): string {
