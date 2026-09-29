@@ -179,10 +179,12 @@
           </div>
           <div class="card-body">
             <!-- Slug / URL personalizada -->
-            <div class="slug-editor mb-3">
-              <label class="form-label fw-bold" style="font-size: 0.85rem;">
-                <i class="bi bi-link-45deg me-1"></i> URL de tu tienda
-              </label>
+            <div class="admin-collapse mb-3">
+              <button type="button" class="admin-collapse-header" (click)="adminOpen.url = !adminOpen.url">
+                <span><i class="bi bi-link-45deg me-1"></i> URL de tu tienda</span>
+                <small>{{ savedSlug ? '/marketplace/' + savedSlug : 'Sin publicar' }} {{ adminOpen.url ? '▲' : '▼' }}</small>
+              </button>
+            <div class="slug-editor admin-collapse-body" *ngIf="adminOpen.url">
               <div class="input-group">
                 <span class="input-group-text" style="font-size: 0.8rem; background: #f8f9fa;">{{ getBaseUrl() }}/marketplace/</span>
                 <input type="text" class="form-control" [(ngModel)]="marketplaceSlug" 
@@ -213,6 +215,7 @@
                 </div>
               </div>
             </div>
+            </div>
 
             <hr>
 
@@ -237,11 +240,12 @@
             </div>
 
             <!-- Display Mode Selector -->
-            <hr>
-            <div class="display-mode-selector">
-              <label class="form-label fw-bold" style="font-size: 0.85rem;">
-                <i class="bi bi-layout-text-window-reverse me-1"></i> Modo de visualización del catálogo
-              </label>
+            <div class="admin-collapse">
+              <button type="button" class="admin-collapse-header" (click)="adminOpen.display = !adminOpen.display">
+                <span><i class="bi bi-layout-text-window-reverse me-1"></i> Modo de visualización del catálogo</span>
+                <small>{{ displayMode === 'menu' ? 'Menú (Restaurante)' : 'Tarjetas (Grid)' }} {{ adminOpen.display ? '▲' : '▼' }}</small>
+              </button>
+            <div class="display-mode-selector admin-collapse-body" *ngIf="adminOpen.display">
               <p class="text-muted mb-2" style="font-size: 0.8rem;">
                 Elige cómo se mostrarán tus productos a los clientes.
               </p>
@@ -262,6 +266,7 @@
                   <i class="bi bi-save"></i> Guardar modo
                 </button>
               </div>
+            </div>
             </div>
           </div>
         </div>
