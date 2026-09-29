@@ -4,6 +4,7 @@ import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/c
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './shared/interceptors/auth.interceptor';
 import { LimitErrorInterceptor } from './shared/interceptors/limit-error.interceptor';
+import { StockRefreshInterceptor } from './shared/interceptors/stock-refresh.interceptor';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
@@ -27,6 +28,12 @@ export const appConfig: ApplicationConfig = {
     {
       provide: HTTP_INTERCEPTORS,
       useClass: LimitErrorInterceptor,
+      multi: true
+    },
+    {
+      // Recalcula las alertas de stock tras compras, producción, ajustes, etc.
+      provide: HTTP_INTERCEPTORS,
+      useClass: StockRefreshInterceptor,
       multi: true
     }
   ]
