@@ -9,6 +9,18 @@ import { environment } from '../../../environments/environment';
 import { LEGAL_VERSIONS, LegalDocKey, LegalDocument, buildLegalDocument } from './legal/marketplace-legal';
 import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
+import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-upload.component';
+import { PAYMENT_PLAN_LABELS, formatScheduleRange } from './order-tracking/order-labels';
+
+/** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
+interface PlanChoice {
+  plan: string;
+  label: string;
+  detail: string;
+  disabled: boolean;
+  note?: string;
+}
+
 interface Product {
   strId: string;
   strName: string;
@@ -21,6 +33,9 @@ interface Product {
   itemType?: 'product' | 'material' | 'material_t';
   ingQuantity?: number;
   ingReservedStock?: number;
+  /** Se fabrica bajo pedido: se puede pedir sin stock. */
+  blnMadeToOrder?: boolean;
+  intProductionLeadHours?: number | null;
   views?: number;
   sales?: number;
   rating?: number;
@@ -39,7 +54,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css']
 })
@@ -180,6 +195,18 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   clientCredit: any = null;
   /** Forma de pago elegida en el checkout con sesión. */
   paymentPreference: 'CONTADO' | 'CREDITO' = 'CONTADO';
+
+  // ─── Formas de pago y pedidos programados (configurados por la tienda) ───
+  /** null = el backend no las ofrece (versión anterior): checkout clásico. */
+  paymentOptions: any = null;
+  schedulingOptions: any = null;
+  paymentPlan: string | null = null;
+  deliveryMode: 'ASAP' | 'SCHEDULED' = 'ASAP';
+  scheduleDate = '';
+  scheduleSlots: { start: string; end: string; available: boolean; remaining: number | null; reason?: string }[] = [];
+  slotsLoading = false;
+  scheduledStart: string | null = null;
+  planLabels = PAYMENT_PLAN_LABELS;
   /** Ubicación exacta de entrega capturada con el GPS del navegador. */
   deliveryLocation: { lat: number; lng: number; accuracy: number } | null = null;
   geoLoading = false;
@@ -420,8 +447,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise().catch(() => ({ businessSector: 'general' })),
       this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}`).toPromise().catch(() => null),
       // Materiales de reventa visibles (precio/stock por presentación)
-      this.http.get<any[]>(`${this.baseUrl}/products/tenant/${tenantId}/resale`).toPromise().catch(() => [])
-    ]).then(([productsResponse, contractResponse, configResponse, resaleResponse]) => {
+      this.http.get<any[]>(`${this.baseUrl}/products/tenant/${tenantId}/resale`).toPromise().catch(() => []),
+      this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}/payment-options`).toPromise().catch(() => null),
+      this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}/scheduling`).toPromise().catch(() => null),
+    ]).then(([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling]) => {
+      this.paymentOptions = paymentOptions || null;
+      this.schedulingOptions = scheduling?.enabled ? scheduling : null;
       this.products = (productsResponse.data || []).map((product: any) => ({
         ...product,
         itemType: 'product',
@@ -1215,7 +1246,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const existing = this.cart.find(item => item.product.strId === product.strId);
     const available = this.getAvailableStock(product);
     const wanted = (existing?.quantity || 0) + 1;
-    if (available !== null && wanted > available) {
+    // Los productos "bajo pedido" se fabrican: no se limitan por el stock
+    if (available !== null && wanted > available && !this.isMadeToOrder(product)) {
       this.warnStock(product, available);
       return;
     }
@@ -1235,13 +1267,178 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const item = this.cart.find(i => i.product.strId === productId);
     if (item) {
       const available = this.getAvailableStock(item.product);
-      if (available !== null && qty > available) {
+      if (available !== null && qty > available && !this.isMadeToOrder(item.product)) {
         this.warnStock(item.product, available);
         item.quantity = Math.max(1, available);
         return;
       }
       item.quantity = Math.max(1, qty);
     }
+  }
+
+  isMadeToOrder(product: Product): boolean {
+    return (product.itemType || 'product') === 'product' && !!product.blnMadeToOrder;
+  }
+
+  /** Unidades del carrito que habría que fabricar (superan el stock disponible). */
+  get cartHasMadeToOrder(): boolean {
+    return this.cart.some((i) => {
+      if (!this.isMadeToOrder(i.product)) return false;
+      const available = this.getAvailableStock(i.product);
+      return available !== null && i.quantity > available;
+    });
+  }
+
+  /** Formas de pago que ofrece la tienda para este carrito y este comprador. */
+  get planChoices(): PlanChoice[] {
+    const o = this.paymentOptions;
+    if (!o) return [];
+    const total = this.getCartTotal();
+    const pct = (p: number) => Math.round((total * p) / 100);
+    const choices: PlanChoice[] = [];
+
+    if (o.contraEntrega?.enabled) {
+      const overMax = o.contraEntrega.maxOrderTotal && total > o.contraEntrega.maxOrderTotal;
+      const needsDeposit = this.cartHasMadeToOrder && o.madeToOrderRequiresDeposit;
+      choices.push({
+        plan: 'CONTRA_ENTREGA', label: this.planLabels['CONTRA_ENTREGA'],
+        detail: 'Pagas cuando recibas tu pedido.',
+        disabled: !!overMax || !!needsDeposit,
+        note: needsDeposit ? 'Los productos por fabricar requieren un anticipo.'
+          : overMax ? `Disponible para pedidos de hasta ${this.formatCurrency(o.contraEntrega.maxOrderTotal)}.` : undefined,
+      });
+    }
+    if (o.contado?.enabled) {
+      choices.push({
+        plan: 'CONTADO', label: this.planLabels['CONTADO'],
+        detail: `Pagas ${this.formatCurrency(total)} ahora (transferencia, Nequi…) y subes el comprobante.`,
+        disabled: false,
+      });
+    }
+    if (o.mitadMitad?.enabled) {
+      const dep = pct(o.mitadMitad.depositPercent);
+      choices.push({
+        plan: 'MITAD_MITAD', label: this.planLabels['MITAD_MITAD'],
+        detail: `Pagas ${this.formatCurrency(dep)} ahora y ${this.formatCurrency(total - dep)} al recibir.`,
+        disabled: false,
+      });
+    }
+    if (o.planSepare?.enabled) {
+      const underMin = o.planSepare.minOrderTotal && total < o.planSepare.minOrderTotal;
+      const deadline = new Date(Date.now() + o.planSepare.maxDays * 86400000)
+        .toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+      choices.push({
+        plan: 'PLAN_SEPARE', label: this.planLabels['PLAN_SEPARE'],
+        detail: `Separas con ${this.formatCurrency(pct(o.planSepare.minInitialPercent))} y completas el pago antes del ${deadline}. Te lo entregamos pagado.`,
+        disabled: !this.clientLoggedIn || !!underMin,
+        note: !this.clientLoggedIn ? 'Inicia sesión o crea tu cuenta para usarlo.'
+          : underMin ? `Disponible desde ${this.formatCurrency(o.planSepare.minOrderTotal)}.` : undefined,
+      });
+    }
+    if (o.credito?.enabled && this.clientLoggedIn && this.clientCredit?.eligibility?.approvedLimit > 0) {
+      const e = this.clientCredit.eligibility;
+      choices.push({
+        plan: 'CREDITO', label: this.planLabels['CREDITO'],
+        detail: `Disponible ${this.formatCurrency(e.available)} · pagas a ${e.termDays} días.`,
+        disabled: !this.canPayWithCredit,
+      });
+    }
+    return choices;
+  }
+
+  /** Forma de pago que se enviará: la elegida si sigue disponible, si no la primera disponible. */
+  get effectivePlan(): string | null {
+    const choices = this.planChoices.filter((c) => !c.disabled);
+    return choices.find((c) => c.plan === this.paymentPlan)?.plan || choices[0]?.plan || null;
+  }
+
+  /** Días que se pueden programar (hora de Colombia), con su horario activo. */
+  get scheduleDates(): { value: string; label: string }[] {
+    const s = this.schedulingOptions;
+    if (!s) return [];
+    const dates: { value: string; label: string }[] = [];
+    for (let i = 0; i <= s.maxDaysAhead; i++) {
+      const d = new Date(Date.now() + i * 86400000);
+      const value = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(d);
+      const weekday = new Date(`${value}T12:00:00Z`).getUTCDay();
+      if (!s.hours?.find((h: any) => h.day === weekday)?.active) continue;
+      const label = i === 0 ? 'Hoy' : i === 1 ? 'Mañana'
+        : new Date(`${value}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+      dates.push({ value, label });
+    }
+    return dates;
+  }
+
+  setDeliveryMode(mode: 'ASAP' | 'SCHEDULED'): void {
+    this.deliveryMode = mode;
+    if (mode === 'SCHEDULED' && !this.scheduleDate && this.scheduleDates.length) {
+      this.selectScheduleDate(this.scheduleDates[0].value);
+    }
+  }
+
+  /** Franjas del día para lo que hay en el carrito (considera la cola y la fabricación). */
+  selectScheduleDate(date: string): void {
+    this.scheduleDate = date;
+    this.scheduledStart = null;
+    this.scheduleSlots = [];
+    this.slotsLoading = true;
+    this.http.post<any>(`${this.baseUrl}/orders/marketplace/slots`, {
+      tenantId: this.tenantId,
+      date,
+      items: this.orderItemsPayload(),
+    }).subscribe({
+      next: (res) => { this.scheduleSlots = res?.slots || []; this.slotsLoading = false; },
+      error: () => { this.slotsLoading = false; },
+    });
+  }
+
+  slotLabel(slot: { start: string; end: string }): string {
+    const f = (iso: string) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    return `${f(slot.start)} – ${f(slot.end)}`;
+  }
+
+  slotReason(reason?: string): string {
+    const m: Record<string, string> = { PASADA: 'Ya pasó', ANTICIPACION: 'Muy pronto', PREPARACION: 'No alcanza a estar listo', LLENA: 'Llena' };
+    return reason ? m[reason] || '' : '';
+  }
+
+  get hasAvailableSlots(): boolean {
+    return this.scheduleSlots.some((s) => s.available);
+  }
+
+  private orderItemsPayload() {
+    return this.cart.map(item => ({
+      productId: item.product.strId,
+      itemType: item.product.itemType || 'product',
+      productName: item.product.strName,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.product.fltPrice),
+      subtotal: Number(item.product.fltPrice) * Number(item.quantity),
+    }));
+  }
+
+  /** Enlace de seguimiento del pedido recién creado. */
+  get trackingUrl(): string | null {
+    const token = this.orderSuccess?.order?.trackingToken;
+    if (!token) return null;
+    return `${window.location.origin}/marketplace/${this.marketplaceSlug || this.tenantId}/pedido/${token}`;
+  }
+
+  get successNeedsPayment(): boolean {
+    const o = this.orderSuccess?.order;
+    return !!o?.trackingToken && ['CONTADO', 'MITAD_MITAD', 'PLAN_SEPARE'].includes(o.paymentPlan);
+  }
+
+  successSchedule(): string | null {
+    const o = this.orderSuccess?.order;
+    return o?.scheduledStart ? formatScheduleRange(o.scheduledStart, o.scheduledEnd) : null;
+  }
+
+  copyTrackingUrl(): void {
+    if (!this.trackingUrl) return;
+    navigator.clipboard?.writeText(this.trackingUrl).then(() => {
+      Swal.fire({ icon: 'success', title: 'Enlace copiado', timer: 1200, showConfirmButton: false, toast: true, position: 'top-end' });
+    }).catch(() => {});
   }
 
   getCartTotal(): number {
@@ -1715,6 +1912,16 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const plan = this.paymentOptions ? this.effectivePlan : null;
+    if (this.paymentOptions && !plan) {
+      Swal.fire({ icon: 'warning', title: 'Forma de pago', text: 'No hay una forma de pago disponible para este pedido. Revisa las opciones o contacta a la tienda.' });
+      return;
+    }
+    if (this.deliveryMode === 'SCHEDULED' && !this.scheduledStart) {
+      Swal.fire({ icon: 'warning', title: 'Elige una franja', text: 'Selecciona el día y la franja horaria de entrega, o elige "Lo antes posible".' });
+      return;
+    }
+
     this.checkoutSending = true;
     const subtotal = this.getCartTotal();
 
@@ -1724,21 +1931,18 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       customerPhone: this.checkoutData.customerPhone.trim(),
       customerAddress: this.checkoutData.customerAddress.trim() || undefined,
       customerEmail: this.checkoutData.customerEmail.trim() || undefined,
-      items: this.cart.map(item => ({
-        productId: item.product.strId,
-        itemType: item.product.itemType || 'product',
-        productName: item.product.strName,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.product.fltPrice),
-        subtotal: Number(item.product.fltPrice) * Number(item.quantity),
-      })),
+      items: this.orderItemsPayload(),
       notes: this.checkoutData.notes.trim() || undefined,
       subtotal: Number(subtotal),
       tax: 0,
       total: Number(subtotal),
       ...(this.clientLoggedIn ? {} : this.consentPayload()),
       ...(this.deliveryLocation ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
-      ...(this.clientLoggedIn ? { paymentPreference: this.canPayWithCredit && this.paymentPreference === 'CREDITO' ? 'CREDITO' : 'CONTADO' } : {}),
+      // Formas de pago configuradas por la tienda; sin ellas, el checkout clásico
+      ...(plan
+        ? { paymentPlan: plan }
+        : this.clientLoggedIn ? { paymentPreference: this.canPayWithCredit && this.paymentPreference === 'CREDITO' ? 'CREDITO' : 'CONTADO' } : {}),
+      ...(this.deliveryMode === 'SCHEDULED' && this.scheduledStart ? { scheduledStart: this.scheduledStart } : {}),
     };
 
     const onSuccess = (response: any) => {
@@ -1753,10 +1957,19 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         this.loadClientCredit();
         this.paymentPreference = 'CONTADO';
       }
+      this.paymentPlan = null;
+      this.deliveryMode = 'ASAP';
+      this.scheduleDate = '';
+      this.scheduleSlots = [];
+      this.scheduledStart = null;
 
       if (response.whatsapp) {
-        const pago = response.order?.requestedPaymentType === 'CREDITO' ? ' - A crédito' : ' - Contra-entrega';
-        const msg = encodeURIComponent(`¡Nuevo pedido ${response.order.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}${pago}`);
+        const o = response.order || {};
+        const pago = o.paymentPlan
+          ? ` - ${PAYMENT_PLAN_LABELS[o.paymentPlan]?.replace(/^\S+\s/, '') || o.paymentPlan}`
+          : o.requestedPaymentType === 'CREDITO' ? ' - A crédito' : ' - Contra-entrega';
+        const cuando = o.scheduledStart ? ` - Entrega: ${formatScheduleRange(o.scheduledStart, o.scheduledEnd)}` : '';
+        const msg = encodeURIComponent(`¡Nuevo pedido ${o.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}${pago}${cuando}`);
         window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
       }
     };
