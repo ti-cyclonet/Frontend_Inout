@@ -16,6 +16,10 @@
       <span class="eta-label">{{ order.estimatedDelivery?.scheduled ? '📅 Entrega programada' : '🚚 Entrega estimada' }}</span>
       <strong>{{ eta }}</strong>
     </div>
+    <div class="tracking-eta" *ngIf="deliveryStatusText() as msg">
+      <span class="eta-label">🚚 Tu entrega</span>
+      <strong class="eta-msg">{{ msg }}</strong>
+    </div>
 
     <!-- Avance -->
     <div class="tracking-steps" *ngIf="order.status !== 'CANCELLED'">

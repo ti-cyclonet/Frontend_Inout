@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { formatCop } from '../../../shared/utils/currency.util';
 
 /** Medios con los que el comprador suele pagar por fuera (el efectivo lo registra el negocio). */
 const CUSTOMER_METHODS = [
@@ -28,7 +29,7 @@ const CUSTOMER_METHODS = [
       <h4 class="voucher-title">📎 Sube tu comprobante de pago</h4>
       <div class="voucher-row">
         <label>Valor pagado</label>
-        <input type="number" min="1" [(ngModel)]="amount" placeholder="0" />
+        <input type="text" inputmode="numeric" [value]="amountText" (input)="onAmountInput($event)" placeholder="$0" />
       </div>
       <div class="voucher-row">
         <label>Medio</label>
@@ -83,6 +84,20 @@ export class PaymentVoucherUploadComponent implements OnChanges {
 
   ngOnChanges(): void {
     if (!this.amount && this.suggestedAmount > 0) this.amount = Math.round(this.suggestedAmount);
+  }
+
+  /** "Valor pagado" con formato de pesos ("$18.245"); por dentro es un número. */
+  get amountText(): string {
+    return this.amount ? formatCop(this.amount) : '';
+  }
+
+  onAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '');
+    this.amount = digits ? Number(digits) : null;
+    // Reescribe el campo ya formateado y deja el cursor al final
+    input.value = this.amountText;
+    input.setSelectionRange(input.value.length, input.value.length);
   }
 
   onFile(event: Event): void {
