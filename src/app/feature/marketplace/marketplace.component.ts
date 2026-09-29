@@ -57,7 +57,7 @@ interface MarketStats {
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent],
   templateUrl: './marketplace.component.html',
-  styleUrls: ['./marketplace.component.css']
+  styleUrls: ['./marketplace.component.css', './marketplace-checkout.css']
 })
 export class MarketplaceComponent implements OnInit, OnDestroy {
   tenantId: string = '';
