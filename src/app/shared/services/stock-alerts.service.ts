@@ -45,6 +45,20 @@ export class StockAlertsService {
     );
   }
 
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Recalcula las alertas agrupando llamadas seguidas (una pantalla puede
+   * guardar varias cosas a la vez): se consulta una sola vez tras 600 ms.
+   */
+  scheduleRefresh(): void {
+    if (this.refreshTimer) clearTimeout(this.refreshTimer);
+    this.refreshTimer = setTimeout(() => {
+      this.refreshTimer = null;
+      this.refreshAlerts();
+    }, 600);
+  }
+
   refreshAlerts(): void {
     this.http.get<StockAlertsResponse>(this.apiUrl).subscribe({
       next: (response) => this.alertsSubject.next(response),
