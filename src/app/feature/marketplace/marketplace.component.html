@@ -815,11 +815,11 @@
     </div>
     <ng-container *ngIf="deliveryMode === 'SCHEDULED'">
       <div class="schedule-dates">
-        <button type="button" *ngFor="let d of scheduleDates" [class.active]="scheduleDate === d.value" (click)="selectScheduleDate(d.value)">{{ d.label }}</button>
+        <button type="button" *ngFor="let d of scheduleDates; trackBy: trackByValue" [class.active]="scheduleDate === d.value" (click)="selectScheduleDate(d.value)">{{ d.label }}</button>
       </div>
       <p class="schedule-hint" *ngIf="slotsLoading">Buscando franjas disponibles…</p>
       <div class="schedule-slots" *ngIf="!slotsLoading && scheduleSlots.length">
-        <button type="button" *ngFor="let s of scheduleSlots" [disabled]="!s.available"
+        <button type="button" *ngFor="let s of scheduleSlots; trackBy: trackByStart" [disabled]="!s.available"
                 [class.active]="scheduledStart === s.start" (click)="scheduledStart = s.start"
                 [title]="s.available ? '' : slotReason(s.reason)">
           {{ slotLabel(s) }}
@@ -835,7 +835,7 @@
   <ng-container *ngIf="paymentOptions">
     <h3 class="checkout-subtitle">💰 ¿Cómo pagas?</h3>
     <div class="pay-options">
-      <label class="pay-option" *ngFor="let c of planChoices" [class.active]="effectivePlan === c.plan" [class.disabled]="c.disabled">
+      <label class="pay-option" *ngFor="let c of planChoices; trackBy: trackByPlan" [class.active]="effectivePlan === c.plan" [class.disabled]="c.disabled">
         <input type="radio" name="mkPlan" [value]="c.plan" [checked]="effectivePlan === c.plan" [disabled]="c.disabled" (change)="paymentPlan = c.plan">
         <span><strong>{{ c.label }}</strong><small>{{ c.detail }}</small><small class="pay-note" *ngIf="c.note">{{ c.note }}</small></span>
       </label>
