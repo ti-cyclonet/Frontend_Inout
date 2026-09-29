@@ -2998,3 +2998,8 @@
 .tracking-link { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.82rem; margin: 0.6rem 0 1rem; }
 .tracking-link a { color: #e65c00; font-weight: 600; }
 .btn-copy-link { border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; padding: 0.2rem 0.6rem; font-size: 0.78rem; cursor: pointer; }
+
+/* Disponibilidad: bajo pedido / agotado */
+.stock-tag { display: inline-block; font-size: 0.72rem; font-weight: 600; border-radius: 999px; padding: 2px 8px; margin-top: 4px; }
+.stock-tag.tag-made { background: #ecfeff; color: #0e7490; }
+.stock-tag.tag-out { background: #f3f4f6; color: #6b7280; }

@@ -1257,11 +1257,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     } else {
       this.cart.push({ product, quantity: 1 });
     }
+    this.refreshSlotsIfScheduled();
     Swal.fire({ icon: 'success', title: 'Agregado', text: `${product.strName} añadido al carrito`, timer: 1200, showConfirmButton: false, position: 'top-end', toast: true });
   }
 
   removeFromCart(productId: string): void {
     this.cart = this.cart.filter(item => item.product.strId !== productId);
+    this.refreshSlotsIfScheduled();
   }
 
   updateCartQuantity(productId: string, qty: number): void {
@@ -1274,7 +1276,25 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         return;
       }
       item.quantity = Math.max(1, qty);
+      this.refreshSlotsIfScheduled();
     }
+  }
+
+  /** Etiqueta de disponibilidad: "Bajo pedido" (se fabrica) o "Agotado". */
+  stockTag(product: Product): { text: string; cls: string } | null {
+    const available = this.getAvailableStock(product);
+    if (available === null || available > 0) return null;
+    if (this.isMadeToOrder(product)) {
+      const h = Number(product.intProductionLeadHours) || 0;
+      const lead = !h ? '' : h < 24 ? ` · listo en ~${h} h` : ` · listo en ~${Math.ceil(h / 24)} día(s)`;
+      return { text: `🛠 Bajo pedido${lead}`, cls: 'tag-made' };
+    }
+    return { text: 'Agotado', cls: 'tag-out' };
+  }
+
+  /** Si se está programando, las franjas dependen del carrito: se recalculan. */
+  private refreshSlotsIfScheduled(): void {
+    if (this.deliveryMode === 'SCHEDULED' && this.scheduleDate) this.selectScheduleDate(this.scheduleDate, true);
   }
 
   isMadeToOrder(product: Product): boolean {
@@ -1378,7 +1398,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   /** Franjas del día para lo que hay en el carrito (considera la cola y la fabricación). */
-  selectScheduleDate(date: string): void {
+  selectScheduleDate(date: string, keepSelection = false): void {
+    const previous = keepSelection ? this.scheduledStart : null;
     this.scheduleDate = date;
     this.scheduledStart = null;
     this.scheduleSlots = [];
@@ -1388,7 +1409,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       date,
       items: this.orderItemsPayload(),
     }).subscribe({
-      next: (res) => { this.scheduleSlots = res?.slots || []; this.slotsLoading = false; },
+      next: (res) => {
+        this.scheduleSlots = res?.slots || [];
+        this.slotsLoading = false;
+        if (previous) {
+          // El carrito cambió: se conserva la franja si todavía alcanza
+          if (this.scheduleSlots.some((s) => s.start === previous && s.available)) this.scheduledStart = previous;
+          else Swal.fire({ icon: 'info', title: 'Elige otra franja', text: 'Con los cambios en tu carrito, la franja elegida ya no está disponible.', timer: 2600, showConfirmButton: false, toast: true, position: 'top-end' });
+        }
+      },
       error: () => { this.slotsLoading = false; },
     });
   }
