@@ -89,6 +89,7 @@ export class SalesDashboardComponent implements OnInit, OnChanges {
           { key: 'CONFIRMED', label: 'Confirmado', color: '#2563eb' },
           { key: 'IN_PRODUCTION', label: 'En Producción', color: '#d97706' },
           { key: 'READY', label: 'Listo', color: '#16a34a' },
+          { key: 'OUT_FOR_DELIVERY', label: 'En reparto', color: '#0284c7' },
           { key: 'DELIVERED', label: 'Entregado', color: '#0d9488' },
         ];
         const maxCount = Math.max(...statuses.map(s => stats[s.key] || 0), 1);

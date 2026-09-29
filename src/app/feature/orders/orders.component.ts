@@ -66,6 +66,7 @@ interface OrderStats {
   CONFIRMED: number;
   IN_PRODUCTION: number;
   READY: number;
+  OUT_FOR_DELIVERY?: number;
   DELIVERED: number;
   INVOICED: number;
   CANCELLED: number;
@@ -90,7 +91,7 @@ interface TimingSettings {
 }
 
 /** Etapas del kanban que admiten duración (mismas que el backend). */
-const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED'];
+const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 
 @Component({
   selector: 'app-orders',
@@ -102,7 +103,7 @@ const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED
 export class OrdersComponent implements OnInit, OnDestroy {
   activeTab: 'panel' | 'list' | 'kanban' = 'panel';
   orders: Order[] = [];
-  stats: OrderStats = { total: 0, DRAFT: 0, CONFIRMED: 0, IN_PRODUCTION: 0, READY: 0, DELIVERED: 0, INVOICED: 0, CANCELLED: 0 };
+  stats: OrderStats = { total: 0, DRAFT: 0, CONFIRMED: 0, IN_PRODUCTION: 0, READY: 0, OUT_FOR_DELIVERY: 0, DELIVERED: 0, INVOICED: 0, CANCELLED: 0 };
   loading = true;
   selectedOrder: Order | null = null;
   showCreateModal = false;
@@ -383,7 +384,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       DRAFT: 'Borrador', CONFIRMED: 'Confirmado', IN_PRODUCTION: 'En Producción',
-      READY: 'Listo', DELIVERED: 'Entregado', INVOICED: 'Facturado', CANCELLED: 'Cancelado'
+      READY: 'Listo', OUT_FOR_DELIVERY: 'En reparto', DELIVERED: 'Entregado', INVOICED: 'Facturado', CANCELLED: 'Cancelado'
     };
     return labels[status] || status;
   }
@@ -391,7 +392,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
       DRAFT: '#6b7280', CONFIRMED: '#2563eb', IN_PRODUCTION: '#d97706',
-      READY: '#16a34a', DELIVERED: '#0d9488', INVOICED: '#7c3aed', CANCELLED: '#dc2626'
+      READY: '#16a34a', OUT_FOR_DELIVERY: '#0284c7', DELIVERED: '#0d9488', INVOICED: '#7c3aed', CANCELLED: '#dc2626'
     };
     return colors[status] || '#6b7280';
   }
@@ -399,7 +400,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   getNextStatus(status: string): string | null {
     const flow: Record<string, string> = {
       DRAFT: 'CONFIRMED', CONFIRMED: 'IN_PRODUCTION', IN_PRODUCTION: 'READY',
-      READY: 'DELIVERED', DELIVERED: 'INVOICED'
+      READY: 'OUT_FOR_DELIVERY', OUT_FOR_DELIVERY: 'DELIVERED', DELIVERED: 'INVOICED'
     };
     return flow[status] || null;
   }
@@ -408,9 +409,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const next = this.getNextStatus(order.status);
     if (!next) return;
 
-    // Al pasar a Entregado (última columna del tablero), sugerir contratar
-    // el domicilio con la extensión de Shotra (configurable en Configuración).
-    if (next === 'DELIVERED' && this.uiPrefs.getSuggestDeliveryOnDeliver()) {
+    // Al salir a reparto, sugerir contratar el domicilio con la extensión de
+    // Shotra (configurable en Configuración).
+    if (next === 'OUT_FOR_DELIVERY' && this.uiPrefs.getSuggestDeliveryOnDeliver()) {
       this.suggestShotraDelivery(order, next);
       return;
     }
@@ -713,7 +714,19 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return this.orders.filter(o => o.status === 'INVOICED' || o.status === 'CANCELLED');
   }
 
-  kanbanStatuses = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED'];
+  kanbanStatuses = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+
+  /** Pedido que el cliente recoge: de Listo a Entregado sin pasar por reparto. */
+  deliverWithoutShipping(order: Order): void {
+    Swal.fire({
+      icon: 'question',
+      title: 'Entregar sin reparto',
+      text: `¿El cliente recogió el pedido ${order.orderCode}? Se marcará como Entregado.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, entregado',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => r.isConfirmed && this.applyStatus(order, 'DELIVERED'));
+  }
   showHistory = true;
   showKanban = true;
 
