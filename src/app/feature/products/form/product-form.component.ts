@@ -139,7 +139,10 @@ export class ProductFormComponent implements OnInit {
       ingStockMax: [0, [Validators.required, Validators.min(1)]],
       strLocation: ['', Validators.required],
       categoryId: [null, Validators.required],
-      marketplaceVisible: [true]
+      marketplaceVisible: [true],
+      // Fabricación bajo pedido: se puede pedir sin stock
+      madeToOrder: [false],
+      productionLeadHours: [null as number | null, [Validators.min(0)]]
     });
   }
 
@@ -164,7 +167,9 @@ export class ProductFormComponent implements OnInit {
       ingStockMax: this.productData.ingStockMax,
       strLocation: this.productData.strLocation,
       categoryId: this.productData.intCategoryId,
-      marketplaceVisible: this.productData.blnMarketplaceVisible !== false
+      marketplaceVisible: this.productData.blnMarketplaceVisible !== false,
+      madeToOrder: !!this.productData.blnMadeToOrder,
+      productionLeadHours: this.productData.intProductionLeadHours ?? null
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
 
@@ -623,7 +628,11 @@ export class ProductFormComponent implements OnInit {
         })),
       images: this.productImages,
       categoryId: +formData.categoryId,
-      blnMarketplaceVisible: formData.marketplaceVisible !== false
+      blnMarketplaceVisible: formData.marketplaceVisible !== false,
+      blnMadeToOrder: !!formData.madeToOrder,
+      ...(formData.productionLeadHours !== null && formData.productionLeadHours !== ''
+        ? { intProductionLeadHours: Math.max(0, Math.round(+formData.productionLeadHours)) }
+        : {})
     };
 
     const request = this.isEditMode && this.productData?.strId

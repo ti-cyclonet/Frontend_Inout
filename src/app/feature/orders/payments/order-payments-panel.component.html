@@ -1,0 +1,41 @@
+<div class="op-panel">
+  <div class="op-head">
+    <h4>💰 Pagos</h4>
+    <span class="op-plan">{{ planLabels[order.paymentPlan] || order.paymentPlan }}</span>
+    <span class="op-status" *ngIf="order.paymentStatus">{{ statusLabels[order.paymentStatus] || order.paymentStatus }}</span>
+  </div>
+
+  <div class="op-summary">
+    <div><span>Pagado</span><strong>{{ formatCurrency(order.amountPaid) }}</strong></div>
+    <div><span>Saldo</span><strong>{{ formatCurrency(balance) }}</strong></div>
+    <div *ngIf="order.depositRequired > 0"><span>Anticipo exigido</span><strong>{{ formatCurrency(order.depositRequired) }}</strong></div>
+  </div>
+  <p class="op-warn" *ngIf="depositMissing > 0 && order.depositDeadline && !['CANCELLED','INVOICED'].includes(order.status)">
+    Falta {{ formatCurrency(depositMissing) }} de anticipo. Si no se verifica antes del {{ formatDate(order.depositDeadline) }}, el pedido se cancela.
+  </p>
+  <p class="op-info" *ngIf="order.layawayDeadline && balance > 0">Plan separe: completar antes del {{ formatDate(order.layawayDeadline) }}.</p>
+  <p class="op-refund" *ngIf="order.refundPending">↩ Pedido cancelado con pagos recibidos: decide y realiza la devolución al cliente.</p>
+
+  <p class="op-empty" *ngIf="!loading && !payments.length">Sin pagos registrados.</p>
+  <div class="op-row" *ngFor="let p of payments" [class.pending]="p.status === 'PENDIENTE_VERIFICACION'">
+    <div class="op-row-main">
+      <strong>{{ formatCurrency(+p.amount) }}</strong>
+      <span>{{ methods[p.method] || p.method }}<ng-container *ngIf="p.reference"> · Ref. {{ p.reference }}</ng-container></span>
+      <small>{{ formatDate(p.createdAt) }} · {{ p.source === 'CLIENTE' ? 'Subido por el cliente' : 'Registrado en tienda' }}</small>
+      <small *ngIf="p.rejectReason" class="op-reject">Rechazado: {{ p.rejectReason }}</small>
+    </div>
+    <div class="op-row-actions">
+      <a *ngIf="p.voucherUrl" [href]="p.voucherUrl" target="_blank" rel="noopener" class="op-link">Ver comprobante</a>
+      <ng-container *ngIf="p.status === 'PENDIENTE_VERIFICACION'">
+        <button type="button" class="op-btn ok" (click)="verify(p)">✔ Confirmar</button>
+        <button type="button" class="op-btn no" (click)="reject(p)">✕ Rechazar</button>
+      </ng-container>
+      <span class="op-badge" *ngIf="p.status !== 'PENDIENTE_VERIFICACION'" [class.rejected]="p.status === 'RECHAZADO'">
+        {{ p.status === 'VERIFICADO' ? 'Confirmado' : 'Rechazado' }}
+      </span>
+    </div>
+  </div>
+
+  <button type="button" class="op-register" *ngIf="acceptsPayments" (click)="register()">+ Registrar pago recibido</button>
+  <p class="op-info" *ngIf="order.paymentPlan === 'CREDITO'">Pedido a crédito: la cuenta por cobrar se crea al facturar y los abonos se registran en Cartera.</p>
+</div>

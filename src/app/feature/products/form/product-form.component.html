@@ -124,6 +124,20 @@
                 </label>
               </div>
             </div>
+
+            <div class="form-group">
+              <div class="form-check">
+                <input type="checkbox" id="madeToOrder" class="form-check-input" formControlName="madeToOrder">
+                <label class="form-check-label" for="madeToOrder">
+                  Se fabrica bajo pedido (se puede pedir aunque no haya stock)
+                </label>
+              </div>
+              <div *ngIf="productForm.get('madeToOrder')?.value" style="margin-top: 0.5rem;">
+                <label for="productionLeadHours" style="font-size: 0.85rem;">Tiempo de fabricación (horas)</label>
+                <input type="number" id="productionLeadHours" min="0" class="form-control" formControlName="productionLeadHours" placeholder="Ej: 48">
+                <small class="text-muted">Se usa para estimar cuándo estará listo el pedido y qué franjas de entrega ofrecer.</small>
+              </div>
+            </div>
           </div>
 
           <div *ngIf="showCategoryForm" style="margin-top: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">

@@ -478,3 +478,25 @@
 .btn-timing-save { border: none; background: #0c4fca; color: #fff; border-radius: 8px; padding: 6px 16px; cursor: pointer; }
 .btn-timing-save:disabled { opacity: 0.6; cursor: default; }
 .card-schedule { font-size: 11px; font-weight: 600; color: #0c4fca; margin-top: 4px; }
+
+/* ─── Insignias, agenda y por fabricar ─── */
+.card-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.card-badge { font-size: 10.5px; font-weight: 600; border-radius: 999px; padding: 1px 7px; background: #eef2ff; color: #3730a3; }
+.card-badge.badge-voucher { background: #fff3e0; color: #e65c00; }
+.card-badge.badge-warn { background: #fff8e1; color: #b26a00; }
+.card-badge.badge-make { background: #ecfeff; color: #0e7490; }
+.card-badge.badge-refund { background: #fdecea; color: #c62828; }
+.agenda-list { padding: 8px 12px 12px; }
+.agenda-empty { font-size: 13px; color: #64748b; margin: 6px 0; }
+.agenda-day-title { font-size: 13px; font-weight: 700; margin: 10px 0 6px; text-transform: capitalize; }
+.agenda-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.agenda-item:hover { background: #f1f5f9; }
+.agenda-time { min-width: 150px; color: #0c4fca; font-weight: 600; }
+.agenda-customer { flex: 1; color: #475569; }
+.make-item { border-bottom: 1px solid #f1f5f9; padding: 8px 0; }
+.make-head { display: flex; justify-content: space-between; font-size: 14px; }
+.make-qty { font-weight: 700; color: #0e7490; }
+.make-orders { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.make-order { font-size: 11.5px; background: #f1f5f9; border-radius: 6px; padding: 2px 8px; }
+.make-order.no-deposit { background: #fff8e1; color: #92400e; }
+.detail-schedule { margin-top: 10px; font-size: 14px; color: #0c4fca; }

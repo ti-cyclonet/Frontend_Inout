@@ -1,0 +1,108 @@
+<!-- ─── Formas de pago ─── -->
+<div class="ss-section">
+  <button type="button" class="ss-header" (click)="toggle('payments')">
+    <span><i class="bi bi-cash-coin me-1"></i> Formas de pago</span>
+    <small>{{ payments ? enabledPlansCount + ' activa(s)' : 'Cargando…' }} {{ open === 'payments' ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="ss-body" *ngIf="open === 'payments' && payments">
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="payments.contraEntrega.enabled">
+      <span><strong>💵 Contra entrega</strong><small>El cliente paga al recibir.</small></span>
+    </label>
+    <div class="ss-sub" *ngIf="payments.contraEntrega.enabled">
+      <label>Solo para pedidos de hasta <small>(opcional)</small></label>
+      <input type="number" min="0" [(ngModel)]="payments.contraEntrega.maxOrderTotal" placeholder="Sin tope">
+    </div>
+
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="payments.contado.enabled">
+      <span><strong>💳 Pago anticipado</strong><small>Paga el 100 % antes de preparar el pedido y sube el comprobante.</small></span>
+    </label>
+
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="payments.mitadMitad.enabled">
+      <span><strong>🌗 50/50</strong><small>Anticipo al pedir y el saldo al recibir.</small></span>
+    </label>
+    <div class="ss-sub" *ngIf="payments.mitadMitad.enabled">
+      <label>Anticipo (%)</label>
+      <input type="number" min="1" max="99" [(ngModel)]="payments.mitadMitad.depositPercent">
+    </div>
+
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="payments.planSepare.enabled">
+      <span><strong>🗓️ Plan separe</strong><small>Aparta con una cuota inicial y abona hasta completar; se entrega pagado. Solo clientes con cuenta.</small></span>
+    </label>
+    <div class="ss-sub ss-grid" *ngIf="payments.planSepare.enabled">
+      <div><label>Cuota inicial mínima (%)</label><input type="number" min="1" max="99" [(ngModel)]="payments.planSepare.minInitialPercent"></div>
+      <div><label>Plazo máximo (días)</label><input type="number" min="1" max="365" [(ngModel)]="payments.planSepare.maxDays"></div>
+      <div><label>Pedido mínimo <small>(opcional)</small></label><input type="number" min="0" [(ngModel)]="payments.planSepare.minOrderTotal" placeholder="Sin mínimo"></div>
+    </div>
+
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="payments.credito.enabled">
+      <span><strong>🧾 A crédito</strong><small>Para clientes con cupo aprobado en Cartera.</small></span>
+    </label>
+
+    <div class="ss-sub ss-grid">
+      <div>
+        <label>Horas para recibir el anticipo</label>
+        <input type="number" min="1" [(ngModel)]="payments.depositTimeoutHours">
+        <small class="ss-help">Si no llega a tiempo, el pedido se cancela y se libera el stock.</small>
+      </div>
+    </div>
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="payments.madeToOrderRequiresDeposit">
+      <span><strong>Exigir anticipo para productos por fabricar</strong><small>Con productos "bajo pedido" sin stock no se ofrece contra entrega.</small></span>
+    </label>
+
+    <div class="ss-sub">
+      <label>Datos para pagar <small>(los ve el cliente)</small></label>
+      <textarea rows="3" maxlength="1000" [(ngModel)]="payments.instructions" placeholder="Nequi 300 123 4567 a nombre de…&#10;Bancolombia ahorros 123-456789-00"></textarea>
+    </div>
+
+    <button type="button" class="ss-save" [disabled]="savingPayments" (click)="savePayments()">{{ savingPayments ? 'Guardando…' : 'Guardar formas de pago' }}</button>
+  </div>
+</div>
+
+<!-- ─── Pedidos programados ─── -->
+<div class="ss-section">
+  <button type="button" class="ss-header" (click)="toggle('scheduling')">
+    <span><i class="bi bi-calendar-event me-1"></i> Pedidos programados</span>
+    <small>{{ scheduling ? (scheduling.enabled ? 'Activos' : 'Inactivos') : 'Cargando…' }} {{ open === 'scheduling' ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="ss-body" *ngIf="open === 'scheduling' && scheduling">
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="scheduling.enabled">
+      <span><strong>Permitir programar la entrega</strong><small>El cliente elige día y franja horaria.</small></span>
+    </label>
+
+    <ng-container *ngIf="scheduling.enabled">
+      <div class="ss-sub ss-grid">
+        <div>
+          <label>Duración de la franja</label>
+          <select [(ngModel)]="scheduling.slotMinutes">
+            <option [ngValue]="30">30 min</option><option [ngValue]="60">1 hora</option>
+            <option [ngValue]="90">1 h 30 min</option><option [ngValue]="120">2 horas</option><option [ngValue]="180">3 horas</option>
+          </select>
+        </div>
+        <div><label>Anticipación mínima (horas)</label><input type="number" min="0" [(ngModel)]="scheduling.minLeadHours"></div>
+        <div><label>Hasta cuántos días adelante</label><input type="number" min="1" max="180" [(ngModel)]="scheduling.maxDaysAhead"></div>
+        <div><label>Pedidos por franja <small>(opcional)</small></label><input type="number" min="1" [(ngModel)]="scheduling.maxOrdersPerSlot" placeholder="Sin límite"></div>
+      </div>
+
+      <p class="ss-label">Horario de entregas</p>
+      <div class="ss-day" *ngFor="let h of scheduling.hours">
+        <label class="ss-day-name"><input type="checkbox" [(ngModel)]="h.active"> {{ days[h.day] }}</label>
+        <ng-container *ngIf="h.active">
+          <input type="time" [(ngModel)]="h.open"> <span>a</span> <input type="time" [(ngModel)]="h.close">
+        </ng-container>
+        <small *ngIf="!h.active" class="ss-help">Cerrado</small>
+      </div>
+      <small class="ss-help">Las franjas también respetan la cola de producción y el tiempo de fabricación de cada pedido.</small>
+    </ng-container>
+
+    <button type="button" class="ss-save" [disabled]="savingScheduling" (click)="saveScheduling()">{{ savingScheduling ? 'Guardando…' : 'Guardar programación' }}</button>
+  </div>
+</div>

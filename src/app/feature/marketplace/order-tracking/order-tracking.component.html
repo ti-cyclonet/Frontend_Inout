@@ -1,0 +1,70 @@
+<div class="tracking-page">
+  <div class="tracking-card" *ngIf="loading">Cargando tu pedido…</div>
+
+  <div class="tracking-card" *ngIf="!loading && notFound">
+    <h2>Pedido no encontrado</h2>
+    <p>Revisa que el enlace esté completo.</p>
+  </div>
+
+  <div class="tracking-card" *ngIf="!loading && order">
+    <p class="tracking-label">Pedido</p>
+    <h2 class="tracking-code">{{ order.orderCode }}</h2>
+    <p class="tracking-status" [class.cancelled]="order.status === 'CANCELLED'">{{ statusLabels[order.status] || order.status }}</p>
+
+    <!-- Avance -->
+    <div class="tracking-steps" *ngIf="order.status !== 'CANCELLED'">
+      <div class="tracking-step" *ngFor="let s of steps; let i = index" [class.done]="i <= stepIndex">
+        <span class="dot"></span><span>{{ statusLabels[s] }}</span>
+      </div>
+    </div>
+
+    <div class="tracking-info">
+      <p *ngIf="schedule() as sched">📅 <strong>Entrega programada:</strong> {{ sched }}</p>
+      <p *ngIf="!order.scheduledStart && order.estimatedReadyAt && ['CONFIRMED','IN_PRODUCTION'].includes(order.status)">
+        ⏱ <strong>Estimado de listo:</strong> {{ formatDate(order.estimatedReadyAt, true) }}
+      </p>
+      <p *ngIf="order.items?.length && hasToManufacture()" class="tracking-note">🛠 Parte de tu pedido se fabrica para ti.</p>
+    </div>
+
+    <!-- Productos -->
+    <div class="tracking-items">
+      <div class="tracking-item" *ngFor="let it of order.items">
+        <span>{{ it.quantity }} × {{ it.productName }}</span>
+        <span>{{ formatCurrency(it.subtotal) }}</span>
+      </div>
+      <div class="tracking-item total"><span>Total</span><span>{{ formatCurrency(order.total) }}</span></div>
+    </div>
+
+    <!-- Pago -->
+    <div class="tracking-payment" *ngIf="order.paymentPlan">
+      <p><strong>{{ planLabels[order.paymentPlan] || order.paymentPlan }}</strong>
+        <span class="pay-status" *ngIf="order.paymentStatus"> · {{ paymentStatusLabels[order.paymentStatus] }}</span></p>
+      <p>Pagado: <strong>{{ formatCurrency(order.amountPaid) }}</strong> · Saldo: <strong>{{ formatCurrency(order.balanceDue) }}</strong></p>
+      <p *ngIf="order.depositRequired > order.amountPaid && order.depositDeadline && order.status !== 'CANCELLED'" class="tracking-warn">
+        Anticipo de {{ formatCurrency(order.depositRequired) }} antes del {{ formatDate(order.depositDeadline, true) }}; si no se recibe, el pedido se cancela.
+      </p>
+      <p *ngIf="order.layawayDeadline && order.balanceDue > 0 && order.status !== 'CANCELLED'">
+        Completa el pago antes del <strong>{{ formatDate(order.layawayDeadline) }}</strong>.
+      </p>
+      <div class="tracking-instructions" *ngIf="order.paymentInstructions && canUploadVoucher">
+        <p class="tracking-label">Datos para pagar</p>
+        <p class="pre">{{ order.paymentInstructions }}</p>
+      </div>
+
+      <app-payment-voucher-upload *ngIf="canUploadVoucher" [token]="token" [suggestedAmount]="suggestedAmount" (uploaded)="load()"></app-payment-voucher-upload>
+
+      <div class="tracking-payments" *ngIf="order.payments?.length">
+        <p class="tracking-label">Tus pagos</p>
+        <div class="tracking-pay" *ngFor="let p of order.payments">
+          <span>{{ formatDate(p.createdAt, true) }} · {{ formatCurrency(p.amount) }}</span>
+          <span class="pay-badge" [ngClass]="p.status">
+            {{ p.status === 'VERIFICADO' ? 'Confirmado' : p.status === 'RECHAZADO' ? 'Rechazado' : 'Por verificar' }}
+          </span>
+          <small *ngIf="p.rejectReason" class="reject">Motivo: {{ p.rejectReason }}</small>
+        </div>
+      </div>
+    </div>
+
+    <a class="tracking-back" [routerLink]="['/marketplace', order.storeSlug || storeId]">← Volver a la tienda</a>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+.tracking-page { min-height: 100vh; background: #f5f6fa; display: flex; justify-content: center; padding: 24px 16px; }
+.tracking-card { background: #fff; border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06); padding: 24px; width: 100%; max-width: 520px; align-self: flex-start; }
+.tracking-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin: 0 0 4px; }
+.tracking-code { margin: 0; font-size: 1.4rem; }
+.tracking-status { display: inline-block; margin: 6px 0 14px; padding: 3px 10px; border-radius: 999px; background: #fff3e0; color: #e65c00; font-weight: 600; font-size: 0.85rem; }
+.tracking-status.cancelled { background: #fdecea; color: #c62828; }
+
+.tracking-steps { display: flex; justify-content: space-between; gap: 6px; margin: 4px 0 16px; }
+.tracking-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.72rem; color: #9ca3af; text-align: center; }
+.tracking-step .dot { width: 14px; height: 14px; border-radius: 50%; background: #e5e7eb; }
+.tracking-step.done { color: #1f2937; font-weight: 600; }
+.tracking-step.done .dot { background: #e65c00; }
+
+.tracking-info p { margin: 4px 0; font-size: 0.9rem; }
+.tracking-note { color: #6b7280; }
+.tracking-items { border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; margin: 14px 0; padding: 8px 0; }
+.tracking-item { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 3px 0; }
+.tracking-item.total { font-weight: 700; border-top: 1px dashed #e5e7eb; margin-top: 4px; padding-top: 6px; }
+
+.tracking-payment p { margin: 4px 0; font-size: 0.9rem; }
+.pay-status { color: #6b7280; font-weight: 400; }
+.tracking-warn { color: #b26a00; background: #fff8e1; border-radius: 8px; padding: 6px 8px; }
+.tracking-instructions { background: #f8fafc; border-radius: 10px; padding: 10px; margin: 10px 0; }
+.tracking-instructions .pre { white-space: pre-line; }
+.tracking-payments { margin-top: 12px; }
+.tracking-pay { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px; font-size: 0.85rem; padding: 5px 0; border-bottom: 1px solid #f3f4f6; }
+.pay-badge { font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #fff8e1; color: #b26a00; }
+.pay-badge.VERIFICADO { background: #e8f5e9; color: #2e7d32; }
+.pay-badge.RECHAZADO { background: #fdecea; color: #c62828; }
+.reject { width: 100%; color: #c62828; }
+.tracking-back { display: inline-block; margin-top: 16px; color: #e65c00; text-decoration: none; font-weight: 600; }

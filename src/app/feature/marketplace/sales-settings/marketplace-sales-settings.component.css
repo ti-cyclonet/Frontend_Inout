@@ -1,0 +1,23 @@
+.ss-section { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; overflow: hidden; }
+.ss-header {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  background: #f8f9fa; border: none; padding: 0.65rem 0.9rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; text-align: left;
+}
+.ss-header small { font-weight: 400; color: #6b7280; }
+.ss-body { padding: 0.75rem 0.9rem; }
+.ss-check { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0.55rem 0; cursor: pointer; }
+.ss-check input { margin-top: 0.25rem; }
+.ss-check span { display: flex; flex-direction: column; }
+.ss-check strong { font-size: 0.88rem; }
+.ss-check small, .ss-help { font-size: 0.78rem; color: #6b7280; }
+.ss-sub { margin: 0.25rem 0 0.6rem 1.6rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.82rem; }
+.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.6rem; }
+.ss-grid > div { display: flex; flex-direction: column; gap: 0.25rem; }
+.ss-sub input, .ss-sub select, .ss-sub textarea, .ss-day input[type='time'] {
+  border: 1px solid #d1d5db; border-radius: 8px; padding: 0.35rem 0.5rem; font-size: 0.85rem;
+}
+.ss-label { font-weight: 600; font-size: 0.85rem; margin: 0.75rem 0 0.35rem; }
+.ss-day { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 0.3rem 0; font-size: 0.85rem; border-bottom: 1px solid #f3f4f6; }
+.ss-day-name { width: 110px; display: flex; gap: 0.35rem; align-items: center; cursor: pointer; }
+.ss-save { margin-top: 0.75rem; border: none; border-radius: 8px; padding: 0.5rem 1rem; background: #0d6efd; color: #fff; font-weight: 600; cursor: pointer; }
+.ss-save:disabled { opacity: 0.6; cursor: default; }

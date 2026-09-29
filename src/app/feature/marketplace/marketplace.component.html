@@ -231,6 +231,11 @@
               </button>
             </div>
 
+            <!-- Formas de pago y pedidos programados -->
+            <div class="mb-3">
+              <app-marketplace-sales-settings [tenantId]="tenantId"></app-marketplace-sales-settings>
+            </div>
+
             <!-- Display Mode Selector -->
             <hr>
             <div class="display-mode-selector">
@@ -476,10 +481,32 @@
       <h2>¡Pedido Confirmado!</h2>
       <p class="order-code">{{ orderSuccess.order?.orderCode }}</p>
       <p>Tu pedido ha sido recibido. Te contactaremos pronto para coordinar la entrega.</p>
-      <p class="payment-note payment-note-credit" *ngIf="orderSuccess.order?.requestedPaymentType === 'CREDITO'; else cashNote">
-        💳 A crédito — se cargará a tu cupo al facturar el pedido
-      </p>
-      <ng-template #cashNote><p class="payment-note">💵 Pago contra-entrega</p></ng-template>
+      <p class="payment-note" *ngIf="successSchedule() as sched">📅 Entrega programada: <strong>{{ sched }}</strong></p>
+
+      <ng-container *ngIf="orderSuccess.order?.paymentPlan as plan; else legacyPayNote">
+        <p class="payment-note" [class.payment-note-credit]="plan === 'CREDITO'">{{ planLabels[plan] }}
+          <ng-container *ngIf="orderSuccess.order.depositRequired > 0"> — paga {{ formatCurrency(orderSuccess.order.depositRequired) }} para confirmar</ng-container>
+        </p>
+        <p class="payment-deadline" *ngIf="orderSuccess.order.layawayDeadline">Completa el pago antes del {{ orderSuccess.order.layawayDeadline }}.</p>
+        <div class="payment-instructions" *ngIf="successNeedsPayment && paymentOptions?.instructions">
+          <strong>Datos para pagar</strong>
+          <p>{{ paymentOptions.instructions }}</p>
+        </div>
+        <app-payment-voucher-upload *ngIf="successNeedsPayment" [token]="orderSuccess.order.trackingToken"
+          [suggestedAmount]="orderSuccess.order.depositRequired"></app-payment-voucher-upload>
+      </ng-container>
+      <ng-template #legacyPayNote>
+        <p class="payment-note payment-note-credit" *ngIf="orderSuccess.order?.requestedPaymentType === 'CREDITO'; else cashNote">
+          💳 A crédito — se cargará a tu cupo al facturar el pedido
+        </p>
+        <ng-template #cashNote><p class="payment-note">💵 Pago contra-entrega</p></ng-template>
+      </ng-template>
+
+      <div class="tracking-link" *ngIf="trackingUrl">
+        <span>Sigue tu pedido y sube comprobantes cuando quieras:</span>
+        <a [href]="trackingUrl" target="_blank" rel="noopener">Ver seguimiento</a>
+        <button type="button" class="btn-copy-link" (click)="copyTrackingUrl()">Copiar enlace</button>
+      </div>
       <button class="btn-checkout-primary" (click)="closeCheckout()">Cerrar</button>
     </div>
 
@@ -513,8 +540,10 @@
         <h3 class="checkout-subtitle">🧾 Detalles del pedido</h3>
         <ng-container *ngTemplateOutlet="cartItems"></ng-container>
 
-        <!-- Forma de pago (con sesión): contra entrega o a crédito -->
-        <div class="pay-options">
+        <ng-container *ngTemplateOutlet="whenAndPay"></ng-container>
+
+        <!-- Checkout clásico (la tienda no expone formas de pago): contra entrega o a crédito -->
+        <div class="pay-options" *ngIf="!paymentOptions">
           <label class="pay-option" [class.active]="paymentPreference === 'CONTADO'">
             <input type="radio" name="mkPay" value="CONTADO" [(ngModel)]="paymentPreference">
             <span><strong>💵 Contra entrega</strong><small>Pagas cuando recibas tu pedido.</small></span>
@@ -709,7 +738,8 @@
           </div>
         </div>
 
-        <div class="checkout-payment-info">
+        <ng-container *ngTemplateOutlet="whenAndPay"></ng-container>
+        <div class="checkout-payment-info" *ngIf="!paymentOptions">
           💵 <strong>Pago contra-entrega</strong> — Pagas cuando recibas tu pedido.
         </div>
 
@@ -766,6 +796,45 @@
     </div>
   </div>
 </div>
+
+<!-- ¿Cuándo? y ¿Cómo pagas? (con y sin sesión) -->
+<ng-template #whenAndPay>
+  <ng-container *ngIf="schedulingOptions">
+    <h3 class="checkout-subtitle">🕒 ¿Cuándo lo quieres?</h3>
+    <div class="when-toggle">
+      <button type="button" [class.active]="deliveryMode === 'ASAP'" (click)="setDeliveryMode('ASAP')">Lo antes posible</button>
+      <button type="button" [class.active]="deliveryMode === 'SCHEDULED'" (click)="setDeliveryMode('SCHEDULED')">Programar</button>
+    </div>
+    <ng-container *ngIf="deliveryMode === 'SCHEDULED'">
+      <div class="schedule-dates">
+        <button type="button" *ngFor="let d of scheduleDates" [class.active]="scheduleDate === d.value" (click)="selectScheduleDate(d.value)">{{ d.label }}</button>
+      </div>
+      <p class="schedule-hint" *ngIf="slotsLoading">Buscando franjas disponibles…</p>
+      <div class="schedule-slots" *ngIf="!slotsLoading && scheduleSlots.length">
+        <button type="button" *ngFor="let s of scheduleSlots" [disabled]="!s.available"
+                [class.active]="scheduledStart === s.start" (click)="scheduledStart = s.start"
+                [title]="s.available ? '' : slotReason(s.reason)">
+          {{ slotLabel(s) }}
+          <small *ngIf="!s.available">{{ slotReason(s.reason) }}</small>
+          <small *ngIf="s.available && s.remaining !== null && s.remaining <= 3">{{ s.remaining }} cupo(s)</small>
+        </button>
+      </div>
+      <p class="schedule-hint" *ngIf="!slotsLoading && scheduleDate && !hasAvailableSlots">No hay franjas disponibles ese día. Prueba otro.</p>
+    </ng-container>
+    <p class="schedule-hint" *ngIf="cartHasMadeToOrder">🛠 Parte de tu pedido se fabrica para ti; por eso algunas franjas pueden no estar disponibles.</p>
+  </ng-container>
+
+  <ng-container *ngIf="paymentOptions">
+    <h3 class="checkout-subtitle">💰 ¿Cómo pagas?</h3>
+    <div class="pay-options">
+      <label class="pay-option" *ngFor="let c of planChoices" [class.active]="effectivePlan === c.plan" [class.disabled]="c.disabled">
+        <input type="radio" name="mkPlan" [value]="c.plan" [checked]="effectivePlan === c.plan" [disabled]="c.disabled" (change)="paymentPlan = c.plan">
+        <span><strong>{{ c.label }}</strong><small>{{ c.detail }}</small><small class="pay-note" *ngIf="c.note">{{ c.note }}</small></span>
+      </label>
+    </div>
+    <p class="schedule-hint" *ngIf="!planChoices.length">Esta tienda aún no tiene formas de pago disponibles.</p>
+  </ng-container>
+</ng-template>
 
 <!-- Ítems del carrito + total (con y sin sesión) -->
 <ng-template #cartItems>

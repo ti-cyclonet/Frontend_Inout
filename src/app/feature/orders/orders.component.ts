@@ -5,6 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { OrderFormComponent } from './form/order-form.component';
+import { OrderPaymentsPanelComponent } from './payments/order-payments-panel.component';
+import { PAYMENT_PLAN_LABELS } from '../marketplace/order-tracking/order-labels';
 import { InvoiceService } from '../../shared/services/invoice.service';
 import { DocumentsService } from '../../shared/services/documents.service';
 import { StockAlertsService } from '../../shared/services/stock-alerts.service';
@@ -40,6 +42,16 @@ interface Order {
   requestedPaymentType?: string | null;
   deliveryLongitude?: number | string | null;
   cancelledAt?: string | null;
+  // Formas de pago del MarketPlace, fabricación y programación
+  paymentPlan?: string | null;
+  paymentStatus?: string | null;
+  depositRequired?: number | string;
+  amountPaid?: number | string;
+  depositDeadline?: string | null;
+  layawayDeadline?: string | null;
+  refundPending?: boolean;
+  scheduledStart?: string | null;
+  scheduledEnd?: string | null;
   subtotal: number;
   tax: number;
   discount: number;
@@ -63,6 +75,7 @@ interface OrderStats {
 interface QueueInfo {
   orderId: string;
   stageDueAt: string | null;
+  pendingVouchers?: number;
   scheduledStart: string | null;
   scheduledEnd: string | null;
   queuePosition: number | null;
@@ -82,7 +95,7 @@ const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, OrderFormComponent],
+  imports: [CommonModule, FormsModule, OrderFormComponent, OrderPaymentsPanelComponent],
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.css'],
 })
@@ -96,6 +109,13 @@ export class OrdersComponent implements OnInit, OnDestroy {
   filterStatus = 'all';
 
   private baseUrl = `${environment.apiUrl}/orders`;
+
+  // ─── Pagos, agenda y pendientes por fabricar ───
+  planLabels = PAYMENT_PLAN_LABELS;
+  showAgenda = false;
+  agendaDays: { date: string; label: string; orders: Order[] }[] = [];
+  showToManufacture = false;
+  toManufacture: { productId: string; productName: string; quantity: number; orders: any[] }[] = [];
 
   // ─── Tiempos por etapa y cola ───
   queueInfo = new Map<string, QueueInfo>();
@@ -129,6 +149,77 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.clockTimer) clearInterval(this.clockTimer);
+  }
+
+  /** Insignias de pago / fabricación de una tarjeta del kanban. */
+  cardBadges(order: Order): { text: string; cls: string }[] {
+    const badges: { text: string; cls: string }[] = [];
+    const pending = this.queueInfo.get(order.id)?.pendingVouchers || 0;
+    if (pending) badges.push({ text: `🔍 ${pending} comprobante(s) por verificar`, cls: 'badge-voucher' });
+    if (order.paymentPlan) {
+      const plan = (this.planLabels[order.paymentPlan] || order.paymentPlan).replace(/^\S+\s/, '');
+      const status = order.paymentStatus === 'ANTICIPO_PENDIENTE' ? ' · anticipo pendiente'
+        : order.paymentStatus === 'PAGADO' ? ' · pagado' : '';
+      badges.push({ text: plan + status, cls: order.paymentStatus === 'ANTICIPO_PENDIENTE' ? 'badge-warn' : 'badge-plan' });
+    }
+    if ((order.items || []).some((i: any) => Number(i.toManufacture) > 0)) badges.push({ text: '🛠 Por fabricar', cls: 'badge-make' });
+    if (order.refundPending) badges.push({ text: '↩ Devolución pendiente', cls: 'badge-refund' });
+    return badges;
+  }
+
+  /** Recarga el pedido abierto (después de registrar o verificar un pago). */
+  refreshSelectedOrder(): void {
+    if (!this.selectedOrder) return;
+    const id = this.selectedOrder.id;
+    this.http.get<Order>(`${this.baseUrl}/${id}`).subscribe({
+      next: (order) => { if (this.selectedOrder?.id === id) this.selectedOrder = order; },
+      error: () => {},
+    });
+    this.loadOrders();
+  }
+
+  toggleAgenda(): void {
+    this.showAgenda = !this.showAgenda;
+    if (this.showAgenda) this.loadAgenda();
+  }
+
+  /** Pedidos programados de hoy y los próximos 6 días, agrupados por día. */
+  loadAgenda(): void {
+    const fmt = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(d);
+    const from = fmt(new Date());
+    const to = fmt(new Date(Date.now() + 6 * 86400000));
+    this.http.get<{ data: Order[] }>(`${this.baseUrl}/agenda`, { params: { from, to } }).subscribe({
+      next: (res) => {
+        const byDay = new Map<string, Order[]>();
+        for (const o of res.data || []) {
+          const day = fmt(new Date(o.scheduledStart!));
+          byDay.set(day, [...(byDay.get(day) || []), o]);
+        }
+        this.agendaDays = [...byDay.entries()].map(([date, orders]) => ({
+          date,
+          label: new Date(`${date}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }),
+          orders,
+        }));
+      },
+      error: () => { this.agendaDays = []; },
+    });
+  }
+
+  slotTime(o: Order): string {
+    const f = (iso: string) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    return o.scheduledStart ? `${f(o.scheduledStart)}${o.scheduledEnd ? ' – ' + f(o.scheduledEnd) : ''}` : '';
+  }
+
+  toggleToManufacture(): void {
+    this.showToManufacture = !this.showToManufacture;
+    if (this.showToManufacture) this.loadToManufacture();
+  }
+
+  loadToManufacture(): void {
+    this.http.get<{ data: any[] }>(`${this.baseUrl}/to-manufacture`).subscribe({
+      next: (res) => { this.toManufacture = res.data || []; },
+      error: () => { this.toManufacture = []; },
+    });
   }
 
   loadQueue(): void {
