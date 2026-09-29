@@ -1,0 +1,36 @@
+/*
+ * Checkout del MarketPlace: programar entrega, formas de pago, seguimiento y
+ * disponibilidad (bajo pedido / agotado). Separado de marketplace.component.css
+ * para no exceder el presupuesto de tamaño por hoja de estilos (angular.json).
+ */
+
+/* ─── ¿Cuándo? / ¿Cómo pagas? / seguimiento ─── */
+.when-toggle { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
+.when-toggle button, .schedule-dates button, .schedule-slots button {
+  border: 1.5px solid #e5e7eb; background: #fff; border-radius: 10px; padding: 0.45rem 0.8rem;
+  font-size: 0.85rem; cursor: pointer; color: #1f2937;
+}
+.when-toggle button { flex: 1; }
+.when-toggle button.active, .schedule-dates button.active, .schedule-slots button.active {
+  border-color: #e65c00; background: #fff3e0; color: #e65c00; font-weight: 600;
+}
+.schedule-dates { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.25rem 0; }
+.schedule-dates button { white-space: nowrap; }
+.schedule-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.4rem; margin: 0.5rem 0; }
+.schedule-slots button { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.schedule-slots button:disabled { opacity: 0.45; cursor: not-allowed; }
+.schedule-slots small { font-size: 0.7rem; color: #6b7280; }
+.schedule-hint { font-size: 0.8rem; color: #6b7280; margin: 0.35rem 0; }
+.pay-option.disabled { opacity: 0.55; cursor: not-allowed; }
+.pay-option .pay-note { color: #b26a00; }
+.payment-deadline { font-size: 0.85rem; color: #374151; margin: 0.25rem 0; }
+.payment-instructions { background: #f8fafc; border-radius: 10px; padding: 0.6rem 0.8rem; margin: 0.6rem 0; text-align: left; font-size: 0.85rem; }
+.payment-instructions p { white-space: pre-line; margin: 0.25rem 0 0; }
+.tracking-link { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.82rem; margin: 0.6rem 0 1rem; }
+.tracking-link a { color: #e65c00; font-weight: 600; }
+.btn-copy-link { border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; padding: 0.2rem 0.6rem; font-size: 0.78rem; cursor: pointer; }
+
+/* Disponibilidad: bajo pedido / agotado */
+.stock-tag { display: inline-block; font-size: 0.72rem; font-weight: 600; border-radius: 999px; padding: 2px 8px; margin-top: 4px; }
+.stock-tag.tag-made { background: #ecfeff; color: #0e7490; }
+.stock-tag.tag-out { background: #f3f4f6; color: #6b7280; }
