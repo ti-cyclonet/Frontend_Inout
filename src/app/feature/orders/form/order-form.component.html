@@ -37,15 +37,44 @@
           </div>
         </div>
         <div class="form-group" style="flex: 1">
-          <label for="deliveryDate">Fecha de Entrega</label>
-          <input
-            type="date"
-            id="deliveryDate"
-            class="form-control"
-            [(ngModel)]="orderData.deliveryDate"
-            name="deliveryDate"
-            [ngModelOptions]="{standalone: true}">
+          <label>Entrega</label>
+          <div class="delivery-toggle">
+            <button type="button" [class.active]="deliveryMode === 'ASAP'" (click)="setDeliveryMode('ASAP')">Lo antes posible</button>
+            <button type="button" [class.active]="deliveryMode === 'SCHEDULED'" (click)="setDeliveryMode('SCHEDULED')">Programar</button>
+          </div>
         </div>
+      </div>
+
+      <!-- Programación: día + franja (misma lógica del MarketPlace) -->
+      <div class="schedule-box" *ngIf="deliveryMode === 'SCHEDULED'">
+        <div class="schedule-row" *ngIf="schedulingEnabled !== false">
+          <label for="scheduleDate">Día de entrega</label>
+          <input type="date" id="scheduleDate" class="form-control" [min]="todayIso"
+                 [ngModel]="scheduleDate" (ngModelChange)="loadSlots($event)" [ngModelOptions]="{standalone: true}">
+        </div>
+
+        <p class="schedule-hint" *ngIf="slotsLoading">Buscando franjas…</p>
+
+        <!-- La tienda no tiene programación activa: hora libre -->
+        <div class="schedule-row" *ngIf="!slotsLoading && schedulingEnabled === false">
+          <label for="freeDateTime">Fecha y hora</label>
+          <input type="datetime-local" id="freeDateTime" class="form-control" [(ngModel)]="freeDateTime" [ngModelOptions]="{standalone: true}">
+          <small class="schedule-hint">Activa "Pedidos programados" en el MarketPlace para usar franjas, cupos y la cola.</small>
+        </div>
+
+        <ng-container *ngIf="!slotsLoading && schedulingEnabled">
+          <p class="schedule-hint" *ngIf="scheduleDate && !scheduleSlots.length">La tienda no atiende ese día.</p>
+          <div class="schedule-slots" *ngIf="scheduleSlots.length">
+            <button type="button" *ngFor="let s of scheduleSlots; trackBy: trackByStart"
+                    [class.active]="scheduledStart === s.start" [class.unavailable]="!s.available"
+                    [title]="s.available ? '' : slotReason(s.reason)" (click)="pickSlot(s)">
+              {{ slotLabel(s) }}
+              <small *ngIf="!s.available">{{ slotReason(s.reason) }}</small>
+              <small *ngIf="s.available && s.remaining !== null">{{ s.remaining }} cupo(s)</small>
+            </button>
+          </div>
+          <p class="schedule-override" *ngIf="allowSlotOverride">⚠ Programado como excepción (franja no disponible).</p>
+        </ng-container>
       </div>
 
       <!-- Notas -->

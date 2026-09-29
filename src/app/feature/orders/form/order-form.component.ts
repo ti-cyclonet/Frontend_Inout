@@ -76,6 +76,20 @@ export class OrderFormComponent implements OnInit {
 
   private baseUrl = `${environment.apiUrl}/orders`;
 
+  // ─── Entrega: lo antes posible o programada (misma lógica de franjas del MarketPlace) ───
+  deliveryMode: 'ASAP' | 'SCHEDULED' = 'ASAP';
+  scheduleDate = '';
+  /** null = no se sabe aún; false = la tienda no tiene programación → hora libre. */
+  schedulingEnabled: boolean | null = null;
+  scheduleSlots: { start: string; end: string; available: boolean; remaining: number | null; reason?: string }[] = [];
+  slotsLoading = false;
+  scheduledStart: string | null = null;
+  /** Hora libre cuando la tienda no tiene programación (datetime-local). */
+  freeDateTime = '';
+  /** El negocio eligió una franja llena o fuera de tiempos (queda como excepción). */
+  allowSlotOverride = false;
+  todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
+
   constructor(
     private customersService: CustomersService,
     private productsService: ProductsService,
@@ -216,7 +230,74 @@ export class OrderFormComponent implements OnInit {
     this.updateTotals();
   }
 
+  setDeliveryMode(mode: 'ASAP' | 'SCHEDULED'): void {
+    this.deliveryMode = mode;
+    if (mode === 'SCHEDULED' && !this.scheduleDate) this.loadSlots(this.todayIso);
+  }
+
+  /** Franjas del día para los productos del pedido (considera la cola y la fabricación). */
+  loadSlots(date: string, keepSelection = false): void {
+    const previous = keepSelection ? this.scheduledStart : null;
+    this.scheduleDate = date;
+    this.scheduledStart = null;
+    this.allowSlotOverride = false;
+    this.scheduleSlots = [];
+    if (!date) return;
+    this.slotsLoading = true;
+    this.http.post<any>(`${this.baseUrl}/slots`, { date, items: this.orderData.items }).subscribe({
+      next: (res) => {
+        this.slotsLoading = false;
+        this.schedulingEnabled = !!res?.enabled;
+        this.scheduleSlots = res?.slots || [];
+        if (previous && this.scheduleSlots.some((s) => s.start === previous && s.available)) this.scheduledStart = previous;
+      },
+      error: () => { this.slotsLoading = false; this.schedulingEnabled = false; },
+    });
+  }
+
+  /** Elegir franja. Una no disponible se puede tomar como excepción, confirmándolo. */
+  pickSlot(slot: { start: string; available: boolean; reason?: string }): void {
+    if (slot.available) {
+      this.scheduledStart = slot.start;
+      this.allowSlotOverride = false;
+      return;
+    }
+    Swal.fire({
+      icon: 'warning',
+      title: 'Franja no disponible',
+      text: `${this.slotReason(slot.reason)}. ¿Programar el pedido en esta franja de todos modos?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, programar',
+      cancelButtonText: 'Elegir otra',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.scheduledStart = slot.start;
+      this.allowSlotOverride = true;
+    });
+  }
+
+  slotLabel(slot: { start: string; end: string }): string {
+    const f = (iso: string) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    return `${f(slot.start)} – ${f(slot.end)}`;
+  }
+
+  slotReason(reason?: string): string {
+    const m: Record<string, string> = {
+      PASADA: 'La franja ya pasó',
+      ANTICIPACION: 'No cumple la anticipación mínima',
+      PREPARACION: 'El pedido no alcanza a estar listo (cola / fabricación)',
+      LLENA: 'La franja está llena',
+    };
+    return reason ? m[reason] || 'No disponible' : '';
+  }
+
+  trackByStart = (_: number, s: { start: string }) => s.start;
+
   updateTotals(): void {
+    // Las franjas dependen de los productos (fabricación): se recalculan
+    if (this.deliveryMode === 'SCHEDULED' && this.schedulingEnabled && this.scheduleDate) {
+      this.loadSlots(this.scheduleDate, true);
+    }
     this.orderData.subtotal = this.orderData.items.reduce((sum, item) => sum + item.subtotal, 0);
     this.orderData.tax = this.orderData.subtotal * 0.19;
     this.orderData.discount = 0;
@@ -232,8 +313,19 @@ export class OrderFormComponent implements OnInit {
     return !!(this.orderData.customerName && this.orderData.items.length > 0);
   }
 
+  /** Inicio programado que se enviará (franja o, sin programación en la tienda, hora libre). */
+  private get scheduledPayload(): string | null {
+    if (this.deliveryMode !== 'SCHEDULED') return null;
+    if (this.schedulingEnabled === false) return this.freeDateTime ? new Date(this.freeDateTime).toISOString() : null;
+    return this.scheduledStart;
+  }
+
   onSubmit(): void {
     if (!this.canSubmit() || this.loading) return;
+    if (this.deliveryMode === 'SCHEDULED' && !this.scheduledPayload) {
+      Swal.fire({ icon: 'warning', title: 'Programación', text: 'Elige el día y la franja de entrega, o marca "Lo antes posible".' });
+      return;
+    }
 
     this.loading = true;
 
@@ -243,6 +335,7 @@ export class OrderFormComponent implements OnInit {
       items: this.orderData.items,
       notes: this.orderData.notes || null,
       deliveryDate: this.orderData.deliveryDate || null,
+      ...(this.scheduledPayload ? { scheduledStart: this.scheduledPayload, allowSlotOverride: this.allowSlotOverride } : {}),
       subtotal: this.orderData.subtotal,
       tax: this.orderData.tax,
       discount: this.orderData.discount,
@@ -292,5 +385,11 @@ export class OrderFormComponent implements OnInit {
     };
     this.customerSearchTerm = '';
     this.resetCurrentItem();
+    this.deliveryMode = 'ASAP';
+    this.scheduleDate = '';
+    this.scheduleSlots = [];
+    this.scheduledStart = null;
+    this.freeDateTime = '';
+    this.allowSlotOverride = false;
   }
 }
