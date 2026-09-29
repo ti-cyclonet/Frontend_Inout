@@ -29,6 +29,9 @@
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
               <div class="card-credit" *ngIf="order.requestedPaymentType === 'CREDITO' && !order.paymentType">💳 Pide crédito</div>
               <div class="card-schedule" *ngIf="scheduleLabel(order) as sched">{{ sched }}</div>
+              <div class="card-badges" *ngIf="cardBadges(order) as badges">
+                <span *ngFor="let b of badges" class="card-badge" [ngClass]="b.cls">{{ b.text }}</span>
+              </div>
               <div class="card-timer" *ngIf="stageTimer(order) as timer" [ngClass]="timer.cls">{{ timer.text }}</div>
               <div class="card-queue" *ngIf="queueLabel(order) as q">{{ q }}</div>
               <div class="card-actions">
@@ -40,6 +43,47 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Agenda de pedidos programados -->
+  <div class="orders-history">
+    <div class="history-header" (click)="toggleAgenda()">
+      <h6 class="history-title">📅 Agenda de pedidos programados (7 días)</h6>
+      <span class="history-toggle">{{ showAgenda ? '▲' : '▼' }}</span>
+    </div>
+    <div class="agenda-list" *ngIf="showAgenda">
+      <p class="agenda-empty" *ngIf="!agendaDays.length">No hay pedidos programados en los próximos 7 días.</p>
+      <div class="agenda-day" *ngFor="let d of agendaDays">
+        <h6 class="agenda-day-title">{{ d.label }} <small>({{ d.orders.length }})</small></h6>
+        <div class="agenda-item" *ngFor="let o of d.orders" (click)="selectOrder(o)">
+          <span class="agenda-time">{{ slotTime(o) }}</span>
+          <strong>{{ o.orderCode }}</strong>
+          <span class="agenda-customer">{{ (o.customerName || 'Sin cliente').split(' | ')[0] }}</span>
+          <span class="status-badge" [style.background]="getStatusColor(o.status)">{{ getStatusLabel(o.status) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unidades por fabricar (productos bajo pedido) -->
+  <div class="orders-history">
+    <div class="history-header" (click)="toggleToManufacture()">
+      <h6 class="history-title">🛠 Por fabricar</h6>
+      <span class="history-toggle">{{ showToManufacture ? '▲' : '▼' }}</span>
+    </div>
+    <div class="agenda-list" *ngIf="showToManufacture">
+      <p class="agenda-empty" *ngIf="!toManufacture.length">No hay unidades pendientes por fabricar.</p>
+      <div class="make-item" *ngFor="let p of toManufacture">
+        <div class="make-head"><strong>{{ p.productName }}</strong><span class="make-qty">{{ p.quantity }} und.</span></div>
+        <div class="make-orders">
+          <span *ngFor="let o of p.orders" class="make-order" [class.no-deposit]="!o.depositCovered"
+                [title]="o.depositCovered ? '' : 'Anticipo sin verificar'">
+            {{ o.orderCode }} · {{ o.quantity }}{{ o.depositCovered ? '' : ' · sin anticipo' }}
+          </span>
+        </div>
+      </div>
+      <p class="agenda-empty" *ngIf="toManufacture.length">Registra la producción en <strong>Productos → Producción</strong>; al marcar el pedido como <em>Listo</em> se reserva lo fabricado.</p>
     </div>
   </div>
 
@@ -168,6 +212,11 @@
           <div class="total-row" *ngIf="selectedOrder.discount > 0"><span>Descuento</span><span>-{{ formatCurrency(selectedOrder.discount) }}</span></div>
           <div class="total-row total-final"><span>TOTAL</span><span>{{ formatCurrency(selectedOrder.total) }}</span></div>
         </div>
+
+        <div class="detail-schedule" *ngIf="selectedOrder.scheduledStart">
+          📅 <strong>Entrega programada:</strong> {{ formatDate(selectedOrder.scheduledStart) }}, {{ slotTime(selectedOrder) }}
+        </div>
+        <app-order-payments-panel *ngIf="selectedOrder.paymentPlan" [order]="selectedOrder" (changed)="refreshSelectedOrder()"></app-order-payments-panel>
       </div>
 
       <!-- Actions -->

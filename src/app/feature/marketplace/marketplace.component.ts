@@ -10,6 +10,7 @@ import { LEGAL_VERSIONS, LegalDocKey, LegalDocument, buildLegalDocument } from '
 import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-upload.component';
+import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange } from './order-tracking/order-labels';
 
 /** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
@@ -54,7 +55,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css']
 })
