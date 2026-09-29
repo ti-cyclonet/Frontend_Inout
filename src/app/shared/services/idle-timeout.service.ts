@@ -7,7 +7,8 @@ import { Router, NavigationEnd } from '@angular/router';
 })
 export class IdleTimeoutService {
   private timeoutId: any;
-  private readonly idleTime = 3 * 60 * 1000;
+  /** Cierre de sesión tras 5 minutos sin actividad. */
+  private readonly idleTime = 5 * 60 * 1000;
   private isBrowser: boolean;
 
   constructor(
@@ -41,6 +42,9 @@ export class IdleTimeoutService {
       document.addEventListener('keydown', this.resetTimer);
       document.addEventListener('click', this.resetTimer);
       document.addEventListener('touchstart', this.resetTimer);
+      // Desplazarse también es actividad (leer una lista larga con la rueda)
+      document.addEventListener('wheel', this.resetTimer, { passive: true });
+      document.addEventListener('scroll', this.resetTimer, { passive: true, capture: true });
     });
 
     this.startTimer();
@@ -53,6 +57,8 @@ export class IdleTimeoutService {
     document.removeEventListener('keydown', this.resetTimer);
     document.removeEventListener('click', this.resetTimer);
     document.removeEventListener('touchstart', this.resetTimer);
+    document.removeEventListener('wheel', this.resetTimer);
+    document.removeEventListener('scroll', this.resetTimer, { capture: true });
     clearTimeout(this.timeoutId);
   }
 

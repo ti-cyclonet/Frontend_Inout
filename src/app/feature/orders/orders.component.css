@@ -500,3 +500,5 @@
 .make-order { font-size: 11.5px; background: #f1f5f9; border-radius: 6px; padding: 2px 8px; }
 .make-order.no-deposit { background: #fff8e1; color: #92400e; }
 .detail-schedule { margin-top: 10px; font-size: 14px; color: #0c4fca; }
+.btn-sm-copy { border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
+.btn-sm-copy:hover { background: #f1f5f9; }

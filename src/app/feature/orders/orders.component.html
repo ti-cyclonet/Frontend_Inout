@@ -37,6 +37,7 @@
               <div class="card-actions">
                 <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
                 <button class="btn-sm-cancel" *ngIf="canCancel(order)" (click)="$event.stopPropagation(); cancelOrder(order)" type="button" title="Cancelar pedido">✕ Cancelar</button>
+                <button class="btn-sm-copy" (click)="$event.stopPropagation(); copyTrackingLink(order)" type="button" title="Copiar el enlace de seguimiento para el cliente">🔗 Copiar</button>
               </div>
             </div>
             <div class="kanban-empty" *ngIf="getOrdersByStatus(status).length === 0">Sin pedidos</div>
@@ -222,6 +223,7 @@
       <!-- Actions -->
       <div class="detail-actions">
         <button class="btn-detail-action" (click)="generateOrderTicket(selectedOrder)" type="button" title="Imprimir comanda">🎫 Comanda</button>
+        <button class="btn-detail-action" (click)="copyTrackingLink(selectedOrder)" type="button" title="Copiar el enlace de seguimiento para el cliente">🔗 Copiar enlace</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'DRAFT'" (click)="generateQuote(selectedOrder)" type="button" title="Generar cotización">💰 Cotización</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' || selectedOrder.status === 'DELIVERED'" (click)="generateDeliveryNote(selectedOrder)" type="button" title="Nota de entrega">📋 Remisión</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status !== 'DRAFT' && selectedOrder.status !== 'CANCELLED'" (click)="generateInvoicePdf(selectedOrder)" type="button">📄 Factura</button>
