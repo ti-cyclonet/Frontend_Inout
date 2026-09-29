@@ -1,7 +1,7 @@
 <div class="op-panel">
   <div class="op-head">
     <h4>💰 Pagos</h4>
-    <span class="op-plan">{{ planLabels[order.paymentPlan] || order.paymentPlan }}</span>
+    <span class="op-plan">{{ planLabel(order.paymentPlan, order) }}</span>
     <span class="op-status" *ngIf="order.paymentStatus">{{ statusLabels[order.paymentStatus] || order.paymentStatus }}</span>
   </div>
 

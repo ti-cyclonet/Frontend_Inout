@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
-import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS } from '../../marketplace/order-tracking/order-labels';
+import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, planLabel } from '../../marketplace/order-tracking/order-labels';
 
 interface OrderPayment {
   id: string;
@@ -42,6 +42,7 @@ export class OrderPaymentsPanelComponent implements OnChanges {
   payments: OrderPayment[] = [];
   loading = false;
   planLabels = PAYMENT_PLAN_LABELS;
+  planLabel = planLabel;
   statusLabels = PAYMENT_STATUS_LABELS;
   methods = METHODS;
 

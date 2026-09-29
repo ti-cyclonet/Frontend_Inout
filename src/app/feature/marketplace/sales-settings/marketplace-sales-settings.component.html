@@ -22,7 +22,7 @@
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.mitadMitad.enabled">
-      <span><strong>🌗 50/50</strong><small>Anticipo al pedir y el saldo al recibir.</small></span>
+      <span><strong>{{ splitPlanLabel(payments.mitadMitad.depositPercent) }}</strong><small>Anticipo al pedir y el saldo al recibir (el nombre cambia con el % de anticipo).</small></span>
     </label>
     <div class="ss-sub" *ngIf="payments.mitadMitad.enabled">
       <label>Anticipo (%)</label>

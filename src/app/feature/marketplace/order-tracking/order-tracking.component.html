@@ -37,7 +37,7 @@
 
     <!-- Pago -->
     <div class="tracking-payment" *ngIf="order.paymentPlan">
-      <p><strong>{{ planLabels[order.paymentPlan] || order.paymentPlan }}</strong>
+      <p><strong>{{ planLabel(order.paymentPlan, order) }}</strong>
         <span class="pay-status" *ngIf="order.paymentStatus"> · {{ paymentStatusLabels[order.paymentStatus] }}</span></p>
       <p>Pagado: <strong>{{ formatCurrency(order.amountPaid) }}</strong> · Saldo: <strong>{{ formatCurrency(order.balanceDue) }}</strong></p>
       <p *ngIf="order.depositRequired > order.amountPaid && order.depositDeadline && order.status !== 'CANCELLED'" class="tracking-warn">

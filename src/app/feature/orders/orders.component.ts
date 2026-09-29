@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { OrderFormComponent } from './form/order-form.component';
 import { OrderPaymentsPanelComponent } from './payments/order-payments-panel.component';
-import { PAYMENT_PLAN_LABELS } from '../marketplace/order-tracking/order-labels';
+import { PAYMENT_PLAN_LABELS, planLabel } from '../marketplace/order-tracking/order-labels';
 import { InvoiceService } from '../../shared/services/invoice.service';
 import { DocumentsService } from '../../shared/services/documents.service';
 import { StockAlertsService } from '../../shared/services/stock-alerts.service';
@@ -157,7 +157,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const pending = this.queueInfo.get(order.id)?.pendingVouchers || 0;
     if (pending) badges.push({ text: `🔍 ${pending} comprobante(s) por verificar`, cls: 'badge-voucher' });
     if (order.paymentPlan) {
-      const plan = (this.planLabels[order.paymentPlan] || order.paymentPlan).replace(/^\S+\s/, '');
+      const plan = planLabel(order.paymentPlan, order).replace(/^\S+\s/, '');
       const status = order.paymentStatus === 'ANTICIPO_PENDIENTE' ? ' · anticipo pendiente'
         : order.paymentStatus === 'PAGADO' ? ' · pagado' : '';
       badges.push({ text: plan + status, cls: order.paymentStatus === 'ANTICIPO_PENDIENTE' ? 'badge-warn' : 'badge-plan' });

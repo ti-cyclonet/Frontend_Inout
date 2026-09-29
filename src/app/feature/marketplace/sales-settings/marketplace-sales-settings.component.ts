@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
+import { splitPlanLabel } from '../order-tracking/order-labels';
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -28,6 +29,7 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
   savingScheduling = false;
   open: 'payments' | 'scheduling' | null = null;
   days = DAYS;
+  splitPlanLabel = splitPlanLabel;
 
   private base = `${environment.apiUrl}/marketplace-config`;
 

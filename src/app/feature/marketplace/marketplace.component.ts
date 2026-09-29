@@ -11,7 +11,7 @@ import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-upload.component';
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
-import { PAYMENT_PLAN_LABELS, formatScheduleRange } from './order-tracking/order-labels';
+import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 
 /** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
 interface PlanChoice {
@@ -210,6 +210,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   slotsLoading = false;
   scheduledStart: string | null = null;
   planLabels = PAYMENT_PLAN_LABELS;
+  planLabel = planLabel;
   /** Ubicación exacta de entrega capturada con el GPS del navegador. */
   deliveryLocation: { lat: number; lng: number; accuracy: number } | null = null;
   geoLoading = false;
@@ -752,10 +753,14 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Pesos enteros sin decimales; con centavos, siempre dos ("$22.805,80", no "$22.805,8"). */
   formatCurrency(value: number): string {
+    const n = Number(value) || 0;
+    const decimals = Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2;
     return '$' + new Intl.NumberFormat('es-CO', {
-      minimumFractionDigits: 0
-    }).format(value);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(n);
   }
 
   formatNumber(value: number): string {
@@ -1328,7 +1333,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         detail: 'Pagas cuando recibas tu pedido.',
         disabled: !!overMax || !!needsDeposit,
         note: needsDeposit ? 'Los productos por fabricar requieren un anticipo.'
-          : overMax ? `Disponible para pedidos de hasta ${this.formatCurrency(o.contraEntrega.maxOrderTotal)}.` : undefined,
+          : overMax ? `No disponible: tu pedido (${this.formatCurrency(total)}) supera el tope de ${this.formatCurrency(o.contraEntrega.maxOrderTotal)} para contra entrega.` : undefined,
       });
     }
     if (o.contado?.enabled) {
@@ -1341,7 +1346,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (o.mitadMitad?.enabled) {
       const dep = pct(o.mitadMitad.depositPercent);
       choices.push({
-        plan: 'MITAD_MITAD', label: this.planLabels['MITAD_MITAD'],
+        plan: 'MITAD_MITAD', label: planLabel('MITAD_MITAD', { depositPercent: o.mitadMitad.depositPercent }),
         detail: `Pagas ${this.formatCurrency(dep)} ahora y ${this.formatCurrency(total - dep)} al recibir.`,
         disabled: false,
       });
@@ -1355,7 +1360,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         detail: `Separas con ${this.formatCurrency(pct(o.planSepare.minInitialPercent))} y completas el pago antes del ${deadline}. Te lo entregamos pagado.`,
         disabled: !this.clientLoggedIn || !!underMin,
         note: !this.clientLoggedIn ? 'Inicia sesión o crea tu cuenta para usarlo.'
-          : underMin ? `Disponible desde ${this.formatCurrency(o.planSepare.minOrderTotal)}.` : undefined,
+          : underMin ? `No disponible: tu pedido (${this.formatCurrency(total)}) no alcanza el mínimo de ${this.formatCurrency(o.planSepare.minOrderTotal)}.` : undefined,
       });
     }
     if (o.credito?.enabled && this.clientLoggedIn && this.clientCredit?.eligibility?.approvedLimit > 0) {
@@ -2005,7 +2010,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (response.whatsapp) {
         const o = response.order || {};
         const pago = o.paymentPlan
-          ? ` - ${PAYMENT_PLAN_LABELS[o.paymentPlan]?.replace(/^\S+\s/, '') || o.paymentPlan}`
+          ? ` - ${planLabel(o.paymentPlan, o).replace(/^\S+\s/, '')}`
           : o.requestedPaymentType === 'CREDITO' ? ' - A crédito' : ' - Contra-entrega';
         const cuando = o.scheduledStart ? ` - Entrega: ${formatScheduleRange(o.scheduledStart, o.scheduledEnd)}` : '';
         const msg = encodeURIComponent(`¡Nuevo pedido ${o.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}${pago}${cuando}`);
