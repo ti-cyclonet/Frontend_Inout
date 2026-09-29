@@ -1369,6 +1369,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return choices;
   }
 
+  // planChoices / scheduleDates son getters que devuelven objetos nuevos en cada
+  // detección de cambios: sin trackBy el *ngFor recreaba los elementos y un clic
+  // podía perderse (el radio del 50/50 "no se dejaba" seleccionar).
+  trackByPlan = (_: number, c: PlanChoice) => c.plan;
+  trackByValue = (_: number, d: { value: string }) => d.value;
+  trackByStart = (_: number, s: { start: string }) => s.start;
+
   /** Forma de pago que se enviará: la elegida si sigue disponible, si no la primera disponible. */
   get effectivePlan(): string | null {
     const choices = this.planChoices.filter((c) => !c.disabled);
