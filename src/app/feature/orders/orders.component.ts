@@ -13,6 +13,7 @@ import { StockAlertsService } from '../../shared/services/stock-alerts.service';
 import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service';
 import { DeliveryLauncherService } from '../../shared/services/delivery-launcher.service';
 import { CreditService, CreditEligibility, PAYMENT_METHODS, paymentMethodLabel } from '../../shared/services/credit.service';
+import { formatCop } from '../../shared/utils/currency.util';
 
 interface OrderItem {
   productId: string;
@@ -696,8 +697,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.selectedOrder = null;
   }
 
+  /** Formato de pesos de los pedidos: "$2.362.200". */
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value || 0);
+    return formatCop(value);
   }
 
   formatDate(date: string): string {

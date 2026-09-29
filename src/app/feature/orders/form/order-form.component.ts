@@ -7,6 +7,7 @@ import { Customer } from '../../../shared/model/customer.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import Swal from 'sweetalert2';
+import { formatCop } from '../../../shared/utils/currency.util';
 
 interface OrderItem {
   productId: string;
@@ -362,13 +363,9 @@ export class OrderFormComponent implements OnInit {
     this.formCancelled.emit();
   }
 
+  /** Formato de pesos de los pedidos: "$2.362.200". */
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
+    return formatCop(amount);
   }
 
   resetForm(): void {
