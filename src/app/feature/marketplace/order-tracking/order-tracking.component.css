@@ -1,4 +1,10 @@
-.tracking-page { min-height: 100vh; background: #f5f6fa; display: flex; justify-content: center; padding: 24px 16px; }
+/* El contenedor raíz de la app tiene overflow: hidden (layout del panel):
+   la página pública se desplaza en su propio contenedor, como el MarketPlace. */
+.tracking-page {
+  height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  background: #f5f6fa; display: flex; justify-content: center; align-items: flex-start;
+  padding: 24px 16px; box-sizing: border-box;
+}
 .tracking-card { background: #fff; border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06); padding: 24px; width: 100%; max-width: 520px; align-self: flex-start; }
 .tracking-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin: 0 0 4px; }
 .tracking-code { margin: 0; font-size: 1.4rem; }
@@ -35,3 +41,4 @@
 .tracking-eta strong { font-size: 1.05rem; text-transform: capitalize; }
 .tracking-updated { font-size: 0.75rem; color: #9ca3af; text-align: center; margin: 14px 0 0; }
 .tracking-eta strong.eta-msg { text-transform: none; font-size: 0.98rem; }
+.tracking-card { margin-bottom: 32px; }
