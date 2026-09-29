@@ -116,6 +116,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   
   // Slug editor
   marketplaceSlug: string = '';
+  /** Secciones plegables del modo administrador (cerradas por defecto). */
+  adminOpen = { url: false, display: false };
   // Slug realmente persistido (para mostrar la URL pública ya guardada).
   savedSlug: string = '';
   slugCopied = false;
