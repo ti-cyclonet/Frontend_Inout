@@ -46,6 +46,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   CONFIRMED: 'Recibido',
   IN_PRODUCTION: 'En preparación',
   READY: 'Listo',
+  OUT_FOR_DELIVERY: 'En reparto',
   DELIVERED: 'Entregado',
   INVOICED: 'Entregado',
   CANCELLED: 'Cancelado',

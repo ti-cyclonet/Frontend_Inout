@@ -225,7 +225,8 @@
         <button class="btn-detail-action" (click)="generateOrderTicket(selectedOrder)" type="button" title="Imprimir comanda">🎫 Comanda</button>
         <button class="btn-detail-action" (click)="copyTrackingLink(selectedOrder)" type="button" title="Copiar el enlace de seguimiento para el cliente">🔗 Copiar enlace</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'DRAFT'" (click)="generateQuote(selectedOrder)" type="button" title="Generar cotización">💰 Cotización</button>
-        <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' || selectedOrder.status === 'DELIVERED'" (click)="generateDeliveryNote(selectedOrder)" type="button" title="Nota de entrega">📋 Remisión</button>
+        <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' || selectedOrder.status === 'OUT_FOR_DELIVERY' || selectedOrder.status === 'DELIVERED'" (click)="generateDeliveryNote(selectedOrder)" type="button" title="Nota de entrega">📋 Remisión</button>
+        <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY'" (click)="deliverWithoutShipping(selectedOrder)" type="button" title="El cliente recoge el pedido">✔ Entregar sin reparto</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status !== 'DRAFT' && selectedOrder.status !== 'CANCELLED'" (click)="generateInvoicePdf(selectedOrder)" type="button">📄 Factura</button>
         <button class="btn-detail-action advance" *ngIf="getNextStatus(selectedOrder.status)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(getNextStatus(selectedOrder.status)!) }}</button>
         <button class="btn-detail-action cancel" *ngIf="canCancel(selectedOrder)" (click)="cancelOrder(selectedOrder)" type="button">✕ Cancelar</button>

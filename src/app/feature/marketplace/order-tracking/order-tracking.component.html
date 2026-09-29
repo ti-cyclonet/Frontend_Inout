@@ -11,6 +11,12 @@
     <h2 class="tracking-code">{{ order.orderCode }}</h2>
     <p class="tracking-status" [class.cancelled]="order.status === 'CANCELLED'">{{ statusLabels[order.status] || order.status }}</p>
 
+    <!-- Entrega estimada (se recalcula en cada refresco) -->
+    <div class="tracking-eta" *ngIf="deliveryText() as eta">
+      <span class="eta-label">{{ order.estimatedDelivery?.scheduled ? '📅 Entrega programada' : '🚚 Entrega estimada' }}</span>
+      <strong>{{ eta }}</strong>
+    </div>
+
     <!-- Avance -->
     <div class="tracking-steps" *ngIf="order.status !== 'CANCELLED'">
       <div class="tracking-step" *ngFor="let s of steps; let i = index" [class.done]="i <= stepIndex">
@@ -19,10 +25,7 @@
     </div>
 
     <div class="tracking-info">
-      <p *ngIf="schedule() as sched">📅 <strong>Entrega programada:</strong> {{ sched }}</p>
-      <p *ngIf="!order.scheduledStart && order.estimatedReadyAt && ['CONFIRMED','IN_PRODUCTION'].includes(order.status)">
-        ⏱ <strong>Estimado de listo:</strong> {{ formatDate(order.estimatedReadyAt, true) }}
-      </p>
+
       <p *ngIf="order.items?.length && hasToManufacture()" class="tracking-note">🛠 Parte de tu pedido se fabrica para ti.</p>
     </div>
 
@@ -65,6 +68,9 @@
       </div>
     </div>
 
+    <p class="tracking-updated" *ngIf="lastUpdated">
+      {{ isFinal ? 'Pedido finalizado' : 'Se actualiza solo cada minuto' }} · última actualización {{ updatedAgo() }}
+    </p>
     <a class="tracking-back" [routerLink]="['/marketplace', order.storeSlug || storeId]">← Volver a la tienda</a>
   </div>
 </div>

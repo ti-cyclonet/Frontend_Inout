@@ -221,6 +221,7 @@ export class InvoiceService {
       CONFIRMED: 'Confirmado',
       IN_PRODUCTION: 'En Producción',
       READY: 'Listo',
+      OUT_FOR_DELIVERY: 'En reparto',
       DELIVERED: 'Entregado',
       INVOICED: 'Facturado',
       CANCELLED: 'Cancelado'
