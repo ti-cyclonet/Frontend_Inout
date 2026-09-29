@@ -36,6 +36,11 @@
     </div>
   </div>
 
+  <!-- Cupos de usuarios por rol según el plan -->
+  <div class="role-quotas">
+    <app-role-quota-summary [refreshTrigger]="quotaRefresh"></app-role-quota-summary>
+  </div>
+
   <!-- Filters Panel -->
   <div class="filters-panel" [class.show]="showFilters">
     <div class="filters-content">

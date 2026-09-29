@@ -5,11 +5,12 @@ import { Observable, firstValueFrom } from 'rxjs';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
+import { RoleQuotaSummaryComponent } from '../../../shared/components/role-quota-summary/role-quota-summary.component';
 
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RoleQuotaSummaryComponent],
   templateUrl: './users-list.component.html',
   styleUrls: ['./users-list.component.css']
 })
@@ -68,9 +69,14 @@ export class UsersListComponent implements OnInit, OnChanges {
     });
   }
 
+  /** Recarga el resumen de cupos por rol. */
+  quotaRefresh = 0;
+
   ngOnChanges(): void {
     if (this.refreshTrigger > 0) {
       this.loadUsers();
+      this.loadRoles();
+      this.quotaRefresh++;
     }
   }
 
@@ -172,12 +178,15 @@ export class UsersListComponent implements OnInit, OnChanges {
       }
 
       // Rol de staff: se reemplaza el anterior (el de cliente no se toca)
+      // Primero se asigna el nuevo (Authoriza valida el cupo del plan) y solo si
+      // lo acepta se quita el anterior: antes se quitaba primero y, si el nuevo
+      // rol no tenía cupo, el usuario quedaba sin ningún rol.
       if (roleChanged) {
-        if (this.originalUserRole) {
-          await firstValueFrom(this.customersService.removeRole(userId, this.originalUserRole, contractId)).catch(() => null);
-        }
         if (this.selectedUserRole) {
           await firstValueFrom(this.customersService.assignRole(userId, this.selectedUserRole, contractId));
+        }
+        if (this.originalUserRole) {
+          await firstValueFrom(this.customersService.removeRole(userId, this.originalUserRole, contractId)).catch(() => null);
         }
         this.originalUserRole = this.selectedUserRole;
       }
@@ -210,6 +219,7 @@ export class UsersListComponent implements OnInit, OnChanges {
     this.originalUserSigner = this.selectedUserSigner;
     this.loadRoles();
     this.loadUsers();
+    this.quotaRefresh++;
     Swal.fire({ icon: 'success', title: 'Cambios guardados', text: 'Los cambios se guardaron correctamente.', confirmButtonColor: '#0066CC', timer: 2000, showConfirmButton: false });
   }
 
