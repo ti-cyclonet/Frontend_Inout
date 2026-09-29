@@ -492,7 +492,7 @@
       <p class="payment-note" *ngIf="successSchedule() as sched">📅 Entrega programada: <strong>{{ sched }}</strong></p>
 
       <ng-container *ngIf="orderSuccess.order?.paymentPlan as plan; else legacyPayNote">
-        <p class="payment-note" [class.payment-note-credit]="plan === 'CREDITO'">{{ planLabels[plan] }}
+        <p class="payment-note" [class.payment-note-credit]="plan === 'CREDITO'">{{ planLabel(plan, orderSuccess.order) }}
           <ng-container *ngIf="orderSuccess.order.depositRequired > 0"> — paga {{ formatCurrency(orderSuccess.order.depositRequired) }} para confirmar</ng-container>
         </p>
         <p class="payment-deadline" *ngIf="orderSuccess.order.layawayDeadline">Completa el pago antes del {{ orderSuccess.order.layawayDeadline }}.</p>

@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { PaymentVoucherUploadComponent } from './payment-voucher-upload.component';
-import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange } from './order-labels';
+import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
 
 /**
  * Seguimiento público de un pedido del MarketPlace: /marketplace/:tenantId/pedido/:token.
@@ -26,6 +26,7 @@ export class OrderTrackingComponent implements OnInit {
   notFound = false;
 
   planLabels = PAYMENT_PLAN_LABELS;
+  planLabel = planLabel;
   paymentStatusLabels = PAYMENT_STATUS_LABELS;
   statusLabels = ORDER_STATUS_LABELS;
   steps = ['CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED'];
