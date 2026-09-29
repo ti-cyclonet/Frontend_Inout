@@ -315,6 +315,7 @@
                 <div class="price-section">
                   <div class="current-price">{{ formatCurrency(product.fltPrice) }}</div>
                   <div class="ml-shipping" *ngIf="product.fltPrice >= 50000">Envío disponible</div>
+                  <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
                 </div>
 
                 <div class="product-actions-modern">
@@ -350,6 +351,7 @@
                       <span class="menu-item-price">{{ formatCurrency(product.fltPrice) }}</span>
                     </div>
                     <p class="menu-item-description" *ngIf="product.strDescription">{{ product.strDescription }}</p>
+                    <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
                   </div>
                   <button class="menu-item-add" (click)="addToCart(product); $event.stopPropagation()" title="Agregar al pedido">
                     +
@@ -453,6 +455,7 @@
         </div>
 
         <div class="modal-actions">
+          <span class="stock-tag" *ngIf="stockTag(selectedProduct!) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
           <button class="btn-modal-cart" (click)="addToCart(selectedProduct!); closeProductDetails()">Agregar al Carrito</button>
           <button class="btn-modal-contact" *ngIf="providerInfo?.phone">
             <a [href]="'https://wa.me/' + providerInfo.phone" target="_blank" style="color: inherit; text-decoration: none;">
