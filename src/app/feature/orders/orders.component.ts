@@ -168,6 +168,33 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   /** Recarga el pedido abierto (después de registrar o verificar un pago). */
+  /**
+   * Copia el enlace público de seguimiento del pedido para compartirlo con el
+   * cliente (ahí ve el estado, sus pagos y puede subir comprobantes).
+   */
+  copyTrackingLink(order: Order): void {
+    this.http.get<{ orderCode: string; token: string; store: string }>(`${this.baseUrl}/${order.id}/tracking-link`).subscribe({
+      next: ({ orderCode, token, store }) => {
+        const url = `${window.location.origin}/marketplace/${store}/pedido/${token}`;
+        const done = () => Swal.fire({
+          icon: 'success', title: 'Enlace copiado', text: `Seguimiento del pedido ${orderCode}`,
+          timer: 1800, showConfirmButton: false, toast: true, position: 'top-end',
+        });
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(url).then(done).catch(() => this.showLinkToCopy(url));
+        } else {
+          this.showLinkToCopy(url);
+        }
+      },
+      error: (err) => Swal.fire({ icon: 'error', title: 'No se pudo obtener el enlace', text: err?.error?.message || 'Intenta de nuevo.' }),
+    });
+  }
+
+  /** Sin acceso al portapapeles (p. ej. sitio sin HTTPS): se muestra para copiarlo a mano. */
+  private showLinkToCopy(url: string): void {
+    Swal.fire({ title: 'Enlace de seguimiento', input: 'text', inputValue: url, confirmButtonText: 'Cerrar' });
+  }
+
   refreshSelectedOrder(): void {
     if (!this.selectedOrder) return;
     const id = this.selectedOrder.id;
