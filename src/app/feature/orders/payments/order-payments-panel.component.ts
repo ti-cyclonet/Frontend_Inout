@@ -115,7 +115,7 @@ export class OrderPaymentsPanelComponent implements OnChanges {
       html: `
         <div style="text-align:left;font-size:0.9rem">
           <label>Valor</label>
-          <input id="op-amount" type="number" min="1" class="swal2-input" style="margin:4px 0 10px;width:100%" value="${Math.round(suggested)}">
+          <input id="op-amount" type="text" inputmode="numeric" class="swal2-input" style="margin:4px 0 10px;width:100%" value="${this.formatCurrency(suggested)}">
           <label>Medio</label>
           <select id="op-method" class="swal2-select" style="margin:4px 0 10px;width:100%">${options}</select>
           <label>Referencia (opcional)</label>
@@ -125,8 +125,16 @@ export class OrderPaymentsPanelComponent implements OnChanges {
       showCancelButton: true,
       confirmButtonText: 'Registrar',
       cancelButtonText: 'Cancelar',
+      // "Valor" con formato de pesos mientras se escribe ("$18.245")
+      didOpen: () => {
+        const input = document.getElementById('op-amount') as HTMLInputElement;
+        input.addEventListener('input', () => {
+          const digits = input.value.replace(/\D/g, '');
+          input.value = digits ? this.formatCurrency(Number(digits)) : '';
+        });
+      },
       preConfirm: () => {
-        const amount = Number((document.getElementById('op-amount') as HTMLInputElement).value);
+        const amount = Number((document.getElementById('op-amount') as HTMLInputElement).value.replace(/\D/g, ''));
         const method = (document.getElementById('op-method') as HTMLSelectElement).value;
         const reference = (document.getElementById('op-ref') as HTMLInputElement).value.trim();
         if (!amount || amount <= 0) { Swal.showValidationMessage('Indica el valor del pago.'); return false; }

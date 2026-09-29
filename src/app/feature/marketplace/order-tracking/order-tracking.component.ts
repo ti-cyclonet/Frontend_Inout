@@ -91,6 +91,21 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     return `${day} ~${time(at)}`;
   }
 
+  /**
+   * Sin hora calculable (la tienda no configuró los tiempos de Listo / En
+   * reparto), se describe el momento de la entrega en palabras.
+   */
+  deliveryStatusText(): string | null {
+    if (!this.order || this.isFinal || this.deliveryText()) return null;
+    const texts: Record<string, string> = {
+      CONFIRMED: 'Recibimos tu pedido; pronto empezaremos a prepararlo.',
+      IN_PRODUCTION: 'Estamos preparando tu pedido.',
+      READY: 'Tu pedido está listo y pronto saldrá a reparto.',
+      OUT_FOR_DELIVERY: '¡Tu pedido va en camino!',
+    };
+    return texts[this.order.status] || null;
+  }
+
   updatedAgo(): string {
     if (!this.lastUpdated) return '';
     const s = Math.max(0, Math.round((this.now - this.lastUpdated.getTime()) / 1000));

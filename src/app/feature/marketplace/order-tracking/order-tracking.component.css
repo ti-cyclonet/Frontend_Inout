@@ -34,3 +34,4 @@
 .tracking-eta .eta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .tracking-eta strong { font-size: 1.05rem; text-transform: capitalize; }
 .tracking-updated { font-size: 0.75rem; color: #9ca3af; text-align: center; margin: 14px 0 0; }
+.tracking-eta strong.eta-msg { text-transform: none; font-size: 0.98rem; }
