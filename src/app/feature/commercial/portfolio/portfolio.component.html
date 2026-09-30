@@ -16,27 +16,29 @@
   <ng-container *ngIf="view === 'summary'">
     <div class="pf-state" *ngIf="loadingSummary">Cargando cartera…</div>
     <ng-container *ngIf="!loadingSummary && summary">
-      <div class="pf-kpis">
-        <div class="kpi">
-          <span class="kpi-label">Cartera total</span>
-          <strong>{{ formatCurrency(summary.total) }}</strong>
-          <small>{{ summary.openCount }} cuenta(s) abiertas</small>
+      <div class="pk">
+        <div class="pk-head" style="margin-top: 0.25rem">
+          <div><h2>Tu cartera</h2><p>Cuentas por cobrar y crédito a clientes</p></div>
+          <app-pk-live [updatedAt]="summaryUpdatedAt" [stale]="summaryStale" [refreshing]="loadingSummary" (refresh)="loadSummary(true)"></app-pk-live>
         </div>
-        <div class="kpi danger">
-          <span class="kpi-label">Vencida</span>
-          <strong>{{ formatCurrency(summary.overdue) }}</strong>
-          <small>{{ summary.overdueCount }} cuenta(s)<ng-container *ngIf="summary.interestPending > 0"> · + {{ formatCurrency(summary.interestPending) }} de mora</ng-container></small>
+        <div class="pk-grid">
+          <app-pk-kpi icon="wallet2" tone="blue" label="Cartera total" [value]="formatCurrency(summary.total)">
+            <span>{{ summary.openCount }} cuenta(s) abiertas</span>
+          </app-pk-kpi>
+          <app-pk-kpi icon="exclamation-octagon" tone="rose" label="Vencida" [value]="formatCurrency(summary.overdue)" [alert]="summary.overdueCount > 0">
+            <span>{{ summary.overdueCount }} cuenta(s)<ng-container *ngIf="summary.interestPending > 0"> · + {{ formatCurrency(summary.interestPending) }} de mora</ng-container></span>
+          </app-pk-kpi>
+          <app-pk-kpi icon="check2-circle" tone="green" label="Al día" [value]="formatCurrency(summary.current)">
+            <span>{{ summary.dueSoonCount }} vence(n) en 7 días</span>
+          </app-pk-kpi>
+          <app-pk-kpi icon="speedometer" tone="violet" label="Uso del crédito" [value]="summary.credit.utilization + '%'">
+            <span>{{ summary.credit.activeAccounts }} cliente(s) · cupo {{ formatCurrency(summary.credit.totalLimit) }}</span>
+          </app-pk-kpi>
         </div>
-        <div class="kpi ok">
-          <span class="kpi-label">Al día</span>
-          <strong>{{ formatCurrency(summary.current) }}</strong>
-          <small>{{ summary.dueSoonCount }} vence(n) en 7 días</small>
-        </div>
-        <div class="kpi info">
-          <span class="kpi-label">Uso del crédito</span>
-          <strong>{{ summary.credit.utilization }}%</strong>
-          <small>{{ summary.credit.activeAccounts }} cliente(s) · cupo {{ formatCurrency(summary.credit.totalLimit) }}</small>
-        </div>
+        <article class="pk-panel" style="margin-bottom: 0.9rem">
+          <header class="pk-panel-head"><h3>Requiere atención</h3><span class="pk-count" *ngIf="attention.length">{{ attention.length }}</span></header>
+          <app-pk-attention [items]="attention" [rows]="attentionRows" emptyText="Sin cuentas vencidas ni solicitudes de crédito por revisar."></app-pk-attention>
+        </article>
       </div>
 
       <div class="pf-grid">

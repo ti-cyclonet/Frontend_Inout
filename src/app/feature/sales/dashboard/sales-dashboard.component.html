@@ -24,65 +24,8 @@
   </div>
 
   <div class="dashboard-content">
-    <!-- VENTAS Section -->
-    <div class="section-label">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="#0066cc"><use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check"></use></svg>
-      Ventas
-    </div>
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check"></use></svg></div>
-        <div class="stat-content"><h3>{{ totalSales }}</h3><p>Total Ventas</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon active"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#currency-dollar"></use></svg></div>
-        <div class="stat-content"><h3>{{ formatCurrency(totalRevenue) }}</h3><p>Ingresos Totales</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon pending"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#clock"></use></svg></div>
-        <div class="stat-content"><h3>{{ pendingSales }}</h3><p>Pedidos Pendientes</p></div>
-      </div>
-    </div>
-
-    <!-- PEDIDOS Section -->
-    <div class="section-label">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="#d97706"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard-data"></use></svg>
-      Pedidos
-    </div>
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon orders"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#clipboard-data"></use></svg></div>
-        <div class="stat-content"><h3>{{ orderStats.total }}</h3><p>Total Pedidos</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon pending"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#gear-wide-connected"></use></svg></div>
-        <div class="stat-content"><h3>{{ orderStats.inProduction }}</h3><p>En Producción</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon active"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle"></use></svg></div>
-        <div class="stat-content"><h3>{{ orderStats.delivered }}</h3><p>Entregados</p></div>
-      </div>
-    </div>
-
-    <!-- CLIENTES Section -->
-    <div class="section-label">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="#16a34a"><use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use></svg>
-      Clientes
-    </div>
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon customers"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#people"></use></svg></div>
-        <div class="stat-content"><h3>{{ customerStats.total }}</h3><p>Total Clientes</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon active"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-check"></use></svg></div>
-        <div class="stat-content"><h3>{{ customerStats.active }}</h3><p>Clientes Activos</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon"><svg fill="currentcolor" viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-plus"></use></svg></div>
-        <div class="stat-content"><h3>{{ customerStats.recent }}</h3><p>Nuevos (último mes)</p></div>
-      </div>
-    </div>
+    <!-- Indicadores en vivo (GET /dashboard/commercial) -->
+    <app-commercial-insights [refreshKey]="refreshTrigger"></app-commercial-insights>
 
     <!-- Charts -->
     <div class="charts-section">
@@ -98,18 +41,6 @@
           </div>
         </div>
         <p class="empty-text" *ngIf="recentSales.length === 0">Sin ventas recientes</p>
-      </div>
-      <div class="chart-card">
-        <h4 class="chart-title">Estado de Pedidos</h4>
-        <div class="orders-status-chart">
-          <div class="status-bar-row" *ngFor="let item of orderStatusBars">
-            <span class="status-bar-label">{{ item.label }}</span>
-            <div class="status-bar-track">
-              <div class="status-bar-fill" [style.width.%]="item.percentage" [style.background]="item.color"></div>
-            </div>
-            <span class="status-bar-count">{{ item.count }}</span>
-          </div>
-        </div>
       </div>
     </div>
 

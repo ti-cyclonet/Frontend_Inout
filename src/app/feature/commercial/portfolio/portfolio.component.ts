@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -6,6 +6,7 @@ import { CreditService, CreditSettings, PAYMENT_METHODS, paymentMethodLabel } fr
 import { DocumentsService } from '../../../shared/services/documents.service';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
+import { PANEL_KIT, PkAttention, PkRow } from '../../../shared/components/panel-kit/panel-kit.components';
 
 type View = 'summary' | 'receivables' | 'credits' | 'settings';
 
@@ -41,17 +42,23 @@ const esc = (v: any) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 @Component({
   selector: 'app-portfolio',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ...PANEL_KIT],
   templateUrl: './portfolio.component.html',
   styleUrls: ['./portfolio.component.css'],
 })
-export class PortfolioComponent implements OnInit {
+export class PortfolioComponent implements OnInit, OnDestroy {
   view: View = 'summary';
   isAdmin = false;
   canOperate = false;
 
   summary: any = null;
   loadingSummary = false;
+  /** Resumen en vivo (se refresca cada 60 s con la pestaña visible). */
+  summaryUpdatedAt: Date | null = null;
+  summaryStale = false;
+  attention: PkAttention[] = [];
+  attentionRows: PkRow[] = [];
+  private liveTimer: any;
 
   receivables: any[] = [];
   loadingReceivables = false;
@@ -85,10 +92,17 @@ export class PortfolioComponent implements OnInit {
     this.canOperate = this.isAdmin || ['operatorInout', 'operator'].includes(role);
     this.loadSummary();
     this.loadSettings();
+    this.liveTimer = setInterval(() => {
+      if (this.view === 'summary' && !document.hidden) this.loadSummary(true);
+    }, 60_000);
     this.customersService.getCustomers().subscribe({
       next: (list: any[]) => (list || []).forEach((c) => c.id && this.customersById.set(c.id, c)),
       error: () => {},
     });
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.liveTimer);
   }
 
   setView(v: View): void {
@@ -104,12 +118,31 @@ export class PortfolioComponent implements OnInit {
   }
 
   // ═══════════════ Resumen ═══════════════
-  loadSummary(): void {
-    this.loadingSummary = true;
+  loadSummary(silent = false): void {
+    if (!silent || !this.summary) this.loadingSummary = true;
     this.creditService.summary().subscribe({
-      next: (s) => { this.summary = s; this.loadingSummary = false; },
-      error: () => { this.loadingSummary = false; },
+      next: (s) => {
+        this.summary = s;
+        this.loadingSummary = false;
+        this.summaryStale = false;
+        this.summaryUpdatedAt = new Date();
+        this.buildAttention(s);
+      },
+      error: () => { this.loadingSummary = false; if (this.summary) this.summaryStale = true; },
     });
+  }
+
+  /** Lo que hay que gestionar en la cartera, de lo más urgente a lo informativo. */
+  private buildAttention(s: any): void {
+    const a: PkAttention[] = [];
+    const money = (v: number) => this.formatCurrency(v);
+    if (s?.overdueCount) a.push({ icon: 'exclamation-octagon-fill', tone: 'danger', count: s.overdueCount, label: 'Cuentas vencidas', detail: `${money(s.overdue)} por cobrar`, action: () => { this.receivableStatus = 'OVERDUE'; this.setView('receivables'); } });
+    if (s?.dueSoonCount) a.push({ icon: 'calendar-event', tone: 'warning', count: s.dueSoonCount, label: 'Vencen en 7 días', detail: 'Recuérdales a tus clientes antes del vencimiento', action: () => { this.receivableStatus = 'OPEN'; this.setView('receivables'); } });
+    if (s?.credit?.pendingRequests) a.push({ icon: 'person-lines-fill', tone: 'info', count: s.credit.pendingRequests, label: 'Solicitudes de crédito', detail: 'Clientes esperando aprobación de cupo', action: () => this.setView('credits') });
+    if (s?.credit?.utilization >= 80) a.push({ icon: 'speedometer', tone: 'warning', count: s.credit.utilization, label: 'Uso alto del crédito (%)', detail: 'Los cupos aprobados están casi agotados', action: () => this.setView('credits') });
+    this.attention = a;
+    this.attentionRows = (s?.topDebtors || []).filter((d: any) => d.overdue > 0).slice(0, 5)
+      .map((d: any) => ({ tone: 'danger' as const, main: d.customerName, meta: `${money(d.overdue)} vencido` }));
   }
 
   agingPercent(value: number): number {

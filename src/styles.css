@@ -140,3 +140,42 @@ footer {
 .swal2-popup .pf-empty { color: #6b7280; font-size: 0.82rem; }
 .invoice-pay .ip-requested { margin: 0 0 0.7rem; padding: 0.5rem 0.7rem; border-radius: 8px; background: #fff4e5; color: #92400e; font-size: 0.82rem; }
 
+
+/* ═══ Kit de paneles de módulo (ver shared/components/panel-kit) ═══ */
+.pk { color: #0b2545; }
+.pk-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin: 0.9rem 0 1rem; }
+.pk-head h2 { margin: 0; font-size: 1.15rem; font-weight: 700; color: #0b2545; letter-spacing: -0.01em; }
+.pk-head p { margin: 0.15rem 0 0; color: #64748b; font-size: 0.84rem; }
+.pk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; margin-bottom: 0.9rem; }
+.pk-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pk-row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 0.9rem; margin-bottom: 0.9rem; }
+.pk-row.half { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pk-row.thirds { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pk-panel { background: #fff; border: 1px solid #e6eaf2; border-radius: 16px; padding: 1rem 1.15rem; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.05); min-width: 0; }
+.pk-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.85rem; }
+.pk-panel-head h3 { margin: 0; font-size: 0.97rem; font-weight: 700; color: #0b2545; }
+.pk-panel-head small { color: #64748b; font-size: 0.75rem; }
+.pk-count { min-width: 22px; height: 22px; padding: 0 0.4rem; border-radius: 999px; background: #0057b8; color: #fff; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.pk-chip { display: inline-flex; padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #f1f5f9; color: #475569; white-space: nowrap; }
+.pk-chip.ok { background: #ecfdf5; color: #047857; } .pk-chip.danger { background: #fff1f2; color: #be123c; } .pk-chip.warn { background: #fff7ed; color: #c2410c; }
+.pk-skeleton { min-height: 124px; border-radius: 16px; background: linear-gradient(100deg, #f4f6fa 30%, #eceff5 50%, #f4f6fa 70%) 0 0 / 200% 100%; animation: pk-shimmer 1.3s infinite; }
+@keyframes pk-shimmer { to { background-position: -200% 0; } }
+.pk-error { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1rem; border-radius: 12px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; margin-bottom: 1rem; font-size: 0.88rem; }
+.pk-feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 1.4rem; }
+.pk-feed li { display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0.3rem; border-bottom: 1px solid #f2f4f8; }
+.pk-feed .fi { width: 30px; height: 30px; border-radius: 50%; background: #eef4fc; color: #0057b8; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pk-feed .fi svg { width: 14px; height: 14px; fill: currentColor; }
+.pk-feed .fi.out { background: #fff7ed; color: #ea7a0b; } .pk-feed .fi.in { background: #ecfdf5; color: #059669; }
+.pk-feed .fb { flex: 1; min-width: 0; } .pk-feed .fb strong { display: block; font-size: 0.83rem; }
+.pk-feed .fb small { display: block; color: #64748b; font-size: 0.73rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk-feed time { color: #64748b; font-size: 0.71rem; white-space: nowrap; }
+.pk-split { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: #f1f4f9; gap: 2px; margin-bottom: 0.9rem; }
+.pk-split span { min-width: 0; transition: flex-grow .5s ease; }
+.pk-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.pk-legend li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+.pk-legend .sw { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.pk-legend .ln { flex: 1; color: #475569; } .pk-legend strong { color: #0b2545; font-variant-numeric: tabular-nums; }
+.pk-empty { color: #64748b; font-size: 0.84rem; margin: 1.2rem 0; text-align: center; }
+@media (max-width: 1200px) { .pk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pk-row.thirds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .pk-row, .pk-row.half, .pk-row.thirds { grid-template-columns: 1fr; } .pk-feed { grid-template-columns: 1fr; } }
+@media (max-width: 576px) { .pk-grid, .pk-grid.three { grid-template-columns: 1fr; } }

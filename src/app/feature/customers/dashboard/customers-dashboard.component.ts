@@ -1,4 +1,5 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { CustomersInsightsComponent } from './customers-insights.component';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
@@ -23,52 +24,12 @@ interface Sale {
 @Component({
   selector: 'app-customers-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CustomersInsightsComponent],
   template: `
     <div class="dashboard-wrapper">
       <div class="dashboard-content">
-        <!-- Metric Cards -->
-        <div class="metrics-grid" *ngIf="!loading">
-          <div class="metric-card">
-            <div class="metric-icon blue">
-              <svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#people-fill"/></svg>
-            </div>
-            <div class="metric-info">
-              <span class="metric-value">{{ totalCustomers }}</span>
-              <span class="metric-label">Total Clientes</span>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-icon green">
-              <svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#person-check-fill"/></svg>
-            </div>
-            <div class="metric-info">
-              <span class="metric-value">{{ activeCustomers }}</span>
-              <span class="metric-label">Clientes Activos</span>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-icon purple">
-              <svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#building"/></svg>
-            </div>
-            <div class="metric-info">
-              <span class="metric-value">{{ legalEntities }}</span>
-              <span class="metric-label">Empresas</span>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-icon orange">
-              <svg viewBox="0 0 16 16" fill="currentColor"><use href="./assets/icons/bootstrap-icons.svg#cart-fill"/></svg>
-            </div>
-            <div class="metric-info">
-              <span class="metric-value">{{ totalSalesRevenue | number:'1.0-0' }}</span>
-              <span class="metric-label">Ventas Totales</span>
-            </div>
-          </div>
-        </div>
+        <!-- Indicadores en vivo (GET /dashboard/customers) -->
+        <app-customers-insights></app-customers-insights>
 
         <!-- Loading -->
         <div class="dashboard-loading" *ngIf="loading">
