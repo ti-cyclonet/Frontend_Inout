@@ -1,6 +1,6 @@
 import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map, of, catchError } from 'rxjs';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../../environments/environment';
@@ -74,5 +74,43 @@ export class AuthService {
       return sessionStorage.getItem('authToken');
     }
     return null;
+  }
+
+  /** Segundos que le quedan al token actual (0 si no hay token o no se puede leer). */
+  tokenSecondsLeft(): number {
+    const token = this.getToken();
+    if (!token) return 0;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return Math.max(0, Math.floor(payload.exp - Date.now() / 1000));
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Renueva el token con Authoriza si le quedan menos de `thresholdSeconds`
+   * (pantallas que quedan abiertas, como el Dashboard). Authoriza revalida al
+   * usuario y su rol, acepta un token recién vencido y limita la sesión a 12 h.
+   */
+  renewSessionIfNeeded(thresholdSeconds = 15 * 60): Observable<boolean> {
+    if (!isPlatformBrowser(this.platformId) || !this.getToken() || this.tokenSecondsLeft() > thresholdSeconds) {
+      return of(true);
+    }
+    return this.http.post<{ access_token: string }>(`${environment.auth.authorizaUrl}/auth/renew`, {}).pipe(
+      tap((r) => {
+        if (r?.access_token) {
+          sessionStorage.setItem('authToken', r.access_token);
+          sessionStorage.setItem('token', r.access_token);
+        }
+      }),
+      map(() => true),
+      catchError(() => of(false)),
+    );
+  }
+
+  /** El token ya venció y no se pudo renovar. */
+  sessionExpired(): boolean {
+    return !!this.getToken() && this.tokenSecondsLeft() === 0;
   }
 }

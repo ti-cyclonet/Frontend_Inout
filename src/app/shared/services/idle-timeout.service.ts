@@ -9,6 +9,11 @@ export class IdleTimeoutService {
   private timeoutId: any;
   /** Cierre de sesión tras 5 minutos sin actividad. */
   private readonly idleTime = 5 * 60 * 1000;
+  /**
+   * Pantallas de monitoreo que se dejan abiertas: no cierran sesión por
+   * inactividad (el Dashboard renueva su token y se actualiza solo).
+   */
+  private readonly keepAliveRoutes = ['/home'];
   private isBrowser: boolean;
 
   constructor(
@@ -64,6 +69,11 @@ export class IdleTimeoutService {
 
   private startTimer(): void {
     this.timeoutId = setTimeout(() => {
+      const url = this.router.url.split('?')[0];
+      if (this.keepAliveRoutes.some((r) => url === r || url.startsWith(r + '/'))) {
+        this.startTimer();
+        return;
+      }
       this.handleLogout();
     }, this.idleTime);
   }

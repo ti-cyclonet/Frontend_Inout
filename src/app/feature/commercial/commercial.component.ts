@@ -142,7 +142,15 @@ export class CommercialComponent {
   showSaleModal = false;
   refreshTrigger = 0;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) {
+    // /orders y /sales abren su pestaña (los accesos del Dashboard llevan
+    // directo a lo que hay que atender); ?tab=cartera abre la cartera.
+    const [path, query = ''] = this.router.url.split('?');
+    const tab = new URLSearchParams(query).get('tab');
+    if (tab === 'cartera' || tab === 'portfolio') this.activeTab = 'portfolio';
+    else if (path === '/orders') this.activeTab = 'orders';
+    else if (path === '/sales') this.activeTab = 'sales';
+  }
 
   openSaleModal(): void {
     this.showSaleModal = true;

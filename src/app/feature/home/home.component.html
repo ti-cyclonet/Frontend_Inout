@@ -1,203 +1,226 @@
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h2 class="mb-1">Dashboard Financiero</h2>
-    <p class="text-muted">Resumen general del inventario y operaciones</p>
+<div class="dash">
+  <!-- Encabezado -->
+  <header class="dash-head">
+    <div>
+      <h1 class="dash-title">{{ greeting }}<span *ngIf="userName">, {{ userName }}</span></h1>
+      <p class="dash-sub"><strong *ngIf="businessName">{{ businessName }}</strong><span *ngIf="businessName"> · </span>Así va tu negocio · {{ monthLabel }}</p>
+    </div>
+    <div class="dash-live" *ngIf="!loading && !sessionEnded">
+      <span class="live-pill" [class.stale]="stale" [title]="stale ? 'No se pudo actualizar; se reintentará' : 'Se actualiza cada 30 segundos'">
+        <span class="live-dot"></span>{{ stale ? 'Sin conexión' : 'En vivo' }}
+      </span>
+      <span class="live-updated">Actualizado {{ updatedLabel }}</span>
+      <button type="button" class="icon-btn" (click)="refresh()" [disabled]="refreshing" title="Actualizar ahora">
+        <svg viewBox="0 0 16 16" [class.spin]="refreshing"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-clockwise"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Accesos rápidos -->
+  <nav class="quick">
+    <a routerLink="/sales" class="quick-item"><span class="q-icon g-green"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#cart-plus"/></svg></span>Ventas</a>
+    <a routerLink="/orders" class="quick-item"><span class="q-icon g-violet"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#kanban"/></svg></span>Pedidos</a>
+    <a routerLink="/inventory" class="quick-item"><span class="q-icon g-blue"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam"/></svg></span>Inventario</a>
+    <a routerLink="/kardex" class="quick-item"><span class="q-icon g-blue"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text"/></svg></span>Kardex</a>
+    <button type="button" (click)="openMarketplace()" class="quick-item"><span class="q-icon g-rose"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#shop"/></svg></span>Mi MarketPlace</button>
+    <button type="button" (click)="openSettings()" class="quick-item"><span class="q-icon g-gray"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#gear"/></svg></span>Configuración</button>
+  </nav>
+
+  <div class="kpi-grid" *ngIf="loading">
+    <div class="kpi skeleton" *ngFor="let i of [1, 2, 3, 4]"></div>
   </div>
 
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
+  <div class="dash-error dash-session" *ngIf="sessionEnded">
+    <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#clock-history"/></svg>
+    Tu sesión llegó a su duración máxima (12 horas). Inicia sesión de nuevo para seguir viendo tus indicadores en vivo.
+    <button type="button" class="link-btn" (click)="goToLogin()">Iniciar sesión</button>
   </div>
 
-  <div *ngIf="!loading">
-    <!-- Accesos Rápidos -->
-    <div class="chart-card-full mb-4">
-      <div class="row g-0">
-        <div class="col-12 col-sm-4 d-flex flex-column align-items-center justify-content-center p-3 hover-card quick-access-left"
-             routerLink="/kardex" style="cursor:pointer;">
-          <svg width="48" height="48" fill="currentColor" class="text-primary mb-2">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text" />
-          </svg>
-          <h5 class="card-title fw-bold mb-1">KARDEX</h5>
-          <p class="card-text text-muted text-center small">Gestión detallada de movimientos de inventario</p>
-        </div>
-        <div class="col-12 col-sm-4 d-flex flex-column align-items-center justify-content-center p-3 hover-card quick-access-middle"
-             (click)="openMarketplace()" style="cursor:pointer;">
-          <svg width="48" height="48" fill="currentColor" class="text-success mb-2">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#shop" />
-          </svg>
-          <h5 class="card-title fw-bold mb-1">CycloNet Market</h5>
-          <p class="card-text text-muted text-center small">Explora productos de otros negocios en la red</p>
-        </div>
-        <div class="col-12 col-sm-4 d-flex flex-column align-items-center justify-content-center p-3 hover-card quick-access-right"
-             (click)="openSettings()" style="cursor:pointer;">
-          <svg width="48" height="48" fill="currentColor" class="text-warning mb-2">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#gear" />
-          </svg>
-          <h5 class="card-title fw-bold mb-1">Configuraciones</h5>
-          <p class="card-text text-muted text-center small">Parámetros y ajustes de la aplicación</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Métricas Principales -->
-    <div class="metrics-grid">
-      <div class="metric-card primary">
-        <div class="metric-icon">
-          <svg width="32" height="32" fill="currentColor">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#cash-stack" />
-          </svg>
-        </div>
-        <div class="metric-content">
-          <h3>{{ formatCurrency(metrics.totalInventoryValue) }}</h3>
-          <p>Valor Total Inventario</p>
-        </div>
-      </div>
-
-      <div class="metric-card success">
-        <div class="metric-icon">
-          <svg width="32" height="32" fill="currentColor">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#cart-check" />
-          </svg>
-        </div>
-        <div class="metric-content">
-          <h3>{{ formatCurrency(metrics.totalSales) }}</h3>
-          <p>Ventas Totales</p>
-        </div>
-      </div>
-
-      <div class="metric-card warning">
-        <div class="metric-icon">
-          <svg width="32" height="32" fill="currentColor">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle" />
-          </svg>
-        </div>
-        <div class="metric-content">
-          <h3>{{ metrics.lowStockProducts }}</h3>
-          <p>Productos Stock Bajo</p>
-        </div>
-      </div>
-
-      <div class="metric-card info">
-        <div class="metric-icon">
-          <svg width="32" height="32" fill="currentColor">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#receipt" />
-          </svg>
-        </div>
-        <div class="metric-content">
-          <h3>{{ formatNumber(metrics.salesCount) }}</h3>
-          <p>Ventas Realizadas</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gráficas Principales -->
-    <div class="charts-full-width">
-      <div class="chart-card-full">
-        <h6>Análisis Financiero de Ventas</h6>
-        <div class="chart-wrapper-large">
-          <canvas #salesTrendChart></canvas>
-        </div>
-        <!-- Filtros de Agrupación -->
-        <div class="chart-filters mt-3">
-          <div class="btn-group" role="group">
-            <input type="radio" class="btn-check" name="chartFilter" id="daily" value="daily" 
-                   [checked]="chartFilter === 'daily'" (change)="onFilterChange('daily')">
-            <label class="btn btn-outline-primary" for="daily">Por Día</label>
-            
-            <input type="radio" class="btn-check" name="chartFilter" id="weekly" value="weekly" 
-                   [checked]="chartFilter === 'weekly'" (change)="onFilterChange('weekly')">
-            <label class="btn btn-outline-primary" for="weekly">Por Semana</label>
-            
-            <input type="radio" class="btn-check" name="chartFilter" id="monthly" value="monthly" 
-                   [checked]="chartFilter === 'monthly'" (change)="onFilterChange('monthly')">
-            <label class="btn btn-outline-primary" for="monthly">Por Mes</label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h6>Top 5 Productos Más Vendidos</h6>
-        <div class="chart-wrapper">
-          <canvas #salesChart></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h6>Distribución de Inventario</h6>
-        <div class="chart-wrapper">
-          <canvas #inventoryChart></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Resumen operativo: gauge de stock, rentabilidad y resumen -->
-    <div class="summary-grid">
-      <div class="chart-card">
-        <h6>Salud de Stock</h6>
-        <div class="gauge-container">
-          <canvas #stockGaugeChart></canvas>
-          <div class="gauge-label">
-            <span class="gauge-percent">{{ stockHealthPercent }}%</span>
-            <span class="gauge-caption">saludable</span>
-          </div>
-        </div>
-        <p class="gauge-footnote">{{ metrics.productsCount - metrics.lowStockProducts }} de {{ metrics.productsCount }} productos</p>
-      </div>
-
-      <div class="chart-card">
-        <h6>Rentabilidad por Categoría</h6>
-        <div class="chart-wrapper-small">
-          <canvas #profitChart></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <h6>Resumen Operativo</h6>
-        <div class="op-summary-list">
-          <div class="op-summary-item">
-            <div class="op-summary-icon">
-              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" /></svg>
-            </div>
-            <span class="op-summary-label">Materiales</span>
-            <span class="op-summary-value">{{ metrics.materialsCount }}</span>
-          </div>
-          <div class="op-summary-item">
-            <div class="op-summary-icon">
-              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#box2-fill" /></svg>
-            </div>
-            <span class="op-summary-label">Productos</span>
-            <span class="op-summary-value">{{ metrics.productsCount }}</span>
-          </div>
-          <div class="op-summary-item">
-            <div class="op-summary-icon">
-              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#receipt" /></svg>
-            </div>
-            <span class="op-summary-label">Ventas realizadas</span>
-            <span class="op-summary-value">{{ formatNumber(metrics.salesCount) }}</span>
-          </div>
-          <div class="op-summary-item" *ngIf="metrics.lowStockProducts > 0">
-            <div class="op-summary-icon">
-              <svg width="18" height="18" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill" /></svg>
-            </div>
-            <span class="op-summary-label">Alertas de stock bajo</span>
-            <span class="op-summary-value op-summary-warning">{{ metrics.lowStockProducts }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="charts-full-width">
-      <div class="chart-card-full">
-        <h6>Evolución del Valor de Inventario</h6>
-        <div class="chart-wrapper-large">
-          <canvas #inventoryTrendChart></canvas>
-        </div>
-      </div>
-    </div>
-
+  <div class="dash-error" *ngIf="error && !loading && !sessionEnded">
+    <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#exclamation-triangle-fill"/></svg>
+    {{ error }}
+    <button type="button" class="link-btn" (click)="refresh()">Reintentar</button>
   </div>
+
+  <ng-container *ngIf="overview as o">
+    <!-- KPIs principales -->
+    <section class="kpi-grid">
+      <article class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-icon g-violet"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#graph-up-arrow"/></svg></span>
+          <span class="kpi-label">Ventas del mes</span>
+        </div>
+        <div class="kpi-value" [title]="money(o.sales.monthRevenue)">{{ compactMoney(o.sales.monthRevenue) }}</div>
+        <div class="kpi-foot">
+          <ng-container *ngTemplateOutlet="deltaTpl; context: { d: delta(o.sales.monthRevenue, o.sales.prevMonthRevenue) }"></ng-container>
+          <span>vs. mes anterior · {{ o.sales.monthCount }} venta(s)</span>
+        </div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-icon g-green"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#cash-coin"/></svg></span>
+          <span class="kpi-label">Vendido hoy</span>
+        </div>
+        <div class="kpi-value" [title]="money(o.sales.todayRevenue)">{{ compactMoney(o.sales.todayRevenue) }}</div>
+        <div class="kpi-foot"><span>{{ o.sales.todayCount }} venta(s) · ticket promedio del mes {{ compactMoney(o.sales.avgTicket) }}</span></div>
+      </article>
+
+      <article class="kpi" [class.kpi-alert]="o.orders.delayed > 0">
+        <div class="kpi-top">
+          <span class="kpi-icon g-blue"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#kanban"/></svg></span>
+          <span class="kpi-label">Pedidos en curso</span>
+        </div>
+        <div class="kpi-value">{{ o.orders.active }}</div>
+        <div class="kpi-foot">
+          <span class="chip" [class.chip-danger]="o.orders.delayed" [class.chip-ok]="!o.orders.delayed">{{ o.orders.delayed ? o.orders.delayed + ' atrasado(s)' : 'Al día' }}</span>
+          <span>{{ compactMoney(o.orders.activeValue) }} por entregar</span>
+        </div>
+      </article>
+
+      <article class="kpi" [class.kpi-alert]="o.receivables.overdueCount > 0">
+        <div class="kpi-top">
+          <span class="kpi-icon g-rose"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#wallet2"/></svg></span>
+          <span class="kpi-label">Cartera por cobrar</span>
+        </div>
+        <div class="kpi-value" [title]="money(o.receivables.balance)">{{ compactMoney(o.receivables.balance) }}</div>
+        <div class="kpi-foot">
+          <span class="chip" [class.chip-danger]="o.receivables.overdueCount" [class.chip-ok]="!o.receivables.overdueCount">
+            {{ o.receivables.overdueCount ? compactMoney(o.receivables.overdueBalance) + ' vencida' : 'Nada vencido' }}
+          </span>
+          <span>{{ o.receivables.count }} cuenta(s) abiertas</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- Indicadores secundarios -->
+    <section class="mini-grid">
+      <div class="mini">
+        <div class="ring" [style.--p]="o.inventory.healthPercent ?? 0"><span>{{ o.inventory.healthPercent === null ? '—' : o.inventory.healthPercent + '%' }}</span></div>
+        <div><strong>Salud del stock</strong><small>{{ o.inventory.lowStockCount }} ítem(s) bajo el mínimo</small></div>
+      </div>
+      <div class="mini">
+        <span class="mini-icon g-blue"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#boxes"/></svg></span>
+        <div><strong>{{ compactMoney(o.inventory.value) }} en inventario</strong><small>{{ o.inventory.materialsCount }} materiales · {{ o.inventory.productsCount }} productos</small></div>
+      </div>
+      <div class="mini">
+        <span class="mini-icon g-violet"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#people-fill"/></svg></span>
+        <div><strong>{{ o.customers.total }} cliente(s)</strong><small>{{ o.customers.newThisMonth }} nuevo(s) este mes</small></div>
+      </div>
+      <div class="mini">
+        <span class="mini-icon g-green"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#calendar-check"/></svg></span>
+        <div><strong>{{ o.orders.scheduledToday }} entrega(s) hoy</strong><small>{{ o.orders.pendingPayments }} pago(s) por verificar</small></div>
+      </div>
+    </section>
+
+    <!-- Requiere atención + tendencia -->
+    <section class="row-2">
+      <article class="panel">
+        <header class="panel-head">
+          <h2>Requiere atención</h2>
+          <span class="count-badge" *ngIf="attention.length">{{ attention.length }}</span>
+        </header>
+        <ul class="attn" *ngIf="attention.length; else allGood">
+          <li *ngFor="let a of attention; trackBy: trackByLabel" [class]="'attn-' + a.tone">
+            <a [routerLink]="a.link" [queryParams]="a.query">
+              <span class="attn-icon"><svg viewBox="0 0 16 16"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + a.icon"/></svg></span>
+              <span class="attn-body"><strong>{{ a.label }}</strong><small>{{ a.detail }}</small></span>
+              <span class="attn-count">{{ a.count }}</span>
+            </a>
+          </li>
+        </ul>
+        <ng-template #allGood>
+          <div class="all-good">
+            <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#check-circle-fill"/></svg>
+            <strong>Todo al día</strong>
+            <small>Sin pedidos atrasados, pagos por verificar, cartera vencida ni stock por reponer.</small>
+          </div>
+        </ng-template>
+
+        <div class="attn-list" *ngIf="o.alerts.lowStock.length || o.alerts.delayedOrders.length || o.alerts.overdueReceivables.length || o.alerts.expiringLots.length">
+          <div class="attn-row" *ngFor="let d of o.alerts.delayedOrders; trackBy: trackById">
+            <span class="dot dot-danger"></span>
+            <span class="attn-row-main">{{ d.code }} · {{ d.customer || 'Cliente' }}</span>
+            <span class="attn-row-meta">{{ minutesLabel(d.minutesLate) }} de atraso</span>
+          </div>
+          <div class="attn-row" *ngFor="let r of o.alerts.overdueReceivables; trackBy: trackById">
+            <span class="dot dot-danger"></span>
+            <span class="attn-row-main">{{ r.code }} · {{ r.customer }}</span>
+            <span class="attn-row-meta">{{ money(r.balance) }} · venció {{ r.dueDate }}</span>
+          </div>
+          <div class="attn-row" *ngFor="let s of o.alerts.lowStock; trackBy: trackByName">
+            <span class="dot dot-warning"></span>
+            <span class="attn-row-main">{{ s.name }}</span>
+            <span class="attn-row-meta">{{ s.stock }}{{ s.unit ? ' ' + s.unit : '' }} de mín. {{ s.min }}</span>
+          </div>
+          <div class="attn-row" *ngFor="let l of o.alerts.expiringLots; trackBy: trackById">
+            <span class="dot dot-warning"></span>
+            <span class="attn-row-main">{{ l.name }}</span>
+            <span class="attn-row-meta">vence en {{ l.daysLeft }} d</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header class="panel-head"><h2>Ventas diarias</h2><small>Últimos 14 días</small></header>
+        <div class="chart-box chart-lg"><canvas #trendCanvas></canvas></div>
+      </article>
+    </section>
+
+    <!-- Pedidos, top productos y meses -->
+    <section class="row-3">
+      <article class="panel">
+        <header class="panel-head"><h2>Pedidos por etapa</h2><small>{{ o.orders.active }} en curso</small></header>
+        <div class="pipeline-bar" *ngIf="o.orders.active; else noOrders">
+          <span *ngFor="let s of pipeline; trackBy: trackByKey" [style.flex-grow]="s.count" [style.background]="s.color" [title]="s.label + ': ' + s.count"></span>
+        </div>
+        <ul class="stages">
+          <li *ngFor="let s of pipeline; trackBy: trackByKey">
+            <span class="dot" [style.background]="s.color"></span>
+            <span class="stage-name">{{ s.label }}</span>
+            <strong>{{ s.count }}</strong>
+          </li>
+        </ul>
+        <ng-template #noOrders><p class="empty">No hay pedidos en curso.</p></ng-template>
+      </article>
+
+      <article class="panel">
+        <header class="panel-head"><h2>Lo más vendido</h2><small>Este mes</small></header>
+        <ul class="bars" *ngIf="topProducts.length; else noTop">
+          <li *ngFor="let p of topProducts; let i = index; trackBy: trackByName">
+            <span class="bar-rank">{{ i + 1 }}</span>
+            <span class="bar-body">
+              <span class="bar-name">{{ p.name }}</span>
+              <span class="bar-track"><span [style.width.%]="p.share"></span></span>
+            </span>
+            <span class="bar-value">{{ compactMoney(p.value) }}</span>
+          </li>
+        </ul>
+        <ng-template #noTop><p class="empty">Aún no hay ventas este mes.</p></ng-template>
+      </article>
+
+      <article class="panel">
+        <header class="panel-head"><h2>Ventas por mes</h2><small>Últimos 6 meses</small></header>
+        <div class="chart-box"><canvas #monthsCanvas></canvas></div>
+      </article>
+    </section>
+
+    <!-- Actividad -->
+    <section class="panel">
+      <header class="panel-head"><h2>Actividad reciente</h2><small>Se actualiza sola</small></header>
+      <ul class="feed" *ngIf="o.activity.length; else noActivity">
+        <li *ngFor="let a of o.activity; trackBy: trackById" [class.fresh]="freshActivity.has(a.id)">
+          <span class="feed-icon"><svg viewBox="0 0 16 16"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + activityIcon(a.kind)"/></svg></span>
+          <span class="feed-body"><strong>{{ a.title }}</strong><small>{{ activityLabel(a.kind) }} · {{ a.detail }} · {{ money(a.value) }}</small></span>
+          <time class="feed-time" [attr.datetime]="a.at">{{ relativeTime(a.at) }}</time>
+        </li>
+      </ul>
+      <ng-template #noActivity><p class="empty">Aún no hay movimientos.</p></ng-template>
+    </section>
+  </ng-container>
 </div>
+
+<ng-template #deltaTpl let-d="d">
+  <span class="chip" *ngIf="d === null" title="Sin ventas el mes anterior para comparar">Nuevo</span>
+  <span class="chip" *ngIf="d !== null" [class.chip-up]="d > 0" [class.chip-down]="d < 0">{{ d > 0 ? '▲' : d < 0 ? '▼' : '•' }} {{ d > 0 ? '+' : '' }}{{ d }}%</span>
+</ng-template>
