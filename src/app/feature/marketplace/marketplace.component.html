@@ -40,10 +40,10 @@
         </div>
       </div>
 
-      <nav class="categories-nav">
-        <button class="category-btn" 
-                *ngFor="let category of getVisibleCategories()" 
-                [class.active]="selectedCategory === category.value" 
+      <nav class="categories-nav" *ngIf="!showMenuBoard">
+        <button class="category-btn"
+                *ngFor="let category of getVisibleCategories()"
+                [class.active]="selectedCategory === category.value"
                 (click)="selectedCategory = category.value; onCategoryChange()">
           {{ category.label }}
         </button>
@@ -57,7 +57,7 @@
     </div>
 
       <!-- Hero Carousel -->
-      <section class="hero-carousel" *ngIf="carouselProducts.length > 0">
+      <section class="hero-carousel" *ngIf="carouselProducts.length > 0 && !showMenuBoard">
         <div class="carousel-container">
           <div class="carousel-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'">
             <div class="carousel-slide" *ngFor="let product of carouselProducts; let i = index">
@@ -97,7 +97,7 @@
       </section>
 
       <!-- Banner promocional por tipo de negocio -->
-      <section class="sector-banner" *ngIf="tenantId !== 'home'">
+      <section class="sector-banner" *ngIf="tenantId !== 'home' && !showMenuBoard">
         <div class="sector-banner-inner">
           <div class="sector-banner-text">
             <h3>{{ sectorBanner.title }}</h3>
@@ -108,7 +108,7 @@
       </section>
 
       <!-- Franja de beneficios (estilo marketplace) -->
-      <section class="benefits-strip" *ngIf="tenantId !== 'home'">
+      <section class="benefits-strip" *ngIf="tenantId !== 'home' && !showMenuBoard">
         <div class="benefits-track">
           <div class="benefit-card">
             <div class="benefit-icon">🚚</div>
@@ -142,7 +142,7 @@
       </section>
 
       <!-- Featured Products -->
-      <section class="featured-section" *ngIf="featuredProducts.length > 0">
+      <section class="featured-section" *ngIf="featuredProducts.length > 0 && !showMenuBoard">
         <div class="featured-container">
           <h2 class="featured-title">⭐ Productos Destacados</h2>
           <div class="featured-carousel">
@@ -187,7 +187,7 @@
             <div class="slug-editor admin-collapse-body" *ngIf="adminOpen.url">
               <div class="input-group">
                 <span class="input-group-text" style="font-size: 0.8rem; background: #f8f9fa;">{{ getBaseUrl() }}/marketplace/</span>
-                <input type="text" class="form-control" [(ngModel)]="marketplaceSlug" 
+                <input type="text" class="form-control" [(ngModel)]="marketplaceSlug"
                        placeholder="mi-tienda" style="font-weight: 600;"
                        (input)="onSlugInput($event)">
                 <button class="btn btn-outline-primary" type="button" (click)="saveSlug()" [disabled]="slugSaving">
@@ -263,27 +263,38 @@
             <div class="admin-collapse">
               <button type="button" class="admin-collapse-header" (click)="adminOpen.display = !adminOpen.display">
                 <span><i class="bi bi-layout-text-window-reverse me-1"></i> Modo de visualización del catálogo</span>
-                <small>{{ displayMode === 'menu' ? 'Menú (Restaurante)' : 'Tarjetas (Grid)' }} {{ adminOpen.display ? '▲' : '▼' }}</small>
+                <small>{{ displayModeLabel }} {{ adminOpen.display ? '▲' : '▼' }}</small>
               </button>
             <div class="display-mode-selector admin-collapse-body" *ngIf="adminOpen.display">
               <p class="text-muted mb-2" style="font-size: 0.8rem;">
                 Elige cómo se mostrarán tus productos a los clientes.
               </p>
-              <div class="d-flex gap-2 align-items-center">
-                <button class="btn btn-sm" 
-                        [class.btn-primary]="displayMode === 'grid'" 
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button class="btn btn-sm"
+                        [class.btn-primary]="displayMode === 'grid'"
                         [class.btn-outline-secondary]="displayMode !== 'grid'"
                         (click)="setDisplayMode('grid')">
                   <i class="bi bi-grid-3x3-gap"></i> Tarjetas (Grid)
                 </button>
-                <button class="btn btn-sm" 
-                        [class.btn-primary]="displayMode === 'menu'" 
-                        [class.btn-outline-secondary]="displayMode !== 'menu'"
-                        (click)="setDisplayMode('menu')">
+                <button class="btn btn-sm"
+                        [class.btn-primary]="isMenuMode()"
+                        [class.btn-outline-secondary]="!isMenuMode()"
+                        (click)="isMenuMode() || setDisplayMode('menu')">
                   <i class="bi bi-list-ul"></i> Menú (Restaurante)
                 </button>
-                <button class="btn btn-success btn-sm ms-2" (click)="saveDisplayMode()">
+                <button class="btn btn-outline-primary btn-sm ms-2" (click)="previewDisplayMode()">
+                  <i class="bi bi-eye"></i> Vista previa
+                </button>
+                <button class="btn btn-success btn-sm" (click)="saveDisplayMode()">
                   <i class="bi bi-save"></i> Guardar modo
+                </button>
+              </div>
+              <!-- Diseño del menú: la tienda pública cambia por completo -->
+              <div class="menu-variants" *ngIf="isMenuMode()">
+                <button type="button" class="menu-variant" *ngFor="let v of menuVariants"
+                        [class.active]="displayMode === v.value" (click)="setDisplayMode(v.value)">
+                  <i [ngClass]="'sw-' + v.value"></i>
+                  <span><strong>{{ v.label }}</strong><small>{{ v.hint }}</small></span>
                 </button>
               </div>
             </div>
@@ -292,7 +303,25 @@
         </div>
       </div>
 
-      <section class="products-section">
+      <!-- ═══════ MENÚ DE RESTAURANTE (vista completa) ═══════ -->
+      <app-menu-board *ngIf="showMenuBoard"
+        [variant]="$any(displayMode)"
+        [products]="filteredProducts"
+        [businessName]="businessName"
+        [tagline]="storeWelcome"
+        [whatsapp]="storeWhatsapp"
+        [quantities]="cartQuantities"
+        [cartCount]="getCartCount()"
+        [cartTotal]="getCartTotal()"
+        [hideCartBar]="showCheckout"
+        [tagFor]="menuTagFor"
+        (add)="addToCart($event)"
+        (decrease)="decreaseFromMenu($event)"
+        (details)="openProductDetails($event)"
+        (checkout)="openCheckout()">
+      </app-menu-board>
+
+      <section class="products-section" *ngIf="!showMenuBoard">
         <div class="section-header">
           <h2>Productos ({{ filteredProducts.length }})</h2>
           <div class="sort-controls">
@@ -307,13 +336,13 @@
 
         <div class="products-sections">
           <!-- ═══════ GRID VIEW (Tarjetas) ═══════ -->
-          <div class="products-grid-modern" *ngIf="displayMode === 'grid' || isAdminMode">
-            <div class="product-card-modern" *ngFor="let product of filteredProducts" 
+          <div class="products-grid-modern">
+            <div class="product-card-modern" *ngFor="let product of filteredProducts"
                  [class.selected-product]="isAdminMode && isProductSelected(product.strId)">
               <!-- Checkbox de selección en modo admin -->
               <div *ngIf="isAdminMode && !isResale(product)" class="product-selection">
-                <input type="checkbox" 
-                       class="form-check-input" 
+                <input type="checkbox"
+                       class="form-check-input"
                        [checked]="isProductSelected(product.strId)"
                        (change)="toggleProductSelection(product.strId)">
               </div>
@@ -351,40 +380,6 @@
             </div>
           </div>
 
-          <!-- ═══════ MENU VIEW (Restaurante) ═══════ -->
-          <div class="menu-view" *ngIf="displayMode === 'menu' && !isAdminMode">
-            <div class="menu-header">
-              <h2 class="menu-title">{{ businessName || 'Menú' }}</h2>
-              <p class="menu-subtitle">Selecciona tus productos y agrégalos al pedido</p>
-            </div>
-
-            <div class="menu-category-section" *ngFor="let group of getProductsByCategory()">
-              <div class="menu-category-header">
-                <h3 class="menu-category-name">{{ group.category }}</h3>
-                <div class="menu-category-divider"></div>
-              </div>
-
-              <div class="menu-items-list">
-                <div class="menu-item" *ngFor="let product of group.products" (click)="openProductDetails(product)">
-                  <div class="menu-item-image" *ngIf="product.image && !hasImageError(product.strId)">
-                    <img [src]="product.image" [alt]="product.strName" (error)="onImageError($event, product)">
-                  </div>
-                  <div class="menu-item-content">
-                    <div class="menu-item-header">
-                      <h4 class="menu-item-name">{{ product.strName }}</h4>
-                      <span class="menu-item-dots"></span>
-                      <span class="menu-item-price">{{ formatCurrency(product.fltPrice) }}</span>
-                    </div>
-                    <p class="menu-item-description" *ngIf="product.strDescription">{{ product.strDescription }}</p>
-                    <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
-                  </div>
-                  <button class="menu-item-add" (click)="addToCart(product); $event.stopPropagation()" title="Agregar al pedido">
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div *ngIf="filteredProducts.length === 0" class="no-products-modern">
@@ -502,7 +497,7 @@
 </div>
 
 <!-- Floating Cart Button (mobile) -->
-<div class="floating-cart" *ngIf="cart.length > 0 && !showCheckout" (click)="openCheckout()">
+<div class="floating-cart" *ngIf="cart.length > 0 && !showCheckout && !showMenuBoard" (click)="openCheckout()">
   🛒 {{ getCartCount() }} items · {{ formatCurrency(getCartTotal()) }}
 </div>
 

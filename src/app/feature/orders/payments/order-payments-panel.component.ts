@@ -63,8 +63,10 @@ export class OrderPaymentsPanelComponent implements OnChanges {
     });
   }
 
+  /** Igual que el backend: un residuo menor a $1 (centavos) se da por saldado. */
   get balance(): number {
-    return Math.max(0, Number(this.order?.total || 0) - Number(this.order?.amountPaid || 0));
+    const due = Math.round((Number(this.order?.total || 0) - Number(this.order?.amountPaid || 0)) * 100) / 100;
+    return due < 1 ? 0 : due;
   }
 
   get acceptsPayments(): boolean {
@@ -72,7 +74,8 @@ export class OrderPaymentsPanelComponent implements OnChanges {
   }
 
   get depositMissing(): number {
-    return Math.max(0, Number(this.order?.depositRequired || 0) - Number(this.order?.amountPaid || 0));
+    const missing = Math.round((Number(this.order?.depositRequired || 0) - Number(this.order?.amountPaid || 0)) * 100) / 100;
+    return missing < 1 ? 0 : missing;
   }
 
   verify(p: OrderPayment): void {
@@ -115,30 +118,33 @@ export class OrderPaymentsPanelComponent implements OnChanges {
       html: `
         <div style="text-align:left;font-size:0.9rem">
           <label>Valor</label>
-          <input id="op-amount" type="text" inputmode="numeric" class="swal2-input" style="margin:4px 0 10px;width:100%" value="${this.formatCurrency(suggested)}">
+          <input id="op-amount" type="text" inputmode="decimal" class="swal2-input" style="margin:4px 0 10px;width:100%" value="${this.formatAmountInput(suggested)}">
           <label>Medio</label>
           <select id="op-method" class="swal2-select" style="margin:4px 0 10px;width:100%">${options}</select>
           <label>Referencia (opcional)</label>
           <input id="op-ref" type="text" maxlength="100" class="swal2-input" style="margin:4px 0;width:100%">
-          <small>Saldo pendiente: ${this.formatCurrency(this.balance)}</small>
+          <small>Saldo pendiente: ${this.formatAmountInput(this.balance)} · decimales con coma (ej: 18.245,50)</small>
         </div>`,
       showCancelButton: true,
       confirmButtonText: 'Registrar',
       cancelButtonText: 'Cancelar',
-      // "Valor" con formato de pesos mientras se escribe ("$18.245")
+      // "Valor" con formato de pesos mientras se escribe ("$18.245,50"): la
+      // coma separa hasta 2 decimales
       didOpen: () => {
         const input = document.getElementById('op-amount') as HTMLInputElement;
         input.addEventListener('input', () => {
-          const digits = input.value.replace(/\D/g, '');
-          input.value = digits ? this.formatCurrency(Number(digits)) : '';
+          const [intRaw, ...rest] = input.value.split(',');
+          const digits = intRaw.replace(/\D/g, '');
+          const dec = rest.length ? ',' + rest.join('').replace(/\D/g, '').slice(0, 2) : '';
+          input.value = digits || dec ? `$${digits ? Number(digits).toLocaleString('es-CO') : '0'}${dec}` : '';
         });
       },
       preConfirm: () => {
-        const amount = Number((document.getElementById('op-amount') as HTMLInputElement).value.replace(/\D/g, ''));
+        const amount = this.parseAmountInput((document.getElementById('op-amount') as HTMLInputElement).value);
         const method = (document.getElementById('op-method') as HTMLSelectElement).value;
         const reference = (document.getElementById('op-ref') as HTMLInputElement).value.trim();
         if (!amount || amount <= 0) { Swal.showValidationMessage('Indica el valor del pago.'); return false; }
-        if (amount > this.balance) { Swal.showValidationMessage('El pago supera el saldo pendiente.'); return false; }
+        if (amount - this.balance >= 1) { Swal.showValidationMessage('El pago supera el saldo pendiente.'); return false; }
         return { amount, method, ...(reference ? { reference } : {}) };
       },
     }).then((r) => {
@@ -148,6 +154,18 @@ export class OrderPaymentsPanelComponent implements OnChanges {
         error: (err) => Swal.fire({ icon: 'error', title: 'No se pudo registrar', text: this.errorText(err) }),
       });
     });
+  }
+
+  /** Valor para el campo del pago: conserva los centavos si los hay ("$18.245,50"). */
+  private formatAmountInput(value: number): string {
+    return '$' + new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value) || 0);
+  }
+
+  /** "$18.245,50" → 18245.5 (punto = miles, coma = decimales). */
+  private parseAmountInput(text: string): number {
+    const [intRaw, decRaw = ''] = (text || '').split(',');
+    const n = Number(`${intRaw.replace(/\D/g, '') || '0'}.${decRaw.replace(/\D/g, '').slice(0, 2) || '0'}`);
+    return Math.round(n * 100) / 100;
   }
 
   /** Formato de pesos de los pedidos: "$2.362.200". */
