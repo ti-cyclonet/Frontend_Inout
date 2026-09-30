@@ -48,7 +48,7 @@
   background: var(--mk-bg);
   color: var(--mk-text);
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  padding-bottom: 4rem;
+  padding-bottom: 6rem;
 }
 .main-modern, .products-section { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
 
@@ -284,7 +284,9 @@
 .saved-url-copy.copied { background: #e8f5e9; border-color: #a7d7b0; color: #1e7b34; }
 
 /* ─── Pie: tienda impulsada por InOut ─── */
-.mk-footer { max-width: 1200px; margin: 3rem auto 0; padding: 1.25rem 1rem 0; border-top: 1px solid var(--mk-border); text-align: center; }
+/* static: el estilo global `footer { position: fixed }` lo dejaba flotando
+   (transparente) encima de las tarjetas del final de la página. */
+.mk-footer { position: static; width: auto; max-width: 1200px; margin: 3rem auto 0; padding: 1.25rem 1rem 1.5rem; border-top: 1px solid var(--mk-border); text-align: center; }
 .mk-footer a { display: inline-flex; align-items: center; gap: 0.55rem; color: var(--mk-muted); font-size: 0.78rem; text-decoration: none; }
 .mk-footer img { height: 28px; width: auto; opacity: 0.9; transition: opacity 0.15s; }
 .mk-footer a:hover img { opacity: 1; }
