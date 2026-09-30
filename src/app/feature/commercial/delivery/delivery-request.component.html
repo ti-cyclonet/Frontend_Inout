@@ -57,6 +57,7 @@
         <div class="request-main">
           <div class="request-title">{{ req.title }}</div>
           <div class="request-address" *ngIf="req.address">📍 {{ req.address }}</div>
+          <div class="request-closes" *ngIf="closesLabel(req) as c">⏳ Recibe ofertas hasta el {{ c }}</div>
         </div>
         <div class="request-meta">
           <span class="request-chat-badge" *ngIf="unreadCountFor(req) > 0" title="Mensajes sin leer">
@@ -205,6 +206,11 @@
         </span>
       </div>
       <p class="detail-desc">{{ selectedRequest.description }}</p>
+      <div class="expiry-box" *ngIf="isExpired(selectedRequest) && !selectedRequest.contract">
+        <span>⏳ Esta solicitud venció sin que se aceptara una oferta.</span>
+        <button class="btn-republish" type="button" (click)="republish(selectedRequest)">Volver a publicar</button>
+      </div>
+      <div class="detail-line" *ngIf="closesLabel(selectedRequest) as c">⏳ Recibe ofertas hasta el {{ c }}</div>
       <div class="detail-line" *ngIf="selectedRequest.address">📍 {{ selectedRequest.address }}</div>
       <div class="detail-line" *ngIf="selectedRequest.budgetMin || selectedRequest.budgetMax">
         💰 {{ formatCurrency(selectedRequest.budgetMin) }} – {{ formatCurrency(selectedRequest.budgetMax) }}

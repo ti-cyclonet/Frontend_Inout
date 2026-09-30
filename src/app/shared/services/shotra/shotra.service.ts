@@ -136,6 +136,17 @@ export class ShotraService {
     );
   }
 
+  /** Volver a publicar una solicitud vencida (nueva fecha si la anterior ya pasó). */
+  republishRequest(requestId: string, scheduledAt?: string): Observable<any> {
+    return this.request((token) =>
+      this.http.patch<any>(
+        `${this.shotraApi}/requests/${requestId}/republish`,
+        scheduledAt ? { scheduledAt } : {},
+        { headers: this.authHeaders(token) },
+      ),
+    );
+  }
+
   /** Cancelar una solicitud. */
   cancelRequest(requestId: string): Observable<any> {
     return this.request((token) =>
@@ -343,6 +354,10 @@ export interface ShotraRequest {
   createdAt: string;
   category?: ShotraCategory;
   _count?: { proposals: number };
+  /** Hasta cuándo recibe ofertas (Shotra vence las publicaciones sin ofertas). */
+  closesAt?: string | null;
+  /** Ya venció aunque Shotra aún no la haya archivado (lo hace cada 10 min). */
+  expiredNow?: boolean;
   // Contrato asociado (si ya se aceptó una oferta). Su estado refleja el ciclo
   // real y puede ir por delante de `status`.
   contract?: { id: string; code: string; status: string };

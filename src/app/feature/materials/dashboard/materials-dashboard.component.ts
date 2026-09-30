@@ -10,11 +10,12 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { CategoryService } from '../../../shared/services/category/category.service';
 import { PLANTILLA_MATERIALES_BASE64 } from './plantilla-materiales';
+import { MaterialsInsightsComponent } from './materials-insights.component';
 
 @Component({
   selector: 'app-materials-dashboard',
   standalone: true,
-  imports: [CommonModule, MetricCardComponent, FormsModule],
+  imports: [CommonModule, MetricCardComponent, FormsModule, MaterialsInsightsComponent],
   templateUrl: './materials-dashboard.component.html',
   styleUrls: ['./materials-dashboard.component.css']
 })
@@ -26,6 +27,8 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   
   metrics: MaterialMetrics | null = null;
   recentActivities: any[] = [];
+  /** Sube con cada recarga para que los indicadores en vivo se actualicen. */
+  metricsVersion = 0;
   loading = true;
   transformedMaterialsCount = 0;
   uploadingFile = false;
@@ -64,6 +67,7 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   }
 
   loadMetrics(): void {
+    this.metricsVersion++;
     this.loading = true;
     this.materialService.getMetrics().subscribe({
       next: (metrics) => {

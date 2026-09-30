@@ -25,47 +25,8 @@
   </div>
 
   <div class="dashboard-container pt-3" style="border-bottom: 1px solid orange; border-top: 1px solid #EBEBEB;">
-    <!-- Metrics Cards -->
-    <div class="metrics-grid" *ngIf="!loading && metrics">
-    <app-metric-card
-      [value]="metrics.totalMaterials"
-      label="Total de Materiales"
-      icon="boxes"
-      cardClass="primary">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="transformedMaterialsCount"
-      label="Total de Materiales Compuestos"
-      icon="diagram-3"
-      cardClass="info">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.lowStockCount"
-      label="Alertas de Stock Bajo"
-      icon="exclamation-triangle"
-      cardClass="warning">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.totalValue"
-      label="Valor Total del Inventario"
-      icon="currency-dollar"
-      cardClass="success">
-    </app-metric-card>
-  </div>
-
-  <!-- Loading State -->
-  <div class="metrics-grid" *ngIf="loading">
-    <div class="metric-skeleton" *ngFor="let item of [1,2,3,4]">
-      <div class="skeleton-icon"></div>
-      <div class="skeleton-content">
-        <div class="skeleton-value"></div>
-        <div class="skeleton-label"></div>
-      </div>
-    </div>
-  </div>
+    <!-- Indicadores en vivo (GET /dashboard/materials) -->
+    <app-materials-insights [refreshKey]="metricsVersion"></app-materials-insights>
 
   <!-- Quick Actions -->
   <div class="quick-actions-section">
@@ -121,35 +82,9 @@
     </div>
   </div>
 
-  <!-- Recent Activity -->
-  <div class="recent-activity-section">
-    <h3 class="section-title">Actividad Reciente</h3>
-    <div class="activity-list" *ngIf="recentActivities.length > 0">
-      <div class="activity-item" *ngFor="let activity of recentActivities">
-        <div class="activity-icon" [ngClass]="activity.type">
-          <svg viewBox="0 0 16 16">
-            <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + activity.icon" />
-          </svg>
-        </div>
-        <div class="activity-content">
-          <div class="activity-title">{{ activity.title }}</div>
-          <div class="activity-time">{{ activity.time }}</div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="empty-state" *ngIf="recentActivities.length === 0">
-      <div class="empty-icon">
-        <svg viewBox="0 0 16 16">
-          <use xlink:href="./assets/icons/bootstrap-icons.svg#clock-history" />
-        </svg>
-      </div>
-      <p>No hay actividad reciente</p>
-      <small>Las actividades aparecerán aquí cuando se realicen operaciones con materiales</small>
-    </div>
-  </div>
   </div>
 </div>
+
 
 <!-- Modal de Carga -->
 <div class="modal fade" [class.show]="showUploadModal" [style.display]="showUploadModal ? 'block' : 'none'" tabindex="-1">

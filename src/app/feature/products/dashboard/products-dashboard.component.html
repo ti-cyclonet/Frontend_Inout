@@ -19,49 +19,7 @@
   </div>
 
   <div class="dashboard-container" style="border-bottom: 1px solid orange;">
-  <div class="row g-4">
-    <div class="col-md-4">
-      <app-metric-card
-        [value]="metrics.totalProducts"
-        [label]="'Total Productos'"
-        [icon]="'box-seam'"
-        [cardClass]="'card-primary'"
-      >
-      </app-metric-card>
-    </div>
-
-    <div class="col-md-4">
-      <app-metric-card
-        [value]="metrics.lowStockCount"
-        [label]="'Alertas de Stock Bajo'"
-        [icon]="'exclamation-triangle'"
-        [cardClass]="'card-warning'"
-      >
-      </app-metric-card>
-    </div>
-
-    <div class="col-md-4">
-      <app-metric-card
-        [value]="metrics.totalValue"
-        [label]="'Valor Total Inventario'"
-        [icon]="'currency-dollar'"
-        [cardClass]="'card-success'"
-      >
-      </app-metric-card>
-    </div>
-  </div>
-
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-body text-center py-5">
-          <h5 class="mb-3">Gestión de Productos</h5>
-          <p class="text-muted mb-4">
-            Crea y administra tus productos terminados
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Indicadores en vivo (GET /dashboard/products) -->
+    <app-products-insights></app-products-insights>
   </div>
 </div>

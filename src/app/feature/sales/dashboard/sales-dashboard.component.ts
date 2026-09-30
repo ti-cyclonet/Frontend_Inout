@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, OnChanges } from '@angular/core';
+import { CommercialInsightsComponent } from './commercial-insights.component';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { SalesService } from '../../../shared/services/sales.service';
@@ -7,7 +8,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-sales-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CommercialInsightsComponent],
   templateUrl: './sales-dashboard.component.html',
   styleUrl: './sales-dashboard.component.css'
 })
