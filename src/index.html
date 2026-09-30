@@ -16,6 +16,14 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-  <app-root ngSkipHydration></app-root>
+  <!-- Indicador neutral mientras arranca la app (Angular lo reemplaza). Antes
+       el HTML inicial era la pantalla de login prerenderizada y se veía un
+       instante al abrir cualquier ruta, p. ej. la tienda del MarketPlace. -->
+  <app-root ngSkipHydration>
+    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f5f7fa">
+      <div style="width:36px;height:36px;border:3px solid #dfe3ea;border-top-color:#1a237e;border-radius:50%;animation:io-spin .8s linear infinite"></div>
+    </div>
+    <style>@keyframes io-spin{to{transform:rotate(360deg)}}</style>
+  </app-root>
 </body>
 </html>
