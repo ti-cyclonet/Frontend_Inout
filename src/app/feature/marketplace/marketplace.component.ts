@@ -389,65 +389,80 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   loadAllProducts(): void {
-    // Cargar configuraciones de marketplace de todos los tenants
-    this.http.get<any[]>(`${this.baseUrl}/marketplace-config`).toPromise()
-      .then((configs) => {
-        if (!configs || configs.length === 0) {
-          this.products = [];
-          this.filteredProducts = [];
-          this.loading = false;
-          return;
-        }
-        
-        // Obtener todos los IDs de productos seleccionados
-        const allSelectedIds = new Set<string>();
-        configs.forEach(config => {
-          const ids = typeof config.selectedProductIds === 'string' 
-            ? JSON.parse(config.selectedProductIds) 
-            : config.selectedProductIds;
-          if (Array.isArray(ids)) {
-            ids.forEach((id: string) => allSelectedIds.add(id));
-          }
-        });
-        
-        if (allSelectedIds.size === 0) {
-          this.products = [];
-          this.filteredProducts = [];
-          this.loading = false;
-          return;
-        }
-        
-        // Cargar todos los productos y filtrar solo los seleccionados
-        this.http.get<any>(`${this.baseUrl}/products/all`).toPromise()
-          .then((productsResponse) => {
-            this.products = (productsResponse.data || [])
-              .filter((product: any) => allSelectedIds.has(product.strId))
-              .map((product: any) => ({
-                ...product,
-                views: Math.floor(Math.random() * 500) + 50,
-                sales: Math.floor(Math.random() * 100) + 10,
-                rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
-                image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null
-              })).sort(() => Math.random() - 0.5);
-            
-            this.calculateStats();
-            this.filteredProducts = [...this.products];
-            this.createProductGroups();
-            this.createFeaturedProducts();
-            this.setupCarousel();
-            this.loading = false;
-          })
-          .catch(() => {
-            this.products = [];
-            this.filteredProducts = [];
-            this.loading = false;
-          });
-      })
-      .catch(() => {
-        this.products = [];
-        this.filteredProducts = [];
-        this.loading = false;
-      });
+    // Vitrina general: lo que cada tienda marcó visible en su MarketPlace. La
+    // categoría del filtro es el sector del contrato de la tienda en Authoriza.
+    Promise.all([
+      this.http.get<any>(`${this.baseUrl}/products/all`).toPromise(),
+      this.http.get<any[]>(`${this.baseUrl}/marketplace-config`).toPromise().catch(() => []),
+    ]).then(async ([productsResponse, configs]) => {
+      const raw: any[] = productsResponse?.data || [];
+      (configs || []).forEach((c: any) => { if (c?.tenantId && c?.slug) this.homeStoreSlugs[c.tenantId] = c.slug; });
+
+      const tenantIds = [...new Set(raw.map((p) => p.strTenantId).filter(Boolean))] as string[];
+      const sectors = await Promise.all(tenantIds.map((id) =>
+        this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${id}`).toPromise()
+          .then((c) => c?.businessSector || 'general').catch(() => 'general')));
+      tenantIds.forEach((id, i) => { this.homeTenantSectors[id] = sectors[i]; });
+
+      const products: Product[] = raw.map((product: any) => ({
+        ...product,
+        views: Math.floor(Math.random() * 500) + 50,
+        sales: Math.floor(Math.random() * 100) + 10,
+        rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
+        image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null,
+      }));
+      this.products = this.interleaveByTenant(products);
+
+      this.calculateStats();
+      this.filteredProducts = [...this.products];
+      this.createProductGroups();
+      this.createFeaturedProducts();
+      this.setupCarousel();
+      this.loading = false;
+    }).catch(() => {
+      this.products = [];
+      this.filteredProducts = [];
+      this.loading = false;
+    });
+  }
+
+  /** Home: sector (contrato en Authoriza) y slug de la tienda de cada producto. */
+  private homeTenantSectors: Record<string, string> = {};
+  private homeStoreSlugs: Record<string, string> = {};
+
+  /**
+   * Orden aleatorio justo entre tiendas: se barajan las tiendas y los productos
+   * de cada una, y se toman por turnos (uno de cada tienda). Así una tienda con
+   * muchos productos no copa el inicio de la vitrina.
+   */
+  private interleaveByTenant(products: Product[]): Product[] {
+    const shuffle = <T>(arr: T[]): T[] => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    const byTenant = new Map<string, Product[]>();
+    for (const p of products) {
+      const key = (p as any).strTenantId || '';
+      byTenant.set(key, [...(byTenant.get(key) || []), p]);
+    }
+    const queues = shuffle([...byTenant.values()]).map(shuffle);
+    const out: Product[] = [];
+    while (queues.some((q) => q.length)) {
+      for (const q of queues) if (q.length) out.push(q.shift()!);
+    }
+    return out;
+  }
+
+  /** Categoría para el filtro: en el home, la del sector de la tienda. */
+  private categoryOf(product: Product): string {
+    if (this.tenantId === 'home') {
+      return this.getSectorCategory(this.homeTenantSectors[(product as any).strTenantId] || 'general');
+    }
+    return product.intCategoryId != null ? product.intCategoryId.toString() : '';
   }
 
   loadTenantData(tenantId: string): void {
@@ -731,10 +746,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   filterProducts(): void {
     this.filteredProducts = this.products.filter(product => {
-      const matchesSearch = product.strName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                           product.strDescription.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchesCategory = this.selectedCategory === 'all' || 
-                             product.intCategoryId.toString() === this.selectedCategory;
+      const term = (this.searchTerm || '').toLowerCase();
+      const matchesSearch = (product.strName || '').toLowerCase().includes(term) ||
+                           (product.strDescription || '').toLowerCase().includes(term);
+      const matchesCategory = this.selectedCategory === 'all' || this.categoryOf(product) === this.selectedCategory;
       return matchesSearch && matchesCategory;
     });
     this.sortProducts();
@@ -893,7 +908,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
     this.productGroups = groups.map(group => ({
       title: group.title,
-      products: this.filteredProducts.filter(p => p.intCategoryId === group.category).slice(0, 6)
+      products: this.filteredProducts.filter(p => this.categoryOf(p) === String(group.category)).slice(0, 6)
     })).filter(group => group.products.length > 0);
 
     // Si no hay productos por categoría, mostrar todos los productos sin agrupar
@@ -1252,6 +1267,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   addToCart(product: Product): void {
+    // En la vitrina general cada producto es de una tienda distinta: el pedido
+    // se hace en la tienda del producto (su carrito, pagos y agenda).
+    if (this.tenantId === 'home') {
+      const tenant = (product as any).strTenantId;
+      if (tenant) window.location.href = `/marketplace/${this.homeStoreSlugs[tenant] || tenant}`;
+      return;
+    }
     const existing = this.cart.find(item => item.product.strId === product.strId);
     const available = this.getAvailableStock(product);
     const wanted = (existing?.quantity || 0) + 1;
