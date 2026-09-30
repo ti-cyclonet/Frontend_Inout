@@ -282,6 +282,12 @@
 .saved-url-link { font-size: 0.85rem; font-weight: 600; color: #0b4a8f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .saved-url-copy { border: 1px solid #b9d3f6; color: var(--mk-blue); background: #fff; flex-shrink: 0; }
 .saved-url-copy.copied { background: #e8f5e9; border-color: #a7d7b0; color: #1e7b34; }
+.store-qr { display: flex; gap: 0.9rem; align-items: center; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px dashed #dbe8fb; }
+.store-qr img { width: 150px; height: 150px; border-radius: 8px; background: #fff; border: 1px solid #dbe8fb; flex-shrink: 0; }
+.store-qr-side { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.store-qr-side small { word-break: break-all; }
+.store-qr-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+@media (max-width: 480px) { .store-qr { flex-direction: column; align-items: flex-start; } }
 
 /* ─── Pie: tienda impulsada por InOut ─── */
 /* static: el estilo global `footer { position: fixed }` lo dejaba flotando

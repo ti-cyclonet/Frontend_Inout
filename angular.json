@@ -52,6 +52,7 @@
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
             ],
 
+            "allowedCommonJsDependencies": ["qrcode", "dijkstrajs"],
             "server": "src/main.server.ts",
             "prerender": false,
             "ssr": false
