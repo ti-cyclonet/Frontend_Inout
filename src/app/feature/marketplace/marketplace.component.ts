@@ -13,6 +13,7 @@ import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
+import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 
 /** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
 interface PlanChoice {
@@ -56,7 +57,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-checkout.css']
 })
@@ -135,8 +136,18 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   slugError = '';
   slugSuccess = '';
 
-  // Display mode: 'grid' (cards) or 'menu' (restaurant menu style)
-  displayMode: 'grid' | 'menu' = 'grid';
+  // Display mode: 'grid' (tarjetas) o un diseño de menú de restaurante
+  // ('menu' Póster, 'menu-chalk' Pizarra, 'menu-clean' Elegante)
+  displayMode: string = 'grid';
+  readonly menuVariants = MENU_VARIANTS;
+  private previewMode: string | null = null;
+  /** WhatsApp y mensaje de bienvenida de la tienda (se muestran en el menú). */
+  storeWhatsapp = '';
+  storeWelcome = '';
+  /** Cantidades del carrito por producto (misma referencia mientras no cambie). */
+  menuQuantities: Record<string, number> = {};
+  private menuQtyKey = '';
+  readonly menuTagFor = (p: Product) => this.stockTag(p);
 
   // Cart
   cart: { product: Product; quantity: number }[] = [];
@@ -331,6 +342,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     // Verificar si viene desde el dashboard (modo admin)
     this.route.queryParams.subscribe(queryParams => {
       this.isAdminMode = queryParams['admin'] === 'true';
+      // ?vista=menu-chalk: vista previa de un diseño sin guardarlo
+      this.previewMode = isMenuMode(queryParams['vista']) || queryParams['vista'] === 'grid' ? queryParams['vista'] : null;
       if (this.isAdminMode) {
         this.checkAuthentication();
         this.loadCurrentSlug();
@@ -518,6 +531,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (configResponse && configResponse.displayMode) {
         this.displayMode = configResponse.displayMode;
       }
+      if (this.previewMode && !this.isAdminMode) this.displayMode = this.previewMode;
+      this.storeWhatsapp = configResponse?.whatsapp || '';
+      this.storeWelcome = configResponse?.welcomeMessage || '';
       
       // Obtener nombre del negocio y sector
       const businessSector = contractResponse?.businessSector || 'general';
@@ -1045,8 +1061,46 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   // ═══════ DISPLAY MODE ═══════
-  setDisplayMode(mode: 'grid' | 'menu'): void {
+  setDisplayMode(mode: string): void {
     this.displayMode = mode;
+  }
+
+  /** Abre la tienda pública con el diseño elegido, aún sin guardar. */
+  previewDisplayMode(): void {
+    if (typeof window === 'undefined') return;
+    const store = this.savedSlug || this.tenantId;
+    window.open(`/marketplace/${store}?vista=${this.displayMode}`, '_blank', 'noopener');
+  }
+
+  isMenuMode(): boolean {
+    return isMenuMode(this.displayMode);
+  }
+
+  get displayModeLabel(): string {
+    const v = MENU_VARIANTS.find((m) => m.value === this.displayMode);
+    return v ? `Menú · ${v.label}` : 'Tarjetas (Grid)';
+  }
+
+  /** La tienda pública se muestra como menú de restaurante (vista completa). */
+  get showMenuBoard(): boolean {
+    return this.isMenuMode() && !this.isAdminMode && this.tenantId !== 'home';
+  }
+
+  /** Cantidades para el menú: se recalcula solo cuando cambia el carrito. */
+  get cartQuantities(): Record<string, number> {
+    const key = this.cart.map((i) => `${i.product.strId}:${i.quantity}`).join('|');
+    if (key !== this.menuQtyKey) {
+      this.menuQtyKey = key;
+      this.menuQuantities = Object.fromEntries(this.cart.map((i) => [i.product.strId, i.quantity]));
+    }
+    return this.menuQuantities;
+  }
+
+  decreaseFromMenu(product: Product): void {
+    const item = this.cart.find((i) => i.product.strId === product.strId);
+    if (!item) return;
+    if (item.quantity > 1) this.updateCartQuantity(product.strId, item.quantity - 1);
+    else this.removeFromCart(product.strId);
   }
 
   saveDisplayMode(): void {
@@ -1066,7 +1120,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         Swal.fire({
           icon: 'success',
           title: 'Modo de visualización guardado',
-          text: this.displayMode === 'menu' ? 'Tu marketplace se mostrará como menú de restaurante' : 'Tu marketplace se mostrará en tarjetas',
+          text: this.isMenuMode() ? `Tu marketplace se mostrará como ${this.displayModeLabel.toLowerCase()}` : 'Tu marketplace se mostrará en tarjetas',
           timer: 2000,
           showConfirmButton: false
         });

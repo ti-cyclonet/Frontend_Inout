@@ -1,0 +1,82 @@
+<div class="mb-page">
+  <!-- Encabezado del menú -->
+  <header class="mb-hero">
+    <div class="mb-hero-text">
+      <h1 class="mb-title">
+        <span class="mb-title-first">{{ titleWords.first }}</span>
+        <span class="mb-title-rest" *ngIf="titleWords.rest">{{ titleWords.rest }}</span>
+      </h1>
+      <div class="mb-ribbon">{{ sections.length === 1 ? sections[0].name : 'Nuestro menú' }}</div>
+      <p class="mb-tagline">{{ tagline || 'Hecho con un sabor único · pide en línea' }}</p>
+    </div>
+    <div class="mb-hero-photo" *ngIf="heroImage">
+      <img [src]="heroImage" alt="" loading="eager">
+    </div>
+  </header>
+
+  <!-- Secciones (categorías) -->
+  <nav class="mb-tabs" *ngIf="sections.length > 1" aria-label="Secciones del menú">
+    <button type="button" *ngFor="let s of sections" [class.active]="s.name === activeSection" (click)="goTo(s)">
+      {{ s.name }}
+    </button>
+  </nav>
+
+  <div class="mb-sections">
+    <section class="mb-section" *ngFor="let s of sections" [id]="sectionId(s.name)">
+      <h2 class="mb-section-title"><span>{{ s.name }}</span></h2>
+
+      <ul class="mb-items">
+        <li class="mb-item" *ngFor="let p of s.items; trackBy: trackById" [class.in-cart]="qty(p) > 0"
+            [class.out]="tagFor(p)?.cls === 'tag-out'">
+          <button type="button" class="mb-thumb" *ngIf="p.image" (click)="details.emit(p)" [attr.aria-label]="'Ver ' + p.strName">
+            <img [src]="p.image" [alt]="p.strName" loading="lazy">
+          </button>
+
+          <div class="mb-item-body" (click)="details.emit(p)">
+            <div class="mb-item-head">
+              <span class="mb-bullet" aria-hidden="true">★</span>
+              <h3 class="mb-item-name">{{ p.strName }}</h3>
+              <span class="mb-leader" aria-hidden="true"></span>
+              <span class="mb-item-price">{{ price(p.fltPrice) }}</span>
+            </div>
+            <p class="mb-item-desc" *ngIf="p.strDescription">{{ p.strDescription }}</p>
+            <span class="mb-tag" *ngIf="tagFor(p) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
+          </div>
+
+          <div class="mb-qty" (click)="$event.stopPropagation()">
+            <ng-container *ngIf="qty(p) > 0; else addBtn">
+              <button type="button" class="mb-qty-btn" (click)="decrease.emit(p)" [attr.aria-label]="'Quitar un ' + p.strName">−</button>
+              <span class="mb-qty-n">{{ qty(p) }}</span>
+              <button type="button" class="mb-qty-btn" (click)="add.emit(p)" [attr.aria-label]="'Agregar otro ' + p.strName">+</button>
+            </ng-container>
+            <ng-template #addBtn>
+              <button type="button" class="mb-add" (click)="add.emit(p)" [disabled]="tagFor(p)?.cls === 'tag-out'"
+                      [attr.aria-label]="'Agregar ' + p.strName">Agregar</button>
+            </ng-template>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="mb-empty" *ngIf="!sections.length">
+    <p>No hay platos disponibles en este momento.</p>
+  </div>
+
+  <!-- Pie tipo póster: pedido por WhatsApp -->
+  <footer class="mb-foot" *ngIf="whatsappLink">
+    <a [href]="whatsappLink" target="_blank" rel="noopener" class="mb-wa">
+      <span class="mb-wa-label">¿Dudas? Escríbenos</span>
+      <strong>{{ whatsappLabel }}</strong>
+    </a>
+  </footer>
+
+  <!-- Barra flotante del pedido -->
+  <div class="mb-cartbar" *ngIf="cartCount > 0 && !hideCartBar">
+    <button type="button" (click)="checkout.emit()">
+      <span class="mb-cartbar-count">{{ cartCount }}</span>
+      <span class="mb-cartbar-text">Ver mi pedido</span>
+      <strong>{{ price(cartTotal) }}</strong>
+    </button>
+  </div>
+</div>
