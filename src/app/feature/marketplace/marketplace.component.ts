@@ -2121,7 +2121,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.storeQrDataUrl = '';
     if (!this.savedSlug || typeof window === 'undefined') return;
     try {
-      const QRCode = await import('qrcode');
+      // CommonJS: con import() dinámico las funciones quedan en `default`
+      const mod: any = await import('qrcode');
+      const QRCode = mod.default ?? mod;
       this.storeQrDataUrl = await QRCode.toDataURL(this.getStoreUrl(), {
         width: 512,
         margin: 2,
