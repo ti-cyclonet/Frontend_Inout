@@ -213,6 +213,26 @@
                     <span class="ms-1">{{ slugCopied ? 'Copiado' : 'Copiar' }}</span>
                   </button>
                 </div>
+
+                <!-- Código QR de la misma URL -->
+                <div class="store-qr" *ngIf="storeQrDataUrl">
+                  <img [src]="storeQrDataUrl" [alt]="'Código QR de ' + getStoreUrl()" width="150" height="150">
+                  <div class="store-qr-side">
+                    <span class="saved-url-label">Código QR de tu tienda</span>
+                    <small class="text-muted">Imprímelo o compártelo: al escanearlo abre {{ getStoreUrl() }}</small>
+                    <div class="store-qr-actions">
+                      <button type="button" class="btn btn-sm saved-url-copy" [class.copied]="qrCopied" (click)="copyStoreQr()"
+                              [title]="qrCopied ? 'Copiado' : 'Copiar imagen del QR'">
+                        <i class="bi" [class.bi-clipboard]="!qrCopied" [class.bi-check2]="qrCopied"></i>
+                        <span class="ms-1">{{ qrCopied ? 'Copiado' : 'Copiar' }}</span>
+                      </button>
+                      <button type="button" class="btn btn-sm saved-url-copy" (click)="downloadStoreQr()" title="Descargar PNG">
+                        <i class="bi bi-download"></i><span class="ms-1">Descargar</span>
+                      </button>
+                    </div>
+                    <small class="text-danger" *ngIf="qrCopyError">{{ qrCopyError }}</small>
+                  </div>
+                </div>
               </div>
             </div>
             </div>

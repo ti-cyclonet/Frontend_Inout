@@ -127,6 +127,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   // Slug realmente persistido (para mostrar la URL pública ya guardada).
   savedSlug: string = '';
   slugCopied = false;
+  /** QR (PNG en data URL) de la URL pública de la tienda. */
+  storeQrDataUrl = '';
+  qrCopied = false;
+  qrCopyError = '';
   slugSaving = false;
   slugError = '';
   slugSuccess = '';
@@ -2076,6 +2080,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         if (config?.slug) {
           this.marketplaceSlug = config.slug;
           this.savedSlug = config.slug;
+          this.generateStoreQr();
         }
       },
       error: () => {}
@@ -2109,6 +2114,50 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     } else {
       this.fallbackCopy(url, done);
     }
+  }
+
+  /** Genera el QR de la URL pública (librería cargada bajo demanda: solo la usa el admin). */
+  async generateStoreQr(): Promise<void> {
+    this.storeQrDataUrl = '';
+    if (!this.savedSlug || typeof window === 'undefined') return;
+    try {
+      const QRCode = await import('qrcode');
+      this.storeQrDataUrl = await QRCode.toDataURL(this.getStoreUrl(), {
+        width: 512,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#0f172a', light: '#ffffff' },
+      });
+    } catch {
+      this.storeQrDataUrl = '';
+    }
+  }
+
+  /** Copia la imagen del QR al portapapeles (para pegarla en WhatsApp, un documento, etc.). */
+  async copyStoreQr(): Promise<void> {
+    if (!this.storeQrDataUrl) return;
+    this.qrCopyError = '';
+    try {
+      const ClipboardItemCtor = (window as any).ClipboardItem;
+      if (!navigator.clipboard?.write || !ClipboardItemCtor) throw new Error('unsupported');
+      const blob = await (await fetch(this.storeQrDataUrl)).blob();
+      await navigator.clipboard.write([new ClipboardItemCtor({ 'image/png': blob })]);
+      this.qrCopied = true;
+      setTimeout(() => (this.qrCopied = false), 2000);
+    } catch {
+      // Navegadores sin copia de imágenes (o sin HTTPS): se ofrece la descarga
+      this.qrCopyError = 'Tu navegador no permite copiar imágenes; usa "Descargar".';
+    }
+  }
+
+  downloadStoreQr(): void {
+    if (!this.storeQrDataUrl || typeof document === 'undefined') return;
+    const a = document.createElement('a');
+    a.href = this.storeQrDataUrl;
+    a.download = `qr-marketplace-${this.savedSlug}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   private fallbackCopy(text: string, done: () => void): void {
@@ -2157,6 +2206,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         this.slugSaving = false;
         this.marketplaceSlug = response.slug;
         this.savedSlug = response.slug;
+        this.generateStoreQr();
         this.slugSuccess = `✓ URL guardada: ${this.getBaseUrl()}/marketplace/${response.slug}`;
       },
       error: (err) => {
