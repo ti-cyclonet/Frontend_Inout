@@ -1192,9 +1192,53 @@ export class DeliveryRequestComponent implements OnDestroy {
       COMPLETED: 'Completada',
       EVALUATED: 'Evaluada',
       CANCELLED: 'Cancelada',
-      EXPIRED: 'Expirada',
+      EXPIRED: 'Vencida',
     };
     return labels[status] || status;
+  }
+
+  /** Vencida: archivada por Shotra o ya pasada de plazo. */
+  isExpired(req: { status: string; expiredNow?: boolean } | null): boolean {
+    return !!req && (req.status === 'EXPIRED' || !!req.expiredNow);
+  }
+
+  /** "Recibe ofertas hasta el 3 oct, 5:30 p. m." para las abiertas. */
+  closesLabel(req: { closesAt?: string | null; status: string; expiredNow?: boolean } | null): string | null {
+    if (!req?.closesAt || this.isExpired(req as any)) return null;
+    const d = new Date(req.closesAt);
+    if (d.getTime() <= Date.now()) return null;
+    return d.toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  }
+
+  /** Volver a publicar: si la fecha de entrega ya pasó, se pide una nueva. */
+  republish(req: ShotraRequest, scheduledAt?: string): void {
+    this.shotra.republishRequest(req.id, scheduledAt).subscribe({
+      next: () => {
+        Swal.fire({ icon: 'success', title: 'Publicada de nuevo', text: 'La solicitud vuelve a recibir ofertas.', timer: 1800, showConfirmButton: false });
+        this.closeDetail();
+        this.loadRequests();
+      },
+      error: (err) => {
+        const code = err?.error?.code || err?.error?.message?.code;
+        if (code === 'NEW_DATE_REQUIRED' || /nueva fecha/i.test(this.readError(err, ''))) {
+          const min = new Date(Date.now() + 30 * 60000);
+          const local = new Date(min.getTime() - min.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+          Swal.fire({
+            title: 'Elige una nueva fecha',
+            text: 'La fecha de entrega que habías pedido ya pasó.',
+            input: 'datetime-local' as any,
+            inputValue: local,
+            inputAttributes: { min: local },
+            showCancelButton: true,
+            confirmButtonText: 'Volver a publicar',
+            cancelButtonText: 'Cancelar',
+            inputValidator: (v: string) => (!v || new Date(v).getTime() <= Date.now() ? 'Elige una fecha futura.' : null),
+          }).then((r) => { if (r.isConfirmed) this.republish(req, new Date(r.value).toISOString()); });
+          return;
+        }
+        Swal.fire('Error', this.readError(err, 'No se pudo volver a publicar.'), 'error');
+      },
+    });
   }
 
   getStatusColor(status: string): string {
@@ -1276,10 +1320,12 @@ export class DeliveryRequestComponent implements OnDestroy {
 
     switch (status) {
       case 'PUBLISHED':
+        if (req.expiredNow) return { label: 'Vencida', color: '#9ca3af', closed: true, pulse: false };
         return offers > 0
           ? { label: 'Con ofertas', color: '#d97706', closed: false, pulse: true }
           : { label: 'Esperando ofertas', color: '#2563eb', closed: false, pulse: false };
       case 'IN_PROPOSALS':
+        if (req.expiredNow) return { label: 'Vencida', color: '#9ca3af', closed: true, pulse: false };
         return { label: 'Con ofertas', color: '#d97706', closed: false, pulse: true };
       case 'ACCEPTED':
         // Oferta aceptada: contrato en curso (firma ya dada al aceptar).
@@ -1293,7 +1339,7 @@ export class DeliveryRequestComponent implements OnDestroy {
       case 'CANCELLED':
         return { label: 'Cancelada', color: '#9ca3af', closed: true, pulse: false };
       case 'EXPIRED':
-        return { label: 'Expirada', color: '#9ca3af', closed: true, pulse: false };
+        return { label: 'Vencida', color: '#9ca3af', closed: true, pulse: false };
       case 'DRAFT':
         return { label: 'Borrador', color: '#6b7280', closed: false, pulse: false };
       default:
@@ -1303,7 +1349,7 @@ export class DeliveryRequestComponent implements OnDestroy {
 
   canManageProposals(): boolean {
     const s = this.selectedRequest?.status;
-    return s === 'PUBLISHED' || s === 'IN_PROPOSALS';
+    return (s === 'PUBLISHED' || s === 'IN_PROPOSALS') && !this.selectedRequest?.expiredNow;
   }
 
   openImagePreview(url: string): void {
