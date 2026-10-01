@@ -34,6 +34,9 @@
 
   <div class="ca-grid" *ngIf="!loading && filtered.length > 0">
     <article class="ca-card" *ngFor="let c of filtered" [class.inactive]="c.strStatus !== 'active'">
+      <div class="ca-card-image" *ngIf="c.strImageWebUrl || c.strImageUrl">
+        <img [src]="c.strImageWebUrl || c.strImageUrl" [alt]="c.strName" loading="lazy" />
+      </div>
       <div class="ca-card-head">
         <div>
           <h4>{{ c.strName }}</h4>
@@ -115,6 +118,24 @@
             <input id="cmbPrice" type="number" min="0" step="100" [(ngModel)]="form.price" />
           </div>
         </div>
+        <div>
+          <span class="ca-label">Imagen (opcional)</span>
+          <div class="ca-image-row">
+            <div class="ca-image-preview" [class.empty]="!imagePreview">
+              <img *ngIf="imagePreview" [src]="imagePreview" alt="Imagen del combo" />
+              <span *ngIf="!imagePreview">🎁</span>
+            </div>
+            <div class="ca-image-actions">
+              <label class="ca-btn sm mb-0">
+                {{ imagePreview ? 'Cambiar imagen' : 'Subir imagen' }}
+                <input type="file" hidden [accept]="imageAccept" (change)="onImageSelected($event)" />
+              </label>
+              <button type="button" class="ca-btn sm ghost" *ngIf="imagePreview" (click)="clearImage()">Quitar</button>
+              <small class="ca-muted">Se muestra en el MarketPlace. PNG, JPG o WebP; las fotos grandes se reducen automáticamente.</small>
+            </div>
+          </div>
+        </div>
+
         <div class="ca-field">
           <label for="cmbDesc">Descripción (opcional)</label>
           <textarea id="cmbDesc" rows="2" maxlength="2000" [(ngModel)]="form.description" placeholder="Lo que verá el cliente en el MarketPlace"></textarea>

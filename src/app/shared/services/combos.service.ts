@@ -32,6 +32,8 @@ export interface ComboView {
   strStatus: 'active' | 'inactive';
   blnMarketplaceVisible: boolean;
   strImageUrl: string | null;
+  /** Variante optimizada para mostrar (Cloudinary). */
+  strImageWebUrl: string | null;
   fltPrice: number;
   listPrice: number;
   savings: number;
@@ -135,6 +137,17 @@ export class CombosService {
 
   disassemble(id: string, body: { quantity: number; date?: string; notes?: string }): Observable<{ message: string; combo: ComboView }> {
     return this.http.post<{ message: string; combo: ComboView }>(`${this.baseUrl}/${id}/disassemble`, body);
+  }
+
+  /** Sube o reemplaza la imagen del combo. */
+  uploadImage(id: string, file: File): Observable<ComboView> {
+    const form = new FormData();
+    form.append('image', file);
+    return this.http.post<ComboView>(`${this.baseUrl}/${id}/image`, form);
+  }
+
+  removeImage(id: string): Observable<ComboView> {
+    return this.http.delete<ComboView>(`${this.baseUrl}/${id}/image`);
   }
 
   assemblies(id: string): Observable<ComboAssembly[]> {
