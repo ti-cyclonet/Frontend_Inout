@@ -1,8 +1,9 @@
 <div
   class="header-container w-100 d-flex justify-content-between align-items-center" style="border-bottom: 4px solid black;;"
 >
-  <!-- Botón de toggle para la barra lateral -->
+  <!-- Botón de toggle para la barra lateral (con barra inferior no aplica) -->
   <button
+    *ngIf="sidebarStyle !== 'bottom'"
     (click)="onToggleSidebar()"
     title="Sidebar"
     class="toggle-button"
@@ -174,6 +175,15 @@
                   <use xlink:href="./assets/icons/bootstrap-icons.svg#list-ul" />
                 </svg>
                 Lista
+              </button>
+              <button class="btn btn-sm flex-fill menu-style-btn"
+                [class.active-style]="sidebarStyle === 'bottom'"
+                [class.inactive-style]="sidebarStyle !== 'bottom'"
+                (click)="changeSidebarStyle('bottom')">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                  <use xlink:href="./assets/icons/bootstrap-icons.svg#window-dock" />
+                </svg>
+                Inferior
               </button>
             </div>
           </li>

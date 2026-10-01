@@ -1,9 +1,10 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { OptionMenu } from '../../model/option_menu';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { SidebarListComponent } from '../sidebar-list/sidebar-list.component';
+import { BottomNavComponent } from '../bottom-nav/bottom-nav.component';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { DeliveryRequestComponent } from '../../../feature/commercial/delivery/delivery-request.component';
@@ -15,6 +16,8 @@ import { UsageWarning } from '../../model/usage-status.model';
 import { NAME_APP_SHORT } from '../../../config/config';
 
 
+export type SidebarStyle = 'lateral' | 'list' | 'bottom';
+
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -23,6 +26,7 @@ import { NAME_APP_SHORT } from '../../../config/config';
     HeaderComponent,
     SidebarComponent,
     SidebarListComponent,
+    BottomNavComponent,
     FooterComponent,
     RouterOutlet,
     RouterModule,
@@ -31,11 +35,12 @@ import { NAME_APP_SHORT } from '../../../config/config';
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css'],
 })
-export default class LayoutComponent implements OnInit {
+export default class LayoutComponent implements OnInit, OnDestroy {
   optionsMenu: OptionMenu[] = [];
   isSidebarVisible = true;
   isLargeScreen = false;
-  sidebarStyle: 'lateral' | 'list' = 'lateral';
+  /** lateral (predeterminado), list (lista a pantalla completa) o bottom (barra inferior tipo Kiri). list y bottom son solo para móvil. */
+  sidebarStyle: SidebarStyle = 'lateral';
   application: Application | undefined;
   currentModule: ModuleType | null = null;
 
@@ -224,8 +229,29 @@ export default class LayoutComponent implements OnInit {
         this.isSidebarVisible = this.isLargeScreen;
       }
       const storedStyle = localStorage.getItem('sidebarStyle');
-      this.sidebarStyle = (storedStyle === 'list') ? 'list' : 'lateral';
+      this.sidebarStyle = (storedStyle === 'list' || storedStyle === 'bottom') ? storedStyle : 'lateral';
+      // list/bottom son estilos de móvil: en pantalla grande se usa el lateral
+      if (this.isLargeScreen && this.sidebarStyle !== 'lateral') this.sidebarStyle = 'lateral';
     }
+    this.syncBottomNavClass();
+  }
+
+  /** Barra inferior activa (solo móvil). */
+  get showBottomNav(): boolean {
+    return this.sidebarStyle === 'bottom' && !this.isLargeScreen;
+  }
+
+  /**
+   * Marca el <body> mientras se usa la barra inferior, para que elementos
+   * flotantes globales (FAB de Domicilios) se suban por encima de ella.
+   */
+  private syncBottomNavClass(): void {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('inout-bottom-nav', this.showBottomNav);
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined') document.body.classList.remove('inout-bottom-nav');
   }
 
   // Usage warnings
@@ -270,18 +296,20 @@ export default class LayoutComponent implements OnInit {
     }, 250);
   }
 
-  setSidebarStyle(style: 'lateral' | 'list') {
+  setSidebarStyle(style: SidebarStyle) {
     this.sidebarStyle = style;
+    this.isListHiding = false;
     if (typeof window !== 'undefined' && localStorage) {
       localStorage.setItem('sidebarStyle', style);
     }
+    this.syncBottomNavClass();
   }
 
   @HostListener('window:resize', ['$event'])
   onResize(event: Event) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
-      if (this.isLargeScreen && this.sidebarStyle === 'list') {
+      if (this.isLargeScreen && this.sidebarStyle !== 'lateral') {
         this.sidebarStyle = 'lateral';
         this.isSidebarVisible = true;
         this.isListHiding = false;
@@ -290,6 +318,7 @@ export default class LayoutComponent implements OnInit {
           localStorage.setItem('sidebarVisible', 'true');
         }
       }
+      this.syncBottomNavClass();
     }
   }
 }

@@ -1,0 +1,68 @@
+<!-- Hoja con el menú completo del módulo (se abre con el botón central) -->
+<div class="bn-backdrop" *ngIf="sheetOpen" (click)="closeSheet()"></div>
+<div class="bn-sheet" *ngIf="sheetOpen" role="dialog" aria-label="Menú">
+  <div class="bn-sheet-handle"></div>
+  <div class="bn-sheet-title">Menú</div>
+  <div class="bn-sheet-grid">
+    <a *ngFor="let option of mainOptions"
+       [routerLink]="option.url"
+       routerLinkActive="active"
+       class="bn-sheet-item"
+       (click)="closeSheet()">
+      <span class="bn-sheet-icon">
+        <svg fill="currentColor" viewBox="0 0 16 16">
+          <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
+        </svg>
+        <span class="bn-badge" *ngIf="alertCount(option) > 0">{{ alertCount(option) > 99 ? '99+' : alertCount(option) }}</span>
+      </span>
+      <span class="bn-sheet-label">{{ option.description }}</span>
+    </a>
+  </div>
+</div>
+
+<!-- Barra inferior -->
+<nav class="bn-bar" aria-label="Menú principal">
+  <a *ngFor="let option of leftItems"
+     [routerLink]="option.url"
+     routerLinkActive="active"
+     class="bn-item"
+     (click)="closeSheet()">
+    <span class="bn-icon">
+      <svg fill="currentColor" viewBox="0 0 16 16">
+        <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
+      </svg>
+      <span class="bn-badge" *ngIf="alertCount(option) > 0">{{ alertCount(option) > 99 ? '99+' : alertCount(option) }}</span>
+    </span>
+    <span class="bn-label">{{ option.description }}</span>
+  </a>
+
+  <!-- Espacio para el botón central -->
+  <span class="bn-center-slot" aria-hidden="true"></span>
+
+  <a *ngFor="let option of rightItems"
+     [routerLink]="option.url"
+     routerLinkActive="active"
+     class="bn-item"
+     (click)="closeSheet()">
+    <span class="bn-icon">
+      <svg fill="currentColor" viewBox="0 0 16 16">
+        <use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + option.icon"></use>
+      </svg>
+      <span class="bn-badge" *ngIf="alertCount(option) > 0">{{ alertCount(option) > 99 ? '99+' : alertCount(option) }}</span>
+    </span>
+    <span class="bn-label">{{ option.description }}</span>
+  </a>
+</nav>
+
+<!-- Botón central: abre/cierra el menú completo (el "+" girado 45° se lee como "x") -->
+<button type="button"
+        class="bn-center"
+        [class.open]="sheetOpen"
+        (click)="toggleSheet()"
+        [attr.aria-expanded]="sheetOpen"
+        [attr.aria-label]="sheetOpen ? 'Cerrar menú' : 'Abrir menú completo'">
+  <svg fill="currentColor" viewBox="0 0 16 16">
+    <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-lg"></use>
+  </svg>
+  <span class="bn-center-dot" *ngIf="hasHiddenAlerts && !sheetOpen"></span>
+</button>

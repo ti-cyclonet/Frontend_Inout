@@ -62,9 +62,9 @@ export class HeaderComponent implements OnInit {
   }
 
   @Output() sidebarToggle = new EventEmitter<void>();
-  @Output() sidebarStyleChange = new EventEmitter<'lateral' | 'list'>();
+  @Output() sidebarStyleChange = new EventEmitter<'lateral' | 'list' | 'bottom'>();
 
-  @Input() sidebarStyle: 'lateral' | 'list' = 'lateral';
+  @Input() sidebarStyle: 'lateral' | 'list' | 'bottom' = 'lateral';
 
   nombreApp = DESCRIPTION_APP;
 
@@ -158,7 +158,7 @@ export class HeaderComponent implements OnInit {
     if (field === 'repeat') this.showRepeatPassword = !this.showRepeatPassword;
   }
 
-  changeSidebarStyle(style: 'lateral' | 'list'): void {
+  changeSidebarStyle(style: 'lateral' | 'list' | 'bottom'): void {
     this.sidebarStyleChange.emit(style);
   }
 
