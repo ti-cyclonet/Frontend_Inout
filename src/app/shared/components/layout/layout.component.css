@@ -174,3 +174,9 @@
 .main-content.with-bottom-nav {
   padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
 }
+
+/* Con la barra inferior sobra el margen de 5rem reservado para el FAB de
+   Domicilios (que se sube sobre la barra): se deja un respiro mínimo */
+.main-content.with-bottom-nav .router-outlet-container {
+  padding-bottom: 0.75rem;
+}
