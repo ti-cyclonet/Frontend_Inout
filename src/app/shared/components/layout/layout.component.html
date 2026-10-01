@@ -8,7 +8,7 @@
     </div>
 
     <!-- Main Content -->
-    <div [ngClass]="{'full-width': !isSidebarVisible || sidebarStyle === 'list', 'reduced-width': isSidebarVisible && sidebarStyle === 'lateral'}" 
+    <div [ngClass]="{'full-width': !isSidebarVisible || sidebarStyle !== 'lateral', 'reduced-width': isSidebarVisible && sidebarStyle === 'lateral', 'with-bottom-nav': showBottomNav}" 
          class="main-content d-flex flex-column p-0" style="height: 100vh; overflow: hidden;">
       
       <!-- Header with Toggle Button -->
@@ -59,6 +59,9 @@
     </div>
   </div>
 </div>
+
+<!-- Menú inferior (tercer estilo de menú, solo móvil) -->
+<app-bottom-nav *ngIf="showBottomNav" [optionsMenu]="optionsMenu"></app-bottom-nav>
 
 <!-- Domicilios (Shotra): FAB flotante transversal — disponible en TODOS los
      módulos de InOut. Se comporta como una app integrada aparte. -->

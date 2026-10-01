@@ -179,3 +179,9 @@ footer {
 @media (max-width: 1200px) { .pk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pk-row.thirds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .pk-row, .pk-row.half, .pk-row.thirds { grid-template-columns: 1fr; } .pk-feed { grid-template-columns: 1fr; } }
 @media (max-width: 576px) { .pk-grid, .pk-grid.three { grid-template-columns: 1fr; } }
+
+/* Con el menú inferior (estilo "Inferior" en móvil) el FAB de Domicilios
+   (Shotra) se sube por encima de la barra. */
+body.inout-bottom-nav .shotra-fab {
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}

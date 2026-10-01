@@ -168,3 +168,9 @@
 .usage-warning-close:hover {
   background: rgba(133, 100, 4, 0.1);
 }
+
+/* Barra inferior: la columna se acorta para que el contenido y el footer no
+   queden debajo de la barra fija */
+.main-content.with-bottom-nav {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+}
