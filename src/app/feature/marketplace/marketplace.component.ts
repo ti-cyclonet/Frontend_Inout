@@ -122,6 +122,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   
   searchTerm: string = '';
   selectedCategory: string = 'all';
+  /** Promociones en curso de la tienda (para la franja "Combos y promociones"). */
+  livePromotions: any[] = [];
   sortBy: string = 'name';
   loading = true;
   imageErrors: Set<string> = new Set();
@@ -568,7 +570,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         image: c.strImageUrl || undefined,
       }));
       this.products = [...comboItems, ...this.products];
-      this.applyLivePromotions(livePromotions || []);
+      this.livePromotions = livePromotions || [];
+      this.applyLivePromotions(this.livePromotions);
 
       // Load display mode from config
       if (configResponse && configResponse.displayMode) {
@@ -812,7 +815,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       const term = (this.searchTerm || '').toLowerCase();
       const matchesSearch = (product.strName || '').toLowerCase().includes(term) ||
                            (product.strDescription || '').toLowerCase().includes(term);
-      const matchesCategory = this.selectedCategory === 'all' || this.categoryOf(product) === this.selectedCategory;
+      const matchesCategory = this.selectedCategory === 'all'
+        || (this.selectedCategory === 'promos' ? this.isOffer(product) : this.categoryOf(product) === this.selectedCategory);
       return matchesSearch && matchesCategory;
     });
     this.sortProducts();
@@ -1262,7 +1266,53 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return sectorCategoryMap[sector] || 'all';
   }
 
+  /** Categorías + "Ofertas" (combos y productos en promoción) de segunda, cuando las hay. */
   getVisibleCategories(): Array<{value: string, label: string}> {
+    const base = this.baseCategories();
+    if (this.tenantId === 'home' || !this.hasOffers) return base;
+    return [base[0], { value: 'promos', label: '🔥 Ofertas' }, ...base.slice(1)];
+  }
+
+  // ── Combos y promociones ──
+
+  /** Combo/kit o producto con precio de promoción. */
+  isOffer(product: Product): boolean {
+    return product.itemType === 'combo' || product.itemType === 'kit' || this.hasPromo(product);
+  }
+
+  /** Lo que va en la franja de ofertas: primero combos y kits, luego productos en promoción. */
+  get offerProducts(): Product[] {
+    const offers = this.products.filter((p) => this.isOffer(p));
+    const isCombo = (p: Product) => (p.itemType === 'combo' || p.itemType === 'kit' ? 0 : 1);
+    return offers.sort((a, b) => isCombo(a) - isCombo(b));
+  }
+
+  get hasOffers(): boolean {
+    return this.products.some((p) => this.isOffer(p));
+  }
+
+  /** "Hora feliz -20% · hasta las 6:00 p. m." / "… · hasta el 15 oct". */
+  promoBannerText(promo: any): string {
+    let until = '';
+    if (promo.timeTo) {
+      const [h, m] = String(promo.timeTo).split(':').map(Number);
+      const d = new Date(2000, 0, 1, h, m || 0);
+      until = ` · hasta las ${d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}`;
+    } else if (promo.endDate) {
+      const [y, mo, da] = String(promo.endDate).slice(0, 10).split('-').map(Number);
+      until = ` · hasta el ${new Date(y, mo - 1, da).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
+    }
+    return `${promo.strName} ${promo.label}${until}`;
+  }
+
+  /** "Ver todas": el catálogo filtrado a ofertas. */
+  showAllOffers(): void {
+    this.selectedCategory = 'promos';
+    this.onCategoryChange();
+    setTimeout(() => document.querySelector('.products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  }
+
+  private baseCategories(): Array<{value: string, label: string}> {
     const allCategories = [
       { value: 'all', label: 'Todas las categorías' },
       { value: '23', label: 'Alimentos y Restaurantes' },

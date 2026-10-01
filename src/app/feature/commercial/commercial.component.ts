@@ -7,8 +7,6 @@ import { SalesListComponent } from '../sales/list/sales-list.component';
 import { SaleFormComponent } from '../sales/form/sale-form.component';
 import { OrdersComponent } from '../orders/orders.component';
 import { PortfolioComponent } from './portfolio/portfolio.component';
-import { CombosAdminComponent } from './combos/combos-admin.component';
-import { PromotionsAdminComponent } from './promotions/promotions-admin.component';
 
 @Component({
   selector: 'app-commercial',
@@ -20,9 +18,7 @@ import { PromotionsAdminComponent } from './promotions/promotions-admin.componen
     SalesListComponent,
     SaleFormComponent,
     OrdersComponent,
-    PortfolioComponent,
-    CombosAdminComponent,
-    PromotionsAdminComponent
+    PortfolioComponent
   ],
   template: `
     <div class="commercial-container">
@@ -41,12 +37,6 @@ import { PromotionsAdminComponent } from './promotions/promotions-admin.componen
         </button>
         <button class="tab-button" [class.active]="activeTab === 'portfolio'" (click)="activeTab = 'portfolio'">
           Cartera
-        </button>
-        <button class="tab-button" [class.active]="activeTab === 'combos'" (click)="activeTab = 'combos'">
-          Combos y kits
-        </button>
-        <button class="tab-button" [class.active]="activeTab === 'promotions'" (click)="activeTab = 'promotions'">
-          Promociones
         </button>
       </div>
 
@@ -69,16 +59,6 @@ import { PromotionsAdminComponent } from './promotions/promotions-admin.componen
         <!-- Cartera: cuentas por cobrar y créditos de clientes -->
         <div *ngIf="activeTab === 'portfolio'">
           <app-portfolio></app-portfolio>
-        </div>
-
-        <!-- Combos virtuales y kits armados -->
-        <div *ngIf="activeTab === 'combos'">
-          <app-combos-admin></app-combos-admin>
-        </div>
-
-        <!-- Promociones -->
-        <div *ngIf="activeTab === 'promotions'">
-          <app-promotions-admin></app-promotions-admin>
         </div>
       </div>
 
@@ -158,7 +138,7 @@ export class CommercialComponent {
   // aparecía hasta recargar toda la página.
   @ViewChild(SaleFormComponent) saleForm?: SaleFormComponent;
 
-  activeTab: 'dashboard' | 'sales' | 'orders' | 'portfolio' | 'combos' | 'promotions' = 'dashboard';
+  activeTab: 'dashboard' | 'sales' | 'orders' | 'portfolio' = 'dashboard';
   showSaleModal = false;
   refreshTrigger = 0;
 
@@ -168,8 +148,6 @@ export class CommercialComponent {
     const [path, query = ''] = this.router.url.split('?');
     const tab = new URLSearchParams(query).get('tab');
     if (tab === 'cartera' || tab === 'portfolio') this.activeTab = 'portfolio';
-    else if (tab === 'combos') this.activeTab = 'combos';
-    else if (tab === 'promociones' || tab === 'promotions') this.activeTab = 'promotions';
     else if (path === '/orders') this.activeTab = 'orders';
     else if (path === '/sales') this.activeTab = 'sales';
   }
