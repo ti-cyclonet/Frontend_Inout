@@ -312,6 +312,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** Abre el checkout en "Iniciar sesión" (desde el encabezado), aunque el carrito esté vacío. */
   openAccountLogin(): void {
+    // En modo administrador no se inicia sesión como cliente de la tienda
+    if (this.isAdminMode) return;
     this.setAccountMode('login');
     this.showCheckout = true;
     this.orderSuccess = null;
@@ -1834,6 +1836,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.clientLoginData = { email: '', password: '' };
     this.registerData.password = '';
     this.registerData.confirmPassword = '';
+    // Sin productos en el carrito no hay pedido que continuar: se cierra el
+    // panel y el cliente sigue en la tienda (antes quedaba en "Tu Pedido" vacío)
+    if (this.cart.length === 0) this.showCheckout = false;
     Swal.fire({ icon: 'success', title: '¡Listo!', text: `Sesión iniciada como ${this.clientEmail}`, timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
   }
 
