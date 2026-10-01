@@ -759,9 +759,11 @@ export class SalesListComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.productsService.getProducts().subscribe({
-      next: (products) => {
-        this.products = products;
+    // Todos los productos (GET /products sin límite solo trae 10) y la lista,
+    // no la respuesta paginada completa ({ data, total }).
+    this.productsService.getAllProducts().subscribe({
+      next: (response) => {
+        this.products = response?.data || response || [];
       },
       error: (error) => {
         console.error('Error loading products:', error);

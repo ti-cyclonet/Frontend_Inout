@@ -401,7 +401,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     
     // Para ruta privada, cargar datos reales
     Promise.all([
-      this.http.get<any>(`${this.baseUrl}/products`).toPromise(),
+      this.http.get<any>(`${this.baseUrl}/products`, { params: { limit: '5000' } }).toPromise(),
       this.http.get<any>(`${this.baseUrl}/sales`).toPromise()
     ]).then(([productsResponse, salesResponse]) => {
       this.products = (productsResponse.data || []).map((product: any) => ({
