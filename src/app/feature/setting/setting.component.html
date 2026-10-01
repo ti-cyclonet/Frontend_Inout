@@ -1,5 +1,36 @@
 <div class="floating-container">
   <div class="outer-container">
+    <!-- Identidad del negocio: logo para documentos y MarketPlace -->
+    <div class="inner-container">
+      <h3 class="card-title mb-0">Identidad del negocio</h3>
+    </div>
+    <div class="inner-container">
+      <div class="d-flex align-items-center gap-3 flex-wrap py-2">
+        <div class="logo-preview" [class.logo-preview-empty]="!branding?.logoWebUrl">
+          <img *ngIf="branding?.logoWebUrl" [src]="branding?.logoWebUrl" alt="Logo del negocio" />
+          <svg *ngIf="!branding?.logoWebUrl" width="28" height="28" fill="currentColor">
+            <use xlink:href="./assets/icons/bootstrap-icons.svg#image" />
+          </svg>
+        </div>
+        <div class="flex-grow-1" style="min-width: 220px;">
+          <div class="fw-semibold">Logo del negocio</div>
+          <small class="text-muted d-block">
+            Aparece en tus documentos (facturas, cotizaciones, remisiones, comprobantes…) y en tu MarketPlace.
+            PNG, JPG o WebP de hasta 2 MB; mejor cuadrado o horizontal y con fondo transparente.
+          </small>
+          <small class="text-muted d-block" *ngIf="!permissions.isAdmin">Solo un administrador puede cambiarlo.</small>
+        </div>
+        <div class="d-flex gap-2" *ngIf="permissions.isAdmin">
+          <label class="btn btn-sm btn-primary mb-0" [class.disabled]="uploadingLogo">
+            <span *ngIf="uploadingLogo" class="spinner-border spinner-border-sm me-1"></span>
+            {{ uploadingLogo ? 'Subiendo...' : (branding?.logoUrl ? 'Cambiar logo' : 'Subir logo') }}
+            <input type="file" hidden [accept]="logoAccept" (change)="onLogoSelected($event)" [disabled]="uploadingLogo" />
+          </label>
+          <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="branding?.logoUrl && !uploadingLogo" (click)="removeLogo()">Quitar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Preferencias de interfaz -->
     <div class="inner-container">
       <h3 class="card-title mb-0">Preferencias</h3>

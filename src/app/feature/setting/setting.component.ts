@@ -6,6 +6,8 @@ import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service';
 import { ProductionPlanPanelComponent } from './production-plan/production-plan-panel.component';
+import { TenantBranding, TenantBrandingService } from '../../shared/services/tenant-branding.service';
+import { PermissionsService } from '../../shared/services/permissions.service';
 
 @Component({
   selector: 'app-setting',
@@ -63,7 +65,18 @@ export class SettingComponent implements OnInit {
   // Preferencia de UI: sugerir Shotra al pasar un pedido a Entregado.
   suggestDeliveryOnDeliver = true;
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private uiPrefs: UiPrefsService) {
+  // Identidad del negocio: logo usado en documentos PDF y MarketPlace
+  branding: TenantBranding | null = null;
+  uploadingLogo = false;
+  readonly logoAccept = 'image/png,image/jpeg,image/webp';
+
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private uiPrefs: UiPrefsService,
+    private brandingService: TenantBrandingService,
+    public permissions: PermissionsService,
+  ) {
     this.showDeliveryFab = this.uiPrefs.getShowDeliveryFab();
     this.suggestDeliveryOnDeliver = this.uiPrefs.getSuggestDeliveryOnDeliver();
     this.nuevoPeriodoForm = this.fb.group({
@@ -92,9 +105,58 @@ export class SettingComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.brandingService.load(true).then((b) => (this.branding = b));
     this.loadPeriodos();
     this.loadPeriodoActivo();
     this.loadParametrosDisponibles();
+  }
+
+  /** Sube o reemplaza el logo del negocio (solo admin; el backend también lo valida). */
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // permite volver a elegir el mismo archivo
+    if (!file) return;
+    if (!this.logoAccept.split(',').includes(file.type)) {
+      Swal.fire('Formato no válido', 'El logo debe ser PNG, JPG o WebP.', 'warning');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      Swal.fire('Archivo muy pesado', 'El logo no puede pesar más de 2 MB.', 'warning');
+      return;
+    }
+    this.uploadingLogo = true;
+    this.brandingService.uploadLogo(file).subscribe({
+      next: (b) => {
+        this.branding = b;
+        this.uploadingLogo = false;
+        Swal.fire({ icon: 'success', title: 'Logo actualizado', text: 'Ya aparece en tus documentos y en tu MarketPlace.', timer: 2200, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.uploadingLogo = false;
+        const msg = err?.status === 413
+          ? 'El archivo es demasiado grande para el servidor. Prueba con una imagen más liviana.'
+          : err?.error?.message || 'Intenta de nuevo.';
+        Swal.fire('No se pudo subir el logo', msg, 'error');
+      },
+    });
+  }
+
+  removeLogo(): void {
+    Swal.fire({
+      title: '¿Quitar el logo?',
+      text: 'Tus documentos y tu MarketPlace se mostrarán sin logo.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Quitar',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.brandingService.removeLogo().subscribe({
+        next: (b) => (this.branding = b),
+        error: (err) => Swal.fire('No se pudo quitar el logo', err?.error?.message || 'Intenta de nuevo.', 'error'),
+      });
+    });
   }
 
   /** Muestra/oculta el botón flotante de Domicilios (Shotra) en toda la app. */

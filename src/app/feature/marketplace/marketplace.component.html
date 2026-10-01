@@ -3,9 +3,12 @@
     <!-- Header -->
     <header class="modern-header">
       <div class="header-top">
-        <div class="brand">
-          <h1>CycloNet <span class="market">Market</span></h1>
-          <span class="business-name" *ngIf="tenantId !== 'home' && businessName">{{ businessName }}</span>
+        <div class="brand-wrap">
+          <img *ngIf="tenantId !== 'home' && storeLogoUrl" class="store-logo" [src]="storeLogoUrl" [alt]="businessName || 'Logo de la tienda'">
+          <div class="brand">
+            <h1>CycloNet <span class="market">Market</span></h1>
+            <span class="business-name" *ngIf="tenantId !== 'home' && businessName">{{ businessName }}</span>
+          </div>
         </div>
         <div class="search-container">
           <div class="search-box">
@@ -309,6 +312,7 @@
         [variant]="$any(displayMode)"
         [products]="filteredProducts"
         [businessName]="businessName"
+        [logoUrl]="storeLogoUrl"
         [tagline]="storeWelcome"
         [whatsapp]="storeWhatsapp"
         [quantities]="cartQuantities"

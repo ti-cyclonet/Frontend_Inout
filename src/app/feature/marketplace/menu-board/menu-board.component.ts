@@ -37,6 +37,8 @@ export class MenuBoardComponent implements OnInit, OnChanges {
   @Input() variant: MenuVariant = 'menu';
   @Input() products: any[] = [];
   @Input() businessName = '';
+  /** Logo del negocio (opcional), sobre el título del menú. */
+  @Input() logoUrl: string | null = null;
   @Input() tagline = '';
   @Input() whatsapp = '';
   /** Cantidad en el carrito por id de producto. */

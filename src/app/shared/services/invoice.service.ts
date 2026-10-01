@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { TenantBrandingService, drawPdfLogo } from './tenant-branding.service';
 
 interface OrderItem {
   productId: string;
@@ -31,7 +32,7 @@ interface OrderData {
 })
 export class InvoiceService {
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private branding: TenantBrandingService) {}
 
   async generateOrderInvoice(order: OrderData): Promise<void> {
     // Fetch business params to get IVA/INC if not already applied
@@ -73,12 +74,15 @@ export class InvoiceService {
     doc.setFont('helvetica', 'normal');
     doc.text(`N° ${order.orderCode}`, 15, 30);
 
-    // Company info (right side of header)
+    // Company info (right side of header), a la izquierda del logo del negocio
+    const logoWidth = drawPdfLogo(doc, await this.branding.getPdfLogo(), pageWidth - 15, 5, 30);
+    const textRight = pageWidth - 15 - logoWidth;
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
-    doc.text('InOut - Sistema de Gestión', pageWidth - 15, 15, { align: 'right' });
-    doc.text(`Fecha: ${this.formatDate(order.createdAt)}`, pageWidth - 15, 22, { align: 'right' });
+    doc.text('InOut - Sistema de Gestión', textRight, 15, { align: 'right' });
+    doc.text(`Fecha: ${this.formatDate(order.createdAt)}`, textRight, 22, { align: 'right' });
     if (order.deliveryDate) {
-      doc.text(`Entrega: ${this.formatDate(order.deliveryDate)}`, pageWidth - 15, 29, { align: 'right' });
+      doc.text(`Entrega: ${this.formatDate(order.deliveryDate)}`, textRight, 29, { align: 'right' });
     }
 
     // Customer section

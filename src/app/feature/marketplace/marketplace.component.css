@@ -63,6 +63,8 @@
   max-width: 1200px; margin: 0 auto; padding: 0.75rem 1rem;
   display: flex; align-items: center; gap: 1.25rem;
 }
+.brand-wrap { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+.store-logo { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.08); padding: 3px; flex-shrink: 0; }
 .brand { display: flex; flex-direction: column; min-width: 0; }
 .brand h1 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--mk-blue); letter-spacing: -0.01em; white-space: nowrap; }
 .brand .market { color: var(--mk-orange); font-weight: 600; }
@@ -436,7 +438,7 @@
 }
 @media (max-width: 768px) {
   .header-top { flex-wrap: wrap; gap: 0.6rem; padding: 0.6rem 0.85rem; }
-  .brand { flex: 1; }
+  .brand-wrap { flex: 1; }
   .search-container { order: 3; flex-basis: 100%; }
   .user-greeting { display: none; }
   .carousel-container { height: 200px; border-radius: 12px; }
