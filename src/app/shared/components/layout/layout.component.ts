@@ -121,6 +121,22 @@ export default class LayoutComponent implements OnInit, OnDestroy {
           this.optionsMenu.push(commercialEntry);
         }
 
+        // Combos y promociones (combos, kits armados y promociones)
+        const combosEntry: OptionMenu = {
+          id: 'combos-promotions',
+          name: 'Combos',
+          description: 'Combos y promociones',
+          url: '/combos',
+          icon: 'tags',
+          type: 'main_menu',
+          idMPather: null,
+          order: '46',
+          idApplication: this.application?.id ?? '',
+        };
+        if (!this.optionsMenu.some(m => m.id === combosEntry.id)) {
+          this.optionsMenu.push(combosEntry);
+        }
+
         // Agregar enlace de Almacenes solo en modo Inventario
         if (this.currentModule === 'inventory') {
           const inventoryEntry: OptionMenu = {

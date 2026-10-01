@@ -50,7 +50,7 @@ export class SalesListComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.http.get<any>(`${this.baseUrl}/products`).subscribe({
+    this.http.get<any>(`${this.baseUrl}/products`, { params: { limit: '5000' } }).subscribe({
       next: (response) => {
         this.products = response.data || response;
       },

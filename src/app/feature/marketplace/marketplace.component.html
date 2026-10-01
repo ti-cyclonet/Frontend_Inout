@@ -60,6 +60,40 @@
       <p>Cargando productos...</p>
     </div>
 
+      <!-- ═══════ Combos y promociones (ubicación destacada, primero que todo) ═══════ -->
+      <section class="offers-section" *ngIf="!loading && tenantId !== 'home' && !showMenuBoard && offerProducts.length > 0" aria-label="Combos y promociones">
+        <div class="offers-head">
+          <div>
+            <h2>🔥 Combos y promociones</h2>
+            <p class="offers-sub" *ngIf="livePromotions.length === 0">Arma tu pedido con nuestros combos.</p>
+          </div>
+          <button type="button" class="offers-all" (click)="showAllOffers()">Ver todas ›</button>
+        </div>
+        <div class="offers-banners" *ngIf="livePromotions.length > 0">
+          <span class="offers-banner" *ngFor="let promo of livePromotions">{{ promoBannerText(promo) }}</span>
+        </div>
+        <div class="offers-track">
+          <article class="offer-card" *ngFor="let product of offerProducts" (click)="openProductDetails(product)">
+            <div class="offer-image">
+              <img *ngIf="product.image && !hasImageError(product.strId)" [src]="product.image" [alt]="product.strName" loading="lazy" (error)="onImageError($event, product)">
+              <div *ngIf="!product.image || hasImageError(product.strId)" class="offer-placeholder">{{ product.itemType === 'combo' || product.itemType === 'kit' ? '🎁' : '🏷️' }}</div>
+              <span class="offer-badge" *ngIf="product.promoLabel">{{ product.promoLabel }}</span>
+              <span class="offer-kind" *ngIf="product.itemType === 'combo' || product.itemType === 'kit'">{{ product.itemType === 'kit' ? 'Kit' : 'Combo' }}</span>
+            </div>
+            <div class="offer-body">
+              <h3>{{ product.strName }}</h3>
+              <p class="offer-includes" *ngIf="product.comboIncludes?.length">{{ product.comboIncludes!.join(' · ') }}</p>
+              <div class="offer-price">
+                <s *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s>
+                <strong>{{ formatCurrency(product.fltPrice) }}</strong>
+              </div>
+              <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
+              <button type="button" class="offer-add" *ngIf="!isAdminMode" (click)="$event.stopPropagation(); addToCart(product)">Agregar</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <!-- Hero Carousel -->
       <section class="hero-carousel" *ngIf="carouselProducts.length > 0 && !showMenuBoard">
         <div class="carousel-container">

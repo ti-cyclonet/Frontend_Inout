@@ -77,6 +77,12 @@ export class MenuBoardComponent implements OnInit, OnChanges {
     this.sections = [...groups.entries()]
       .map(([name, items]) => ({ name, items }))
       .sort((a, b) => Number(b.name === 'Combos') - Number(a.name === 'Combos'));
+    // Promociones: los ítems con precio de promoción, también en su propia sección (después de Combos)
+    const promos = (this.products || []).filter((p) => p.itemType !== 'combo' && p.itemType !== 'kit' && p.promoLabel);
+    if (promos.length) {
+      const at = this.sections[0]?.name === 'Combos' ? 1 : 0;
+      this.sections.splice(at, 0, { name: 'Promociones', items: promos });
+    }
     if (!this.sections.some((s) => s.name === this.activeSection)) this.activeSection = this.sections[0]?.name || '';
     this.heroImage = (this.products || []).find((p) => p.image)?.image || null;
   }

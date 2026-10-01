@@ -214,7 +214,7 @@ export class KardexComponent implements OnInit {
   }
 
   searchProducts(): void {
-    this.http.get<any>(`${this.baseUrl}/products`).subscribe({
+    this.http.get<any>(`${this.baseUrl}/products`, { params: { limit: '5000' } }).subscribe({
       next: (response) => {
         const products = response.data || response;
         this.materials = products.map((p: any) => ({
@@ -358,7 +358,7 @@ export class KardexComponent implements OnInit {
         error: () => {}
       });
     } else if (this.entityType === 'product') {
-      this.http.get<any>(`${this.baseUrl}/products`).subscribe({
+      this.http.get<any>(`${this.baseUrl}/products`, { params: { limit: '5000' } }).subscribe({
         next: (response) => {
           const products = response.data || response;
           this.materials = products.map((p: any) => ({
