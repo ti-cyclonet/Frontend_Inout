@@ -1,0 +1,167 @@
+<div class="ca-container">
+  <div class="ca-toolbar">
+    <div class="ca-filters">
+      <div class="ca-seg" role="tablist" aria-label="Estado">
+        <button type="button" [class.active]="stateFilter === 'current'" (click)="stateFilter = 'current'">Vigentes y programadas</button>
+        <button type="button" [class.active]="stateFilter === 'ended'" (click)="stateFilter = 'ended'">Vencidas e inactivas</button>
+        <button type="button" [class.active]="stateFilter === 'all'" (click)="stateFilter = 'all'">Todas</button>
+      </div>
+      <input class="ca-search" type="search" placeholder="Buscar promoción" [(ngModel)]="search" />
+    </div>
+    <div class="ca-filters">
+      <button type="button" class="ca-btn" (click)="load()">Actualizar</button>
+      <button type="button" class="ca-btn primary" *ngIf="isAdmin" (click)="openNew()">+ Nueva promoción</button>
+    </div>
+  </div>
+
+  <div class="ca-note">
+    En cada producto se aplica solo <b>la mejor promoción vigente</b> (no se acumulan), sin pasar del descuento máximo del período.
+    Los componentes de un combo no reciben promociones sueltas: el combo ya tiene su precio.
+  </div>
+
+  <div class="ca-state" *ngIf="loading">Cargando promociones…</div>
+  <div class="ca-note danger" *ngIf="error">{{ error }}</div>
+  <div class="ca-state" *ngIf="!loading && !error && filtered.length === 0">
+    {{ promotions.length ? 'No hay promociones con ese filtro.' : 'Aún no tienes promociones.' }}
+    <span *ngIf="!isAdmin && !promotions.length"> Un administrador puede crearlas.</span>
+  </div>
+
+  <div class="ca-grid" *ngIf="!loading && filtered.length > 0">
+    <article class="ca-card" *ngFor="let p of filtered" [class.inactive]="p.state === 'inactive' || p.state === 'expired'">
+      <div class="ca-card-head">
+        <h4>{{ p.strName }}</h4>
+        <div class="ca-badges">
+          <span class="ca-badge orange">{{ p.label }}</span>
+          <span class="ca-badge" [ngClass]="stateLabel(p).cls">{{ stateLabel(p).text }}</span>
+        </div>
+      </div>
+      <p class="ca-muted" *ngIf="p.strDescription" style="margin: 0">{{ p.strDescription }}</p>
+      <div class="ca-meta" style="grid-template-columns: 1fr">
+        <span>Aplica a: <b>{{ targetsLabel(p) }}</b></span>
+        <span>Cuándo: <b>{{ scheduleLabel(p) }}</b></span>
+        <span>Dónde: <b>{{ channelLabel(p.channel) }}</b></span>
+      </div>
+      <div class="ca-actions" *ngIf="isAdmin">
+        <button type="button" class="ca-btn sm" (click)="openEdit(p)">Editar</button>
+        <button type="button" class="ca-btn sm ghost" (click)="toggleStatus(p)">{{ p.strStatus === 'active' ? 'Desactivar' : 'Activar' }}</button>
+        <button type="button" class="ca-btn sm danger" (click)="remove(p)">Eliminar</button>
+      </div>
+    </article>
+  </div>
+</div>
+
+<!-- ═══════ Editor de promoción ═══════ -->
+<ng-container *ngIf="editorOpen">
+  <div class="ca-backdrop" (click)="closeEditor()"></div>
+  <div class="ca-modal" (click)="closeEditor()">
+    <div class="ca-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="ca-dialog-head">
+        <h3>{{ editing ? 'Editar promoción' : 'Nueva promoción' }}</h3>
+        <button type="button" class="ca-close" aria-label="Cerrar" (click)="closeEditor()">×</button>
+      </div>
+      <div class="ca-dialog-body">
+        <div class="ca-field">
+          <label for="prName">Nombre</label>
+          <input id="prName" type="text" maxlength="120" [(ngModel)]="form.name" placeholder="Ej. Hora feliz en bebidas" />
+        </div>
+        <div class="ca-field">
+          <label for="prDesc">Descripción (opcional)</label>
+          <input id="prDesc" type="text" maxlength="1000" [(ngModel)]="form.description" placeholder="Lo que verá el cliente" />
+        </div>
+
+        <div>
+          <span class="ca-label">Descuento</span>
+          <div class="ca-row" style="margin-top: 0.25rem">
+            <div class="ca-seg">
+              <button type="button" [class.active]="form.discountType === 'PERCENT'" (click)="form.discountType = 'PERCENT'">Porcentaje (%)</button>
+              <button type="button" [class.active]="form.discountType === 'FIXED'" (click)="form.discountType = 'FIXED'">Valor fijo ($)</button>
+            </div>
+            <div class="ca-field">
+              <input type="number" [min]="form.discountType === 'PERCENT' ? 1 : 100" [max]="form.discountType === 'PERCENT' ? 100 : null"
+                     [step]="form.discountType === 'PERCENT' ? 1 : 100" [(ngModel)]="form.value" aria-label="Valor del descuento" />
+              <small>{{ preview }}</small>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <span class="ca-label">¿A qué aplica?</span>
+          <div class="ca-choice" style="margin-top: 0.25rem">
+            <button type="button" [class.active]="form.scope === 'ITEMS'" (click)="form.scope = 'ITEMS'">
+              <b>Productos, categorías o combos</b><span>Elige uno o varios.</span>
+            </button>
+            <button type="button" [class.active]="form.scope === 'ALL'" (click)="form.scope = 'ALL'">
+              <b>Todo el catálogo</b><span>Incluye combos y kits.</span>
+            </button>
+          </div>
+          <ng-container *ngIf="form.scope === 'ITEMS'">
+            <div class="ca-picker" style="margin-top: 0.5rem">
+              <input class="ca-search" style="max-width: none; width: 100%" type="search" [(ngModel)]="pickerQuery"
+                     placeholder="Busca un producto, categoría, combo o kit" />
+              <div class="ca-picker-results" *ngIf="pickerQuery.trim()">
+                <button type="button" *ngFor="let o of pickerResults" (click)="addTarget(o)">
+                  <span>{{ o.name }}</span><small>{{ o.hint }}</small>
+                </button>
+                <button type="button" disabled *ngIf="pickerResults.length === 0"><span>Sin resultados</span></button>
+              </div>
+            </div>
+            <div class="ca-chips" style="margin-top: 0.5rem" *ngIf="form.targets.length">
+              <span class="ca-chip" *ngFor="let t of form.targets; let i = index">
+                {{ t.type === 'category' ? 'Categoría: ' : '' }}{{ t.name }}
+                <button type="button" (click)="removeTarget(i)" aria-label="Quitar">×</button>
+              </span>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="ca-field">
+          <label for="prChannel">Dónde aplica</label>
+          <select id="prChannel" [(ngModel)]="form.channel">
+            <option value="ALL">En la tienda y en el MarketPlace</option>
+            <option value="POS">Solo en la tienda (ventas y pedidos del panel)</option>
+            <option value="MARKETPLACE">Solo en el MarketPlace</option>
+          </select>
+        </div>
+
+        <div class="ca-row">
+          <div class="ca-field">
+            <label for="prStart">Desde</label>
+            <input id="prStart" type="date" [(ngModel)]="form.startDate" />
+          </div>
+          <div class="ca-field">
+            <label for="prEnd">Hasta (opcional)</label>
+            <input id="prEnd" type="date" [(ngModel)]="form.endDate" [min]="form.startDate" />
+            <small>Vacío = sin fecha de fin</small>
+          </div>
+        </div>
+
+        <div>
+          <span class="ca-label">Días de la semana</span>
+          <div class="ca-days" style="margin-top: 0.25rem">
+            <button type="button" *ngFor="let d of days" [class.active]="form.weekdays.includes(d.n)" (click)="toggleDay(d.n)">{{ d.label }}</button>
+          </div>
+          <small class="ca-muted">{{ form.weekdays.length ? 'Solo los días marcados' : 'Todos los días' }}</small>
+        </div>
+
+        <div>
+          <label class="ca-check"><input type="checkbox" [(ngModel)]="useTimeRange" /> Solo en una franja horaria (ej. hora feliz)</label>
+          <div class="ca-row" *ngIf="useTimeRange" style="margin-top: 0.4rem">
+            <div class="ca-field">
+              <label for="prFrom">Desde las</label>
+              <input id="prFrom" type="time" [(ngModel)]="form.timeFrom" />
+            </div>
+            <div class="ca-field">
+              <label for="prTo">Hasta las</label>
+              <input id="prTo" type="time" [(ngModel)]="form.timeTo" />
+              <small *ngIf="form.timeFrom > form.timeTo">Cruza la medianoche</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ca-dialog-foot">
+        <button type="button" class="ca-btn ghost" (click)="closeEditor()">Cancelar</button>
+        <button type="button" class="ca-btn primary" [disabled]="saving" (click)="save()">{{ saving ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
