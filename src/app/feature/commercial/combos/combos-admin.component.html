@@ -1,0 +1,255 @@
+<div class="ca-container">
+  <div class="ca-toolbar">
+    <div class="ca-filters">
+      <div class="ca-seg" role="tablist" aria-label="Tipo">
+        <button type="button" [class.active]="typeFilter === 'all'" (click)="typeFilter = 'all'">Todos</button>
+        <button type="button" [class.active]="typeFilter === 'VIRTUAL'" (click)="typeFilter = 'VIRTUAL'">Combos</button>
+        <button type="button" [class.active]="typeFilter === 'KIT'" (click)="typeFilter = 'KIT'">Kits armados</button>
+      </div>
+      <div class="ca-seg" role="tablist" aria-label="Estado">
+        <button type="button" [class.active]="statusFilter === 'active'" (click)="statusFilter = 'active'">Activos</button>
+        <button type="button" [class.active]="statusFilter === 'inactive'" (click)="statusFilter = 'inactive'">Inactivos</button>
+        <button type="button" [class.active]="statusFilter === 'all'" (click)="statusFilter = 'all'">Todos</button>
+      </div>
+      <input class="ca-search" type="search" placeholder="Buscar por nombre o código" [(ngModel)]="search" />
+    </div>
+    <div class="ca-filters">
+      <button type="button" class="ca-btn" (click)="load()">Actualizar</button>
+      <button type="button" class="ca-btn primary" *ngIf="isAdmin" (click)="openNew()">+ Nuevo combo o kit</button>
+    </div>
+  </div>
+
+  <div class="ca-note" *ngIf="!loading && !error && combos.length === 0">
+    <b>Combo:</b> se arma al venderse con el stock de sus componentes (ej. hamburguesa + papas + gaseosa).
+    <b>Kit armado:</b> lo armas por lotes y tiene su propio stock (ej. anchetas, canastas, cajas de regalo).
+  </div>
+
+  <div class="ca-state" *ngIf="loading">Cargando combos…</div>
+  <div class="ca-note danger" *ngIf="error">{{ error }}</div>
+  <div class="ca-state" *ngIf="!loading && !error && combos.length > 0 && filtered.length === 0">No hay combos con esos filtros.</div>
+  <div class="ca-state" *ngIf="!loading && !error && combos.length === 0">
+    Aún no tienes combos ni kits.
+    <span *ngIf="!isAdmin"> Un administrador puede crearlos.</span>
+  </div>
+
+  <div class="ca-grid" *ngIf="!loading && filtered.length > 0">
+    <article class="ca-card" *ngFor="let c of filtered" [class.inactive]="c.strStatus !== 'active'">
+      <div class="ca-card-head">
+        <div>
+          <h4>{{ c.strName }}</h4>
+          <span class="ca-code">{{ c.strCode }}</span>
+        </div>
+        <div class="ca-badges">
+          <span class="ca-badge" [ngClass]="c.strType === 'KIT' ? 'violet' : 'blue'">{{ c.strType === 'KIT' ? 'Kit armado' : 'Combo' }}</span>
+          <span class="ca-badge gray" *ngIf="c.strStatus !== 'active'">Inactivo</span>
+          <span class="ca-badge gray" *ngIf="!c.blnMarketplaceVisible" title="No se muestra en el MarketPlace">Oculto en MarketPlace</span>
+        </div>
+      </div>
+
+      <div class="ca-price">
+        <strong>{{ formatCop(c.fltPrice) }}</strong>
+        <s *ngIf="c.listPrice > c.fltPrice">{{ formatCop(c.listPrice) }}</s>
+        <span class="ca-badge green" *ngIf="c.savings > 0">Ahorra {{ c.savingsPercent | number: '1.0-1' }}%</span>
+      </div>
+
+      <div class="ca-meta">
+        <span>Costo: <b>{{ formatCop(c.cost) }}</b></span>
+        <span [class.ca-bad]="c.belowCost">Margen: <b>{{ c.marginPercent | number: '1.0-1' }}%</b><ng-container *ngIf="c.belowCost"> (bajo costo)</ng-container></span>
+        <span>{{ availabilityText(c) }}</span>
+        <span *ngIf="c.strType === 'KIT'">Puedes armar: <b>{{ c.assemblable ?? 0 }}</b></span>
+      </div>
+
+      <ul class="ca-list">
+        <li *ngFor="let comp of c.components">
+          {{ componentLabel(comp) }}
+          <span class="ca-badge orange" *ngIf="comp.madeToOrder" title="Se fabrica bajo pedido">bajo pedido</span>
+        </li>
+      </ul>
+
+      <div class="ca-actions" *ngIf="isAdmin">
+        <button type="button" class="ca-btn sm" (click)="openEdit(c)">Editar</button>
+        <ng-container *ngIf="c.strType === 'KIT'">
+          <button type="button" class="ca-btn sm success" (click)="openStock(c, 'assemble')" [disabled]="c.strStatus !== 'active'">Armar</button>
+          <button type="button" class="ca-btn sm" (click)="openStock(c, 'disassemble')" [disabled]="!c.available">Desarmar</button>
+          <button type="button" class="ca-btn sm ghost" (click)="openHistory(c)">Lotes</button>
+        </ng-container>
+        <button type="button" class="ca-btn sm ghost" (click)="toggleStatus(c)">{{ c.strStatus === 'active' ? 'Desactivar' : 'Activar' }}</button>
+        <button type="button" class="ca-btn sm danger" (click)="remove(c)">Eliminar</button>
+      </div>
+      <div class="ca-actions" *ngIf="!isAdmin && c.strType === 'KIT'">
+        <button type="button" class="ca-btn sm ghost" (click)="openHistory(c)">Lotes</button>
+      </div>
+    </article>
+  </div>
+</div>
+
+<!-- ═══════ Editor de combo / kit ═══════ -->
+<ng-container *ngIf="editorOpen">
+  <div class="ca-backdrop" (click)="closeEditor()"></div>
+  <div class="ca-modal" (click)="closeEditor()">
+    <div class="ca-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="ca-dialog-head">
+        <h3>{{ editing ? 'Editar ' + (form.type === 'KIT' ? 'kit' : 'combo') : 'Nuevo combo o kit' }}</h3>
+        <button type="button" class="ca-close" aria-label="Cerrar" (click)="closeEditor()">×</button>
+      </div>
+      <div class="ca-dialog-body">
+        <div>
+          <span class="ca-label">Tipo</span>
+          <div class="ca-choice">
+            <button type="button" [class.active]="form.type === 'VIRTUAL'" [disabled]="!!editing && form.type !== 'VIRTUAL'" (click)="setType('VIRTUAL')">
+              <b>Combo</b><span>Se arma al venderse con el stock de sus componentes.</span>
+            </button>
+            <button type="button" [class.active]="form.type === 'KIT'" [disabled]="!!editing && form.type !== 'KIT'" (click)="setType('KIT')">
+              <b>Kit armado</b><span>Lo armas por lotes y tiene su propio stock. Puede llevar empaque.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ca-row">
+          <div class="ca-field">
+            <label for="cmbName">Nombre</label>
+            <input id="cmbName" type="text" maxlength="120" [(ngModel)]="form.name" placeholder="Ej. Combo Clásico" />
+          </div>
+          <div class="ca-field">
+            <label for="cmbPrice">Precio de venta</label>
+            <input id="cmbPrice" type="number" min="0" step="100" [(ngModel)]="form.price" />
+          </div>
+        </div>
+        <div class="ca-field">
+          <label for="cmbDesc">Descripción (opcional)</label>
+          <textarea id="cmbDesc" rows="2" maxlength="2000" [(ngModel)]="form.description" placeholder="Lo que verá el cliente en el MarketPlace"></textarea>
+        </div>
+        <label class="ca-check"><input type="checkbox" [(ngModel)]="form.marketplaceVisible" /> Mostrar en el MarketPlace</label>
+
+        <div>
+          <span class="ca-label">Componentes</span>
+          <div class="ca-note warn" *ngIf="componentsLocked">
+            Este kit tiene unidades armadas: para cambiar sus componentes primero desármalas. Puedes cambiar nombre, precio y descripción.
+          </div>
+          <div class="ca-picker" *ngIf="!componentsLocked">
+            <input class="ca-search" style="max-width: none; width: 100%" type="search" [(ngModel)]="pickerQuery"
+                   placeholder="Busca un producto o material para agregarlo" />
+            <div class="ca-picker-results" *ngIf="pickerQuery.trim()">
+              <button type="button" *ngFor="let o of pickerResults" [disabled]="!!pickBlockedReason(o)" (click)="addComponent(o)">
+                <span>{{ o.saleName || o.name }}</span>
+                <small>{{ pickBlockedReason(o) || (optionTypeLabel(o) + ' · ' + (o.listPrice ? formatCop(o.listPrice) : 'sin precio de venta')) }}</small>
+              </button>
+              <button type="button" disabled *ngIf="pickerResults.length === 0"><span>Sin resultados</span></button>
+            </div>
+          </div>
+
+          <table class="ca-table" *ngIf="components.length > 0" style="margin-top: 0.5rem">
+            <thead><tr><th>Componente</th><th>Cantidad</th><th>Se cuenta en</th><th>Precio normal</th><th></th></tr></thead>
+            <tbody>
+              <tr *ngFor="let c of components; let i = index">
+                <td>{{ c.quantityMode === 'STOCK' ? c.option.name : (c.option.saleName || c.option.name) }}</td>
+                <td><input type="number" min="0.001" step="1" [(ngModel)]="c.quantity" [disabled]="componentsLocked" /></td>
+                <td>
+                  <select *ngIf="canToggleMode(c); else fixedUnit" [(ngModel)]="c.quantityMode" [disabled]="componentsLocked">
+                    <option value="SALE">Presentación</option>
+                    <option value="STOCK">{{ c.option.unit || 'Unidad de medida' }} (insumo)</option>
+                  </select>
+                  <ng-template #fixedUnit>{{ unitLabel(c) }}</ng-template>
+                </td>
+                <td>{{ c.quantityMode === 'SALE' ? formatCop(c.option.listPrice * c.quantity) : '—' }}</td>
+                <td><button type="button" class="ca-btn sm ghost" *ngIf="!componentsLocked" (click)="removeComponent(i)" aria-label="Quitar">✕</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="ca-muted" *ngIf="components.length === 0" style="margin: 0.5rem 0 0">
+            {{ form.type === 'VIRTUAL' ? 'Agrega productos o materiales de reventa.' : 'Agrega productos, materiales de reventa o insumos de empaque (canasta, moño…).' }}
+          </p>
+        </div>
+
+        <div class="ca-summary" *ngIf="components.length > 0">
+          <div><span>Precio normal</span><b>{{ formatCop(summary.listPrice) }}</b></div>
+          <div><span>Ahorro del cliente</span><b>{{ formatCop(summary.savings) }} ({{ summary.savingsPercent | number: '1.0-1' }}%)</b></div>
+          <div><span>Costo estimado</span><b>{{ formatCop(summary.cost) }}</b></div>
+          <div><span>Margen</span><b [class.ca-bad]="summary.belowCost">{{ formatCop(summary.margin) }} ({{ summary.marginPercent | number: '1.0-1' }}%)</b></div>
+        </div>
+      </div>
+      <div class="ca-dialog-foot">
+        <button type="button" class="ca-btn ghost" (click)="closeEditor()">Cancelar</button>
+        <button type="button" class="ca-btn primary" [disabled]="saving" (click)="save()">{{ saving ? 'Guardando…' : 'Guardar' }}</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ═══════ Armar / desarmar kit ═══════ -->
+<ng-container *ngIf="stockDialog as sd">
+  <div class="ca-backdrop" (click)="closeStock()"></div>
+  <div class="ca-modal" (click)="closeStock()">
+    <div class="ca-dialog sm" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="ca-dialog-head">
+        <h3>{{ sd.mode === 'assemble' ? 'Armar' : 'Desarmar' }} {{ sd.combo.strName }}</h3>
+        <button type="button" class="ca-close" aria-label="Cerrar" (click)="closeStock()">×</button>
+      </div>
+      <div class="ca-dialog-body">
+        <div class="ca-note" *ngIf="sd.mode === 'assemble'">Los componentes se descuentan del inventario y el kit suma a su stock.</div>
+        <div class="ca-note" *ngIf="sd.mode === 'disassemble'">Los componentes vuelven al inventario. Solo se desarman kits libres (no reservados por pedidos).</div>
+        <div class="ca-row">
+          <div class="ca-field">
+            <label for="kitQty">Cantidad de kits</label>
+            <input id="kitQty" type="number" min="1" step="1" [(ngModel)]="stockQty" />
+            <small>{{ sd.mode === 'assemble' ? 'Puedes armar hasta ' : 'Libres para desarmar: ' }}{{ maxStockQty }}</small>
+          </div>
+          <div class="ca-field">
+            <label for="kitDate">Fecha</label>
+            <input id="kitDate" type="date" [(ngModel)]="stockDate" />
+          </div>
+        </div>
+        <div class="ca-field">
+          <label for="kitNotes">Nota (opcional)</label>
+          <input id="kitNotes" type="text" maxlength="255" [(ngModel)]="stockNotes" placeholder="Ej. Temporada de amor y amistad" />
+        </div>
+        <table class="ca-table">
+          <thead><tr><th>Componente</th><th>{{ sd.mode === 'assemble' ? 'Se usa' : 'Vuelve' }}</th><th>Disponible</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let l of stockLines">
+              <td>{{ l.name }}</td>
+              <td [class.ca-bad]="l.short">{{ l.needed | number: '1.0-3' }} {{ l.unit }}</td>
+              <td>{{ l.available | number: '1.0-2' }} {{ l.unit }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ca-dialog-foot">
+        <button type="button" class="ca-btn ghost" (click)="closeStock()">Cancelar</button>
+        <button type="button" class="ca-btn" [class.success]="sd.mode === 'assemble'" [class.primary]="sd.mode === 'disassemble'" [disabled]="stockBusy" (click)="confirmStock()">
+          {{ stockBusy ? 'Procesando…' : (sd.mode === 'assemble' ? 'Armar kits' : 'Desarmar kits') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ═══════ Historial de lotes ═══════ -->
+<ng-container *ngIf="historyFor as hf">
+  <div class="ca-backdrop" (click)="closeHistory()"></div>
+  <div class="ca-modal" (click)="closeHistory()">
+    <div class="ca-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="ca-dialog-head">
+        <h3>Lotes de {{ hf.strName }}</h3>
+        <button type="button" class="ca-close" aria-label="Cerrar" (click)="closeHistory()">×</button>
+      </div>
+      <div class="ca-dialog-body">
+        <div class="ca-state" *ngIf="historyLoading">Cargando…</div>
+        <div class="ca-state" *ngIf="!historyLoading && history.length === 0">Aún no se han armado lotes.</div>
+        <table class="ca-table" *ngIf="!historyLoading && history.length > 0">
+          <thead><tr><th>Lote</th><th>Fecha</th><th>Movimiento</th><th>Cantidad</th><th>Costo unit.</th><th>Nota</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let h of history">
+              <td>{{ h.strBatchReference }}</td>
+              <td>{{ dayLabel(h.dtmDate) }}</td>
+              <td><span class="ca-badge" [ngClass]="h.strType === 'ASSEMBLE' ? 'green' : 'orange'">{{ h.strType === 'ASSEMBLE' ? 'Armado' : 'Desarmado' }}</span></td>
+              <td>{{ h.fltQuantity | number: '1.0-2' }}</td>
+              <td>{{ formatCop(h.fltUnitCost) }}</td>
+              <td class="ca-muted">{{ h.strNotes || '—' }}<ng-container *ngIf="h.strCreatedBy"> · {{ h.strCreatedBy }}</ng-container></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</ng-container>

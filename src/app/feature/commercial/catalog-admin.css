@@ -1,0 +1,107 @@
+/* Estilos comunes de Combos y kits / Promociones (Comercial). Mismo lenguaje visual que Cartera. */
+.ca-container { padding: 0.75rem; font-size: 0.88rem; color: #1f2937; }
+.ca-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.ca-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.ca-seg { display: inline-flex; gap: 4px; padding: 4px; background: #e9ecef; border-radius: 10px; }
+.ca-seg button { border: none; background: transparent; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; color: #6b7280; cursor: pointer; }
+.ca-seg button.active { background: #ffffff; color: #0066cc; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.ca-search { min-width: 200px; flex: 1; max-width: 320px; padding: 0.4rem 0.7rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.85rem; }
+
+.ca-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.4rem 0.8rem; border: 1px solid #0066cc; border-radius: 6px; background: #ffffff; color: #0066cc; font-size: 0.8rem; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.ca-btn:hover { background: #e7f1ff; }
+.ca-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ca-btn.primary { background: #0066cc; color: #ffffff; }
+.ca-btn.primary:hover { background: #0052a3; }
+.ca-btn.success { background: #16a34a; border-color: #16a34a; color: #ffffff; }
+.ca-btn.danger { border-color: #dc3545; color: #dc3545; }
+.ca-btn.danger:hover { background: #fdecea; }
+.ca-btn.ghost { border-color: transparent; color: #4b5563; }
+.ca-btn.ghost:hover { background: #f3f4f6; }
+.ca-btn.sm { padding: 0.25rem 0.55rem; font-size: 0.75rem; }
+
+.ca-state { padding: 2rem 1rem; text-align: center; color: #6b7280; background: #ffffff; border-radius: 10px; }
+.ca-note { padding: 0.6rem 0.8rem; border-radius: 8px; background: #eff6ff; color: #1e40af; font-size: 0.8rem; margin-bottom: 0.8rem; }
+.ca-note.warn { background: #fff7ed; color: #9a3412; }
+.ca-note.danger { background: #fef2f2; color: #991b1b; }
+
+.ca-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 0.8rem; }
+.ca-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.55rem; }
+.ca-card.inactive { opacity: 0.65; }
+.ca-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.ca-card-head h4 { margin: 0; font-size: 0.98rem; font-weight: 700; }
+.ca-code { font-size: 0.72rem; color: #9ca3af; }
+.ca-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.ca-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; background: #f3f4f6; color: #4b5563; white-space: nowrap; }
+.ca-badge.blue { background: #e0edff; color: #0057b8; }
+.ca-badge.orange { background: #fff1e6; color: #c2410c; }
+.ca-badge.green { background: #dcfce7; color: #15803d; }
+.ca-badge.red { background: #fee2e2; color: #b91c1c; }
+.ca-badge.violet { background: #ede9fe; color: #6d28d9; }
+.ca-badge.gray { background: #f3f4f6; color: #6b7280; }
+
+.ca-price { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.ca-price strong { font-size: 1.15rem; color: #0057b8; }
+.ca-price s { color: #9ca3af; font-size: 0.82rem; }
+.ca-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.8rem; font-size: 0.78rem; color: #4b5563; }
+.ca-meta b { color: #1f2937; }
+.ca-list { margin: 0; padding-left: 1.1rem; font-size: 0.8rem; color: #374151; }
+.ca-list li { margin: 0.1rem 0; }
+.ca-muted { color: #6b7280; font-size: 0.78rem; }
+.ca-bad { color: #b91c1c; font-weight: 600; }
+.ca-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.4rem; border-top: 1px solid #f3f4f6; }
+
+/* Modal */
+.ca-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 1055; }
+.ca-modal { position: fixed; inset: 0; z-index: 1060; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 0.75rem; overflow-y: auto; }
+.ca-dialog { background: #ffffff; border-radius: 14px; width: 100%; max-width: 760px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; }
+.ca-dialog.sm { max-width: 480px; }
+.ca-dialog-head { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.1rem; border-bottom: 1px solid #e5e7eb; }
+.ca-dialog-head h3 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.ca-dialog-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.ca-dialog-foot { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.8rem 1.1rem; border-top: 1px solid #e5e7eb; }
+.ca-close { border: none; background: transparent; font-size: 1.4rem; line-height: 1; color: #6b7280; cursor: pointer; }
+
+.ca-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.ca-field label, .ca-label { font-size: 0.78rem; font-weight: 600; color: #374151; }
+.ca-field input, .ca-field select, .ca-field textarea { padding: 0.45rem 0.6rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.88rem; }
+.ca-field small { color: #6b7280; font-size: 0.74rem; }
+.ca-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.7rem; }
+.ca-check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; }
+
+.ca-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; }
+.ca-choice button { text-align: left; border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 0.55rem 0.7rem; cursor: pointer; display: flex; flex-direction: column; gap: 0.15rem; }
+.ca-choice button b { font-size: 0.85rem; }
+.ca-choice button span { font-size: 0.74rem; color: #6b7280; }
+.ca-choice button.active { border-color: #0066cc; background: #f0f6ff; }
+.ca-choice button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ca-picker { position: relative; }
+.ca-picker-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; max-height: 240px; overflow-y: auto; background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); margin-top: 2px; }
+.ca-picker-results button { width: 100%; text-align: left; border: none; background: transparent; padding: 0.45rem 0.7rem; display: flex; justify-content: space-between; gap: 0.5rem; cursor: pointer; font-size: 0.83rem; }
+.ca-picker-results button:hover:not(:disabled) { background: #f0f6ff; }
+.ca-picker-results button:disabled { color: #9ca3af; cursor: not-allowed; }
+.ca-picker-results small { color: #6b7280; white-space: nowrap; }
+
+.ca-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.ca-table th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7280; padding: 0.35rem 0.4rem; border-bottom: 1px solid #e5e7eb; }
+.ca-table td { padding: 0.4rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+.ca-table input[type='number'] { width: 80px; padding: 0.3rem 0.4rem; border: 1px solid #d1d5db; border-radius: 6px; }
+.ca-table select { padding: 0.3rem 0.4rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.78rem; }
+
+.ca-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; background: #f9fafb; border-radius: 10px; padding: 0.7rem; }
+.ca-summary div { display: flex; flex-direction: column; gap: 0.1rem; }
+.ca-summary span { font-size: 0.72rem; color: #6b7280; }
+.ca-summary b { font-size: 0.95rem; }
+
+.ca-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.ca-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.55rem; border-radius: 999px; background: #e0edff; color: #0057b8; font-size: 0.75rem; font-weight: 600; }
+.ca-chip button { border: none; background: transparent; color: inherit; cursor: pointer; padding: 0; font-size: 0.9rem; line-height: 1; }
+.ca-days { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.ca-days button { min-width: 42px; border: 1px solid #d1d5db; background: #ffffff; border-radius: 8px; padding: 0.3rem 0.4rem; font-size: 0.78rem; font-weight: 600; color: #4b5563; cursor: pointer; }
+.ca-days button.active { border-color: #0066cc; background: #0066cc; color: #ffffff; }
+
+@media (max-width: 576px) {
+  .ca-modal { padding: 0; }
+  .ca-dialog { border-radius: 0; min-height: 100%; }
+  .ca-meta { grid-template-columns: 1fr; }
+}
