@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import Swal from 'sweetalert2';
 import { formatCop } from '../../../shared/utils/currency.util';
+import { PromotionsService } from '../../../shared/services/promotions.service';
 
 interface OrderItem {
   productId: string;
@@ -16,6 +17,9 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  /** Precio normal, si se aplicó una promoción. */
+  listPrice?: number;
+  promotionName?: string;
 }
 
 interface OrderForm {
@@ -67,7 +71,9 @@ export class OrderFormComponent implements OnInit {
     itemType: 'product' as SellableItem['itemType'],
     product: '',
     quantity: 1,
-    unitPrice: 0
+    unitPrice: 0,
+    listPrice: 0,
+    promotionName: ''
   };
 
   customers: Customer[] = [];
@@ -94,7 +100,8 @@ export class OrderFormComponent implements OnInit {
   constructor(
     private customersService: CustomersService,
     private productsService: ProductsService,
-    private http: HttpClient
+    private http: HttpClient,
+    private promotionsService: PromotionsService
   ) {}
 
   ngOnInit(): void {
@@ -182,6 +189,39 @@ export class OrderFormComponent implements OnInit {
     this.currentItem.unitPrice = product.price || 0;
     this.productSearchTerm = product.name;
     this.showProductDropdown = false;
+    this.applyPromotionPrice(product);
+  }
+
+  /**
+   * Precio con la mejor promoción vigente en la tienda. Si el usuario cambia
+   * el precio después, se respeta (y el backend no marca la promoción).
+   */
+  private applyPromotionPrice(product: Product): void {
+    this.currentItem.listPrice = product.price || 0;
+    this.currentItem.promotionName = '';
+    const requestedId = product.id;
+    this.promotionsService.quote([{ productId: product.id, itemType: product.itemType, quantity: 1 }]).subscribe({
+      next: (q) => {
+        const line = q.items?.[0];
+        // Solo si sigue seleccionado el mismo ítem
+        if (!line || this.currentItem.productId !== requestedId) return;
+        this.currentItem.listPrice = line.listPrice;
+        if (line.promotion) {
+          this.currentItem.unitPrice = line.unitPrice;
+          this.currentItem.promotionName = line.promotion.name;
+        }
+      },
+      error: () => { /* sin promociones: queda el precio normal */ },
+    });
+  }
+
+  /** La promoción solo vale si se cobra su precio. */
+  private promotionStillApplies(): boolean {
+    return !!this.currentItem.promotionName && this.currentItem.unitPrice < this.currentItem.listPrice;
+  }
+
+  itemTypeLabel(product: Product): string {
+    return product.itemType === 'combo' ? 'Combo' : product.itemType === 'kit' ? 'Kit' : '';
   }
 
   canAddItem(): boolean {
@@ -218,7 +258,8 @@ export class OrderFormComponent implements OnInit {
       productName: this.currentItem.product,
       quantity: this.currentItem.quantity,
       unitPrice: this.currentItem.unitPrice,
-      subtotal: this.currentItem.quantity * this.currentItem.unitPrice
+      subtotal: this.currentItem.quantity * this.currentItem.unitPrice,
+      ...(this.promotionStillApplies() ? { listPrice: this.currentItem.listPrice, promotionName: this.currentItem.promotionName } : {})
     };
 
     this.orderData.items.push(item);
@@ -306,7 +347,7 @@ export class OrderFormComponent implements OnInit {
   }
 
   resetCurrentItem(): void {
-    this.currentItem = { productId: '', itemType: 'product', product: '', quantity: 1, unitPrice: 0 };
+    this.currentItem = { productId: '', itemType: 'product', product: '', quantity: 1, unitPrice: 0, listPrice: 0, promotionName: '' };
     this.productSearchTerm = '';
   }
 

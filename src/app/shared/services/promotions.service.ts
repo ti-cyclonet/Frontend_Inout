@@ -46,6 +46,23 @@ export interface PromotionInput {
   timeTo: string | null;
 }
 
+export interface QuotedLine {
+  productId: string;
+  itemType: string;
+  quantity: number;
+  unitPrice: number;
+  listPrice: number;
+  subtotal: number;
+  promotion?: { id: string; name: string; discountPerUnit: number };
+}
+
+export interface PriceQuote {
+  items: QuotedLine[];
+  listSubtotal: number;
+  subtotal: number;
+  promoDiscount: number;
+}
+
 /** Promociones (backend: /promotions). */
 @Injectable({ providedIn: 'root' })
 export class PromotionsService {
@@ -67,5 +84,10 @@ export class PromotionsService {
 
   remove(id: string): Observable<{ deleted: boolean }> {
     return this.http.delete<{ deleted: boolean }>(`${this.baseUrl}/${id}`);
+  }
+
+  /** Precio con la mejor promoción vigente en la tienda (panel), por línea. */
+  quote(items: { productId: string; itemType: string; quantity: number }[]): Observable<PriceQuote> {
+    return this.http.post<PriceQuote>(`${this.baseUrl}/quote`, { items });
   }
 }

@@ -42,3 +42,7 @@
 .tracking-updated { font-size: 0.75rem; color: #9ca3af; text-align: center; margin: 14px 0 0; }
 .tracking-eta strong.eta-msg { text-transform: none; font-size: 0.98rem; }
 .tracking-card { margin-bottom: 32px; }
+
+/* Combos y promociones */
+.tracking-promo { color: #c2410c; font-weight: 600; }
+.tracking-includes { color: #6b7280; }

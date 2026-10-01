@@ -33,8 +33,15 @@ interface Product {
   strLocation: string;
   intCategoryId: number;
   strStatus: string;
-  /** 'product' o material de reventa ('material' | 'material_t'), vendido por presentación. */
-  itemType?: 'product' | 'material' | 'material_t';
+  /** 'product', material de reventa ('material' | 'material_t', por presentación), kit armado o combo. */
+  itemType?: 'product' | 'material' | 'material_t' | 'kit' | 'combo';
+  /** Precio normal cuando hay promoción vigente (fltPrice ya trae el precio con promoción). */
+  listPrice?: number;
+  /** Etiqueta de la promoción ("-20%", "-$3.000") o del ahorro del combo. */
+  promoLabel?: string;
+  promoName?: string;
+  /** Combo/kit: lo que incluye. */
+  comboIncludes?: string[];
   ingQuantity?: number;
   ingReservedStock?: number;
   /** Se fabrica bajo pedido: se puede pedir sin stock. */
@@ -503,7 +510,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.http.get<any[]>(`${this.baseUrl}/products/tenant/${tenantId}/resale`).toPromise().catch(() => []),
       this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}/payment-options`).toPromise().catch(() => null),
       this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}/scheduling`).toPromise().catch(() => null),
-    ]).then(([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling]) => {
+      // Combos y kits de la tienda, y promociones en curso
+      this.http.get<any[]>(`${this.baseUrl}/combos/tenant/${tenantId}/catalog`).toPromise().catch(() => []),
+      this.http.get<any[]>(`${this.baseUrl}/promotions/tenant/${tenantId}/live`).toPromise().catch(() => []),
+    ]).then(([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions]) => {
       this.paymentOptions = paymentOptions || null;
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
       this.products = (productsResponse.data || []).map((product: any) => ({
@@ -537,6 +547,28 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         image: item.images && item.images.length > 0 ? item.images[0].strImageUrl : null
       }));
       this.products = [...this.products, ...resaleItems];
+
+      // Combos y kits: entran como un ítem más del catálogo (carrito, menú y
+      // checkout funcionan igual). El precio lo confirma el servidor.
+      const comboItems: Product[] = (combosResponse || []).map((c: any) => ({
+        strId: c.strId,
+        strName: c.strName,
+        strDescription: c.strDescription || `Incluye: ${(c.components || []).map((x: any) => `${x.quantity} x ${x.name}`).join(', ')}`,
+        fltPrice: Number(c.fltPrice) || 0,
+        strLocation: '',
+        intCategoryId: null as any,
+        strStatus: 'active',
+        itemType: c.itemType === 'kit' ? 'kit' : 'combo',
+        // Combo con componentes bajo pedido (available = null): no tiene tope
+        ingQuantity: c.available === null || c.available === undefined ? undefined : Number(c.available),
+        ingReservedStock: 0,
+        blnMadeToOrder: c.itemType !== 'kit' && (c.available === null || c.available === undefined),
+        comboIncludes: (c.components || []).map((x: any) => `${x.quantity} x ${x.name}`),
+        ...(Number(c.listPrice) > Number(c.fltPrice) ? { listPrice: Number(c.listPrice), promoLabel: `Ahorras ${this.formatCurrency(Number(c.listPrice) - Number(c.fltPrice))}` } : {}),
+        image: c.strImageUrl || undefined,
+      }));
+      this.products = [...comboItems, ...this.products];
+      this.applyLivePromotions(livePromotions || []);
 
       // Load display mode from config
       if (configResponse && configResponse.displayMode) {
@@ -1315,7 +1347,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   // ═══════ CART & CHECKOUT ═══════
   isResale(product: Product): boolean {
-    return !!product.itemType && product.itemType !== 'product';
+    return product.itemType === 'material' || product.itemType === 'material_t';
   }
 
   /** Stock disponible (para reventa, en presentaciones); null si no se conoce. */
@@ -1379,6 +1411,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Tiene precio con promoción (o es un combo con ahorro). */
+  hasPromo(product: Product): boolean {
+    return !!product.listPrice && product.listPrice > product.fltPrice + 0.5;
+  }
+
   /** Etiqueta de disponibilidad: "Bajo pedido" (se fabrica) o "Agotado". */
   stockTag(product: Product): { text: string; cls: string } | null {
     const available = this.getAvailableStock(product);
@@ -1397,7 +1434,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   isMadeToOrder(product: Product): boolean {
-    return (product.itemType || 'product') === 'product' && !!product.blnMadeToOrder;
+    const type = product.itemType || 'product';
+    return (type === 'product' || type === 'combo') && !!product.blnMadeToOrder;
   }
 
   /** Unidades del carrito que habría que fabricar (superan el stock disponible). */
@@ -1575,6 +1613,72 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     navigator.clipboard?.writeText(this.trackingUrl).then(() => {
       Swal.fire({ icon: 'success', title: 'Enlace copiado', timer: 1200, showConfirmButton: false, toast: true, position: 'top-end' });
     }).catch(() => {});
+  }
+
+  /**
+   * Aplica al catálogo la mejor promoción en curso de cada ítem (para
+   * mostrarla). Mismo criterio que el servidor; el tope del período lo aplica
+   * el servidor y se concilia al enviar el pedido (reconcilePrices).
+   */
+  private applyLivePromotions(promotions: any[]): void {
+    if (!promotions.length) return;
+    for (const product of this.products) {
+      const type = product.itemType || 'product';
+      // Sobre el precio del ítem (en un combo, su precio de combo)
+      const base = product.fltPrice;
+      let best: { discount: number; promo: any } | null = null;
+      for (const promo of promotions) {
+        const matches = promo.scope === 'ALL' || (promo.targets || []).some((t: any) =>
+          t.type === 'category'
+            ? type !== 'combo' && type !== 'kit' && product.intCategoryId !== null && product.intCategoryId !== undefined && String(product.intCategoryId) === String(t.id)
+            : t.type === type && t.id === product.strId);
+        if (!matches) continue;
+        const raw = promo.discountType === 'PERCENT' ? base * (Math.min(100, Number(promo.value)) / 100) : Number(promo.value);
+        const discount = Math.round(Math.min(raw, base) * 100) / 100;
+        if (discount > 0 && (!best || discount > best.discount)) best = { discount, promo };
+      }
+      if (!best) continue;
+      // El combo conserva su precio normal (suma de componentes) como referencia
+      product.listPrice = product.listPrice && product.listPrice > base ? product.listPrice : base;
+      product.fltPrice = Math.round((base - best.discount) * 100) / 100;
+      product.promoLabel = best.promo.label;
+      product.promoName = best.promo.strName;
+    }
+  }
+
+  /**
+   * Antes de enviar el pedido se pide el precio al servidor (el mismo cálculo
+   * con el que se crea el pedido). Si algo cambió (terminó una promoción, tope
+   * del período), se actualiza el carrito y se avisa: devuelve false.
+   */
+  private async reconcilePrices(): Promise<boolean> {
+    try {
+      const quote: any = await this.http.post(`${this.baseUrl}/promotions/marketplace/quote`, {
+        tenantId: this.tenantId,
+        items: this.cart.map((i) => ({ productId: i.product.strId, itemType: i.product.itemType || 'product', quantity: Number(i.quantity) })),
+      }).toPromise();
+      const before = this.getCartTotal();
+      (quote?.items || []).forEach((line: any, idx: number) => {
+        const item = this.cart[idx];
+        if (!item || item.product.strId !== line.productId) return;
+        if (Math.abs(Number(line.unitPrice) - Number(item.product.fltPrice)) >= 0.5) {
+          item.product.fltPrice = Number(line.unitPrice);
+          if (!line.promotion) item.product.promoLabel = undefined;
+        }
+      });
+      if (Math.abs(this.getCartTotal() - before) >= 0.5) {
+        await Swal.fire({
+          icon: 'info',
+          title: 'Actualizamos los precios',
+          text: `Algunos precios cambiaron (por ejemplo, terminó una promoción). El total ahora es ${this.formatCurrency(this.getCartTotal())}. Revisa tu pedido y vuelve a confirmarlo.`,
+          confirmButtonText: 'Revisar',
+        });
+        return false;
+      }
+    } catch {
+      // Si la cotización falla, el servidor igual fija el precio al crear el pedido
+    }
+    return true;
   }
 
   getCartTotal(): number {
@@ -2028,8 +2132,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.setAccountMode('guest');
   }
 
-  submitOrder(): void {
-    if (this.cart.length === 0) return;
+  async submitOrder(): Promise<void> {
+    if (this.cart.length === 0 || this.checkoutSending) return;
     // Con sesión, nombre/teléfono/correo vienen de la cuenta
     if (this.clientLoggedIn) {
       this.checkoutData.customerName = this.clientDisplayName;
@@ -2062,6 +2166,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     }
 
     this.checkoutSending = true;
+    // El precio final lo pone el servidor: si cambió, se muestra antes de enviar
+    if (!(await this.reconcilePrices())) {
+      this.checkoutSending = false;
+      return;
+    }
     const subtotal = this.getCartTotal();
 
     const payload = {

@@ -38,9 +38,10 @@
               <span class="mb-bullet" aria-hidden="true">★</span>
               <h3 class="mb-item-name">{{ p.strName }}</h3>
               <span class="mb-leader" aria-hidden="true"></span>
-              <span class="mb-item-price">{{ price(p.fltPrice) }}</span>
+              <span class="mb-item-price"><s class="mb-was" *ngIf="p.listPrice > p.fltPrice">{{ price(p.listPrice) }}</s> {{ price(p.fltPrice) }}</span>
             </div>
             <p class="mb-item-desc" *ngIf="p.strDescription">{{ p.strDescription }}</p>
+            <span class="mb-promo" *ngIf="p.promoLabel">{{ p.promoLabel }}</span>
             <span class="mb-tag" *ngIf="tagFor(p) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
           </div>
 

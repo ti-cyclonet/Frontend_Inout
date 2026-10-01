@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { TenantBrandingService, drawPdfLogo } from './tenant-branding.service';
+import { documentLines } from '../utils/combo-lines.util';
 
 interface OrderItem {
   productId: string;
@@ -102,7 +103,7 @@ export class InvoiceService {
     doc.text(`Estado: ${statusLabel}`, pageWidth - 15, 55, { align: 'right' });
 
     // Items table
-    const tableData = (order.items || []).map((item, index) => [
+    const tableData = documentLines(order.items).map((item, index) => [
       (index + 1).toString(),
       item.productName,
       item.quantity.toString(),

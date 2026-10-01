@@ -471,3 +471,9 @@
 .sw-menu { background: linear-gradient(135deg, #e85d04 0 45%, #fff3df 45%); }
 .sw-menu-chalk { background: #222826; border: 2px solid #6b4b2e; }
 .sw-menu-clean { background: #fbf8f3; border: 1px solid #b08d57; }
+
+/* Promociones y combos */
+.mk-was { color: #9ca3af; font-weight: 400; font-size: 0.78em; margin-right: 4px; }
+.mk-promo { display: inline-block; margin: 2px 0; padding: 1px 8px; border-radius: 999px; background: #ea580c; color: #fff; font-size: 0.72rem; font-weight: 700; }
+.combo-tag { background: #ede9fe; color: #6d28d9; }
+.mk-includes { margin: 6px 0 0; font-size: 0.85rem; color: #4b5563; }

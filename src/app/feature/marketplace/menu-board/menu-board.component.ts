@@ -68,10 +68,15 @@ export class MenuBoardComponent implements OnInit, OnChanges {
   ngOnChanges(): void {
     const groups = new Map<string, any[]>();
     for (const p of this.products || []) {
-      const name = (p.category?.name || (p.itemType && p.itemType !== 'product' ? 'Para acompañar' : 'Nuestro menú')).trim();
+      const name = (p.itemType === 'combo' || p.itemType === 'kit'
+        ? 'Combos'
+        : p.category?.name || (p.itemType && p.itemType !== 'product' ? 'Para acompañar' : 'Nuestro menú')).trim();
       groups.set(name, [...(groups.get(name) || []), p]);
     }
-    this.sections = [...groups.entries()].map(([name, items]) => ({ name, items }));
+    // Los combos van primero
+    this.sections = [...groups.entries()]
+      .map(([name, items]) => ({ name, items }))
+      .sort((a, b) => Number(b.name === 'Combos') - Number(a.name === 'Combos'));
     if (!this.sections.some((s) => s.name === this.activeSection)) this.activeSection = this.sections[0]?.name || '';
     this.heroImage = (this.products || []).find((p) => p.image)?.image || null;
   }

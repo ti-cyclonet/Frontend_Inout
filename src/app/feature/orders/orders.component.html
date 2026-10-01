@@ -183,11 +183,15 @@
         <div class="detail-items" *ngIf="selectedOrder.items && selectedOrder.items.length > 0">
           <h4 class="detail-section-title">Items del Pedido</h4>
           <div class="comanda-list">
-            <div class="comanda-item" *ngFor="let item of selectedOrder.items; let i = index">
+            <div class="comanda-item" *ngFor="let item of displayLines(selectedOrder); let i = index">
               <div class="comanda-number">{{ i + 1 }}</div>
               <div class="comanda-info">
-                <span class="comanda-product">{{ item.productName }}</span>
+                <span class="comanda-product">
+                  {{ item.name }}
+                  <span class="promo-tag" *ngIf="item.promotionName" [title]="'Precio normal ' + formatCurrency(item.listPrice || 0)">{{ item.promotionName }}</span>
+                </span>
                 <span class="comanda-qty">x{{ item.quantity }}</span>
+                <span class="comanda-includes" *ngIf="item.components?.length">Incluye: {{ item.components!.join(', ') }}</span>
               </div>
               <div class="comanda-price">{{ formatCurrency(item.subtotal) }}</div>
             </div>

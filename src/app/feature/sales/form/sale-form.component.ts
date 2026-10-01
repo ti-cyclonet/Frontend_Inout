@@ -10,6 +10,7 @@ import { StockAlertsService } from '../../../shared/services/stock-alerts.servic
 import { CompositionService } from '../../../shared/services/composition.service';
 import { Customer } from '../../../shared/model/customer.model';
 import { CreditService, CreditEligibility, PAYMENT_METHODS, PaymentType } from '../../../shared/services/credit.service';
+import { PromotionsService } from '../../../shared/services/promotions.service';
 import Swal from 'sweetalert2';
 
 interface OrderItem {
@@ -20,6 +21,9 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  /** Precio normal, si se aplicó una promoción. */
+  listPrice?: number;
+  promotionName?: string;
 }
 
 interface OrderForm {
@@ -72,7 +76,9 @@ export class SaleFormComponent implements OnInit {
     productId: '',
     product: '',
     quantity: 1,
-    unitPrice: 0
+    unitPrice: 0,
+    listPrice: 0,
+    promotionName: ''
   };
 
   customers: Customer[] = [];
@@ -80,7 +86,7 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService) {}
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -238,6 +244,39 @@ export class SaleFormComponent implements OnInit {
     this.currentItem.unitPrice = product.price || 0;
     this.productSearchTerm = product.name;
     this.showProductDropdown = false;
+    this.applyPromotionPrice(product);
+  }
+
+  /**
+   * Precio con la mejor promoción vigente en la tienda. Si el usuario cambia
+   * el precio después, se respeta (y el backend no marca la promoción).
+   */
+  private applyPromotionPrice(product: Product): void {
+    this.currentItem.listPrice = product.price || 0;
+    this.currentItem.promotionName = '';
+    const requestedId = product.id;
+    this.promotionsService.quote([{ productId: product.id, itemType: product.itemType, quantity: 1 }]).subscribe({
+      next: (q) => {
+        const line = q.items?.[0];
+        // Solo si sigue seleccionado el mismo ítem
+        if (!line || this.currentItem.productId !== requestedId) return;
+        this.currentItem.listPrice = line.listPrice;
+        if (line.promotion) {
+          this.currentItem.unitPrice = line.unitPrice;
+          this.currentItem.promotionName = line.promotion.name;
+        }
+      },
+      error: () => { /* sin promociones: queda el precio normal */ },
+    });
+  }
+
+  /** La promoción solo vale si se cobra su precio. */
+  private promotionStillApplies(): boolean {
+    return !!this.currentItem.promotionName && this.currentItem.unitPrice < this.currentItem.listPrice;
+  }
+
+  itemTypeLabel(product: Product): string {
+    return product.itemType === 'combo' ? 'Combo' : product.itemType === 'kit' ? 'Kit' : '';
   }
 
   canAddItem(): boolean {
@@ -283,7 +322,8 @@ export class SaleFormComponent implements OnInit {
       product: this.currentItem.product,
       quantity: this.currentItem.quantity,
       unitPrice: this.currentItem.unitPrice,
-      total: this.currentItem.quantity * this.currentItem.unitPrice
+      total: this.currentItem.quantity * this.currentItem.unitPrice,
+      ...(this.promotionStillApplies() ? { listPrice: this.currentItem.listPrice, promotionName: this.currentItem.promotionName } : {})
     };
     
     this.orderData.items.push(item);
@@ -307,7 +347,9 @@ export class SaleFormComponent implements OnInit {
       productId: '',
       product: '',
       quantity: 1,
-      unitPrice: 0
+      unitPrice: 0,
+      listPrice: 0,
+      promotionName: ''
     };
   }
 

@@ -35,8 +35,12 @@
 
     <!-- Productos -->
     <div class="tracking-items">
-      <div class="tracking-item" *ngFor="let it of order.items">
-        <span>{{ it.quantity }} × {{ it.productName }}</span>
+      <div class="tracking-item" *ngFor="let it of displayItems">
+        <span>
+          {{ it.quantity }} × {{ it.name }}
+          <small class="tracking-promo" *ngIf="it.promotionName"> · {{ it.promotionName }}</small>
+          <small class="tracking-includes" *ngIf="it.components?.length"><br>Incluye: {{ it.components!.join(', ') }}</small>
+        </span>
         <span>{{ formatCurrency(it.subtotal) }}</span>
       </div>
       <div class="tracking-item total"><span>Total</span><span>{{ formatCurrency(order.total) }}</span></div>

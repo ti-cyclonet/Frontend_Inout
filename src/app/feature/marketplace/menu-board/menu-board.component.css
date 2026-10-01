@@ -221,3 +221,7 @@
       var(--mb-bg);
   }
 }
+
+/* Promociones y combos */
+.mb-was { opacity: 0.55; font-size: 0.8em; margin-right: 2px; }
+.mb-promo { display: inline-block; margin: 2px 6px 0 0; padding: 1px 8px; border-radius: 999px; background: #c2410c; color: #fff; font-size: 0.72rem; font-weight: 700; }
