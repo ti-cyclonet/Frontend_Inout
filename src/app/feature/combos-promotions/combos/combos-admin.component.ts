@@ -7,6 +7,8 @@ import {
 } from '../../../shared/services/combos.service';
 import { PermissionsService } from '../../../shared/services/permissions.service';
 import { formatCop } from '../../../shared/utils/currency.util';
+import { shrinkImage } from '../../../shared/utils/image-resize.util';
+import { firstValueFrom } from 'rxjs';
 
 interface EditorComponent extends ComboComponentInput {
   option: CatalogOption;
@@ -43,6 +45,12 @@ export class CombosAdminComponent implements OnInit {
   form = this.emptyForm();
   components: EditorComponent[] = [];
   pickerQuery = '';
+
+  // Imagen (se sube después de guardar el combo, que necesita su id)
+  readonly imageAccept = 'image/png,image/jpeg,image/webp';
+  imageFile: File | null = null;
+  imagePreview: string | null = null;
+  imageRemoved = false;
 
   // Armar / desarmar
   stockDialog: { combo: ComboView; mode: 'assemble' | 'disassemble' } | null = null;
@@ -120,6 +128,7 @@ export class CombosAdminComponent implements OnInit {
       this.form = this.emptyForm();
       this.components = [];
       this.pickerQuery = '';
+      this.resetImage(null);
       this.editorOpen = true;
     });
   }
@@ -143,12 +152,59 @@ export class CombosAdminComponent implements OnInit {
         })
         .filter((c): c is EditorComponent => !!c);
       this.pickerQuery = '';
+      this.resetImage(combo.strImageWebUrl || combo.strImageUrl);
       this.editorOpen = true;
     });
   }
 
   closeEditor(): void {
     this.editorOpen = false;
+    this.resetImage(null);
+  }
+
+  // ── Imagen ─────────────────────────────────────────────────────────
+
+  private resetImage(current: string | null): void {
+    if (this.imagePreview?.startsWith('blob:')) URL.revokeObjectURL(this.imagePreview);
+    this.imageFile = null;
+    this.imagePreview = current;
+    this.imageRemoved = false;
+  }
+
+  async onImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (!this.imageAccept.split(',').includes(file.type)) {
+      Swal.fire('Formato no válido', 'La imagen debe ser PNG, JPG o WebP.', 'warning');
+      return;
+    }
+    const small = await shrinkImage(file).catch(() => file);
+    if (small.size > 5 * 1024 * 1024) {
+      Swal.fire('Imagen muy pesada', 'La imagen no puede pesar más de 5 MB.', 'warning');
+      return;
+    }
+    if (this.imagePreview?.startsWith('blob:')) URL.revokeObjectURL(this.imagePreview);
+    this.imageFile = small;
+    this.imagePreview = URL.createObjectURL(small);
+    this.imageRemoved = false;
+  }
+
+  clearImage(): void {
+    if (this.imagePreview?.startsWith('blob:')) URL.revokeObjectURL(this.imagePreview);
+    this.imageFile = null;
+    this.imagePreview = null;
+    this.imageRemoved = true;
+  }
+
+  /** Sube la imagen nueva o quita la anterior, ya con el combo guardado. */
+  private async syncImage(comboId: string): Promise<void> {
+    if (this.imageFile) {
+      await firstValueFrom(this.combosService.uploadImage(comboId, this.imageFile));
+    } else if (this.imageRemoved && this.editing?.strImageUrl) {
+      await firstValueFrom(this.combosService.removeImage(comboId));
+    }
   }
 
   /** Un kit con unidades armadas no puede cambiar su receta (hay que desarmarlo). */
@@ -249,11 +305,23 @@ export class CombosAdminComponent implements OnInit {
         ? this.combosService.update(this.editing.strId, body)
         : this.combosService.create({ ...body, type: this.form.type, components });
       req.subscribe({
-        next: () => {
+        next: async (saved) => {
+          const wasEditing = !!this.editing;
+          let imageError = '';
+          try {
+            await this.syncImage(saved.strId);
+          } catch (err: any) {
+            imageError = err?.error?.message || 'No se pudo subir la imagen.';
+          }
           this.saving = false;
           this.editorOpen = false;
+          this.resetImage(null);
           this.load();
-          Swal.fire({ icon: 'success', title: this.editing ? 'Combo actualizado' : 'Combo creado', timer: 1600, showConfirmButton: false });
+          if (imageError) {
+            Swal.fire('Combo guardado, pero sin imagen', `${imageError} Puedes intentarlo de nuevo desde Editar.`, 'warning');
+          } else {
+            Swal.fire({ icon: 'success', title: wasEditing ? 'Combo actualizado' : 'Combo creado', timer: 1600, showConfirmButton: false });
+          }
         },
         error: (err) => { this.saving = false; Swal.fire('No se pudo guardar', err?.error?.message || 'Intenta de nuevo.', 'error'); },
       });
