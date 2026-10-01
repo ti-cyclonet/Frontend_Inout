@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { TenantBrandingService, drawPdfLogo } from './tenant-branding.service';
 
 /**
  * Servicio unificado de generación de documentos PDF para InOut.
@@ -23,7 +24,7 @@ export class DocumentsService {
   private businessAddress = '';
   private businessPhone = '';
 
-  constructor() {
+  constructor(private branding: TenantBrandingService) {
     // Cargar datos del negocio desde sessionStorage si están disponibles
     if (typeof window !== 'undefined') {
       this.businessName = sessionStorage.getItem('user_displayName') || sessionStorage.getItem('user_name') || 'Mi Negocio';
@@ -46,7 +47,7 @@ export class DocumentsService {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    this.drawHeader(doc, 'COMPROBANTE DE COMPRA', data.document);
+    await this.drawHeader(doc, 'COMPROBANTE DE COMPRA', data.document);
 
     // Info
     let y = 55;
@@ -101,7 +102,7 @@ export class DocumentsService {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    this.drawHeader(doc, 'ORDEN DE PEDIDO', data.orderCode);
+    await this.drawHeader(doc, 'ORDEN DE PEDIDO', data.orderCode);
 
     let y = 55;
     doc.setFontSize(9);
@@ -171,7 +172,7 @@ export class DocumentsService {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    this.drawHeader(doc, 'REMISIÓN', data.orderCode);
+    await this.drawHeader(doc, 'REMISIÓN', data.orderCode);
 
     let y = 55;
     doc.setFontSize(9);
@@ -235,7 +236,7 @@ export class DocumentsService {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    this.drawHeader(doc, 'COTIZACIÓN', data.quoteNumber);
+    await this.drawHeader(doc, 'COTIZACIÓN', data.quoteNumber);
 
     let y = 55;
     doc.setFontSize(9);
@@ -309,8 +310,10 @@ export class DocumentsService {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.text(`Fecha de corte: ${this.formatDate(data.date)}`, 15, 23);
-    doc.text(`${this.businessName}`, pageWidth - 15, 15, { align: 'right' });
-    doc.text(`Total items: ${data.totalItems} | Valor total: ${this.formatCurrency(data.totalValue)}`, pageWidth - 15, 23, { align: 'right' });
+    const logoWidth = drawPdfLogo(doc, await this.branding.getPdfLogo(), pageWidth - 15, 3, 24);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${this.businessName}`, pageWidth - 15 - logoWidth, 15, { align: 'right' });
+    doc.text(`Total items: ${data.totalItems} | Valor total: ${this.formatCurrency(data.totalValue)}`, pageWidth - 15 - logoWidth, 23, { align: 'right' });
 
     const tableData = data.items.map((item, i) => [
       (i + 1).toString(),
@@ -368,7 +371,7 @@ export class DocumentsService {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    this.drawHeader(doc, 'NOTA DE AJUSTE DE INVENTARIO', data.adjustmentCode);
+    await this.drawHeader(doc, 'NOTA DE AJUSTE DE INVENTARIO', data.adjustmentCode);
 
     let y = 55;
     doc.setFontSize(9);
@@ -446,7 +449,7 @@ export class DocumentsService {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    this.drawHeader(doc, 'PLAN DE PRODUCCIÓN Y VENTA', data.periodName);
+    await this.drawHeader(doc, 'PLAN DE PRODUCCIÓN Y VENTA', data.periodName);
 
     const totalUnits = data.rows.reduce((sum, r) => sum + (r.plannedUnits || 0), 0);
     const totalValue = data.rows.reduce((sum, r) => sum + (r.plannedValue || 0), 0);
@@ -517,7 +520,7 @@ export class DocumentsService {
 
     const doc = new jsPDF();
     const today = new Date().toISOString().slice(0, 10);
-    this.drawHeader(doc, 'ESTADO DE CUENTA', today);
+    await this.drawHeader(doc, 'ESTADO DE CUENTA', today);
 
     let y = 50;
     doc.setFontSize(10);
@@ -602,11 +605,15 @@ export class DocumentsService {
     return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(value || 0);
   }
 
-  private drawHeader(doc: any, title: string, code: string): void {
+  private async drawHeader(doc: any, title: string, code: string): Promise<void> {
     const pageWidth = doc.internal.pageSize.getWidth();
 
     doc.setFillColor(0, 102, 204);
     doc.rect(0, 0, pageWidth, 40, 'F');
+
+    // Logo del negocio a la derecha; los datos se corren a su izquierda
+    const logoWidth = drawPdfLogo(doc, await this.branding.getPdfLogo(), pageWidth - 15, 5, 30);
+    const textRight = pageWidth - 15 - logoWidth;
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
@@ -618,9 +625,10 @@ export class DocumentsService {
     doc.text(`N° ${code}`, 15, 28);
 
     doc.setFontSize(9);
-    doc.text(this.businessName, pageWidth - 15, 15, { align: 'right' });
-    doc.text('InOut - Sistema de Gestión', pageWidth - 15, 23, { align: 'right' });
-    doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')}`, pageWidth - 15, 31, { align: 'right' });
+    doc.setTextColor(255, 255, 255);
+    doc.text(this.businessName, textRight, 15, { align: 'right' });
+    doc.text('InOut - Sistema de Gestión', textRight, 23, { align: 'right' });
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')}`, textRight, 31, { align: 'right' });
   }
 
   private drawTotals(doc: any, rows: { label: string; value: string; bold?: boolean }[]): void {

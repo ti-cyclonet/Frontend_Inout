@@ -14,6 +14,7 @@ import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
+import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
 
 /** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
 interface PlanChoice {
@@ -69,6 +70,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
   tenantId: string = '';
   businessName: string = '';
+  /** Logo de la tienda (Configuración > Identidad del negocio). */
+  storeLogoUrl: string | null = null;
   businessSector: string = 'general';
 
   // Banner promocional por tipo de negocio (título, subtítulo y emoji).
@@ -329,7 +332,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private http: HttpClient,
-    private titleService: Title
+    private titleService: Title,
+    private brandingService: TenantBrandingService,
   ) {}
 
   ngOnInit(): void {
@@ -486,6 +490,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   loadTenantData(tenantId: string): void {
     this.checkExistingClientSession();
+    this.storeLogoUrl = null;
+    this.brandingService.getPublic(tenantId).subscribe({
+      next: (b) => (this.storeLogoUrl = b?.logoWebUrl || null),
+      error: () => (this.storeLogoUrl = null),
+    });
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/products/tenant/${tenantId}`).toPromise(),
       this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise().catch(() => ({ businessSector: 'general' })),

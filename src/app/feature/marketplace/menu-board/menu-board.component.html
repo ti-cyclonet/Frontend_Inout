@@ -2,6 +2,7 @@
   <!-- Encabezado del menú -->
   <header class="mb-hero">
     <div class="mb-hero-text">
+      <img *ngIf="logoUrl" class="mb-logo" [src]="logoUrl" [alt]="businessName || 'Logo'">
       <h1 class="mb-title">
         <span class="mb-title-first">{{ titleWords.first }}</span>
         <span class="mb-title-rest" *ngIf="titleWords.rest">{{ titleWords.rest }}</span>

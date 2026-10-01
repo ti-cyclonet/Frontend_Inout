@@ -80,6 +80,7 @@
 /* ─── Encabezado ─── */
 .mb-hero { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-bottom: 1.25rem; }
 .mb-hero-text { min-width: 0; text-align: center; flex: 1; }
+.mb-logo { display: block; margin: 0 auto 0.6rem; max-width: 140px; max-height: 80px; object-fit: contain; }
 .mb-title { margin: 0; line-height: 1; font-family: var(--mb-title-font); font-weight: 400; }
 .mb-title-first { display: block; font-size: clamp(2.4rem, 6vw, 4rem); color: var(--mb-accent-2); }
 .mb-title-rest { display: block; font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--mb-accent); }
