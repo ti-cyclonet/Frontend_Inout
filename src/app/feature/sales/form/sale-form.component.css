@@ -462,3 +462,8 @@
 @media (max-width: 576px) {
   .credit-box { grid-template-columns: 1fr 1fr; }
 }
+
+/* Promociones y combos */
+.promo-hint { display: block; margin-top: 2px; font-size: 0.72rem; color: #c2410c; font-weight: 600; }
+.promo-hint s, .promo-was { color: #9ca3af; font-weight: 400; font-size: 0.8em; margin-right: 2px; }
+.promo-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: #fff1e6; color: #c2410c; font-size: 0.68rem; font-weight: 700; vertical-align: middle; }

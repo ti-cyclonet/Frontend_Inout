@@ -71,7 +71,7 @@
               </div>
               <div class="slide-overlay">
                 <h3>{{ product.strName }}</h3>
-                <p>{{ formatCurrency(product.fltPrice) }}</p>
+                <p><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</p>
               </div>
             </div>
           </div>
@@ -162,7 +162,8 @@
                     <span class="stars">⭐⭐⭐⭐⭐</span>
                     <span class="rating-text">{{ product.rating }}/5</span>
                   </div>
-                  <div class="featured-price">{{ formatCurrency(product.fltPrice) }}</div>
+                  <div class="featured-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</div>
+                  <span class="mk-promo" *ngIf="product.promoLabel">{{ product.promoLabel }}</span>
                 </div>
               </div>
             </div>
@@ -364,6 +365,7 @@
               <div class="product-info-modern">
                 <h3>{{ product.strName }}</h3>
                 <span class="resale-tag" *ngIf="isResale(product)">Reventa</span>
+                <span class="resale-tag combo-tag" *ngIf="product.itemType === 'combo' || product.itemType === 'kit'">{{ product.itemType === 'kit' ? 'Kit' : 'Combo' }}</span>
                 <p class="description">{{ product.strDescription }}</p>
 
                 <div class="product-meta-modern">
@@ -372,7 +374,8 @@
                 </div>
 
                 <div class="price-section">
-                  <div class="current-price">{{ formatCurrency(product.fltPrice) }}</div>
+                  <div class="current-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</div>
+                  <span class="mk-promo" *ngIf="product.promoLabel" [title]="product.promoName || ''">{{ product.promoLabel }}</span>
                   <div class="ml-shipping" *ngIf="product.fltPrice >= 50000">Envío disponible</div>
                   <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
                 </div>
@@ -427,7 +430,9 @@
       <div class="modal-info-section">
         <div class="modal-header-info">
           <h2>{{ selectedProduct.strName }}</h2>
-          <div class="modal-price">{{ formatCurrency(selectedProduct.fltPrice) }}</div>
+          <div class="modal-price"><s class="mk-was" *ngIf="hasPromo(selectedProduct)">{{ formatCurrency(selectedProduct.listPrice!) }}</s> {{ formatCurrency(selectedProduct.fltPrice) }}</div>
+          <span class="mk-promo" *ngIf="selectedProduct.promoLabel">{{ selectedProduct.promoName || selectedProduct.promoLabel }}</span>
+          <p class="mk-includes" *ngIf="selectedProduct.comboIncludes?.length">Incluye: {{ selectedProduct.comboIncludes!.join(', ') }}</p>
         </div>
 
         <div class="modal-description">
@@ -880,7 +885,7 @@
         <div class="checkout-item" *ngFor="let item of cart">
           <div class="item-info">
             <strong>{{ item.product.strName }}</strong>
-            <span class="item-price">{{ formatCurrency(item.product.fltPrice) }}</span>
+            <span class="item-price"><s class="mk-was" *ngIf="hasPromo(item.product)">{{ formatCurrency(item.product.listPrice!) }}</s> {{ formatCurrency(item.product.fltPrice) }}</span>
           </div>
           <div class="item-controls">
             <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity - 1)" type="button">−</button>

@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { PaymentVoucherUploadComponent } from './payment-voucher-upload.component';
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
 import { formatCop } from '../../../shared/utils/currency.util';
+import { DisplayLine, groupComboLines } from '../../../shared/utils/combo-lines.util';
 
 /** Cada cuánto se refresca el seguimiento mientras el pedido sigue en curso. */
 const REFRESH_MS = 60_000;
@@ -142,6 +143,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       .reduce((s: number, p: any) => s + p.amount, 0);
     const missingDeposit = Math.max(0, o.depositRequired - o.amountPaid - pendingVouchers);
     return missingDeposit > 0 ? missingDeposit : Math.max(0, o.balanceDue - pendingVouchers);
+  }
+
+  /** Ítems para mostrar: cada combo en una sola línea con lo que incluye. */
+  get displayItems(): DisplayLine[] {
+    return groupComboLines(this.order?.items);
   }
 
   hasToManufacture(): boolean {

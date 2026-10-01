@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { SalesService, Sale } from '../../../shared/services/sales.service';
 import { ProductsService, Product } from '../../../shared/services/products.service';
 import { KardexService } from '../../../shared/services/kardex.service';
+import { groupComboLines } from '../../../shared/utils/combo-lines.util';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -170,8 +171,12 @@ import { environment } from '../../../../environments/environment';
                             </tr>
                           </thead>
                           <tbody>
-                            <tr *ngFor="let item of getItems(selectedSale)" class="movement-row">
-                              <td class="align-middle" style="text-align: left;">{{ item.product }}</td>
+                            <tr *ngFor="let item of getDisplayItems(selectedSale)" class="movement-row">
+                              <td class="align-middle" style="text-align: left;">
+                                {{ item.product }}
+                                <small *ngIf="item.promotionName" style="color:#c2410c; font-weight:600;"> · {{ item.promotionName }}</small>
+                                <div *ngIf="item.components?.length" style="font-size:0.75rem; color:#6b7280;">Incluye: {{ item.components.join(', ') }}</div>
+                              </td>
                               <td class="text-center align-middle">{{ item.quantity }}</td>
                               <td class="align-middle" style="text-align: right;">{{ formatCurrency(item.unitPrice) }}</td>
                               <td class="align-middle" style="text-align: right;">{{ formatCurrency(item.total) }}</td>
@@ -789,6 +794,18 @@ export class SalesListComponent implements OnInit {
     }
   }
 
+  /** Ítems para mostrar: cada combo en una sola línea con lo que incluye. */
+  getDisplayItems(sale: Sale): any[] {
+    return groupComboLines(this.getItems(sale)).map((l) => ({
+      product: l.name,
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+      total: l.subtotal,
+      components: l.components,
+      promotionName: l.promotionName,
+    }));
+  }
+
   getItemsText(sale: Sale): string {
     const items = this.getItems(sale);
     return items.map(item => item.product).join(', ');
@@ -866,9 +883,9 @@ export class SalesListComponent implements OnInit {
               </tr>
             </thead>
             <tbody>
-              ${this.getItems(this.selectedSale).map(item => `
+              ${this.getDisplayItems(this.selectedSale).map(item => `
                 <tr>
-                  <td class="text-left">${item.product}</td>
+                  <td class="text-left">${item.product}${item.components?.length ? `<br><small>Incluye: ${item.components.join(', ')}</small>` : ''}</td>
                   <td class="text-center">${item.quantity}</td>
                   <td class="text-right">${this.formatCurrencyForPDF(item.unitPrice)}</td>
                   <td class="text-right">${this.formatCurrencyForPDF(item.total)}</td>

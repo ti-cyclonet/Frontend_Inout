@@ -502,3 +502,7 @@
 .detail-schedule { margin-top: 10px; font-size: 14px; color: #0c4fca; }
 .btn-sm-copy { border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
 .btn-sm-copy:hover { background: #f1f5f9; }
+
+/* Combos y promociones en el detalle */
+.comanda-includes { display: block; width: 100%; font-size: 0.72rem; color: #6b7280; }
+.promo-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: #fff1e6; color: #c2410c; font-size: 0.68rem; font-weight: 700; vertical-align: middle; }

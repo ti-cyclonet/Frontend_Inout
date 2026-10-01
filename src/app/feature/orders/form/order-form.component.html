@@ -110,8 +110,8 @@
                 [ngModelOptions]="{standalone: true}">
               <div class="select-dropdown" *ngIf="showProductDropdown">
                 <div class="select-option" *ngFor="let product of filteredProducts" (mousedown)="selectProduct(product)">
-                  <strong>{{ product.name }}</strong> <span class="item-type-tag" *ngIf="product.itemType !== 'product'">Reventa</span>
-                  <small *ngIf="product.stock > 0">{{ formatCurrency(product.price) }} — Stock: {{ product.stock }}</small>
+                  <strong>{{ product.name }}</strong> <span class="item-type-tag" *ngIf="product.itemType === 'material' || product.itemType === 'material_t'">Reventa</span><span class="item-type-tag" *ngIf="itemTypeLabel(product)">{{ itemTypeLabel(product) }}</span>
+                  <small *ngIf="product.stock > 0">{{ formatCurrency(product.price) }} — {{ product.unlimited ? 'Bajo pedido' : 'Stock: ' + product.stock }}</small>
                   <small *ngIf="product.stock <= 0" class="stock-empty">{{ formatCurrency(product.price) }} — Sin stock</small>
                 </div>
                 <div class="select-option no-results" *ngIf="filteredProducts.length === 0">
@@ -144,6 +144,9 @@
               step="100"
               min="0"
               [ngModelOptions]="{standalone: true}">
+            <small class="promo-hint" *ngIf="currentItem.promotionName">
+              <s>{{ formatCurrency(currentItem.listPrice) }}</s> · Promo: {{ currentItem.promotionName }}
+            </small>
           </div>
           <div class="form-group add-button-field">
             <button type="button" class="btn btn-outline-primary add-btn" (click)="addItem()" [disabled]="!canAddItem()">
@@ -165,9 +168,9 @@
             <div></div>
           </div>
           <div class="table-row" *ngFor="let item of orderData.items; let i = index">
-            <div>{{ item.productName }}</div>
+            <div>{{ item.productName }} <span class="promo-tag" *ngIf="item.promotionName">{{ item.promotionName }}</span></div>
             <div>{{ item.quantity }}</div>
-            <div>{{ formatCurrency(item.unitPrice) }}</div>
+            <div><s class="promo-was" *ngIf="item.promotionName">{{ formatCurrency(item.listPrice || 0) }}</s> {{ formatCurrency(item.unitPrice) }}</div>
             <div class="subtotal-cell">{{ formatCurrency(item.subtotal) }}</div>
             <div>
               <button type="button" class="btn-remove" (click)="removeItem(i)" title="Eliminar item">✕</button>

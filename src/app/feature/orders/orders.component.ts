@@ -14,6 +14,7 @@ import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service'
 import { DeliveryLauncherService } from '../../shared/services/delivery-launcher.service';
 import { CreditService, CreditEligibility, PAYMENT_METHODS, paymentMethodLabel } from '../../shared/services/credit.service';
 import { formatCop } from '../../shared/utils/currency.util';
+import { DisplayLine, documentLines, groupComboLines } from '../../shared/utils/combo-lines.util';
 
 interface OrderItem {
   productId: string;
@@ -698,6 +699,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   /** Formato de pesos de los pedidos: "$2.362.200". */
+  /** Ítems para mostrar: cada combo en una sola línea con lo que incluye. */
+  displayLines(order: Order): DisplayLine[] {
+    return groupComboLines(order?.items);
+  }
+
   formatCurrency(value: number): string {
     return formatCop(value);
   }
@@ -765,7 +771,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       customerName: order.customerName || 'Sin cliente',
       date: order.createdAt,
       deliveryDate: order.deliveryDate,
-      items: (order.items || []).map(item => ({ productName: item.productName, quantity: item.quantity })),
+      items: documentLines(order.items).map(item => ({ productName: item.productName, quantity: item.quantity })),
       notes: order.notes,
       status: this.getStatusLabel(order.status)
     });
@@ -777,7 +783,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       orderCode: order.orderCode,
       customerName: order.customerName || 'Sin cliente',
       date: new Date().toISOString(),
-      items: (order.items || []).map(item => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice, subtotal: item.subtotal })),
+      items: documentLines(order.items),
       subtotal: order.subtotal,
       tax: order.tax,
       total: order.total
@@ -806,7 +812,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       customerName: order.customerName || 'Sin cliente',
       date: order.createdAt,
       validUntil: validUntil.toISOString(),
-      items: (order.items || []).map(item => ({ productName: item.productName, quantity: item.quantity, unitPrice: item.unitPrice, subtotal: item.subtotal })),
+      items: documentLines(order.items),
       subtotal: order.subtotal,
       tax: order.tax,
       discount: order.discount,
