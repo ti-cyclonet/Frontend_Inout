@@ -90,6 +90,7 @@
 }
 .session-login { padding: 0.4rem 1rem; font-weight: 600; color: var(--mk-sector-ink); }
 .session-chip:hover, .session-login:hover { border-color: var(--mk-sector); }
+.session-login:disabled { opacity: 0.45; cursor: not-allowed; border-color: inherit; }
 .session-avatar {
   width: 26px; height: 26px; border-radius: 50%; background: var(--mk-sector-soft); color: var(--mk-sector-ink);
   display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;

@@ -21,7 +21,8 @@
               <span class="session-avatar">{{ clientFirstName.charAt(0) }}</span>
               <span class="session-name">{{ clientFirstName }}</span>
             </button>
-            <button type="button" class="session-login" *ngIf="!clientLoggedIn" (click)="openAccountLogin()">Ingresar</button>
+            <button type="button" class="session-login" *ngIf="!clientLoggedIn" (click)="openAccountLogin()"
+                    [disabled]="isAdminMode" [title]="isAdminMode ? 'No disponible en modo administrador' : 'Iniciar sesión como cliente'">Ingresar</button>
             <div class="session-menu" *ngIf="clientLoggedIn && sessionMenuOpen">
               <strong>{{ clientDisplayName }}</strong>
               <small>{{ clientEmail }}</small>
