@@ -820,3 +820,20 @@
   line-height: 1;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
+
+/* Criterios de la evaluación del domiciliario */
+.rating-criteria { display: flex; flex-direction: column; gap: 0.55rem; margin: 0.25rem 0 0.85rem; padding: 0.7rem 0.8rem; border-radius: 12px; background: #f9fafb; }
+.rating-criterion { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.criterion-label { font-size: 0.82rem; font-weight: 600; color: #374151; }
+.rating-stars.small { margin: 0; gap: 0.1rem; }
+.rating-stars.small .star { font-size: 1.35rem; }
+.repeat-options { display: flex; gap: 0.35rem; }
+.repeat-btn { border: 1px solid #d1d5db; background: #fff; border-radius: 999px; padding: 0.2rem 0.7rem; font-size: 0.8rem; font-weight: 600; color: #374151; cursor: pointer; }
+.repeat-btn.active { border-color: var(--shotra-red); background: var(--shotra-soft); color: var(--shotra-red-dark); }
+.rating-private { font-size: 0.75rem; color: #6b7280; margin: 0.4rem 0 0; }
+
+/* Chat: separador por servicio y aviso de solo lectura */
+.chat-service-sep { display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0; color: #9ca3af; font-size: 0.72rem; }
+.chat-service-sep::before, .chat-service-sep::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+.chat-service-sep span { max-width: 70%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-readonly { padding: 0.7rem 0.9rem; border-top: 1px solid #e5e7eb; font-size: 0.78rem; color: #6b7280; background: #f9fafb; }

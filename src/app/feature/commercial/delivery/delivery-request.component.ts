@@ -17,6 +17,8 @@ import {
   ShotraContract,
   ShotraPaymentMethod,
   ShotraMessage,
+  ShotraThread,
+  CreateRatingPayload,
   ShotraConversation,
   ShotraNotification,
   CreateShotraRequest,
@@ -33,6 +35,24 @@ import { Subscription } from 'rxjs';
  * domiciliarios, sin salir de InOut. Todo se apoya en ShotraService (token
  * Shotra vía switch-app).
  */
+type RatingCriterion = 'quality' | 'punctuality' | 'communication' | 'priceFairness';
+
+interface RatingForm {
+  score: number;
+  comment?: string;
+  criteria: Partial<Record<RatingCriterion, number>>;
+  wouldRepeat: boolean | null;
+}
+
+const RATING_CRITERIA: { key: RatingCriterion; label: string }[] = [
+  { key: 'quality', label: 'Cuidado del pedido (llegó en buen estado)' },
+  { key: 'punctuality', label: 'Puntualidad' },
+  { key: 'communication', label: 'Comunicación y trato' },
+  { key: 'priceFairness', label: 'Respetó el precio acordado' },
+];
+
+const emptyRatingForm = (): RatingForm => ({ score: 5, comment: '', criteria: {}, wouldRepeat: null });
+
 @Component({
   selector: 'app-delivery-request',
   standalone: true,
@@ -116,8 +136,12 @@ export class DeliveryRequestComponent implements OnDestroy {
   // Evaluación del domiciliario (tras completar el trabajo)
   showRatingForm = false;
   rating = false;
-  ratingForm: { score: number; comment?: string } = { score: 5 };
+  ratingForm: RatingForm = emptyRatingForm();
   readonly stars = [1, 2, 3, 4, 5];
+  /** Criterios para evaluar al domiciliario (los mismos que usa Shotra para recomendarlo). */
+  readonly ratingCriteria = RATING_CRITERIA;
+  /** Chat con el domiciliario: historial de todos los servicios con él. */
+  chatThread: ShotraThread | null = null;
   readonly paymentMethods: { value: ShotraPaymentMethod; label: string; icon: string }[] = [
     { value: 'CASH', label: 'Efectivo', icon: '💵' },
     { value: 'TRANSFER', label: 'Transferencia', icon: '🏦' },
@@ -936,7 +960,8 @@ export class DeliveryRequestComponent implements OnDestroy {
   }
 
   openChat(): void {
-    if (!this.selectedRequest || !this.canChat() || this.isContractClosed()) return;
+    // Con el trabajo finalizado se abre en solo lectura (ver chatThread.canSend)
+    if (!this.selectedRequest || !this.canChat()) return;
     this.showChat = true;
     this.loadChatMessages();
     this.stopChatPolling();
@@ -958,9 +983,10 @@ export class DeliveryRequestComponent implements OnDestroy {
   private loadChatMessages(silent = false): void {
     if (!this.selectedRequest) return;
     if (!silent) this.loadingChat = true;
-    this.shotra.getMessages(this.selectedRequest.id).subscribe({
-      next: (msgs) => {
-        this.chatMessages = msgs || [];
+    this.shotra.getThread(this.selectedRequest.id).subscribe({
+      next: (thread) => {
+        this.chatThread = thread;
+        this.chatMessages = thread?.messages || [];
         this.loadingChat = false;
         // getMessages marca como leídos en el backend: refrescar el badge ya.
         this.refreshNotifications();
@@ -971,17 +997,31 @@ export class DeliveryRequestComponent implements OnDestroy {
     });
   }
 
-  /** ¿El mensaje lo envié yo (el comerciante = siempre el solicitante en esta extensión)? */
+  /** ¿El mensaje lo envié yo? (el chat reúne varios servicios: lo que no envió el domiciliario es mío) */
   isMyMessage(msg: ShotraMessage): boolean {
+    if (this.chatThread?.otherParty?.id) return msg.senderId !== this.chatThread.otherParty.id;
     return !!this.contract && msg.senderId === this.contract.requesterId;
+  }
+
+  /** ¿Este mensaje empieza otro servicio? (para el separador con el título de la solicitud) */
+  serviceTitleBefore(index: number): string | null {
+    const m = this.chatMessages[index];
+    if (!m || (index > 0 && this.chatMessages[index - 1].requestId === m.requestId)) return null;
+    return this.chatThread?.requests.find((r) => r.id === m.requestId)?.title || 'Servicio';
+  }
+
+  /** Se puede escribir si hay un servicio en curso con este domiciliario. */
+  get chatCanSend(): boolean {
+    return this.chatThread ? this.chatThread.canSend : !this.isContractClosed();
   }
 
   sendChatMessage(): void {
     const content = this.chatText.trim();
-    if (!content || this.sendingChat || !this.selectedRequest) return;
+    if (!content || this.sendingChat || !this.selectedRequest || !this.chatCanSend) return;
     this.sendingChat = true;
     this.chatText = '';
-    this.shotra.sendMessage(this.selectedRequest.id, content).subscribe({
+    // Va al servicio en curso con este domiciliario (el backend lo resuelve igual)
+    this.shotra.sendMessage(this.chatThread?.activeRequestId || this.selectedRequest.id, content).subscribe({
       next: (msg) => {
         this.chatMessages = [...this.chatMessages, msg];
         this.sendingChat = false;
@@ -1033,8 +1073,16 @@ export class DeliveryRequestComponent implements OnDestroy {
   }
 
   openRatingForm(): void {
-    this.ratingForm = { score: 5, comment: '' };
+    this.ratingForm = emptyRatingForm();
     this.showRatingForm = true;
+  }
+
+  setCriterion(key: RatingCriterion, n: number): void {
+    this.ratingForm.criteria[key] = n;
+  }
+
+  setWouldRepeat(value: boolean): void {
+    this.ratingForm.wouldRepeat = this.ratingForm.wouldRepeat === value ? null : value;
   }
 
   closeRatingForm(): void {
@@ -1048,9 +1096,11 @@ export class DeliveryRequestComponent implements OnDestroy {
   submitRating(): void {
     if (!this.contract || this.rating) return;
     this.rating = true;
-    const dto = {
+    const dto: CreateRatingPayload = {
       contractId: this.contract.id,
       score: this.ratingForm.score,
+      ...this.ratingForm.criteria,
+      ...(this.ratingForm.wouldRepeat !== null ? { wouldRepeat: this.ratingForm.wouldRepeat } : {}),
       ...(this.ratingForm.comment?.trim() ? { comment: this.ratingForm.comment.trim() } : {}),
     };
     this.shotra.rateContract(dto).subscribe({
@@ -1060,7 +1110,8 @@ export class DeliveryRequestComponent implements OnDestroy {
         Swal.fire({
           icon: 'success',
           title: '¡Gracias por tu evaluación!',
-          timer: 1800,
+          text: 'El domiciliario la verá cuando también te califique (o al vencer el plazo).',
+          timer: 2600,
           showConfirmButton: false,
         });
         if (this.selectedRequest) this.openDetail(this.selectedRequest);

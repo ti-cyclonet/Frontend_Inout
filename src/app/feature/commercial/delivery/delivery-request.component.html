@@ -233,15 +233,13 @@
           </span>
         </div>
 
-        <!-- Chat: solo cuando ambas partes firmaron el contrato; se deshabilita
-             cuando el trabajo ya quedó Completado/Evaluado -->
+        <!-- Chat: desde que ambas partes firman el contrato; con el trabajo
+             Completado/Evaluado se abre en solo lectura -->
         <button class="btn-close-work" type="button"
                 *ngIf="canChat()"
-                [disabled]="isContractClosed()"
                 [class.btn-disabled]="isContractClosed()"
-                [title]="isContractClosed() ? 'El chat se cierra cuando el trabajo ya está finalizado' : ''"
                 (click)="openChat()">
-          💬 Chat con el domiciliario
+          💬 {{ isContractClosed() ? 'Ver chat (solo lectura)' : 'Chat con el domiciliario' }}
         </button>
 
         <!-- Acción de cierre: confirmar recepción + pago -->
@@ -387,13 +385,32 @@
         <button type="button" class="star" *ngFor="let s of stars"
                 [class.active]="s <= ratingForm.score" (click)="setScore(s)">★</button>
       </div>
-      <div class="rating-value">{{ ratingForm.score }} de 5</div>
+      <div class="rating-value">{{ ratingForm.score }} de 5 · valoración general</div>
+
+      <div class="rating-criteria">
+        <div class="rating-criterion" *ngFor="let c of ratingCriteria">
+          <span class="criterion-label">{{ c.label }}</span>
+          <div class="rating-stars small">
+            <button type="button" class="star" *ngFor="let s of stars"
+                    [class.active]="s <= (ratingForm.criteria[c.key] || 0)" (click)="setCriterion(c.key, s)"
+                    [attr.aria-label]="c.label + ': ' + s + ' de 5'">★</button>
+          </div>
+        </div>
+        <div class="rating-criterion">
+          <span class="criterion-label">¿Lo volverías a contratar?</span>
+          <div class="repeat-options">
+            <button type="button" class="repeat-btn" [class.active]="ratingForm.wouldRepeat === true" (click)="setWouldRepeat(true)">👍 Sí</button>
+            <button type="button" class="repeat-btn" [class.active]="ratingForm.wouldRepeat === false" (click)="setWouldRepeat(false)">👎 No</button>
+          </div>
+        </div>
+      </div>
 
       <div class="form-group">
         <label>Comentario (opcional)</label>
         <textarea [(ngModel)]="ratingForm.comment" name="ratingComment" class="form-control" rows="3"
                   placeholder="Cuéntanos cómo estuvo la entrega…"></textarea>
       </div>
+      <p class="rating-private">🔒 Tu evaluación es privada hasta que el domiciliario también te califique (o se cumpla el plazo de 7 días).</p>
     </div>
 
     <div class="sheet-foot">
@@ -408,25 +425,30 @@
   <div class="drawer-sheet chat-sheet" *ngIf="showChat">
     <div class="sheet-head">
       <button class="sheet-back" type="button" (click)="closeChat()">← Volver</button>
-      <h6>Chat con el domiciliario</h6>
+      <h6>Chat con {{ chatThread?.otherParty?.displayName || 'el domiciliario' }}</h6>
     </div>
 
     <div class="chat-messages">
       <div class="empty" *ngIf="!loadingChat && chatMessages.length === 0">
-        Todavía no hay mensajes. Escribe el primero.
+        {{ chatCanSend ? 'Todavía no hay mensajes. Escribe el primero.' : 'No hay mensajes en este chat.' }}
       </div>
       <div *ngIf="loadingChat" class="empty">Cargando…</div>
-      <div *ngFor="let m of chatMessages"
-           class="chat-bubble-row"
+      <ng-container *ngFor="let m of chatMessages; let i = index">
+      <div class="chat-service-sep" *ngIf="serviceTitleBefore(i) as title"><span>{{ title }}</span></div>
+      <div class="chat-bubble-row"
            [class.mine]="isMyMessage(m)">
         <div class="chat-bubble" [class.mine]="isMyMessage(m)">
           <span class="chat-sender" *ngIf="!isMyMessage(m)">{{ m.sender?.displayName || 'Domiciliario' }}</span>
           <span class="chat-content">{{ m.content }}</span>
         </div>
       </div>
+      </ng-container>
     </div>
 
-    <div class="chat-input-bar">
+    <div class="chat-readonly" *ngIf="!chatCanSend">
+      🔒 Chat de solo lectura: el trabajo fue finalizado. Se habilita de nuevo si vuelven a tener un servicio en curso.
+    </div>
+    <div class="chat-input-bar" *ngIf="chatCanSend">
       <textarea class="chat-input" rows="1" [(ngModel)]="chatText" name="chatText"
                 placeholder="Escribe un mensaje..."
                 (keydown.enter)="$event.preventDefault(); sendChatMessage()"></textarea>
