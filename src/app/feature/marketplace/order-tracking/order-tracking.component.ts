@@ -138,6 +138,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     return !!this.order && FINAL.includes(this.order.status);
   }
 
+  /** La franja programada ya pasó y el pedido aún no se entrega. */
+  get deliveryLate(): boolean {
+    return !!this.order?.estimatedDelivery?.late && !this.isFinal;
+  }
+
   /** "Hoy ~3:30 p. m." / "mañana ~10:00 a. m." / programada con su franja. */
   deliveryText(): string | null {
     const d = this.order?.estimatedDelivery;

@@ -111,3 +111,8 @@
 @media (prefers-reduced-motion: reduce) {
   .thanks-overlay, .thanks-modal, .confetti { animation: none; }
 }
+
+/* Franja programada vencida sin entregar */
+.tracking-eta.late { background: #fff4e5; color: #92400e; }
+.tracking-eta.late .eta-label { color: #b45309; }
+.eta-late-note { display: block; margin-top: 4px; font-size: 0.8rem; color: #92400e; line-height: 1.4; }

@@ -12,9 +12,13 @@
     <p class="tracking-status" [class.cancelled]="order.status === 'CANCELLED'">{{ statusLabels[order.status] || order.status }}</p>
 
     <!-- Entrega estimada (se recalcula en cada refresco) -->
-    <div class="tracking-eta" *ngIf="deliveryText() as eta">
-      <span class="eta-label">{{ order.estimatedDelivery?.scheduled ? '📅 Entrega programada' : '🚚 Entrega estimada' }}</span>
-      <strong>{{ eta }}</strong>
+    <div class="tracking-eta" [class.late]="deliveryLate" *ngIf="deliveryText() as eta">
+      <span class="eta-label">{{ deliveryLate ? '⏰ Entrega retrasada' : order.estimatedDelivery?.scheduled ? '📅 Entrega programada' : '🚚 Entrega estimada' }}</span>
+      <ng-container *ngIf="!deliveryLate"><strong>{{ eta }}</strong></ng-container>
+      <ng-container *ngIf="deliveryLate">
+        <strong class="eta-msg">Estaba programada para {{ eta.charAt(0).toLowerCase() + eta.slice(1) }}.</strong>
+        <small class="eta-late-note">Tu pedido va un poco retrasado; la tienda lo entregará lo antes posible. Aquí verás cada cambio de estado.</small>
+      </ng-container>
     </div>
     <div class="tracking-eta" *ngIf="deliveryStatusText() as msg">
       <span class="eta-label">🚚 Tu entrega</span>
