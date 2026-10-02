@@ -238,7 +238,8 @@
                     <td><strong>{{ param.nombre }}</strong></td>
                     <td>
                       <span class="badge bg-primary" style="font-size: 0.8rem;" *ngIf="param.dataType === 'number'">{{ param.valor | number:'1.0-0' }}</span>
-                      <span class="badge bg-info" style="font-size: 0.8rem;" *ngIf="param.dataType !== 'number'">{{ param.valor }}</span>
+                      <span class="badge bg-info" style="font-size: 0.8rem;" *ngIf="param.dataType === 'boolean'">{{ boolLabel(param.valor) }}</span>
+                      <span class="badge bg-info" style="font-size: 0.8rem;" *ngIf="param.dataType !== 'number' && param.dataType !== 'boolean'">{{ param.valor }}</span>
                     </td>
                     <td class="d-none d-md-table-cell text-muted" style="font-size: 0.8rem;">{{ param.descripcion }}</td>
                     <td class="text-center">
@@ -313,13 +314,19 @@
                   {{ param.nombre }}
                   <!-- Móvil: mostrar valor y estado inline -->
                   <div class="d-md-none" *ngIf="!param.editando">
-                    <span class="badge bg-primary me-1">{{ formatNumber(param.valor) }}</span>
+                    <span class="badge bg-primary me-1">{{ isBool(param) ? boolLabel(param.valor) : formatNumber(param.valor) }}</span>
                     <span class="badge" [ngClass]="param.estado === 'ACTIVE' ? 'bg-success' : 'bg-secondary'">
                       {{ param.estado === 'ACTIVE' ? 'ACTIVO' : 'INACTIVO' }}
                     </span>
                   </div>
                   <!-- Móvil: input de edición inline -->
-                  <div class="d-md-none mt-1" *ngIf="param.editando">
+                  <div class="d-md-none mt-1" *ngIf="param.editando && isBool(param)">
+                    <select class="form-select form-select-sm" [(ngModel)]="param.valor">
+                      <option value="SI">Sí</option>
+                      <option value="NO">No</option>
+                    </select>
+                  </div>
+                  <div class="d-md-none mt-1" *ngIf="param.editando && !isBool(param)">
                     <input type="text" class="form-control form-control-sm" 
                            [(ngModel)]="param.valor"
                            (input)="formatInputNumber($event, param)"
@@ -328,8 +335,12 @@
                   </div>
                 </td>
                 <td class="d-none d-md-table-cell">
-                  <span *ngIf="!param.editando" class="badge bg-primary">{{ formatNumber(param.valor) }}</span>
-                  <input *ngIf="param.editando" type="text" class="form-control form-control-sm" 
+                  <span *ngIf="!param.editando" class="badge bg-primary">{{ isBool(param) ? boolLabel(param.valor) : formatNumber(param.valor) }}</span>
+                  <select *ngIf="param.editando && isBool(param)" class="form-select form-select-sm" [(ngModel)]="param.valor" style="min-width: 80px;">
+                    <option value="SI">Sí</option>
+                    <option value="NO">No</option>
+                  </select>
+                  <input *ngIf="param.editando && !isBool(param)" type="text" class="form-control form-control-sm" 
                          [(ngModel)]="param.valor"
                          (input)="formatInputNumber($event, param)"
                          (blur)="guardarValor(param)"
@@ -577,6 +588,7 @@
             <select class="form-select" [(ngModel)]="filtroTipo" (change)="aplicarFiltros()">
               <option value="">Todos los tipos</option>
               <option value="number">Numérico</option>
+              <option value="boolean">Sí / No</option>
               <option value="string">Texto</option>
             </select>
             <button class="btn btn-primary flex-shrink-0" data-bs-toggle="modal" data-bs-target="#createParameterModal">
@@ -613,11 +625,16 @@
                 </td>
                 <td>
                   <span class="badge" [ngClass]="param.dataType === 'number' ? 'bg-info' : 'bg-secondary'">
-                    {{ param.dataType === 'number' ? 'NUM' : 'TXT' }}
+                    {{ typeLabel(param.dataType) }}
                   </span>
                 </td>
                 <td>
-                  <input type="text" class="form-control form-control-sm" 
+                  <select *ngIf="isBool(param)" class="form-select form-select-sm" [(ngModel)]="param.value" [disabled]="!param.selected">
+                    <option [ngValue]="undefined" disabled>Elige…</option>
+                    <option value="SI">Sí</option>
+                    <option value="NO">No</option>
+                  </select>
+                  <input *ngIf="!isBool(param)" type="text" class="form-control form-control-sm"
                          [(ngModel)]="param.value" 
                          [placeholder]="param.dataType === 'number' ? 'Ej: 19' : 'Ej: valor'"
                          [disabled]="!param.selected">
@@ -639,12 +656,17 @@
                      [(ngModel)]="param.selected">
               <strong class="flex-grow-1">{{ param.name }}</strong>
               <span class="badge ms-2" [ngClass]="param.dataType === 'number' ? 'bg-info' : 'bg-secondary'">
-                {{ param.dataType === 'number' ? 'NUM' : 'TXT' }}
+                {{ typeLabel(param.dataType) }}
               </span>
             </div>
             <small class="text-muted d-block mb-1" *ngIf="param.description">{{ param.description }}</small>
             <div *ngIf="param.selected">
-              <input type="text" class="form-control form-control-sm" 
+              <select *ngIf="isBool(param)" class="form-select form-select-sm" [(ngModel)]="param.value">
+                <option [ngValue]="undefined" disabled>Elige…</option>
+                <option value="SI">Sí</option>
+                <option value="NO">No</option>
+              </select>
+              <input *ngIf="!isBool(param)" type="text" class="form-control form-control-sm"
                      [(ngModel)]="param.value" 
                      [placeholder]="param.dataType === 'number' ? 'Ej: 19' : 'Ej: COP'">
             </div>
@@ -693,6 +715,7 @@
               <option value="">Seleccionar tipo</option>
               <option value="string">Texto</option>
               <option value="number">Numérico</option>
+              <option value="boolean">Sí / No</option>
             </select>
             <div class="text-danger small mt-1" *ngIf="nuevoParametroForm.get('dataType')?.invalid && nuevoParametroForm.get('dataType')?.touched">
               <div *ngIf="nuevoParametroForm.get('dataType')?.errors?.['required']">El tipo de dato es requerido</div>
