@@ -106,3 +106,52 @@
     <button type="button" class="ss-save" [disabled]="savingScheduling" (click)="saveScheduling()">{{ savingScheduling ? 'Guardando…' : 'Guardar programación' }}</button>
   </div>
 </div>
+
+<!-- ─── Mensaje de agradecimiento (al entregar el pedido) ─── -->
+<div class="ss-section">
+  <button type="button" class="ss-header" (click)="toggle('thanks')">
+    <span><i class="bi bi-envelope-heart me-1"></i> Mensaje de agradecimiento</span>
+    <small>{{ thanks ? (thanks.enabled ? 'Activo' : 'Apagado') : 'Cargando…' }} {{ open === 'thanks' ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="ss-body" *ngIf="open === 'thanks' && thanks">
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="thanks.enabled">
+      <span><strong>Agradecer al cliente cuando su pedido se entrega</strong><small>Se le muestra una sola vez en la página de seguimiento del pedido, con las fotos de lo que compró y el logo de la tienda.</small></span>
+    </label>
+
+    <ng-container *ngIf="thanks.enabled">
+      <p class="ss-help ss-tags">Puedes usar <code>{{ tagName }}</code> (primer nombre del cliente) y <code>{{ tagOrder }}</code> (código del pedido). Si dejas un campo vacío se usa el texto por defecto.</p>
+      <div class="ss-sub ss-thanks">
+        <label>Encabezado <small>({{ thanks.kicker.length }}/{{ maxLen.kicker }})</small></label>
+        <input type="text" [maxlength]="maxLen.kicker" [(ngModel)]="thanks.kicker">
+        <label>Título</label>
+        <input type="text" [maxlength]="maxLen.title" [(ngModel)]="thanks.title">
+        <label>Mensaje <small>({{ thanks.message.length }}/{{ maxLen.message }})</small></label>
+        <textarea rows="4" [maxlength]="maxLen.message" [(ngModel)]="thanks.message"></textarea>
+        <label>Firma</label>
+        <input type="text" [maxlength]="maxLen.signature" [(ngModel)]="thanks.signature">
+        <div class="ss-grid">
+          <div><label>Botón principal <small>(vuelve a la tienda)</small></label><input type="text" [maxlength]="maxLen.buttonText" [(ngModel)]="thanks.buttonText"></div>
+          <div><label>Botón para cerrar</label><input type="text" [maxlength]="maxLen.closeText" [(ngModel)]="thanks.closeText"></div>
+        </div>
+      </div>
+
+      <p class="ss-label">Vista previa</p>
+      <div class="ss-thanks-preview">
+        <div class="tp-hero"><span>🎁</span></div>
+        <p class="tp-kicker">{{ preview('kicker') }}</p>
+        <p class="tp-title">{{ preview('title') }}</p>
+        <p class="tp-text">{{ preview('message') }}</p>
+        <p class="tp-sign">{{ preview('signature') }}</p>
+        <span class="tp-btn">{{ preview('buttonText') }}</span>
+        <span class="tp-close">{{ preview('closeText') }}</span>
+      </div>
+    </ng-container>
+
+    <div class="ss-actions">
+      <button type="button" class="ss-save" [disabled]="savingThanks" (click)="saveThanks()">{{ savingThanks ? 'Guardando…' : 'Guardar mensaje' }}</button>
+      <button type="button" class="ss-reset" *ngIf="thanks.enabled" (click)="resetThanks()">Restaurar textos por defecto</button>
+    </div>
+  </div>
+</div>

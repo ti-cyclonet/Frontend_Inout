@@ -88,7 +88,7 @@
 .thanks-body { padding: 46px 26px 24px; text-align: center; }
 .thanks-kicker { margin: 0 0 6px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; }
 .thanks-body h2 { margin: 0 0 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; line-height: 1.25; color: #111827; }
-.thanks-text { margin: 0 0 10px; color: #4b5563; font-size: 0.95rem; line-height: 1.55; }
+.thanks-text { margin: 0 0 10px; color: #4b5563; font-size: 0.95rem; line-height: 1.55; white-space: pre-line; }
 .thanks-sign { margin: 0 0 20px; font-style: italic; color: var(--accent); font-size: 0.9rem; }
 .thanks-actions { display: flex; flex-direction: column; gap: 8px; }
 .thanks-primary {
