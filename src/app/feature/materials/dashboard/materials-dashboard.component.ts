@@ -244,6 +244,10 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
                     <div style="font-size: 28px; font-weight: 700; color: #16a34a;">${response.success}</div>
                     <div style="font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Creados</div>
                   </div>
+                  ${response.openingApplied ? `<div style="text-align: center; padding: 12px 20px; background: #eff6ff; border-radius: 10px; border: 1px solid #bfdbfe;">
+                    <div style="font-size: 28px; font-weight: 700; color: #1d4ed8;">${response.openingApplied}</div>
+                    <div style="font-size: 11px; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px;">Con saldo inicial</div>
+                  </div>` : ''}
                   <div style="text-align: center; padding: 12px 20px; background: ${hasErrors ? '#fef2f2' : '#f8f9fa'}; border-radius: 10px; border: 1px solid ${hasErrors ? '#fecaca' : '#e9ecef'};">
                     <div style="font-size: 28px; font-weight: 700; color: ${hasErrors ? '#dc2626' : '#6c757d'};">${response.errors.length}</div>
                     <div style="font-size: 11px; color: ${hasErrors ? '#991b1b' : '#6c757d'}; text-transform: uppercase; letter-spacing: 0.5px;">Errores</div>
