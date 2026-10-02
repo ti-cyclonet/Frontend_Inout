@@ -112,17 +112,14 @@
     </div>
 
     <div class="thanks-body">
-      <p class="thanks-kicker">Pedido {{ order.orderCode }} · entregado</p>
-      <h2 id="thanks-title">¡Gracias por tu compra{{ firstName() ? ', ' + firstName() : '' }}!</h2>
-      <p class="thanks-text">
-        Tu pedido llegó a su destino. Lo preparamos con mucho cuidado y esperamos
-        que lo disfrutes tanto como nosotros disfrutamos hacerlo.
-      </p>
-      <p class="thanks-sign">Con cariño, el equipo de la tienda ♥</p>
+      <p class="thanks-kicker">{{ thanksText('kicker') }}</p>
+      <h2 id="thanks-title">{{ thanksText('title') }}</h2>
+      <p class="thanks-text">{{ thanksText('message') }}</p>
+      <p class="thanks-sign">{{ thanksText('signature') }}</p>
 
       <div class="thanks-actions">
-        <a class="thanks-primary" [routerLink]="['/marketplace', order.storeSlug || storeId]" (click)="closeThanks()">Volver a comprar</a>
-        <button type="button" class="thanks-close" (click)="closeThanks()">Cerrar</button>
+        <a class="thanks-primary" [routerLink]="['/marketplace', order.storeSlug || storeId]" (click)="closeThanks()">{{ thanksText('buttonText') }}</a>
+        <button type="button" class="thanks-close" (click)="closeThanks()">{{ thanksText('closeText') }}</button>
       </div>
     </div>
   </div>

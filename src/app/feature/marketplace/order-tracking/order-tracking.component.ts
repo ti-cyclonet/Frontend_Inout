@@ -7,6 +7,7 @@ import { PaymentVoucherUploadComponent } from './payment-voucher-upload.componen
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { DisplayLine, groupComboLines } from '../../../shared/utils/combo-lines.util';
+import { DEFAULT_THANKS_MESSAGES, ThanksMessages, fillThanks } from './thanks-messages';
 
 /** Cada cuánto se refresca el seguimiento mientras el pedido sigue en curso. */
 const REFRESH_MS = 60_000;
@@ -85,7 +86,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   /** Pedido entregado y aún no agradecido en este navegador: se abre la modal. */
   private maybeShowThanks(): void {
-    if (!this.order || !DELIVERED.includes(this.order.status) || this.showThanks) return;
+    // Sin thanks: la tienda apagó el agradecimiento (o el pedido no se ha entregado)
+    if (!this.order?.thanks || !DELIVERED.includes(this.order.status) || this.showThanks) return;
     let seen = false;
     try { seen = localStorage.getItem(THANKS_KEY + this.token) === '1'; } catch { /* sin almacenamiento */ }
     if (!seen) this.showThanks = true;
@@ -102,7 +104,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   get isDelivered(): boolean {
-    return !!this.order && DELIVERED.includes(this.order.status);
+    return !!this.order?.thanks && DELIVERED.includes(this.order.status);
+  }
+
+  /** Texto de la modal, configurado por la tienda, con sus marcadores reemplazados. */
+  thanksText(key: Exclude<keyof ThanksMessages, 'enabled'>): string {
+    const messages = this.order?.thanks?.messages || DEFAULT_THANKS_MESSAGES;
+    return fillThanks(messages[key] || DEFAULT_THANKS_MESSAGES[key], this.firstName(), this.order?.orderCode || '');
   }
 
   /** Color de la tienda para la modal (o el naranja de InOut). */
