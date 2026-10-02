@@ -7,6 +7,7 @@ import { MaterialService } from '../../shared/services/material.service';
 import { SupplierService } from '../../shared/services/supplier.service';
 import { DocumentsService } from '../../shared/services/documents.service';
 import { StockAlertsService } from '../../shared/services/stock-alerts.service';
+import { PermissionsService } from '../../shared/services/permissions.service';
 import { Material } from '../../shared/models/material.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
@@ -89,8 +90,12 @@ export class KardexComponent implements OnInit {
     private documentsService: DocumentsService,
     private stockAlertsService: StockAlertsService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    public permissions: PermissionsService
   ) {}
+
+  /** El ítem seleccionado aún no tiene movimientos: admite saldo inicial. */
+  openingEligible = false;
 
   ngOnInit(): void {
     // Obtener codePrefix desde sessionStorage
@@ -539,6 +544,182 @@ export class KardexComponent implements OnInit {
   selectMaterial(material: any): void {
     this.selectedMaterial = material;
     this.loadMovements(material.id);
+    this.checkOpening();
+  }
+
+  // ─── Saldo inicial (existencias sin documento al empezar a usar InOut) ───
+
+  private get openingUrl(): string {
+    return `${this.baseUrl}/inventory-movements/opening-balance`;
+  }
+
+  /** ¿El ítem seleccionado admite saldo inicial? (solo administradores, sin movimientos) */
+  checkOpening(): void {
+    this.openingEligible = false;
+    const item = this.selectedMaterial;
+    if (!item || !this.permissions.isAdmin) return;
+    this.http.get<{ eligible: boolean }>(`${this.openingUrl}/status/${item.entityType}/${item.id}`).subscribe({
+      next: (r) => { if (this.selectedMaterial?.id === item.id) this.openingEligible = !!r?.eligible; },
+      error: () => {},
+    });
+  }
+
+  private todayIso(): string {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+
+  registerOpening(): void {
+    const item = this.selectedMaterial;
+    if (!item) return;
+    const unit = item.measureUnit || 'unidades';
+    const esc = (s: string) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+    Swal.fire({
+      title: 'Saldo inicial',
+      html: `
+        <div style="text-align:left;font-size:14px;">
+          <p style="margin-bottom:6px"><strong>${esc(item.name)}</strong> (${esc(item.code)})</p>
+          <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Lo que tienes hoy en bodega y no tiene factura ni remisión. Se registra una sola vez; después las diferencias se corrigen con compras o con el conteo físico.</p>
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Cantidad en existencia (${esc(unit)})</label>
+          <input id="ob-qty" type="number" min="0.01" step="0.01" class="swal2-input" style="margin:0 0 12px;width:100%;">
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Costo unitario estimado (por ${esc(unit)})</label>
+          <input id="ob-cost" type="number" min="0" step="0.01" class="swal2-input" style="margin:0 0 4px;width:100%;">
+          <small style="display:block;color:#6b7280;font-size:11px;margin-bottom:12px">Sin factura: usa lo que costaría comprarlo hoy o la última compra conocida. Con este costo se calculan la producción y los márgenes.</small>
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Fecha de corte</label>
+          <input id="ob-date" type="date" class="swal2-input" value="${this.todayIso()}" max="${this.todayIso()}" style="margin:0 0 12px;width:100%;">
+          <label style="display:block;margin-bottom:4px;font-weight:600;font-size:12px;">Observaciones (opcional)</label>
+          <input id="ob-notes" type="text" maxlength="120" class="swal2-input" placeholder="Ej: conteo del 1 de octubre" style="margin:0;width:100%;">
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Registrar saldo inicial',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0d6efd',
+      preConfirm: () => {
+        const quantity = parseFloat((document.getElementById('ob-qty') as HTMLInputElement).value);
+        const costRaw = (document.getElementById('ob-cost') as HTMLInputElement).value;
+        const unitCost = parseFloat(costRaw);
+        const date = (document.getElementById('ob-date') as HTMLInputElement).value;
+        const notes = (document.getElementById('ob-notes') as HTMLInputElement).value;
+        if (!quantity || quantity <= 0) { Swal.showValidationMessage('Ingresa una cantidad mayor que cero'); return false; }
+        if (costRaw === '' || isNaN(unitCost) || unitCost < 0) { Swal.showValidationMessage('Ingresa el costo unitario (estimado si no hay factura)'); return false; }
+        if (date && date > this.todayIso()) { Swal.showValidationMessage('La fecha de corte no puede ser futura'); return false; }
+        return { quantity, unitCost, date, notes };
+      },
+    }).then((result) => {
+      if (!result.isConfirmed || !result.value) return;
+      const v = result.value;
+      this.http.post<any>(this.openingUrl, { items: [{ type: item.entityType, id: item.id, ...v }] }).subscribe({
+        next: (r) => {
+          const res = r?.results?.[0];
+          if (!res?.ok) {
+            Swal.fire('No se registró', res?.error || 'Intenta de nuevo.', 'error');
+            return;
+          }
+          this.openingEligible = false;
+          item.balance = v.quantity;
+          item.price = v.unitCost;
+          this.loadMovements(item.id);
+          this.stockAlertsService.refreshAlerts();
+          Swal.fire({ icon: 'success', title: 'Saldo inicial registrado', html: `Existencia: <strong>${this.formatNumber(v.quantity)} ${esc(unit)}</strong> a <strong>$${this.formatNumber(v.unitCost)}</strong> c/u (costo estimado).` });
+        },
+        error: (err) => Swal.fire('Error', err?.error?.message || 'No se pudo registrar el saldo inicial', 'error'),
+      });
+    });
+  }
+
+  /** Saldos iniciales por Excel: plantilla con los ítems sin movimientos y carga del archivo. */
+  openBulkOpening(): void {
+    Swal.fire({
+      title: 'Saldos iniciales',
+      html: `
+        <div style="text-align:left;font-size:14px;line-height:1.5">
+          <p>Para lo que ya tienes en bodega al empezar a usar InOut y <strong>no tiene documentos</strong> (factura, remisión).</p>
+          <ol style="padding-left:18px;margin:0">
+            <li>Descarga la plantilla: trae listados los materiales, materiales compuestos y productos <strong>sin movimientos</strong>.</li>
+            <li>Llena <strong>Cantidad</strong> y <strong>Costo unitario</strong> (estimado si no hay factura). Deja en blanco lo que no tengas.</li>
+            <li>Súbela aquí. Cada ítem recibe su saldo inicial una sola vez.</li>
+          </ol>
+        </div>`,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: '⬇ Descargar plantilla',
+      denyButtonText: '⬆ Subir archivo',
+      cancelButtonText: 'Cerrar',
+      confirmButtonColor: '#198754',
+      denyButtonColor: '#0d6efd',
+    }).then((r) => {
+      if (r.isConfirmed) this.downloadOpeningTemplate();
+      else if (r.isDenied) this.uploadOpeningFile();
+    });
+  }
+
+  private downloadOpeningTemplate(): void {
+    this.http.get(`${this.openingUrl}/template`, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `saldos_iniciales_${this.todayIso()}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => Swal.fire('Error', 'No se pudo descargar la plantilla', 'error'),
+    });
+  }
+
+  private uploadOpeningFile(): void {
+    Swal.fire({
+      title: 'Subir saldos iniciales',
+      input: 'file',
+      inputAttributes: { accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+      showCancelButton: true,
+      confirmButtonText: 'Registrar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (file) => (!file ? 'Selecciona el archivo de la plantilla' : null),
+    }).then((r) => {
+      if (!r.isConfirmed || !r.value) return;
+      const form = new FormData();
+      form.append('file', r.value as File);
+      Swal.fire({ title: 'Registrando saldos…', allowEscapeKey: false, didOpen: () => Swal.showLoading() });
+      this.http.post<any>(`${this.openingUrl}/upload`, form).subscribe({
+        next: (res) => {
+          const errors: any[] = res?.errors || [];
+          const esc = (s: any) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+          const list = errors.slice(0, 30).map((e) => `<li><strong>Fila ${e.row ?? '?'}</strong> ${esc(e.code || '')} ${esc(e.name || '')}: ${esc(e.error)}</li>`).join('');
+          Swal.fire({
+            icon: errors.length ? (res?.applied ? 'warning' : 'error') : 'success',
+            title: `${res?.applied || 0} saldo(s) inicial(es) registrado(s)`,
+            html: `${res?.skipped ? `<p>${res.skipped} fila(s) sin cantidad se omitieron.</p>` : ''}`
+              + (errors.length ? `<p style="text-align:left;margin-bottom:4px"><strong>${errors.length} fila(s) con error:</strong></p><ul style="text-align:left;font-size:12px;max-height:220px;overflow:auto;padding-left:18px">${list}</ul>${errors.length > 30 ? '<p style="font-size:12px">…y más. Corrige y vuelve a subir: los ya registrados no se duplican.</p>' : ''}` : ''),
+          });
+          if (this.selectedMaterial) { this.loadMovements(this.selectedMaterial.id); this.checkOpening(); }
+          this.stockAlertsService.refreshAlerts();
+        },
+        error: (err) => Swal.fire('Error', err?.error?.message || 'No se pudo procesar el archivo', 'error'),
+      });
+    });
+  }
+
+  /** Movimiento de inventory_movements para el kardex (respeta si es entrada o salida). */
+  private inventoryMovementRow(m: any, entrySupplier: string): any {
+    const isIn = m.strType === 'IN';
+    const opening = m.strReason === 'OPENING_BALANCE';
+    return {
+      date: m.dtmDate || m.dtmCreationDate,
+      datetime: new Date(m.dtmCreationDate).getTime(),
+      type: isIn ? 'entry' : 'output',
+      quantity: m.fltQuantity,
+      unitValue: m.fltUnitPrice,
+      totalPrice: m.fltQuantity * m.fltUnitPrice,
+      supplier: isIn ? (opening ? 'Saldo inicial (sin documento)' : m.strReason === 'ADJUSTMENT' ? 'Ajuste de inventario' : entrySupplier) : '',
+      concept: m.strNotes || (isIn ? 'Entrada' : 'Salida'),
+      opening,
+      balanceQuantity: 0,
+      balanceUnitValue: 0,
+      balancePrice: 0,
+    };
   }
 
   loadMovements(materialId: string): void {
@@ -576,19 +757,9 @@ export class KardexComponent implements OnInit {
         
         if (movements && movements.length > 0) {
           movements.forEach(movement => {
-            allMovements.push({
-              date: movement.dtmDate || movement.dtmCreationDate,
-              datetime: new Date(movement.dtmCreationDate).getTime(),
-              type: movement.strType === 'IN' ? 'entry' : 'output',
-              quantity: movement.fltQuantity,
-              unitValue: movement.fltUnitPrice,
-              totalPrice: movement.fltQuantity * movement.fltUnitPrice,
-              supplier: movement.strType === 'IN' ? 'Producción Interna' : '',
-              concept: movement.strNotes || (movement.strType === 'IN' ? 'Entrada por producción' : 'Salida'),
-              balanceQuantity: 0,
-              balanceUnitValue: 0,
-              balancePrice: 0
-            });
+            const row = this.inventoryMovementRow(movement, 'Producción Interna');
+            if (row.type === 'entry' && !movement.strNotes && !row.opening) row.concept = 'Entrada por producción';
+            allMovements.push(row);
           });
         }
         
@@ -664,23 +835,10 @@ export class KardexComponent implements OnInit {
       });
     }
 
-    // Agregar salidas
+    // Movimientos de inventario: salidas y también entradas (saldo inicial,
+    // conteo físico, cancelaciones). Antes todos se mostraban como salidas.
     if (outputs) {
-      outputs.forEach(output => {
-        allMovements.push({
-          date: output.dtmDate || output.dtmCreationDate,
-          datetime: new Date(output.dtmCreationDate).getTime(),
-          type: 'output',
-          quantity: output.fltQuantity,
-          unitValue: output.fltUnitPrice,
-          totalPrice: output.fltQuantity * output.fltUnitPrice,
-          supplier: '',
-          concept: output.strNotes || 'Salida',
-          balanceQuantity: 0,
-          balanceUnitValue: 0,
-          balancePrice: 0
-        });
-      });
+      outputs.forEach(output => allMovements.push(this.inventoryMovementRow(output, 'Entrada')));
     }
 
     // Ordenar por fecha y hora ascendente para calcular saldos
@@ -905,9 +1063,11 @@ export class KardexComponent implements OnInit {
         const newStock = previousStock - quantity;
 
         // Register inventory movement
+        const idField = this.selectedMaterial.entityType === 'product' ? 'strProductId'
+          : this.selectedMaterial.entityType === 'composite' ? 'strTransformedMaterialId' : 'strMaterialId';
         const movementData = {
           strTenantId: '',
-          strMaterialId: this.selectedMaterial.id,
+          [idField]: this.selectedMaterial.id,
           strType: 'OUT',
           strReason: reason,
           fltQuantity: quantity,
@@ -964,6 +1124,7 @@ export class KardexComponent implements OnInit {
   private getReasonLabel(reason: string): string {
     const labels: Record<string, string> = {
       'ADJUSTMENT': 'Ajuste de inventario',
+      'OPENING_BALANCE': 'Saldo inicial',
       'DAMAGE': 'Merma / Daño',
       'RETURN': 'Devolución a proveedor',
       'INTERNAL_USE': 'Consumo interno',

@@ -49,6 +49,9 @@ export interface ComboView {
   ingReservedStock: number;
   /** KIT: cuántos se pueden armar con el stock de componentes. */
   assemblable: number | null;
+  /** KIT: todos sus componentes son bajo pedido (se puede pedir sin armados). */
+  madeToOrder?: boolean;
+  productionLeadHours?: number;
   components: ComboComponentView[];
 }
 

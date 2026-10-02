@@ -23,7 +23,7 @@ interface MaterialsPanel {
 }
 
 const REASONS: Record<string, string> = {
-  PURCHASE: 'Compra', PRODUCTION: 'Producción', ADJUSTMENT: 'Ajuste', TRANSFORMED_MATERIAL: 'Material compuesto', SALE: 'Venta',
+  PURCHASE: 'Compra', PRODUCTION: 'Producción', ADJUSTMENT: 'Ajuste', OPENING_BALANCE: 'Saldo inicial', TRANSFORMED_MATERIAL: 'Material compuesto', SALE: 'Venta',
   TRANSFER: 'Traslado', COUNT: 'Conteo físico', RETURN: 'Devolución',
 };
 

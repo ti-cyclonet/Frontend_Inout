@@ -1,8 +1,12 @@
 ﻿<div class="container-fluid p-0">
   <div class="card shadow-sm kardex-card" style="border: 1px solid white;">
-    <div class="card-header bg-white d-flex justify-content-end align-items-center py-2"
+    <div class="card-header bg-white d-flex justify-content-end align-items-center py-2 gap-2"
       style="border-bottom: 1px solid orange"
     >
+      <button *ngIf="permissions.isAdmin" type="button" class="btn btn-outline-secondary btn-sm me-auto opening-bulk-btn" (click)="openBulkOpening()" title="Existencias con las que empiezas a usar InOut, sin documentos">
+        <svg width="14" height="14" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" /></svg>
+        Saldos iniciales
+      </button>
       <h5 class="mb-0">
         Materials / MaterialsT / Products <span class="text-primary fw-bold">KARDEX</span>
         <span style="color: #ff8000">●</span>
@@ -251,6 +255,17 @@
               <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-excel" />
             </svg>
             <span class="btn-label">Exportar Excel</span>
+          </button>
+          <button
+            *ngIf="openingEligible"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="registerOpening()"
+            title="Existencia con la que empiezas a usar InOut (sin factura ni remisión)"
+          >
+            <svg width="16" height="16" fill="currentColor">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam" />
+            </svg>
+            <span class="btn-label">Saldo inicial</span>
           </button>
           <button
             class="btn btn-outline-primary btn-sm"
