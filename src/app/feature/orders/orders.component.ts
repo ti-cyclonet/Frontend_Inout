@@ -60,6 +60,8 @@ interface Order {
   total: number;
   createdAt: string;
   updatedAt: string;
+  /** Solicitud de domicilio en Shotra que entrega este pedido. */
+  shotraRequestId?: string | null;
 }
 
 interface OrderStats {
@@ -144,14 +146,35 @@ export class OrdersComponent implements OnInit, OnDestroy {
     private creditService: CreditService
   ) {}
 
+  private ordersChangedSub?: { unsubscribe(): void };
+
   ngOnInit(): void {
     this.loadOrders();
     this.loadStats();
     this.clockTimer = setInterval(() => { this.now = Date.now(); }, 30000);
+    // Un pedido quedó ligado a Shotra o avanzó por su contrato: recargar
+    this.ordersChangedSub = this.deliveryLauncher.ordersChanged$.subscribe(() => {
+      this.loadOrders();
+      this.loadStats();
+    });
   }
 
   ngOnDestroy(): void {
     if (this.clockTimer) clearInterval(this.clockTimer);
+    this.ordersChangedSub?.unsubscribe();
+  }
+
+  /**
+   * Pedido que se entrega con Shotra: En reparto y Entregado los pone el
+   * sistema según el contrato del domiciliario (no se avanza a mano).
+   */
+  isShotraManaged(order: Order | null | undefined): boolean {
+    return !!order?.shotraRequestId && (order.status === 'READY' || order.status === 'OUT_FOR_DELIVERY');
+  }
+
+  /** ¿Se puede avanzar a mano? (no si el siguiente paso lo controla Shotra) */
+  canAdvanceManually(order: Order): boolean {
+    return !!this.getNextStatus(order.status) && !this.isShotraManaged(order);
   }
 
   /** Insignias de pago / fabricación de una tarjeta del kanban. */
@@ -166,6 +189,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       badges.push({ text: plan + status, cls: order.paymentStatus === 'ANTICIPO_PENDIENTE' ? 'badge-warn' : 'badge-plan' });
     }
     if ((order.items || []).some((i: any) => Number(i.toManufacture) > 0)) badges.push({ text: '🛠 Por fabricar', cls: 'badge-make' });
+    if (this.isShotraManaged(order)) badges.push({ text: '🛵 Entrega con Shotra · avanza sola', cls: 'badge-shotra' });
     if (order.refundPending) badges.push({ text: '↩ Devolución pendiente', cls: 'badge-refund' });
     return badges;
   }
@@ -410,6 +434,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
   advanceStatus(order: Order): void {
     const next = this.getNextStatus(order.status);
     if (!next) return;
+    if (this.isShotraManaged(order)) {
+      Swal.fire('Entrega con Shotra', 'Este pedido pasa a En reparto y a Entregado automáticamente según el contrato del domiciliario en Shotra.', 'info');
+      return;
+    }
 
     // Al salir a reparto, sugerir contratar el domicilio con la extensión de
     // Shotra (configurable en Configuración).
@@ -587,6 +615,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       title: `Entregar pedido ${order.orderCode}`,
       description: lines.join('\n'),
       address: order.customerAddress || undefined,
+      orderId: order.id,
     };
   }
 

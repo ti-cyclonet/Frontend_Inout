@@ -6,7 +6,7 @@
 </button>
 
 <!-- Backdrop + Drawer lateral (estilo "otra aplicación") -->
-<div class="shotra-backdrop" *ngIf="open" (click)="closePanel()"></div>
+<div class="shotra-backdrop" *ngIf="open"></div>
 
 <aside class="shotra-drawer" [class.open]="open">
   <!-- Cinta estilo login de Shotra: franja carmesí + placa + frase -->
@@ -500,10 +500,13 @@
   </div>
 
   <!-- Bottom-sheet: seleccionar categoría (estilo Shotra) -->
-  <div class="cat-sheet-backdrop" *ngIf="showCategorySheet" (click)="closeCategorySheet()"></div>
+  <div class="cat-sheet-backdrop" *ngIf="showCategorySheet"></div>
   <div class="cat-sheet" [class.open]="showCategorySheet">
     <div class="cat-sheet-handle"></div>
-    <h6 class="cat-sheet-title">Selecciona una categoría</h6>
+    <div class="cat-sheet-head">
+      <h6 class="cat-sheet-title">Selecciona una categoría</h6>
+      <button type="button" class="cat-sheet-close" (click)="closeCategorySheet()" aria-label="Cerrar">✕</button>
+    </div>
     <div class="cat-search">
       <svg width="16" height="16" fill="#9ca3af" viewBox="0 0 16 16">
         <use xlink:href="./assets/icons/bootstrap-icons.svg#search" />
@@ -532,6 +535,7 @@
 </aside>
 
 <!-- Vista ampliada de una foto de oferta -->
-<div class="image-preview-overlay" *ngIf="previewImageUrl" (click)="closeImagePreview()">
+<div class="image-preview-overlay" *ngIf="previewImageUrl">
+  <button type="button" class="image-preview-close" (click)="closeImagePreview()" aria-label="Cerrar">✕</button>
   <img [src]="previewImageUrl" class="image-preview-full" alt="" />
 </div>

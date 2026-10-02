@@ -19,7 +19,7 @@
   <!-- Accesos rápidos -->
   <nav class="quick">
     <a routerLink="/sales" class="quick-item"><span class="q-icon g-green"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#cart-plus"/></svg></span>Ventas</a>
-    <a routerLink="/orders" class="quick-item"><span class="q-icon g-violet"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#kanban"/></svg></span>Pedidos</a>
+    <a routerLink="/orders" class="quick-item" [class.has-new]="newOrders > 0"><span class="q-icon g-violet"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#kanban"/></svg></span>Pedidos<span class="new-badge" *ngIf="newOrders > 0" [attr.aria-label]="newOrders + ' pedido(s) nuevo(s)'">{{ newOrders > 99 ? '99+' : newOrders }} {{ newOrders === 1 ? 'nuevo' : 'nuevos' }}</span></a>
     <a routerLink="/inventory" class="quick-item"><span class="q-icon g-blue"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-seam"/></svg></span>Inventario</a>
     <a routerLink="/kardex" class="quick-item"><span class="q-icon g-blue"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#journal-text"/></svg></span>Kardex</a>
     <button type="button" (click)="openMarketplace()" class="quick-item"><span class="q-icon g-rose"><svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#shop"/></svg></span>Mi MarketPlace</button>
