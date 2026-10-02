@@ -828,7 +828,8 @@
               
               <div *ngIf="productIngredients.length > 0" class="mt-3">
                 <h6>&#10003; Verificar stock de ingredientes</h6>
-                <table class="table table-sm">
+                <!-- En móvil cada ingrediente se ve como tarjeta (ver .ing-table en el CSS) -->
+                <table class="table table-sm ing-table">
                   <thead>
                     <tr>
                       <th>Ingrediente</th>
@@ -839,12 +840,12 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let ing of productIngredients">
-                      <td>{{ ing.name }}</td>
-                      <td class="text-center">{{ formatNumber(ing.quantity) }} {{ ing.unit }}</td>
-                      <td class="text-center">{{ formatNumber(ing.stock) }} {{ ing.stockUnit }}</td>
-                      <td class="text-center">{{ formatNumber(ing.quantityInStockUnit * productEntryData.quantity) }} {{ ing.stockUnit }}</td>
-                      <td class="text-center">
+                    <tr *ngFor="let ing of productIngredients" [class.ing-short]="ing.stock < (ing.quantityInStockUnit * productEntryData.quantity)">
+                      <td class="ing-name">{{ ing.name }}</td>
+                      <td class="text-center" data-label="Cantidad/Unidad">{{ formatNumber(ing.quantity) }} {{ ing.unit }}</td>
+                      <td class="text-center" data-label="Stock disponible">{{ formatNumber(ing.stock) }} {{ ing.stockUnit }}</td>
+                      <td class="text-center" data-label="Total necesario">{{ formatNumber(ing.quantityInStockUnit * productEntryData.quantity) }} {{ ing.stockUnit }}</td>
+                      <td class="text-center ing-status">
                         <span *ngIf="ing.stock >= (ing.quantityInStockUnit * productEntryData.quantity)" class="badge bg-success">&#10003; Disponible</span>
                         <span *ngIf="ing.stock < (ing.quantityInStockUnit * productEntryData.quantity)" class="badge bg-danger">&#9888; Insuficiente</span>
                       </td>
@@ -853,7 +854,7 @@
                 </table>
               </div>
 
-              <div class="mt-3 p-3" style="background-color: #e7f3ff; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+              <div class="mt-3 p-3 ing-cost-box" style="background-color: #e7f3ff; border-radius: 5px; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; justify-content: space-between; align-items: center;">
                 <div>
                   <strong>Costo unitario calculado:</strong> ${{ formatNumber(productEntryData.unitCost) }}
                 </div>
