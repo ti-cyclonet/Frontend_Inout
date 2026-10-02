@@ -329,7 +329,7 @@
 .image-preview-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.9);
   display: flex; align-items: center; justify-content: center;
-  z-index: 2000; cursor: zoom-out; padding: 1.5rem;
+  z-index: 2000; padding: 1.5rem;
 }
 .image-preview-full { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
 .offer-side { text-align: right; min-width: 118px; }
@@ -837,3 +837,10 @@
 .chat-service-sep::before, .chat-service-sep::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 .chat-service-sep span { max-width: 70%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-readonly { padding: 0.7rem 0.9rem; border-top: 1px solid #e5e7eb; font-size: 0.78rem; color: #6b7280; background: #f9fafb; }
+
+/* Las modales solo se cierran con su botón */
+.image-preview-close { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: #fff; font-size: 1.1rem; cursor: pointer; }
+.image-preview-close:hover { background: rgba(255,255,255,0.3); }
+.cat-sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.cat-sheet-head .cat-sheet-title { margin-bottom: 0.7rem; }
+.cat-sheet-close { border: none; background: #f3f4f6; color: #4b5563; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; margin-bottom: 0.7rem; flex-shrink: 0; }

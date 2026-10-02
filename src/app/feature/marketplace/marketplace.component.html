@@ -443,7 +443,7 @@
 </div>
 
 <!-- Modal de Detalles del Producto -->
-<div class="product-modal-overlay" *ngIf="selectedProduct" (click)="closeProductDetails()">
+<div class="product-modal-overlay" *ngIf="selectedProduct">
   <div class="product-modal-card" (click)="$event.stopPropagation()">
     <button class="modal-close" (click)="closeProductDetails()">&times;</button>
 
@@ -546,7 +546,7 @@
 </div>
 
 <!-- Checkout Modal -->
-<div class="product-modal-overlay" *ngIf="showCheckout" (click)="closeCheckout()">
+<div class="product-modal-overlay" *ngIf="showCheckout">
   <div class="checkout-modal" (click)="$event.stopPropagation()">
     <button class="modal-close" (click)="closeCheckout()">&times;</button>
 
@@ -847,7 +847,7 @@
 </ng-template>
 
 <!-- Visor de documentos legales -->
-<div class="legal-overlay" *ngIf="legalDoc" (click)="closeLegal()">
+<div class="legal-overlay" *ngIf="legalDoc">
   <div class="legal-modal" role="dialog" aria-modal="true" [attr.aria-label]="legalDoc.title" (click)="$event.stopPropagation()">
     <div class="legal-header">
       <div>

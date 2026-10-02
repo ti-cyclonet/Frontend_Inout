@@ -506,3 +506,7 @@
 /* Combos y promociones en el detalle */
 .comanda-includes { display: block; width: 100%; font-size: 0.72rem; color: #6b7280; }
 .promo-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: #fff1e6; color: #c2410c; font-size: 0.68rem; font-weight: 700; vertical-align: middle; }
+
+/* Entrega con Shotra (avanza sola) */
+.card-badge.badge-shotra { background: #fde8e8; color: #7a0000; }
+.shotra-managed-note { display: block; width: 100%; margin-top: 6px; font-size: 0.78rem; color: #7a0000; background: #fdf0f0; border-radius: 8px; padding: 6px 10px; }

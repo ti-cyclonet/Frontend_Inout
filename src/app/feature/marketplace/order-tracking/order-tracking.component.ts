@@ -11,6 +11,9 @@ import { DisplayLine, groupComboLines } from '../../../shared/utils/combo-lines.
 /** Cada cuánto se refresca el seguimiento mientras el pedido sigue en curso. */
 const REFRESH_MS = 60_000;
 const FINAL = ['DELIVERED', 'INVOICED', 'CANCELLED'];
+const DELIVERED = ['DELIVERED', 'INVOICED'];
+/** El agradecimiento se muestra una sola vez por pedido (en este navegador). */
+const THANKS_KEY = 'inout.thanks.';
 
 /**
  * Seguimiento público de un pedido del MarketPlace: /marketplace/:tenantId/pedido/:token.
@@ -37,6 +40,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   statusLabels = ORDER_STATUS_LABELS;
   steps = ['CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
   lastUpdated: Date | null = null;
+  /** Modal de agradecimiento al entregarse el pedido. */
+  showThanks = false;
   /** Reloj para "actualizado hace…" (cada 15 s). */
   now = Date.now();
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -69,12 +74,56 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       next: (order) => {
         this.order = order;
         this.loading = false;
+        this.maybeShowThanks();
         this.lastUpdated = new Date();
         this.now = Date.now();
         if (this.isFinal && this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null; }
       },
       error: () => { if (!silent) { this.notFound = true; this.loading = false; } },
     });
+  }
+
+  /** Pedido entregado y aún no agradecido en este navegador: se abre la modal. */
+  private maybeShowThanks(): void {
+    if (!this.order || !DELIVERED.includes(this.order.status) || this.showThanks) return;
+    let seen = false;
+    try { seen = localStorage.getItem(THANKS_KEY + this.token) === '1'; } catch { /* sin almacenamiento */ }
+    if (!seen) this.showThanks = true;
+  }
+
+  closeThanks(): void {
+    this.showThanks = false;
+    try { localStorage.setItem(THANKS_KEY + this.token, '1'); } catch { /* sin almacenamiento */ }
+  }
+
+  /** Vuelve a abrir el agradecimiento desde la tarjeta del pedido. */
+  openThanks(): void {
+    this.showThanks = true;
+  }
+
+  get isDelivered(): boolean {
+    return !!this.order && DELIVERED.includes(this.order.status);
+  }
+
+  /** Color de la tienda para la modal (o el naranja de InOut). */
+  get thanksColor(): string {
+    const c = this.order?.thanks?.brandColor;
+    return typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#e65c00';
+  }
+
+  get thanksImages(): string[] {
+    return (this.order?.thanks?.images || []).slice(0, 4);
+  }
+
+  firstName(): string {
+    return (this.order?.customerName || '').trim().split(/\s+/)[0] || '';
+  }
+
+  /** Imagen rota: se quita del collage. */
+  onThanksImageError(url: string): void {
+    if (this.order?.thanks?.images) {
+      this.order.thanks.images = this.order.thanks.images.filter((u: string) => u !== url);
+    }
   }
 
   get isFinal(): boolean {

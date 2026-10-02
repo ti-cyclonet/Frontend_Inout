@@ -88,8 +88,8 @@
 
 <!-- ═══════ Editor de combo / kit ═══════ -->
 <ng-container *ngIf="editorOpen">
-  <div class="ca-backdrop" (click)="closeEditor()"></div>
-  <div class="ca-modal" (click)="closeEditor()">
+  <div class="ca-backdrop"></div>
+  <div class="ca-modal">
     <div class="ca-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="ca-dialog-head">
         <h3>{{ editing ? 'Editar ' + (form.type === 'KIT' ? 'kit' : 'combo') : 'Nuevo combo o kit' }}</h3>
@@ -199,8 +199,8 @@
 
 <!-- ═══════ Armar / desarmar kit ═══════ -->
 <ng-container *ngIf="stockDialog as sd">
-  <div class="ca-backdrop" (click)="closeStock()"></div>
-  <div class="ca-modal" (click)="closeStock()">
+  <div class="ca-backdrop"></div>
+  <div class="ca-modal">
     <div class="ca-dialog sm" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="ca-dialog-head">
         <h3>{{ sd.mode === 'assemble' ? 'Armar' : 'Desarmar' }} {{ sd.combo.strName }}</h3>
@@ -247,8 +247,8 @@
 
 <!-- ═══════ Historial de lotes ═══════ -->
 <ng-container *ngIf="historyFor as hf">
-  <div class="ca-backdrop" (click)="closeHistory()"></div>
-  <div class="ca-modal" (click)="closeHistory()">
+  <div class="ca-backdrop"></div>
+  <div class="ca-modal">
     <div class="ca-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="ca-dialog-head">
         <h3>Lotes de {{ hf.strName }}</h3>

@@ -64,6 +64,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   @ViewChild('trendCanvas') trendCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('monthsCanvas') monthsCanvas?: ElementRef<HTMLCanvasElement>;
 
+  /** Pedidos nuevos: recibidos (CONFIRMED) que aún nadie empezó a preparar. */
+  get newOrders(): number {
+    return this.overview?.orders?.byStage?.['CONFIRMED'] || 0;
+  }
+
   overview: InoutOverview | null = null;
   loading = true;
   refreshing = false;
@@ -206,6 +211,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private buildAttention(o: InoutOverview): AttentionItem[] {
     const items: AttentionItem[] = [];
+    if (this.newOrders) items.push({ icon: 'bell-fill', tone: 'info', count: this.newOrders, label: this.newOrders === 1 ? 'Pedido nuevo' : 'Pedidos nuevos', detail: 'Recibidos y aún sin empezar a preparar', link: '/orders' });
     if (o.orders.pendingPayments) items.push({ icon: 'cash-stack', tone: 'warning', count: o.orders.pendingPayments, label: 'Pagos por verificar', detail: 'Comprobantes enviados por tus clientes', link: '/orders' });
     if (o.orders.delayed) items.push({ icon: 'alarm-fill', tone: 'danger', count: o.orders.delayed, label: 'Pedidos atrasados', detail: 'Superaron el tiempo de su etapa', link: '/orders' });
     if (o.orders.scheduledToday) items.push({ icon: 'calendar-check', tone: 'info', count: o.orders.scheduledToday, label: 'Entregas programadas hoy', detail: 'Pedidos con fecha de entrega para hoy', link: '/orders' });

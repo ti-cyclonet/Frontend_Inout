@@ -52,8 +52,8 @@
 
 <!-- ═══════ Editor de promoción ═══════ -->
 <ng-container *ngIf="editorOpen">
-  <div class="ca-backdrop" (click)="closeEditor()"></div>
-  <div class="ca-modal" (click)="closeEditor()">
+  <div class="ca-backdrop"></div>
+  <div class="ca-modal">
     <div class="ca-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="ca-dialog-head">
         <h3>{{ editing ? 'Editar promoción' : 'Nueva promoción' }}</h3>

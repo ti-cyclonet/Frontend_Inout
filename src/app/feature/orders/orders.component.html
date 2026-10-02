@@ -35,7 +35,7 @@
               <div class="card-timer" *ngIf="stageTimer(order) as timer" [ngClass]="timer.cls">{{ timer.text }}</div>
               <div class="card-queue" *ngIf="queueLabel(order) as q">{{ q }}</div>
               <div class="card-actions">
-                <button class="btn-sm-advance" *ngIf="getNextStatus(order.status)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
+                <button class="btn-sm-advance" *ngIf="canAdvanceManually(order)" (click)="$event.stopPropagation(); advanceStatus(order)" type="button">Avanzar →</button>
                 <button class="btn-sm-cancel" *ngIf="canCancel(order)" (click)="$event.stopPropagation(); cancelOrder(order)" type="button" title="Cancelar pedido">✕ Cancelar</button>
                 <button class="btn-sm-copy" (click)="$event.stopPropagation(); copyTrackingLink(order)" type="button" title="Copiar el enlace de seguimiento para el cliente">🔗 Copiar</button>
               </div>
@@ -89,7 +89,7 @@
   </div>
 
   <!-- Configuración de tiempos por etapa -->
-  <div class="timing-overlay" *ngIf="showTimingModal" (click)="showTimingModal = false">
+  <div class="timing-overlay" *ngIf="showTimingModal">
     <div class="timing-modal" (click)="$event.stopPropagation()">
       <h6 class="timing-title">⏱ Tiempos por etapa</h6>
       <p class="timing-help">
@@ -145,7 +145,7 @@
   </div>
 
   <!-- Order Detail Modal (Comanda) -->
-  <div class="modal-overlay" *ngIf="selectedOrder" (click)="closeOrderDetail()">
+  <div class="modal-overlay" *ngIf="selectedOrder">
     <div class="order-detail-modal" (click)="$event.stopPropagation()">
       <div class="detail-header" [style.border-left-color]="getStatusColor(selectedOrder.status)">
         <div class="detail-header-info">
@@ -230,9 +230,10 @@
         <button class="btn-detail-action" (click)="copyTrackingLink(selectedOrder)" type="button" title="Copiar el enlace de seguimiento para el cliente">🔗 Copiar enlace</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'DRAFT'" (click)="generateQuote(selectedOrder)" type="button" title="Generar cotización">💰 Cotización</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' || selectedOrder.status === 'OUT_FOR_DELIVERY' || selectedOrder.status === 'DELIVERED'" (click)="generateDeliveryNote(selectedOrder)" type="button" title="Nota de entrega">📋 Remisión</button>
-        <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY'" (click)="deliverWithoutShipping(selectedOrder)" type="button" title="El cliente recoge el pedido">✔ Entregar sin reparto</button>
+        <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' && !isShotraManaged(selectedOrder)" (click)="deliverWithoutShipping(selectedOrder)" type="button" title="El cliente recoge el pedido">✔ Entregar sin reparto</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status !== 'DRAFT' && selectedOrder.status !== 'CANCELLED'" (click)="generateInvoicePdf(selectedOrder)" type="button">📄 Factura</button>
-        <button class="btn-detail-action advance" *ngIf="getNextStatus(selectedOrder.status)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(getNextStatus(selectedOrder.status)!) }}</button>
+        <button class="btn-detail-action advance" *ngIf="canAdvanceManually(selectedOrder)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(getNextStatus(selectedOrder.status)!) }}</button>
+        <span class="shotra-managed-note" *ngIf="isShotraManaged(selectedOrder)">🛵 Se entrega con Shotra: pasa a En reparto y a Entregado automáticamente según el contrato del domiciliario.</span>
         <button class="btn-detail-action cancel" *ngIf="canCancel(selectedOrder)" (click)="cancelOrder(selectedOrder)" type="button">✕ Cancelar</button>
       </div>
     </div>

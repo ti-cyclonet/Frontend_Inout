@@ -6,6 +6,8 @@ export interface DeliveryPrefill {
   title: string;
   description: string;
   address?: string;
+  /** Pedido de InOut que se entrega con este domicilio (avanza solo con el contrato de Shotra). */
+  orderId?: string;
 }
 
 /**
@@ -20,5 +22,13 @@ export class DeliveryLauncherService {
 
   openNewRequest(prefill: DeliveryPrefill): void {
     this.openRequestSubject.next(prefill);
+  }
+
+  /** Avisa a Pedidos que un pedido cambió por Shotra (quedó ligado o avanzó). */
+  private ordersChangedSubject = new Subject<void>();
+  readonly ordersChanged$ = this.ordersChangedSubject.asObservable();
+
+  notifyOrdersChanged(): void {
+    this.ordersChangedSubject.next();
   }
 }

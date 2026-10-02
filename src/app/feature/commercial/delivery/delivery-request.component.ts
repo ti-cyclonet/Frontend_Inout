@@ -26,6 +26,8 @@ import {
 import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
 import { DeliveryLauncherService, DeliveryPrefill } from '../../../shared/services/delivery-launcher.service';
 import { Subscription } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 /**
  * Pestaña "Domicilios" del módulo Comercial de InOut.
@@ -164,6 +166,7 @@ export class DeliveryRequestComponent implements OnDestroy {
     private shotra: ShotraService,
     private uiPrefs: UiPrefsService,
     private deliveryLauncher: DeliveryLauncherService,
+    private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     this.fabEnabled = this.uiPrefs.getShowDeliveryFab();
@@ -545,6 +548,7 @@ export class DeliveryRequestComponent implements OnDestroy {
   // ─── Formulario ────────────────────────────────────────────────────────────
 
   openForm(): void {
+    this.pendingOrderId = null; // un formulario nuevo no queda ligado a un pedido anterior
     this.form = this.emptyForm();
     if (this.subcategories.length === 1) {
       this.form.categoryId = this.subcategories[0].id;
@@ -559,11 +563,15 @@ export class DeliveryRequestComponent implements OnDestroy {
   }
 
   /** Abre el panel con una nueva solicitud ya diligenciada (desde Pedidos). */
+  /** Pedido de InOut que se entrega con la solicitud que se está creando. */
+  private pendingOrderId: string | null = null;
+
   openPrefilledRequest(prefill: DeliveryPrefill): void {
     this.openPanel();
     this.selectedRequest = null;
     this.showNotifications = false;
     this.openForm();
+    this.pendingOrderId = prefill.orderId || null;
     this.form.title = prefill.title.slice(0, 120);
     this.form.description = prefill.description;
     if (prefill.address?.trim()) {
@@ -889,10 +897,14 @@ export class DeliveryRequestComponent implements OnDestroy {
     }
     if (this.form.scheduledAt) payload.scheduledAt = new Date(this.form.scheduledAt).toISOString();
 
+    const orderId = this.pendingOrderId;
+    this.pendingOrderId = null;
     this.shotra.createRequest(payload).subscribe({
-      next: () => {
+      next: (created) => {
         this.submitting = false;
         this.showForm = false;
+        // Pedido ligado: avanza solo (En reparto / Entregado) con el contrato
+        if (orderId && created?.id) this.linkOrder(orderId, created.id);
         Swal.fire({
           icon: 'success',
           title: 'Solicitud publicada',
@@ -906,6 +918,22 @@ export class DeliveryRequestComponent implements OnDestroy {
         this.submitting = false;
         Swal.fire('Error', this.readError(err, 'No se pudo publicar la solicitud.'), 'error');
       },
+    });
+  }
+
+  /** Liga el pedido de InOut a la solicitud de Shotra recién publicada. */
+  private linkOrder(orderId: string, shotraRequestId: string): void {
+    this.http.patch(`${environment.apiUrl}/orders/${orderId}/shotra-delivery`, { shotraRequestId }).subscribe({
+      next: () => this.deliveryLauncher.notifyOrdersChanged(),
+      error: () => Swal.fire('Domicilio publicado', 'La solicitud quedó publicada, pero no se pudo ligar al pedido: avánzalo a mano cuando se entregue.', 'warning'),
+    });
+  }
+
+  /** Pide a InOut revisar ya los pedidos que entrega esta solicitud. */
+  private syncLinkedOrders(shotraRequestId: string): void {
+    this.http.post<{ updated: number }>(`${environment.apiUrl}/orders/shotra-sync`, { shotraRequestId }).subscribe({
+      next: (r) => { if (r?.updated) this.deliveryLauncher.notifyOrdersChanged(); },
+      error: () => { /* el sistema lo revisa solo cada 2 minutos */ },
     });
   }
 
@@ -1165,6 +1193,8 @@ export class DeliveryRequestComponent implements OnDestroy {
         // Refrescar detalle + contrato + lista.
         if (this.selectedRequest) this.openDetail(this.selectedRequest);
         this.loadRequests();
+        // Si este domicilio entrega un pedido de InOut, pasa ya a Entregado
+        if (this.selectedRequest) this.syncLinkedOrders(this.selectedRequest.id);
       },
       error: (err) => {
         this.confirming = false;
