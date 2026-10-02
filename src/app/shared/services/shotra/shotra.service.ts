@@ -298,6 +298,19 @@ export class ShotraService {
     );
   }
 
+  /**
+   * Chat completo con el domiciliario de esta solicitud: incluye los servicios
+   * anteriores con la misma persona. Si el trabajo terminó es de solo lectura
+   * (canSend = false) y se habilita de nuevo si vuelven a tener un servicio.
+   */
+  getThread(requestId: string): Observable<ShotraThread> {
+    return this.request((token) =>
+      this.http.get<ShotraThread>(`${this.shotraApi}/messaging/${requestId}/thread`, {
+        headers: this.authHeaders(token),
+      }),
+    );
+  }
+
   /** Envía un mensaje en el contexto de una solicitud. */
   sendMessage(requestId: string, content: string): Observable<ShotraMessage> {
     return this.request((token) =>
@@ -454,7 +467,21 @@ export interface CreateRatingPayload {
   contractId: string;
   score: number;
   comment?: string;
+  /** Criterios del domiciliario (ofertante), 1-5 — ver ratings de Shotra. */
   quality?: number;
   punctuality?: number;
   communication?: number;
+  priceFairness?: number;
+  /** ¿Lo volverías a contratar? */
+  wouldRepeat?: boolean;
+}
+
+/** Chat con una persona: todos los servicios entre los dos (Shotra: GET /messaging/:requestId/thread). */
+export interface ShotraThread {
+  otherParty: { id: string; displayName: string; avatarUrl?: string } | null;
+  /** Hay un servicio en curso con esa persona: se puede escribir. */
+  canSend: boolean;
+  activeRequestId: string | null;
+  requests: { id: string; title: string; status: string | null }[];
+  messages: ShotraMessage[];
 }
