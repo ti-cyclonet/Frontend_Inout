@@ -232,6 +232,7 @@ export class SettingComponent implements OnInit {
           valorOriginal: param.value,
           descripcion: param.customerParameter.description,
           estado: (param.status || 'ACTIVE').toUpperCase(),
+          dataType: param.customerParameter?.dataType || 'string',
           editando: false
         }));
         this.parametrosPage = 0;
@@ -544,6 +545,21 @@ export class SettingComponent implements OnInit {
   getParentPeriodName(parentPeriodId: string): string {
     const parentPeriod = this.periodos.find(p => p.id === parentPeriodId);
     return parentPeriod ? parentPeriod.nombre : 'Desconocido';
+  }
+
+  /** Parámetro Sí/No (dataType 'boolean'): se guarda como "SI" / "NO". */
+  isBool(param: any): boolean {
+    return param?.dataType === 'boolean';
+  }
+
+  boolLabel(value: any): string {
+    const v = String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    return ['si', 's', 'true', '1', 'yes', 'y'].includes(v) ? 'Sí' : 'No';
+  }
+
+  /** Etiqueta corta del tipo de dato. */
+  typeLabel(dataType: string): string {
+    return dataType === 'number' ? 'NUM' : dataType === 'boolean' ? 'SÍ/NO' : 'TXT';
   }
 
   editarParametro(param: any): void {

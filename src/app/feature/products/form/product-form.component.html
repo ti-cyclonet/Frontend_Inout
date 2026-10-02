@@ -471,8 +471,8 @@
                   <span>Mano de obra directa</span>
                   <strong>{{ formatCurrency(directLaborCost) }}</strong>
                 </div>
-                <div class="pricing-row" [title]="overheadBreakdown ? ('Arriendo: ' + formatCurrency(overheadBreakdown.arriendo) + ' · Agua: ' + formatCurrency(overheadBreakdown.agua) + ' · Energía: ' + formatCurrency(overheadBreakdown.energia) + ' · Gas: ' + formatCurrency(overheadBreakdown.gas) + ' · Internet: ' + formatCurrency(overheadBreakdown.internet) + ' · Nómina: ' + formatCurrency(overheadBreakdown.nomina)) : ''">
-                  <span>Costo indirecto por unidad <small class="text-muted">({{ formatCurrency(overheadTotal) }}/mes ÷ {{ plannedMonthlyUnits }} und.)</small></span>
+                <div class="pricing-row" [title]="overheadBreakdown ? ('Arriendo: ' + formatCurrency(overheadBreakdown.arriendo) + ' · Agua: ' + formatCurrency(overheadBreakdown.agua) + ' · Energía: ' + formatCurrency(overheadBreakdown.energia) + ' · Gas: ' + formatCurrency(overheadBreakdown.gas) + ' · Internet: ' + formatCurrency(overheadBreakdown.internet) + ' · Nómina: ' + formatCurrency(overheadBreakdown.nomina) + (overheadIncludesInoutPlan ? ' · Plan InOut: ' + formatCurrency(overheadBreakdown.planInout || 0) : '')) : ''">
+                  <span>Costo indirecto por unidad <small class="text-muted">({{ formatCurrency(overheadTotal) }}/mes ÷ {{ plannedMonthlyUnits }} und.<ng-container *ngIf="overheadIncludesInoutPlan"> · incluye el plan de InOut</ng-container>)</small></span>
                   <strong>{{ formatCurrency(indirectCostPerUnit) }}</strong>
                 </div>
                 <div class="pricing-row subtotal">

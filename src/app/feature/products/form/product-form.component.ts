@@ -97,7 +97,9 @@ export class ProductFormComponent implements OnInit {
    * overhead prorrateado. Default 0 para no forzar su uso. */
   directLaborCost: number = 0;
   overheadTotal: number = 0;
-  overheadBreakdown: { arriendo: number; agua: number; energia: number; gas: number; internet: number; nomina: number } | null = null;
+  overheadBreakdown: { arriendo: number; agua: number; energia: number; gas: number; internet: number; nomina: number; planInout?: number } | null = null;
+  /** El negocio decidió incluir su plan de InOut en el costeo (Configuración). */
+  overheadIncludesInoutPlan = false;
   marginPercent: number = 0;
   loadingPricing = false;
   pricingError = false;
@@ -522,6 +524,7 @@ export class ProductFormComponent implements OnInit {
     ]).then(([overhead, params]) => {
       this.overheadTotal = overhead?.total || 0;
       this.overheadBreakdown = overhead?.breakdown || null;
+      this.overheadIncludesInoutPlan = !!overhead?.includesInoutPlan;
       this.marginPercent = params?.PORCENTAJE_GANANCIA || 0;
       this.loadingPricing = false;
     }).catch(() => {
