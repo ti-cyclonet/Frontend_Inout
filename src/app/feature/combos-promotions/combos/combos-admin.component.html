@@ -60,6 +60,7 @@
         <span [class.ca-bad]="c.belowCost">Margen: <b>{{ c.marginPercent | number: '1.0-1' }}%</b><ng-container *ngIf="c.belowCost"> (bajo costo)</ng-container></span>
         <span>{{ availabilityText(c) }}</span>
         <span *ngIf="c.strType === 'KIT'">Puedes armar: <b>{{ c.assemblable ?? 0 }}</b></span>
+        <span *ngIf="c.strType === 'KIT' && c.madeToOrder" class="ca-mto" title="Todos sus componentes son bajo pedido: en el MarketPlace se puede pedir y programar aunque no haya kits armados">🛠 Se vende bajo pedido</span>
       </div>
 
       <ul class="ca-list">

@@ -564,7 +564,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         // Combo con componentes bajo pedido (available = null): no tiene tope
         ingQuantity: c.available === null || c.available === undefined ? undefined : Number(c.available),
         ingReservedStock: 0,
-        blnMadeToOrder: c.itemType !== 'kit' && (c.available === null || c.available === undefined),
+        // Combo virtual sin tope, o kit cuyos componentes son todos bajo pedido
+        blnMadeToOrder: c.itemType === 'kit' ? !!c.madeToOrder : (c.available === null || c.available === undefined),
+        intProductionLeadHours: c.itemType === 'kit' ? Number(c.productionLeadHours) || 0 : undefined,
         comboIncludes: (c.components || []).map((x: any) => `${x.quantity} x ${x.name}`),
         ...(Number(c.listPrice) > Number(c.fltPrice) ? { listPrice: Number(c.listPrice), promoLabel: `Ahorras ${this.formatCurrency(Number(c.listPrice) - Number(c.fltPrice))}` } : {}),
         image: c.strImageUrl || undefined,
@@ -1485,7 +1487,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   isMadeToOrder(product: Product): boolean {
     const type = product.itemType || 'product';
-    return (type === 'product' || type === 'combo') && !!product.blnMadeToOrder;
+    return (type === 'product' || type === 'combo' || type === 'kit') && !!product.blnMadeToOrder;
   }
 
   /** Unidades del carrito que habría que fabricar (superan el stock disponible). */
