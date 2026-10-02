@@ -1,8 +1,13 @@
+/* La tarjeta ocupa todo el alto disponible (antes quedaba una franja gris
+   vacía debajo) y no recorta la lista de materiales: overflow-x: hidden
+   convertía la tarjeta en un contenedor con scroll propio. */
+:host { display: flex; flex-direction: column; min-height: 100%; }
+:host > .container-fluid { flex: 1; display: flex; flex-direction: column; }
 .bulk-card {
+  flex: 1;
   margin: 1rem;
-  margin-bottom: 3rem;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .card-header h5 {
@@ -87,7 +92,7 @@
   overflow-y: auto;
 }
 
-.material-dropdown { max-height: 250px; }
+.material-dropdown { max-height: 340px; }
 
 .select-option {
   padding: 0.5rem 0.75rem;
