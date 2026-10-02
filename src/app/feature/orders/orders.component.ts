@@ -97,6 +97,9 @@ interface TimingSettings {
 /** Etapas del kanban que admiten duración (mismas que el backend). */
 const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 
+/** Cada cuánto se refresca el tablero mientras la pestaña está visible. */
+const REFRESH_MS = 20_000;
+
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -128,6 +131,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
   /** Reloj para los contadores de las tarjetas (se actualiza cada 30 s). */
   now = Date.now();
   private clockTimer: ReturnType<typeof setInterval> | null = null;
+  /** Refresco automático del tablero (pedidos que llegan del MarketPlace u otro equipo). */
+  private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private refreshing = false;
+  private onVisible = () => { if (document.visibilityState === 'visible') this.refreshBoard(); };
   showTimingModal = false;
   timingSaving = false;
   timingStages = TIMED_STAGES;
@@ -152,6 +159,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.loadOrders();
     this.loadStats();
     this.clockTimer = setInterval(() => { this.now = Date.now(); }, 30000);
+    // Los pedidos nuevos (p. ej. desde el celular) aparecen solos, sin recargar
+    this.refreshTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') this.refreshBoard();
+    }, REFRESH_MS);
+    document.addEventListener('visibilitychange', this.onVisible);
     // Un pedido quedó ligado a Shotra o avanzó por su contrato: recargar
     this.ordersChangedSub = this.deliveryLauncher.ordersChanged$.subscribe(() => {
       this.loadOrders();
@@ -161,7 +173,42 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.clockTimer) clearInterval(this.clockTimer);
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    document.removeEventListener('visibilitychange', this.onVisible);
     this.ordersChangedSub?.unsubscribe();
+  }
+
+  /**
+   * Refresco silencioso: trae los pedidos sin pantalla de carga y avisa con
+   * un toast si llegaron pedidos nuevos desde la última carga.
+   */
+  refreshBoard(): void {
+    if (this.refreshing || this.loading) return;
+    this.refreshing = true;
+    const known = new Set(this.orders.map(o => o.id));
+    this.http.get<{ data: Order[] }>(this.baseUrl).subscribe({
+      next: (res) => {
+        this.refreshing = false;
+        const fresh = res.data || [];
+        const added = known.size ? fresh.filter(o => !known.has(o.id) && o.status !== 'DRAFT') : [];
+        this.orders = fresh;
+        // El detalle abierto se queda con su versión más reciente
+        if (this.selectedOrder) {
+          const updated = fresh.find(o => o.id === this.selectedOrder!.id);
+          if (updated && updated.status !== this.selectedOrder.status) this.selectedOrder = updated;
+        }
+        this.now = Date.now();
+        this.loadQueue();
+        this.loadStats();
+        if (added.length) {
+          Swal.fire({
+            toast: true, position: 'top-end', icon: 'info', timer: 5000, showConfirmButton: false,
+            title: added.length === 1 ? `Nuevo pedido ${added[0].orderCode}` : `${added.length} pedidos nuevos`,
+          });
+        }
+      },
+      error: () => { this.refreshing = false; },
+    });
   }
 
   /**

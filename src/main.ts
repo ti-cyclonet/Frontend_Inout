@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 const swalFire = Swal.fire.bind(Swal);
 (Swal as any).fire = (...args: any[]) => {
   if (args.length === 1 && args[0] && typeof args[0] === 'object') {
+    if (args[0].toast) return swalFire(args[0]);
     return swalFire({ allowOutsideClick: false, ...args[0] });
   }
   if (typeof args[0] === 'string') {
