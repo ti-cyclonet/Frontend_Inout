@@ -1,31 +1,21 @@
-# PWA Icons - InOut
+# Íconos de la app (PWA) - InOut
 
-Los iconos PWA deben generarse a partir del logo fuente ubicado en:
-`src/assets/img/logo_inout_v7.png`
+El ícono de la app instalada se genera desde **`icon-master.png`** (1024 × 1024):
+fondo blanco con el logo "InOut" y la flecha infinita naranja, de borde a borde.
 
-## Cómo generar los iconos
+- El fondo llega hasta el borde y el símbolo queda dentro de la **zona segura**
+  (círculo central del 80 %). Android recorta los íconos `maskable` con la forma
+  del teléfono (círculo, squircle…); un logo a todo el ancho queda cortado.
+- `icon-180x180.png` es el de iPhone (`apple-touch-icon` en `index.html`).
 
-1. Asegúrate de tener `sharp` instalado:
-   ```bash
-   npm install sharp --save-dev
-   ```
+## Regenerar los tamaños
 
-2. Ejecuta el script de generación desde la raíz del proyecto:
-   ```bash
-   node generate-pwa-icons.js
-   ```
+```bash
+npm install sharp --save-dev   # si no está instalado
+node generate-pwa-icons.js
+```
 
-3. Esto generará los siguientes tamaños de iconos en esta carpeta:
-   - icon-72x72.png
-   - icon-96x96.png
-   - icon-128x128.png
-   - icon-144x144.png
-   - icon-152x152.png
-   - icon-192x192.png
-   - icon-384x384.png
-   - icon-512x512.png
+Genera icon-72, 96, 128, 144, 152, 180, 192, 384 y 512 en esta carpeta.
 
-## Notas
-- Los iconos deben ser cuadrados con fondo transparente
-- Se recomienda regenerar los iconos cada vez que se actualice el logo
-- El script usa `sharp` para redimensionar manteniendo la proporción
+Los teléfonos que ya instalaron la app actualizan el ícono solos cuando Chrome
+revisa el manifest (puede tardar unos días); reinstalarla lo muestra de inmediato.
