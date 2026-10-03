@@ -152,12 +152,12 @@
   .row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 900px) {
-  .row-2, .row-3 { grid-template-columns: 1fr; }
-  .feed { grid-template-columns: 1fr; }
+  .row-2, .row-3 { grid-template-columns: minmax(0, 1fr); }
+  .feed { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 576px) {
   .dash { padding: 1rem 0.85rem 1.5rem; }
-  .kpi-grid, .mini-grid { grid-template-columns: 1fr; }
+  .kpi-grid, .mini-grid { grid-template-columns: minmax(0, 1fr); }
   .dash-live { width: 100%; justify-content: space-between; }
   .quick { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -0.85rem 1.1rem; padding: 0 0.85rem 0.2rem; }
   .quick::-webkit-scrollbar { display: none; }
