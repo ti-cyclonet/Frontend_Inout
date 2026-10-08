@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { SalesService, Sale } from '../../../shared/services/sales.service';
+import { compararPorFechaVenta, fechaVenta } from '../../../shared/utils/fecha-venta';
 import { ProductsService, Product } from '../../../shared/services/products.service';
 import { KardexService } from '../../../shared/services/kardex.service';
 import { groupComboLines } from '../../../shared/utils/combo-lines.util';
@@ -89,7 +90,7 @@ import { environment } from '../../../../environments/environment';
                   Completado
                 </span>
               </td>
-              <td>{{ sale.dtmCreationDate | date:'short' }}</td>
+              <td>{{ fechaVenta(sale) | date:'short' }}</td>
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-sm btn-outline-primary" (click)="viewSale(sale.strId || '')">
@@ -155,7 +156,7 @@ import { environment } from '../../../../environments/environment';
                       <td class="stacked-cell" colspan="1">
                         <div class="label-text text-center">Fecha</div>
                         <div class="value-text text-center">
-                          {{ selectedSale.dtmCreationDate | date: 'dd/MM/yyyy' }}
+                          {{ fechaVenta(selectedSale) | date: 'dd/MM/yyyy' }}
                         </div>
                       </td>
                     </tr>
@@ -668,6 +669,8 @@ import { environment } from '../../../../environments/environment';
   `]
 })
 export class SalesListComponent implements OnInit {
+  /** Fecha de venta para la plantilla (ver shared/utils/fecha-venta). */
+  readonly fechaVenta = fechaVenta;
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
   
@@ -699,7 +702,8 @@ export class SalesListComponent implements OnInit {
     
     this.salesService.getSales().subscribe({
       next: (response: any) => {
-        this.sales = response.data || response;
+        // Por fecha de venta, la más reciente primero (el API ordena por fecha de registro).
+        this.sales = [...(response.data || response)].sort(compararPorFechaVenta);
         this.filteredSales = this.sales;
         this.loading = false;
       },
@@ -871,7 +875,7 @@ export class SalesListComponent implements OnInit {
           <table class="details-table">
             <tr>
               <td><strong>Cliente:</strong><br>${this.selectedSale.customerName || 'N/A'}</td>
-              <td><strong>Fecha:</strong><br>${new Date(this.selectedSale.dtmCreationDate || '').toLocaleDateString('es-ES')}</td>
+              <td><strong>Fecha:</strong><br>${fechaVenta(this.selectedSale)?.toLocaleDateString('es-ES') || ''}</td>
             </tr>
           </table>
           
