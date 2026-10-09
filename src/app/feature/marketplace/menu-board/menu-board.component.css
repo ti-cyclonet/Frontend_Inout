@@ -247,7 +247,34 @@
 
 /* ─── Pie (WhatsApp) ─── */
 /* static: el estilo global `footer { position: fixed }` lo sacaba de la carta */
-.mb-foot { position: static; width: auto; margin-top: 1.8rem; text-align: center; }
+.mb-foot { position: static; width: auto; margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1rem 1.75rem; text-align: center; }
+.mb-foot-side { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; min-width: 0; max-width: 220px; }
+.mb-foot-kicker { font-family: var(--mb-head-font); font-size: 1.15rem; line-height: 1; color: var(--mb-ink); text-transform: uppercase; letter-spacing: 0.02em; }
+.mb-foot-tag { padding: 0.1rem 0.7rem; border-radius: 999px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; background: var(--mb-accent-2); color: var(--mb-accent-ink); }
+.mb-foot-side strong { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.02em; color: var(--mb-ink); overflow-wrap: anywhere; }
+:host([data-variant="menu-chalk"]) .mb-foot-kicker { text-transform: none; font-size: 1.5rem; }
+:host([data-variant="menu-clean"]) .mb-foot-kicker { font-size: 0.95rem; letter-spacing: 0.18em; }
+:host([data-variant="menu-clean"]) .mb-foot-tag { background: transparent; color: var(--mb-accent); box-shadow: inset 0 0 0 1px var(--mb-accent); }
+
+/* ─── Información de la carta (burbujas: proteínas, salsas…) ─── */
+.mb-sections--info { padding-top: 2.4rem; }
+.mb-section--info { padding-bottom: 1rem; }
+.mb-bubbles { list-style: none; margin: 0.7rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.mb-bubble { display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.9rem; border-radius: 999px; background: var(--mb-soft); color: var(--mb-ink); box-shadow: inset 0 0 0 1.5px var(--mb-line); }
+.mb-bubble-text { display: flex; flex-direction: column; line-height: 1.15; }
+.mb-bubble strong { font-weight: 700; font-size: 0.9rem; }
+.mb-bubble em { font-size: 0.75rem; color: var(--mb-muted); }
+:host([data-variant="menu"]) .mb-bubble strong { font-family: var(--mb-head-font); font-weight: 400; font-size: 1.05rem; color: var(--mb-accent-2); text-transform: uppercase; }
+:host([data-variant="menu"]) .mb-bubble em { font-family: 'Pacifico', cursive; font-style: normal; }
+:host([data-variant="menu-chalk"]) .mb-bubble { background: transparent; border-radius: 12px; }
+:host([data-variant="menu-chalk"]) .mb-bubble strong { font-family: var(--mb-head-font); font-size: 1.35rem; font-weight: 700; }
+:host([data-variant="menu-clean"]) .mb-bubble { background: transparent; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--mb-line); }
+:host([data-variant="menu-clean"]) .mb-bubble strong { font-family: var(--mb-head-font); font-weight: 500; letter-spacing: 0.04em; }
+/* Con fotos (p. ej. salsas): renglones con la foto en círculo, como en un menú impreso */
+.mb-bubbles--photos { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+.mb-bubbles--photos .mb-bubble { border-radius: 999px 18px 18px 999px; padding: 0.35rem 1rem 0.35rem 0.35rem; }
+.mb-bubble img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.45); background: #fff; }
+.mb-bubbles--photos .mb-bubble:not(.has-img) { padding-left: 1rem; }
 .mb-wa { display: inline-flex; flex-direction: column; align-items: center; padding: 0.6rem 1.7rem; border-radius: 16px; background: var(--mb-accent-2); color: var(--mb-accent-ink); text-decoration: none; }
 .mb-wa-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .mb-wa strong { font-family: var(--mb-head-font); font-weight: 400; font-size: 1.6rem; line-height: 1.1; }
