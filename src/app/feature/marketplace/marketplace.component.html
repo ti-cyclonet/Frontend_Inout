@@ -101,8 +101,11 @@
               <li *ngIf="schedulingOptions">
                 <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#calendar2-check"/></svg>Pedidos programados
               </li>
+              <li *ngIf="menuExtras.deliveryOnly">
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#shop"/></svg>Solo domicilios
+              </li>
               <li>
-                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#truck"/></svg>Coordina la entrega
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#truck"/></svg>{{ zonesText ? 'Domicilios en ' + zonesText : 'Coordina la entrega' }}
               </li>
             </ul>
           </ng-container>
@@ -201,6 +204,19 @@
               <button type="button" class="offer-add" *ngIf="!isAdminMode" (click)="$event.stopPropagation(); addToCart(product)">Agregar</button>
             </div>
           </article>
+        </div>
+      </section>
+
+      <!-- Información de la carta (proteínas, salsas…): burbujas, no son productos -->
+      <section class="mk-extras" *ngIf="!loading && tenantId !== 'home' && !showMenuBoard && menuExtras.blocks.length" aria-label="Información de la carta">
+        <div class="mk-extra" *ngFor="let b of menuExtras.blocks">
+          <h3>{{ b.title }}</h3>
+          <ul [class.with-photos]="hasExtraPhotos(b)">
+            <li *ngFor="let it of b.items">
+              <img *ngIf="it.imageUrl" [src]="extraThumb(it.imageUrl, 96)" [alt]="it.name" loading="lazy">
+              <span><strong>{{ it.name }}</strong><em *ngIf="it.note">{{ it.note }}</em></span>
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -305,6 +321,8 @@
             <!-- Formas de pago y pedidos programados -->
             <div class="mb-3">
               <app-marketplace-sales-settings [tenantId]="tenantId"></app-marketplace-sales-settings>
+              <!-- Información de la carta: proteínas, salsas, zonas de domicilio… -->
+              <app-menu-extras-settings [tenantId]="tenantId"></app-menu-extras-settings>
             </div>
 
             <!-- Display Mode Selector -->
@@ -379,6 +397,7 @@
         [whatsapp]="storeWhatsapp"
         [hours]="todayHours"
         [promos]="promoTexts"
+        [extras]="menuExtras"
         [quantities]="cartQuantities"
         [cartCount]="getCartCount()"
         [cartTotal]="getCartTotal()"

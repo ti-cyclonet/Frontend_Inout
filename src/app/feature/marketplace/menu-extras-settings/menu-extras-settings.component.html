@@ -1,0 +1,64 @@
+<div class="mx-block">
+  <button type="button" class="mx-header" (click)="open = !open" [attr.aria-expanded]="open">
+    <span><i class="bi bi-card-list me-1"></i> Información de la carta</span>
+    <small>{{ summary }} {{ open ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="mx-body" *ngIf="open && extras">
+    <p class="mx-help">Datos que el cliente lee en la carta y en la tienda, pero que no se piden como productos: las proteínas a elegir, las salsas, dónde llegan los domicilios…</p>
+
+    <!-- Subtítulo y domicilios -->
+    <label class="mx-label" for="mx-subtitle">Subtítulo de la carta <small>({{ extras.subtitle.length }}/{{ limits.subtitle }})</small></label>
+    <input id="mx-subtitle" class="mx-input" type="text" [maxlength]="limits.subtitle" [(ngModel)]="extras.subtitle" placeholder="Arepas & Patacones">
+    <small class="mx-hint">Va en la cinta bajo el nombre de la carta. Vacío = «Nuestro menú».</small>
+
+    <label class="mx-label" for="mx-zone">Zonas de domicilio <small>({{ extras.deliveryZones.length }}/{{ limits.zones }})</small></label>
+    <div class="mx-chips">
+      <span class="mx-chip" *ngFor="let z of extras.deliveryZones; let i = index; trackBy: trackByIndex">
+        {{ z }} <button type="button" (click)="removeZone(i)" [attr.aria-label]="'Quitar ' + z">×</button>
+      </span>
+      <input id="mx-zone" class="mx-chip-input" type="text" [maxlength]="limits.zone" [(ngModel)]="zoneDraft"
+             (keydown)="onZoneKey($event)" (blur)="addZones()" placeholder="Escribe una zona y presiona Enter"
+             [disabled]="extras.deliveryZones.length >= limits.zones">
+    </div>
+
+    <label class="mx-check">
+      <input type="checkbox" [(ngModel)]="extras.deliveryOnly">
+      <span><strong>Solo domicilios (cocina oculta)</strong><small>Se avisa en la carta y en la tienda que no hay atención en el local.</small></span>
+    </label>
+
+    <!-- Bloques -->
+    <div class="mx-blocks-head">
+      <span class="mx-label">Bloques <small>({{ extras.blocks.length }}/{{ limits.blocks }})</small></span>
+      <div class="mx-add">
+        <button type="button" *ngFor="let t of templates" (click)="addBlock(t)" [disabled]="extras.blocks.length >= limits.blocks">+ {{ t.title }}</button>
+        <button type="button" (click)="addBlock()" [disabled]="extras.blocks.length >= limits.blocks">+ Bloque en blanco</button>
+      </div>
+    </div>
+    <p class="mx-hint" *ngIf="!extras.blocks.length">Aún no hay bloques. Empieza con una plantilla y cambia los renglones.</p>
+
+    <div class="mx-card" *ngFor="let b of extras.blocks; let bi = index; trackBy: trackByIndex">
+      <div class="mx-card-head">
+        <input class="mx-input mx-title" type="text" [maxlength]="limits.blockTitle" [(ngModel)]="b.title" placeholder="Título (p. ej. Proteínas)" [attr.aria-label]="'Título del bloque ' + (bi + 1)">
+        <button type="button" class="mx-icon" (click)="moveBlock(bi, -1)" [disabled]="bi === 0" aria-label="Subir bloque">↑</button>
+        <button type="button" class="mx-icon" (click)="moveBlock(bi, 1)" [disabled]="bi === extras.blocks.length - 1" aria-label="Bajar bloque">↓</button>
+        <button type="button" class="mx-icon mx-danger" (click)="removeBlock(bi)" aria-label="Eliminar bloque">🗑</button>
+      </div>
+
+      <div class="mx-row" *ngFor="let it of b.items; let ii = index; trackBy: trackByIndex">
+        <label class="mx-photo" [class.has-img]="it.imageUrl" [attr.title]="it.imageUrl ? 'Cambiar foto' : 'Agregar foto (opcional)'">
+          <img *ngIf="it.imageUrl" [src]="thumb(it.imageUrl, 96)" alt="">
+          <span *ngIf="!it.imageUrl">{{ uploading === bi + ':' + ii ? '…' : '📷' }}</span>
+          <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadImage(it, bi + ':' + ii, $event)" [disabled]="!!uploading">
+        </label>
+        <input class="mx-input" type="text" [maxlength]="limits.itemName" [(ngModel)]="it.name" placeholder="Nombre (p. ej. Chorizo)" [attr.aria-label]="'Nombre del renglón ' + (ii + 1)">
+        <input class="mx-input mx-note" type="text" [maxlength]="limits.itemNote" [(ngModel)]="it.note" placeholder="Nota opcional (p. ej. especial de la casa)" [attr.aria-label]="'Nota del renglón ' + (ii + 1)">
+        <button type="button" class="mx-icon" *ngIf="it.imageUrl" (click)="removeImage(it)" aria-label="Quitar foto" title="Quitar foto">🖼✕</button>
+        <button type="button" class="mx-icon mx-danger" (click)="removeItem(b, ii)" aria-label="Eliminar renglón">×</button>
+      </div>
+      <button type="button" class="mx-link" (click)="addItem(b)" [disabled]="b.items.length >= limits.items">+ Agregar renglón</button>
+    </div>
+
+    <button type="button" class="mx-save" [disabled]="saving || !!uploading" (click)="save()">{{ saving ? 'Guardando…' : 'Guardar información' }}</button>
+  </div>
+</div>

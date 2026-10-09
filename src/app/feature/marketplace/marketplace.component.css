@@ -263,6 +263,18 @@
 .sw-menu-chalk { background: #1c2a24; border: 2px solid #6b4b2e; }
 .sw-menu-clean { background: #0e0e10; border: 1px solid #c9a96e; }
 
+/* ─── Información de la carta en la vista en tarjetas (burbujas) ─── */
+.mk-extras { max-width: 1200px; margin: 0 auto 2.2rem; padding: 0 var(--mk-gutter); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1rem; }
+.mk-extra { background: #fff; border-radius: 20px; padding: 1rem 1.1rem 1.1rem; box-shadow: 0 1px 0 var(--mk-border), 0 14px 30px -22px rgba(11, 21, 48, 0.4); }
+.mk-extra h3 { margin: 0 0 0.7rem; font: 800 1.05rem/1.2 var(--mk-font-d); color: var(--mk-text); }
+.mk-extra ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.mk-extra li { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border-radius: 999px; background: var(--mk-sector-soft); color: var(--mk-sector-ink); font-size: 0.84rem; }
+.mk-extra li span { display: flex; flex-direction: column; line-height: 1.2; }
+.mk-extra li em { font-size: 0.72rem; color: var(--mk-muted); }
+.mk-extra ul.with-photos { flex-direction: column; align-items: stretch; }
+.mk-extra ul.with-photos li { padding: 0.25rem 0.9rem 0.25rem 0.25rem; }
+.mk-extra img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #fff; }
+
 /* Promociones y combos */
 .mk-was { color: #9ca3af; font-weight: 400; font-size: 0.78em; margin-right: 4px; }
 .mk-promo { display: inline-block; margin: 2px 0; padding: 1px 8px; border-radius: 999px; background: #ea580c; color: #fff; font-size: 0.72rem; font-weight: 700; }
