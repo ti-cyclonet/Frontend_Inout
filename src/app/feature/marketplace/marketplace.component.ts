@@ -511,7 +511,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       // Combos y kits de la tienda, y promociones en curso
       this.http.get<any[]>(`${this.baseUrl}/combos/tenant/${tenantId}/catalog`).toPromise().catch(() => []),
       this.http.get<any[]>(`${this.baseUrl}/promotions/tenant/${tenantId}/live`).toPromise().catch(() => []),
-    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions]) => {
+      // Nombre del negocio configurado en los parámetros del período (título del tab)
+      this.http.get<{ name: string | null }>(`${this.baseUrl}/marketplace-config/${tenantId}/store-name`).toPromise().catch(() => null),
+    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions, storeNameResponse]) => {
       this.storeContract = contractResponse || null;
       this.paymentOptions = paymentOptions || null;
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
@@ -579,7 +581,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.businessSector = businessSector;
       this.businessName = contractResponse?.user?.basicData?.legalEntityData?.businessName || 
                           contractResponse?.user?.basicData?.naturalPersonData?.strFirstName || '';
-      
+      // Tienda personalizada: el tab muestra el nombre del negocio (parámetro
+      // NEGOCIO_NOMBRE del período; si no está, la razón social de Authoriza)
+      const storeName = storeNameResponse?.name || this.businessName || configResponse?.slug;
+      if (storeName) this.titleService.setTitle(storeName);
+
       this.customizeMarketplaceBySector(businessSector);
       await this.aplicarEstadisticas(this.products);
 
