@@ -53,5 +53,43 @@
 .tp-sign { font-size: 0.78rem; font-style: italic; color: #e65c00; }
 .tp-btn { display: block; margin: 0.5rem 0.9rem 0.3rem; padding: 0.45rem; border-radius: 10px; background: #e65c00; color: #fff; font-weight: 600; font-size: 0.82rem; }
 .tp-close { font-size: 0.78rem; color: #6b7280; }
+/* Selector de estilo de la tarjeta */
+.ss-styles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.5rem; }
+.ss-style { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.65rem; text-align: left; border: 1.5px solid #e5e7eb; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.82rem; }
+.ss-style.active { border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12); }
+.ss-style small { display: block; color: #6b7280; font-size: 0.72rem; }
+.ss-sw { width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; }
+.ss-sw[data-style="clasico"] { background: linear-gradient(#e65c00 0 45%, #fff 45%); box-shadow: inset 0 0 0 1px #e5e7eb; }
+.ss-sw[data-style="postal"] { background: #fbf6ec; box-shadow: inset 0 0 0 3px #fbf6ec, inset 0 0 0 4px #c9b38f; }
+.ss-sw[data-style="nocturno"] { background: radial-gradient(circle at 70% 20%, rgba(230, 92, 0, 0.7), transparent 60%), #050b1a; }
+
+/* Vista previa: elementos comunes */
+.ss-thanks-preview { position: relative; }
+.ss-thanks-preview .tp-hero { position: relative; }
+.tp-seal { display: none; }
+
+/* Vista previa · Postal */
+.ss-thanks-preview[data-style="postal"] { background: #fbf6ec; border: 1px solid #e7dcc6; box-shadow: 0 10px 28px rgba(80, 55, 20, 0.18); }
+.ss-thanks-preview[data-style="postal"]::before { content: ''; position: absolute; inset: 7px; border: 1.5px dashed #d6c4a3; border-radius: 11px; pointer-events: none; }
+.ss-thanks-preview[data-style="postal"] .tp-hero { background: transparent; height: 86px; margin-bottom: 0.4rem; }
+.ss-thanks-preview[data-style="postal"] .tp-photo { width: 64px; height: 56px; display: grid; place-items: center; background: #fff; padding: 4px 4px 12px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15); transform: rotate(-4deg); font-size: 1.5rem; }
+.ss-thanks-preview[data-style="postal"] .tp-seal { display: grid; place-items: center; position: absolute; top: 12px; right: 18px; width: 38px; height: 38px; border-radius: 50%; border: 2px dashed #b45309; color: #b45309; font-weight: 700; transform: rotate(12deg); }
+.ss-thanks-preview[data-style="postal"] .tp-kicker { color: #a08a68; }
+.ss-thanks-preview[data-style="postal"] .tp-title { color: #3b2a1a; font-style: italic; }
+.ss-thanks-preview[data-style="postal"] .tp-text { color: #5b4636; }
+.ss-thanks-preview[data-style="postal"] .tp-sign { font-family: 'Caveat', 'Segoe Print', cursive; font-style: normal; font-size: 1.15rem; color: #b45309; }
+.ss-thanks-preview[data-style="postal"] .tp-btn { background: transparent; color: #3b2a1a; border: 1.5px solid #3b2a1a; border-radius: 4px; }
+.ss-thanks-preview[data-style="postal"] .tp-close { color: #8a7458; }
+
+/* Vista previa · Nocturno */
+.ss-thanks-preview[data-style="nocturno"] { background: radial-gradient(260px 140px at 80% 0%, rgba(230, 92, 0, 0.35), transparent 70%), #050b1a; box-shadow: 0 14px 34px rgba(5, 11, 26, 0.45); }
+.ss-thanks-preview[data-style="nocturno"] .tp-hero { background: linear-gradient(rgba(122, 168, 255, 0.08) 1px, transparent 1px) 0 0 / 18px 18px, linear-gradient(90deg, rgba(122, 168, 255, 0.08) 1px, transparent 1px) 0 0 / 18px 18px; }
+.ss-thanks-preview[data-style="nocturno"] .tp-kicker { color: #ff9a4d; }
+.ss-thanks-preview[data-style="nocturno"] .tp-title { font-family: system-ui, sans-serif; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+.ss-thanks-preview[data-style="nocturno"] .tp-text { color: rgba(220, 230, 255, 0.75); }
+.ss-thanks-preview[data-style="nocturno"] .tp-sign { color: #7aa8ff; }
+.ss-thanks-preview[data-style="nocturno"] .tp-btn { border-radius: 999px; background: linear-gradient(135deg, #ff7a1a, #e65c00); }
+.ss-thanks-preview[data-style="nocturno"] .tp-close { color: rgba(220, 230, 255, 0.6); }
+
 .ss-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 .ss-reset { margin-top: 0.75rem; border: none; background: none; color: #6b7280; font-size: 0.82rem; text-decoration: underline; cursor: pointer; }

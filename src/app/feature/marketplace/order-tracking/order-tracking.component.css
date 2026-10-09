@@ -68,7 +68,8 @@
 }
 .thanks-collage {
   position: relative; z-index: 1; display: grid; gap: 6px; width: 220px; height: 150px;
-  grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  /* minmax(0, 1fr): una foto vertical no estira la fila ni se sale del marco */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   padding: 6px; background: #fff; border-radius: 16px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
   transform: rotate(-2deg);
 }
@@ -105,6 +106,47 @@
 .confetti.c4 { right: 20%; top: 72%; animation-delay: 1.2s; }
 .confetti.c5 { left: 45%; top: 8%; width: 6px; height: 6px; border-radius: 50%; animation-delay: 0.6s; }
 .confetti.c6 { right: 38%; bottom: 14%; width: 6px; height: 6px; border-radius: 50%; background: #fde68a; animation-delay: 1s; }
+/* ── Estilo Postal: papel, foto tipo polaroid con cinta, logo como sello y firma a mano ── */
+.thanks-modal[data-style="postal"] { position: relative; background: #fbf6ec; border: 1px solid #e7dcc6; border-radius: 18px; box-shadow: 0 30px 80px rgba(60, 40, 10, 0.35); }
+.thanks-modal[data-style="postal"]::before { content: ''; position: absolute; inset: 9px; border: 1.5px dashed #d6c4a3; border-radius: 12px; pointer-events: none; }
+.thanks-modal[data-style="postal"] .thanks-hero { background: none; padding: 34px 22px 10px; }
+.thanks-modal[data-style="postal"] .confetti { display: none; }
+.thanks-modal[data-style="postal"] .thanks-collage { background: #fff; padding: 8px 8px 30px; border-radius: 3px; height: 176px; transform: rotate(-3deg); box-shadow: 0 14px 28px rgba(60, 40, 10, 0.25); }
+.thanks-modal[data-style="postal"] .thanks-collage::after { content: ''; position: absolute; top: -10px; left: 50%; width: 76px; height: 22px; transform: translateX(-50%) rotate(4deg); background: rgba(250, 235, 200, 0.85); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.thanks-modal[data-style="postal"] .thanks-collage img { border-radius: 2px; }
+.thanks-modal[data-style="postal"] .thanks-gift { padding: 14px; border-radius: 50%; background: var(--accent); }
+.thanks-modal[data-style="postal"] .thanks-logo, .thanks-modal[data-style="postal"] .thanks-check {
+  top: 22px; right: 22px; bottom: auto; left: auto; transform: rotate(12deg); width: 62px; height: 62px;
+  border: 2px dashed var(--accent); box-shadow: 0 0 0 4px #fbf6ec, 0 6px 14px rgba(60, 40, 10, 0.2);
+}
+.thanks-modal[data-style="postal"] .thanks-check { background: #fbf6ec; color: var(--accent); }
+.thanks-modal[data-style="postal"] .thanks-body { padding: 18px 30px 28px; }
+.thanks-modal[data-style="postal"] .thanks-kicker { color: #a08a68; }
+.thanks-modal[data-style="postal"] .thanks-body h2 { color: #3b2a1a; font-style: italic; }
+.thanks-modal[data-style="postal"] .thanks-text { color: #5b4636; }
+.thanks-modal[data-style="postal"] .thanks-sign { font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive; font-style: normal; font-size: 1.55rem; line-height: 1.2; }
+.thanks-modal[data-style="postal"] .thanks-primary { background: transparent; color: #3b2a1a; border: 1.5px solid #3b2a1a; border-radius: 4px; box-shadow: none; }
+.thanks-modal[data-style="postal"] .thanks-primary:hover { background: #3b2a1a; color: #fbf6ec; }
+.thanks-modal[data-style="postal"] .thanks-close { color: #8a7458; }
+.thanks-modal[data-style="postal"] .thanks-close:hover { background: rgba(160, 138, 104, 0.12); }
+
+/* ── Estilo Nocturno: el fondo oscuro de la landing de InOut con el color de la tienda ── */
+.thanks-modal[data-style="nocturno"] { background: radial-gradient(420px 260px at 85% 0%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 70%), #050b1a; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.thanks-modal[data-style="nocturno"] .thanks-hero {
+  background: linear-gradient(rgba(122, 168, 255, 0.08) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(122, 168, 255, 0.08) 1px, transparent 1px) 0 0 / 28px 28px;
+}
+.thanks-modal[data-style="nocturno"] .confetti { opacity: 0.45; }
+.thanks-modal[data-style="nocturno"] .thanks-collage { background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 20px 40px rgba(0, 0, 0, 0.5); }
+.thanks-modal[data-style="nocturno"] .thanks-logo, .thanks-modal[data-style="nocturno"] .thanks-check { border-color: #050b1a; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent), 0 10px 26px rgba(0, 0, 0, 0.5); }
+.thanks-modal[data-style="nocturno"] .thanks-kicker { color: color-mix(in srgb, var(--accent) 65%, #fff); }
+.thanks-modal[data-style="nocturno"] .thanks-body h2 { font-family: system-ui, 'Segoe UI', sans-serif; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+.thanks-modal[data-style="nocturno"] .thanks-text { color: rgba(220, 230, 255, 0.75); }
+.thanks-modal[data-style="nocturno"] .thanks-sign { color: #7aa8ff; }
+.thanks-modal[data-style="nocturno"] .thanks-primary { border-radius: 999px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent)); box-shadow: 0 14px 30px -10px var(--accent); }
+.thanks-modal[data-style="nocturno"] .thanks-close { color: rgba(220, 230, 255, 0.6); }
+.thanks-modal[data-style="nocturno"] .thanks-close:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
 @keyframes thanks-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes thanks-pop { from { opacity: 0; transform: translateY(24px) scale(0.94); } to { opacity: 1; transform: none; } }
 @keyframes thanks-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }

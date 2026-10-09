@@ -90,7 +90,7 @@
 
 <!-- Agradecimiento al entregarse el pedido (solo se cierra con su botón) -->
 <div class="thanks-overlay" *ngIf="showThanks && order" role="dialog" aria-modal="true" aria-labelledby="thanks-title">
-  <div class="thanks-modal" [style.--accent]="thanksColor">
+  <div class="thanks-modal" [style.--accent]="thanksColor" [attr.data-style]="thanksStyle">
     <div class="thanks-hero">
       <span class="confetti c1"></span><span class="confetti c2"></span><span class="confetti c3"></span>
       <span class="confetti c4"></span><span class="confetti c5"></span><span class="confetti c6"></span>
