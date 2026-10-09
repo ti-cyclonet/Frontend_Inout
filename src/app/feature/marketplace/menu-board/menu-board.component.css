@@ -246,7 +246,8 @@
 .mb-empty { text-align: center; padding: 2rem; color: var(--mb-muted); }
 
 /* ─── Pie (WhatsApp) ─── */
-.mb-foot { margin-top: 1.8rem; text-align: center; }
+/* static: el estilo global `footer { position: fixed }` lo sacaba de la carta */
+.mb-foot { position: static; width: auto; margin-top: 1.8rem; text-align: center; }
 .mb-wa { display: inline-flex; flex-direction: column; align-items: center; padding: 0.6rem 1.7rem; border-radius: 16px; background: var(--mb-accent-2); color: var(--mb-accent-ink); text-decoration: none; }
 .mb-wa-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .mb-wa strong { font-family: var(--mb-head-font); font-weight: 400; font-size: 1.6rem; line-height: 1.1; }
