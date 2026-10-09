@@ -46,7 +46,7 @@
 
       <nav class="categories-nav" *ngIf="!showMenuBoard">
         <button class="category-btn"
-                *ngFor="let category of getVisibleCategories()"
+                *ngFor="let category of getVisibleCategories(); trackBy: trackByValue"
                 [class.active]="selectedCategory === category.value"
                 (click)="selectedCategory = category.value; onCategoryChange()">
           {{ category.label }}
