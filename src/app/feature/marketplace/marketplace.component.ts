@@ -13,6 +13,8 @@ import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
+import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
+import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
 
@@ -65,7 +67,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css']
 })
@@ -160,6 +162,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Horario de pedidos de hoy y textos de las promociones en curso: se calculan
    *  al cargar la tienda (no son getters: el menú los recibe como @Input). */
   todayHours: { open: boolean; label: string } | null = null;
+  /** Información de la carta (proteínas, salsas…, zonas de domicilio, solo domicilios). */
+  menuExtras: MenuExtras = EMPTY_MENU_EXTRAS;
+  extraThumb = extraThumb;
   promoTexts: string[] = [];
   /** Barra superior: su altura se publica en --mk-header-h para las pestañas fijas del menú. */
   @ViewChild('mkHeader', { static: true }) private mkHeader?: ElementRef<HTMLElement>;
@@ -588,6 +593,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (this.previewMode && !this.isAdminMode) this.displayMode = this.previewMode;
       this.storeWhatsapp = configResponse?.whatsapp || '';
       this.storeWelcome = configResponse?.welcomeMessage || '';
+      this.menuExtras = menuExtrasFrom(configResponse?.menuExtras);
       
       // Obtener nombre del negocio y sector
       const businessSector = contractResponse?.businessSector || 'general';
@@ -1347,6 +1353,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (!names.length) return '';
     const text = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} o ${names[names.length - 1]}`;
     return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /** "Domicilios en Turbaco y Bonanza" (vacío si la tienda no configuró zonas). */
+  get zonesText(): string {
+    return joinZones(this.menuExtras.deliveryZones);
+  }
+
+  hasExtraPhotos(block: { items: { imageUrl: string | null }[] }): boolean {
+    return block.items.some((i) => !!i.imageUrl);
   }
 
   /** Enlace de WhatsApp de la tienda (número colombiano de 10 dígitos → +57). */

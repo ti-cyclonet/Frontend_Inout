@@ -6,7 +6,7 @@
         <span class="mb-title-first">{{ titleWords.first }}</span>
         <span class="mb-title-rest" *ngIf="titleWords.rest">{{ titleWords.rest }}</span>
       </h1>
-      <div class="mb-ribbon">{{ sections.length === 1 ? sections[0].name : 'Nuestro menú' }}</div>
+      <div class="mb-ribbon">{{ ribbon }}</div>
       <p class="mb-tagline">{{ tagline || 'Hecho con un sabor único · pide en línea' }}</p>
 
       <!-- Estado de hoy y contacto -->
@@ -33,10 +33,10 @@
   </div>
 
   <!-- Secciones (categorías): siguen el scroll -->
-  <nav class="mb-tabs" #tabsNav *ngIf="sections.length > 1" aria-label="Secciones del menú">
-    <button type="button" *ngFor="let s of sections; trackBy: trackBySection" [attr.data-tab]="s.name"
-            [class.active]="s.name === activeSection" [attr.aria-current]="s.name === activeSection ? 'true' : null" (click)="goTo(s)">
-      {{ s.name }} <small>{{ s.items.length }}</small>
+  <nav class="mb-tabs" #tabsNav *ngIf="tabs.length > 1" aria-label="Secciones del menú">
+    <button type="button" *ngFor="let t of tabs; trackBy: trackByName" [attr.data-tab]="t"
+            [class.active]="t === activeSection" [attr.aria-current]="t === activeSection ? 'true' : null" (click)="goTo(t)">
+      {{ t }}
     </button>
   </nav>
 
@@ -93,16 +93,43 @@
     </section>
   </div>
 
+  <!-- Información de la carta: proteínas, salsas… (no se piden, solo se muestran) -->
+  <div class="mb-sections mb-sections--info" *ngIf="extras?.blocks?.length">
+    <section class="mb-section mb-section--info" #sectionEl *ngFor="let b of extras.blocks; trackBy: trackByTitle"
+             [id]="sectionId(b.title)" [attr.data-section]="b.title">
+      <h2 class="mb-section-title"><span>{{ b.title }}</span></h2>
+      <ul class="mb-bubbles" [class.mb-bubbles--photos]="hasPhotos(b)">
+        <li class="mb-bubble" *ngFor="let it of b.items" [class.has-img]="it.imageUrl">
+          <img *ngIf="it.imageUrl" [src]="thumb(it.imageUrl, 120)" [alt]="it.name" loading="lazy">
+          <span class="mb-bubble-text">
+            <strong>{{ it.name }}</strong>
+            <em *ngIf="it.note">{{ it.note }}</em>
+          </span>
+        </li>
+      </ul>
+    </section>
+  </div>
+
   <div class="mb-empty" *ngIf="!sections.length">
     <p>No hay platos disponibles en este momento.</p>
   </div>
 
-  <!-- Pie tipo póster: pedido por WhatsApp -->
-  <footer class="mb-foot" *ngIf="whatsappLink">
-    <a [href]="whatsappLink" target="_blank" rel="noopener" class="mb-wa">
-      <span class="mb-wa-label">¿Dudas? Escríbenos</span>
+  <!-- Pie tipo póster: domicilios · pedido por WhatsApp · cocina oculta -->
+  <footer class="mb-foot" *ngIf="hasFooter">
+    <div class="mb-foot-side" *ngIf="extras?.deliveryZones?.length">
+      <span class="mb-foot-kicker">Domicilios</span>
+      <span class="mb-foot-tag">Solo en</span>
+      <strong>{{ zonesText }}</strong>
+    </div>
+    <a *ngIf="whatsappLink" [href]="whatsappLink" target="_blank" rel="noopener" class="mb-wa">
+      <span class="mb-wa-label">Haz tu pedido</span>
       <strong>{{ whatsappLabel }}</strong>
     </a>
+    <div class="mb-foot-side" *ngIf="extras?.deliveryOnly">
+      <span class="mb-foot-kicker">Cocina oculta</span>
+      <span class="mb-foot-tag">Solo para</span>
+      <strong>domicilios</strong>
+    </div>
   </footer>
 
   <!-- Barra flotante del pedido -->

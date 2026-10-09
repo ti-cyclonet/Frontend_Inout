@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { formatCop } from '../../../shared/utils/currency.util';
+import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones } from './menu-extras';
 
 /** Diseños del menú de restaurante (valor guardado en marketplace_config.displayMode). */
 export type MenuVariant = 'menu' | 'menu-chalk' | 'menu-clean';
@@ -49,6 +50,8 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
   @Input() hours: { open: boolean; label: string } | null = null;
   /** Promociones en curso, ya en texto ("Hora feliz -20% · hasta las 7:00 p. m."). */
   @Input() promos: string[] = [];
+  /** Información de la carta: bloques (proteínas, salsas…), subtítulo, zonas y solo domicilios. */
+  @Input() extras: MenuExtras = EMPTY_MENU_EXTRAS;
   /** Cantidad en el carrito por id de producto. */
   @Input() quantities: Record<string, number> = {};
   @Input() cartCount = 0;
@@ -67,6 +70,9 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
   @ViewChildren('sectionEl') private sectionEls!: QueryList<ElementRef<HTMLElement>>;
 
   sections: MenuSection[] = [];
+  /** Pestañas: las secciones de platos y después los bloques de información. */
+  tabs: string[] = [];
+  thumb = extraThumb;
   heroImage: string | null = null;
   activeSection = '';
 
@@ -108,7 +114,9 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
     for (const s of this.sections) {
       if (s.featured && !s.items.some((p) => p.image)) s.featured = false;
     }
-    if (!this.sections.some((s) => s.name === this.activeSection)) this.activeSection = this.sections[0]?.name || '';
+    const extras = this.extras || EMPTY_MENU_EXTRAS;
+    this.tabs = [...new Set([...this.sections.map((s) => s.name), ...extras.blocks.map((b) => b.title)])];
+    if (!this.tabs.includes(this.activeSection)) this.activeSection = this.tabs[0] || '';
     this.heroImage = (this.products || []).find((p) => p.image)?.image || null;
   }
 
@@ -131,6 +139,24 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
   get titleWords(): { first: string; rest: string } {
     const words = (this.businessName || 'Nuestro menú').trim().split(/\s+/);
     return { first: words[0], rest: words.slice(1).join(' ') };
+  }
+
+  /** Texto de la cinta: el subtítulo de la tienda, o la sección única, o "Nuestro menú". */
+  get ribbon(): string {
+    return this.extras?.subtitle || (this.sections.length === 1 ? this.sections[0].name : 'Nuestro menú');
+  }
+
+  get zonesText(): string {
+    return joinZones(this.extras?.deliveryZones || []);
+  }
+
+  get hasFooter(): boolean {
+    return !!this.whatsappLink || !!this.extras?.deliveryZones.length || !!this.extras?.deliveryOnly;
+  }
+
+  /** Bloque con alguna foto: se muestra en renglones con la foto en círculo. */
+  hasPhotos(block: { items: { imageUrl: string | null }[] }): boolean {
+    return block.items.some((i) => !!i.imageUrl);
   }
 
   get whatsappLink(): string | null {
@@ -156,10 +182,10 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
     return 'mb-' + name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-');
   }
 
-  goTo(section: MenuSection): void {
-    this.setActive(section.name);
+  goTo(name: string): void {
+    this.setActive(name);
     this.spyLockedUntil = Date.now() + 900;
-    const el = this.host.nativeElement.querySelector('#' + this.sectionId(section.name));
+    const el = this.host.nativeElement.querySelector('#' + this.sectionId(name));
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -169,6 +195,14 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
   trackBySection(_: number, s: MenuSection): string {
     return s.name;
+  }
+
+  trackByName(_: number, name: string): string {
+    return name;
+  }
+
+  trackByTitle(_: number, b: { title: string }): string {
+    return b.title;
   }
 
   /**
