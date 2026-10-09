@@ -80,7 +80,6 @@
 /* ─── Encabezado ─── */
 .mb-hero { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-bottom: 1.25rem; }
 .mb-hero-text { min-width: 0; text-align: center; flex: 1; }
-.mb-logo { display: block; margin: 0 auto 0.6rem; max-width: 140px; max-height: 80px; object-fit: contain; }
 .mb-title { margin: 0; line-height: 1; font-family: var(--mb-title-font); font-weight: 400; }
 .mb-title-first { display: block; font-size: clamp(2.4rem, 6vw, 4rem); color: var(--mb-accent-2); }
 .mb-title-rest { display: block; font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--mb-accent); }
@@ -98,6 +97,9 @@
 .mb-tagline { margin: 0.6rem 0 0; color: var(--mb-muted); font-style: italic; font-size: 0.95rem; }
 .mb-hero-photo { flex: 0 0 clamp(130px, 28%, 260px); aspect-ratio: 1; border-radius: 50%; overflow: hidden; border: 6px solid var(--mb-paper); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); transform: rotate(-4deg); }
 .mb-hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Logo: completo dentro del círculo (sin recortar), sobre el papel del menú y sin girar */
+.mb-hero-photo--logo { background: var(--mb-paper); transform: none; display: grid; place-items: center; }
+.mb-hero-photo--logo img { object-fit: contain; width: 78%; height: 78%; }
 :host([data-variant="menu-clean"]) .mb-hero-photo { border-radius: 14px; transform: none; border-width: 1px; border-color: var(--mb-line); box-shadow: none; }
 
 /* ─── Pestañas de secciones ─── */
