@@ -87,6 +87,10 @@ export class MenuBoardComponent implements OnInit, OnChanges {
     this.heroImage = (this.products || []).find((p) => p.image)?.image || null;
   }
 
+  /** El logo del negocio va en el círculo del encabezado; sin logo, la foto del primer plato. */
+  get circuloEsLogo(): boolean { return !!this.logoUrl; }
+  get circuloSrc(): string | null { return this.logoUrl || this.heroImage; }
+
   get titleWords(): { first: string; rest: string } {
     const words = (this.businessName || 'Nuestro menú').trim().split(/\s+/);
     return { first: words[0], rest: words.slice(1).join(' ') };
