@@ -321,7 +321,11 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     }
 
     // Calcular ingQuantity correctamente
-    if (this.editingMaterialId) {
+    if (this.editingMaterialId && this.getTotalQuantity() <= 0) {
+      // Edición sin producir más (nombre, precio, MarketPlace…): no se envían la
+      // cantidad ni la receta, para no pisar el stock con el valor que tenía al
+      // abrir el formulario (pudo cambiar por ventas) ni tocar las composiciones.
+    } else if (this.editingMaterialId) {
       const additionalQty = this.getTotalQuantity();
       materialData.ingQuantity = Number(this.newMaterial.quantityToGenerate) + Number(additionalQty);
       // En ediciÃ³n, enviar composiciones con cantidades base + adicionales
@@ -672,11 +676,13 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   isFormValid(): boolean {
+    // Al editar, producir más es opcional (la cantidad adicional puede ser 0):
+    // así se pueden cambiar solo los datos, como quitarlo del MarketPlace.
     return !!(this.newMaterial.name && 
              this.newMaterial.description && 
              this.newMaterial.measurementUnit && 
              this.newMaterial.ubicacion && 
-             this.getTotalQuantity() > 0 &&
+             (this.editingMaterialId || this.getTotalQuantity() > 0) &&
              this.compositions.length > 0);
   }
 
