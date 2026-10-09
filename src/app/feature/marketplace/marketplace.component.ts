@@ -67,7 +67,7 @@ interface MarketStats {
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent],
   templateUrl: './marketplace.component.html',
-  styleUrls: ['./marketplace.component.css', './marketplace-checkout.css']
+  styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css']
 })
 export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Tema visual por sector: los estilos leen :host([data-sector="…"]). En
@@ -77,6 +77,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
   tenantId: string = '';
   businessName: string = '';
+  /** Nombre que muestra la tienda (pestaña, encabezado y menú): NEGOCIO_NOMBRE del
+   *  período, o la razón social de Authoriza, o el slug. */
+  storeName = '';
   /** Logo de la tienda (Configuración > Identidad del negocio). */
   storeLogoUrl: string | null = null;
   businessSector: string = 'general';
@@ -109,8 +112,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   productGroups: any[] = [];
   featuredProducts: Product[] = [];
   infiniteFeaturedProducts: Product[] = [];
-  featuredTransform = 0;
-  private featuredInterval: any;
   stats: MarketStats = {
     totalProducts: 0,
     totalViews: 0,
@@ -156,6 +157,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** WhatsApp y mensaje de bienvenida de la tienda (se muestran en el menú). */
   storeWhatsapp = '';
   storeWelcome = '';
+  /** Horario de pedidos de hoy y textos de las promociones en curso: se calculan
+   *  al cargar la tienda (no son getters: el menú los recibe como @Input). */
+  todayHours: { open: boolean; label: string } | null = null;
+  promoTexts: string[] = [];
+  /** Barra superior: su altura se publica en --mk-header-h para las pestañas fijas del menú. */
+  @ViewChild('mkHeader', { static: true }) private mkHeader?: ElementRef<HTMLElement>;
+  private headerObserver?: ResizeObserver;
   /** Cantidades del carrito por producto (misma referencia mientras no cambie). */
   menuQuantities: Record<string, number> = {};
   private menuQtyKey = '';
@@ -343,11 +351,14 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private titleService: Title,
     private brandingService: TenantBrandingService,
+    private hostEl: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
     // Cambiar título del tab solo para marketplace
     this.titleService.setTitle('CM CycloNet Market');
+    this.loadStoreFonts();
+    this.trackHeaderHeight();
     
     this.route.params.subscribe(params => {
       this.tenantId = params['tenantId'] || 'current-tenant';
@@ -567,6 +578,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.products = [...comboItems, ...this.products];
       this.livePromotions = livePromotions || [];
       this.applyLivePromotions(this.livePromotions);
+      this.promoTexts = this.livePromotions.map((p) => this.promoBannerText(p));
+      this.todayHours = this.computeTodayHours();
 
       // Load display mode from config
       if (configResponse && configResponse.displayMode) {
@@ -584,6 +597,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       // Tienda personalizada: el tab muestra el nombre del negocio (parámetro
       // NEGOCIO_NOMBRE del período; si no está, la razón social de Authoriza)
       const storeName = storeNameResponse?.name || this.businessName || configResponse?.slug;
+      this.storeName = storeName || '';
       if (storeName) this.titleService.setTitle(storeName);
 
       this.customizeMarketplaceBySector(businessSector);
@@ -947,12 +961,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Restaurar título original al salir del marketplace
     this.titleService.setTitle('InOut');
+    this.headerObserver?.disconnect();
     
     if (this.carouselInterval && typeof window !== 'undefined') {
       clearInterval(this.carouselInterval);
-    }
-    if (this.featuredInterval && typeof window !== 'undefined') {
-      clearInterval(this.featuredInterval);
     }
   }
 
@@ -1001,21 +1013,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (this.featuredProducts.length === 0) {
       this.featuredProducts = productsToUse.slice(0, 10);
     }
+    // La cinta se mueve con CSS (animación de -50%): la lista va duplicada
     this.infiniteFeaturedProducts = [...this.featuredProducts, ...this.featuredProducts];
-    this.startFeaturedCarousel();
   }
 
-  startFeaturedCarousel(): void {
-    if (typeof window !== 'undefined' && this.featuredProducts.length > 0) {
-      this.featuredInterval = setInterval(() => {
-        this.featuredTransform -= 1;
-        // Reset cuando una tarjeta completa haya pasado
-        if (Math.abs(this.featuredTransform) >= this.featuredProducts.length * 200) {
-          this.featuredTransform = 0;
-        }
-      }, 50);
-    }
-  }
 
   customizeMarketplaceBySector(sector: string): void {
     if (sector !== 'general') {
@@ -1305,6 +1306,77 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       until = ` · hasta el ${new Date(y, mo - 1, da).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
     }
     return `${promo.strName} ${promo.label}${until}`;
+  }
+
+  /**
+   * Horario de pedidos de hoy (hora de Colombia), según la programación de
+   * pedidos de la tienda. null si la tienda no la tiene configurada.
+   */
+  private computeTodayHours(): { open: boolean; label: string } | null {
+    const hours: any[] = this.schedulingOptions?.hours || [];
+    if (!hours.length) return null;
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
+    const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
+    const h = hours.find((x) => x.day === weekday);
+    if (!h?.active || !h.open || !h.close) return { open: false, label: 'Hoy no recibe pedidos' };
+    const fmt = (t: string) => {
+      const [hh, mm] = t.split(':').map(Number);
+      return new Date(2000, 0, 1, hh, mm || 0).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    };
+    return { open: true, label: `Pedidos hoy · ${fmt(h.open)} – ${fmt(h.close)}` };
+  }
+
+  /** Nombre de la tienda para el encabezado: la última palabra va resaltada. */
+  get heroTitle(): { lead: string; accent: string } {
+    const words = (this.storeName || 'Nuestra tienda').trim().split(/\s+/);
+    if (words.length === 1) return { lead: '', accent: words[0] };
+    return { lead: words.slice(0, -1).join(' '), accent: words[words.length - 1] };
+  }
+
+  /** Formas de pago que la tienda tiene activas, en una frase ("Contado o contra entrega"). */
+  get paymentSummary(): string {
+    const o = this.paymentOptions;
+    if (!o) return '';
+    const names = [
+      o.contado?.enabled && 'contado',
+      o.contraEntrega?.enabled && 'contra entrega',
+      o.mitadMitad?.enabled && '50/50',
+      o.planSepare?.enabled && 'plan separe',
+      o.credito?.enabled && 'crédito',
+    ].filter(Boolean) as string[];
+    if (!names.length) return '';
+    const text = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} o ${names[names.length - 1]}`;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /** Enlace de WhatsApp de la tienda (número colombiano de 10 dígitos → +57). */
+  get storeWhatsappLink(): string | null {
+    const digits = (this.storeWhatsapp || '').replace(/\D/g, '');
+    if (!digits) return null;
+    return `https://wa.me/${digits.length === 10 ? '57' + digits : digits}`;
+  }
+
+  /** Lleva a la lista de productos (botón del encabezado de la tienda). */
+  scrollToProducts(): void {
+    document.querySelector('.products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  private trackHeaderHeight(): void {
+    const header = this.mkHeader?.nativeElement;
+    if (!header || typeof ResizeObserver === 'undefined') return;
+    this.headerObserver = new ResizeObserver(() =>
+      this.hostEl.nativeElement.style.setProperty('--mk-header-h', `${header.offsetHeight}px`));
+    this.headerObserver.observe(header);
+  }
+
+  /** Tipografías de la landing de InOut (Sora + Inter), solo en el MarketPlace. */
+  private loadStoreFonts(): void {
+    if (typeof document === 'undefined' || document.getElementById('market-fonts')) return;
+    const link = document.createElement('link');
+    link.id = 'market-fonts';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap';
+    document.head.appendChild(link);
   }
 
   /** "Ver todas": el catálogo filtrado a ofertas. */
