@@ -302,23 +302,6 @@
             </div>
             </div>
 
-            <hr>
-
-            <p class="text-muted mb-3">
-              Selecciona los productos que quieres mostrar en tu marketplace público.
-            </p>
-            <div class="d-flex gap-2 mb-3">
-              <button class="btn btn-outline-success btn-sm" (click)="selectAllProducts()">
-                <i class="bi bi-check-all"></i> Seleccionar Todos
-              </button>
-              <button class="btn btn-outline-danger btn-sm" (click)="clearAllProducts()">
-                <i class="bi bi-x-circle"></i> Limpiar Selección
-              </button>
-              <button class="btn btn-primary btn-sm" (click)="saveSelectedProducts()">
-                <i class="bi bi-save"></i> Guardar Configuración ({{ selectedProductIds.size }})
-              </button>
-            </div>
-
             <!-- Formas de pago y pedidos programados -->
             <div class="mb-3">
               <app-marketplace-sales-settings [tenantId]="tenantId"></app-marketplace-sales-settings>
@@ -363,6 +346,24 @@
                 </button>
               </div>
             </div>
+            </div>
+
+            <!-- Productos visibles: al final, debajo de las secciones plegables -->
+            <hr>
+
+            <p class="text-muted mb-3">
+              Selecciona los productos que quieres mostrar en tu marketplace público.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-outline-success btn-sm" (click)="selectAllProducts()">
+                <i class="bi bi-check-all"></i> Seleccionar Todos
+              </button>
+              <button class="btn btn-outline-danger btn-sm" (click)="clearAllProducts()">
+                <i class="bi bi-x-circle"></i> Limpiar Selección
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="saveSelectedProducts()">
+                <i class="bi bi-save"></i> Guardar Configuración ({{ selectedProductIds.size }})
+              </button>
             </div>
           </div>
         </div>
