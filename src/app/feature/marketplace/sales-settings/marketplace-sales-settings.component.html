@@ -1,3 +1,32 @@
+<!-- ─── Datos de la tienda (WhatsApp y bienvenida) ─── -->
+<div class="ss-block">
+  <button type="button" class="ss-header" (click)="toggle('store')">
+    <span><i class="bi bi-whatsapp me-1"></i> Datos de la tienda</span>
+    <small>{{ storeInfoSummary }} {{ open === 'store' ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="ss-body" *ngIf="open === 'store' && storeInfo">
+    <div class="ss-sub ss-store">
+      <label for="ss-whatsapp">WhatsApp de pedidos <small>(celular de 10 dígitos)</small></label>
+      <div class="ss-phone">
+        <span class="ss-prefix">+57</span>
+        <input id="ss-whatsapp" type="tel" inputmode="numeric" autocomplete="off" placeholder="300 120 5337"
+               [(ngModel)]="storeInfo.whatsapp" [class.ss-invalid]="!whatsappValid" maxlength="20">
+        <a *ngIf="whatsappTestLink" class="ss-test" [href]="whatsappTestLink" target="_blank" rel="noopener">Probar</a>
+      </div>
+      <small class="ss-error" *ngIf="!whatsappValid">Debe ser un celular colombiano de 10 dígitos que empiece por 3.</small>
+      <small class="ss-help">Aparece en la tienda y en la carta como «Haz tu pedido» y en el botón «Escríbenos». Déjalo vacío para no mostrarlo.</small>
+
+      <label for="ss-welcome">Mensaje de bienvenida <small>({{ storeInfo.welcomeMessage.length }}/{{ welcomeMax }})</small></label>
+      <textarea id="ss-welcome" rows="2" [maxlength]="welcomeMax" [(ngModel)]="storeInfo.welcomeMessage"
+                placeholder="Hecho con un sabor único · pide en línea"></textarea>
+      <small class="ss-help">Va en el encabezado de la tienda y bajo el título de la carta. Vacío = texto por defecto.</small>
+    </div>
+
+    <button type="button" class="ss-save" [disabled]="savingStoreInfo || !whatsappValid" (click)="saveStoreInfo()">{{ savingStoreInfo ? 'Guardando…' : 'Guardar datos' }}</button>
+  </div>
+</div>
+
 <!-- ─── Formas de pago ─── -->
 <div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('payments')">

@@ -24,6 +24,17 @@
 .ss-save { margin-top: 0.75rem; border: none; border-radius: 8px; padding: 0.5rem 1rem; background: #0d6efd; color: #fff; font-weight: 600; cursor: pointer; }
 .ss-save:disabled { opacity: 0.6; cursor: default; }
 
+/* Datos de la tienda */
+.ss-store { margin-left: 0; }
+.ss-store label { margin-top: 0.35rem; font-weight: 600; }
+.ss-store label small { font-weight: 400; color: #6b7280; }
+.ss-phone { display: flex; align-items: center; gap: 0.4rem; }
+.ss-prefix { padding: 0.35rem 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; color: #6b7280; font-size: 0.85rem; }
+.ss-phone input { flex: 1; min-width: 0; max-width: 220px; }
+.ss-sub input.ss-invalid { border-color: #dc2626; }
+.ss-error { color: #b91c1c; font-size: 0.78rem; }
+.ss-test { font-size: 0.8rem; font-weight: 600; color: #128c4a; }
+
 /* Mensaje de agradecimiento */
 .ss-thanks { margin-left: 0; }
 .ss-thanks label { margin-top: 0.35rem; font-weight: 600; }
