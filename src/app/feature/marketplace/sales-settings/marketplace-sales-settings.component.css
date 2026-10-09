@@ -1,4 +1,6 @@
-.ss-section { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; overflow: hidden; }
+/* ss-block, no ss-section: styles.css tiene un .ss-section global (ayuda de Pedidos) con
+   mayúsculas y color rojo, que se heredaba a todo el panel y a la vista previa del mensaje. */
+.ss-block { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; overflow: hidden; }
 .ss-header {
   width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
   background: #f8f9fa; border: none; padding: 0.65rem 0.9rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; text-align: left;

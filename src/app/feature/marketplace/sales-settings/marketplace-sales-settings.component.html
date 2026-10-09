@@ -1,5 +1,5 @@
 <!-- ─── Formas de pago ─── -->
-<div class="ss-section">
+<div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('payments')">
     <span><i class="bi bi-cash-coin me-1"></i> Formas de pago</span>
     <small>{{ payments ? enabledPlansCount + ' activa(s)' : 'Cargando…' }} {{ open === 'payments' ? '▲' : '▼' }}</small>
@@ -66,7 +66,7 @@
 </div>
 
 <!-- ─── Pedidos programados ─── -->
-<div class="ss-section">
+<div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('scheduling')">
     <span><i class="bi bi-calendar-event me-1"></i> Pedidos programados</span>
     <small>{{ scheduling ? (scheduling.enabled ? 'Activos' : 'Inactivos') : 'Cargando…' }} {{ open === 'scheduling' ? '▲' : '▼' }}</small>
@@ -108,7 +108,7 @@
 </div>
 
 <!-- ─── Mensaje de agradecimiento (al entregar el pedido) ─── -->
-<div class="ss-section">
+<div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('thanks')">
     <span><i class="bi bi-envelope-heart me-1"></i> Mensaje de agradecimiento</span>
     <small>{{ thanks ? (thanks.enabled ? 'Activo' : 'Apagado') : 'Cargando…' }} {{ open === 'thanks' ? '▲' : '▼' }}</small>
