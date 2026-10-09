@@ -8,6 +8,16 @@
       </h1>
       <div class="mb-ribbon">{{ sections.length === 1 ? sections[0].name : 'Nuestro menú' }}</div>
       <p class="mb-tagline">{{ tagline || 'Hecho con un sabor único · pide en línea' }}</p>
+
+      <!-- Estado de hoy y contacto -->
+      <div class="mb-status" *ngIf="hours || whatsappLink">
+        <span class="mb-chip" *ngIf="hours as h" [class.mb-chip--off]="!h.open">
+          <i class="mb-dot" aria-hidden="true"></i>{{ h.label }}
+        </span>
+        <a class="mb-chip mb-chip--link" *ngIf="whatsappLink" [href]="whatsappLink" target="_blank" rel="noopener">
+          <svg class="mb-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#whatsapp"/></svg>{{ whatsappLabel }}
+        </a>
+      </div>
     </div>
     <!-- El círculo lleva el logo del negocio; sin logo, la foto del primer plato -->
     <div class="mb-hero-photo" *ngIf="circuloSrc" [class.mb-hero-photo--logo]="circuloEsLogo">
@@ -15,49 +25,71 @@
     </div>
   </header>
 
-  <!-- Secciones (categorías) -->
-  <nav class="mb-tabs" *ngIf="sections.length > 1" aria-label="Secciones del menú">
-    <button type="button" *ngFor="let s of sections" [class.active]="s.name === activeSection" (click)="goTo(s)">
-      {{ s.name }}
+  <!-- Promociones en curso -->
+  <div class="mb-promos" *ngIf="promos.length">
+    <span class="mb-promo-banner" *ngFor="let text of promos">
+      <svg class="mb-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#fire"/></svg>{{ text }}
+    </span>
+  </div>
+
+  <!-- Secciones (categorías): siguen el scroll -->
+  <nav class="mb-tabs" #tabsNav *ngIf="sections.length > 1" aria-label="Secciones del menú">
+    <button type="button" *ngFor="let s of sections; trackBy: trackBySection" [attr.data-tab]="s.name"
+            [class.active]="s.name === activeSection" [attr.aria-current]="s.name === activeSection ? 'true' : null" (click)="goTo(s)">
+      {{ s.name }} <small>{{ s.items.length }}</small>
     </button>
   </nav>
 
   <div class="mb-sections">
-    <section class="mb-section" *ngFor="let s of sections" [id]="sectionId(s.name)">
+    <section class="mb-section" #sectionEl *ngFor="let s of sections; trackBy: trackBySection" [id]="sectionId(s.name)"
+             [attr.data-section]="s.name" [class.mb-section--featured]="s.featured">
       <h2 class="mb-section-title"><span>{{ s.name }}</span></h2>
 
-      <ul class="mb-items">
-        <li class="mb-item" *ngFor="let p of s.items; trackBy: trackById" [class.in-cart]="qty(p) > 0"
-            [class.out]="tagFor(p)?.cls === 'tag-out'">
-          <button type="button" class="mb-thumb" *ngIf="p.image" (click)="details.emit(p)" [attr.aria-label]="'Ver ' + p.strName">
-            <img [src]="p.image" [alt]="p.strName" loading="lazy">
+      <!-- Combos y promociones: tarjetas con foto -->
+      <div class="mb-cards" *ngIf="s.featured; else rows">
+        <article class="mb-card" *ngFor="let p of s.items; trackBy: trackById" [class.in-cart]="qty(p) > 0"
+                 [class.out]="tagFor(p)?.cls === 'tag-out'">
+          <button type="button" class="mb-card-photo" (click)="details.emit(p)" [attr.aria-label]="'Ver ' + p.strName">
+            <img *ngIf="p.image" [src]="p.image" [alt]="p.strName" loading="lazy">
+            <span class="mb-card-badge" *ngIf="p.promoLabel">{{ p.promoLabel }}</span>
           </button>
-
-          <div class="mb-item-body" (click)="details.emit(p)">
-            <div class="mb-item-head">
-              <span class="mb-bullet" aria-hidden="true">★</span>
-              <h3 class="mb-item-name">{{ p.strName }}</h3>
-              <span class="mb-leader" aria-hidden="true"></span>
-              <span class="mb-item-price"><s class="mb-was" *ngIf="p.listPrice > p.fltPrice">{{ price(p.listPrice) }}</s> {{ price(p.fltPrice) }}</span>
-            </div>
-            <p class="mb-item-desc" *ngIf="p.strDescription">{{ p.strDescription }}</p>
-            <span class="mb-promo" *ngIf="p.promoLabel">{{ p.promoLabel }}</span>
+          <div class="mb-card-body" (click)="details.emit(p)">
+            <h3 class="mb-item-name">{{ p.strName }}</h3>
+            <p class="mb-item-desc" *ngIf="p.comboIncludes?.length; else cardDesc">{{ p.comboIncludes.join(' · ') }}</p>
+            <ng-template #cardDesc><p class="mb-item-desc" *ngIf="p.strDescription">{{ p.strDescription }}</p></ng-template>
             <span class="mb-tag" *ngIf="tagFor(p) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
           </div>
-
-          <div class="mb-qty" (click)="$event.stopPropagation()">
-            <ng-container *ngIf="qty(p) > 0; else addBtn">
-              <button type="button" class="mb-qty-btn" (click)="decrease.emit(p)" [attr.aria-label]="'Quitar un ' + p.strName">−</button>
-              <span class="mb-qty-n">{{ qty(p) }}</span>
-              <button type="button" class="mb-qty-btn" (click)="add.emit(p)" [attr.aria-label]="'Agregar otro ' + p.strName">+</button>
-            </ng-container>
-            <ng-template #addBtn>
-              <button type="button" class="mb-add" (click)="add.emit(p)" [disabled]="tagFor(p)?.cls === 'tag-out'"
-                      [attr.aria-label]="'Agregar ' + p.strName">Agregar</button>
-            </ng-template>
+          <div class="mb-card-foot">
+            <span class="mb-item-price"><s class="mb-was" *ngIf="p.listPrice > p.fltPrice">{{ price(p.listPrice) }}</s> {{ price(p.fltPrice) }}</span>
+            <ng-container *ngTemplateOutlet="qtyCtl; context: { $implicit: p }"></ng-container>
           </div>
-        </li>
-      </ul>
+        </article>
+      </div>
+
+      <!-- Renglones del menú -->
+      <ng-template #rows>
+        <ul class="mb-items">
+          <li class="mb-item" *ngFor="let p of s.items; trackBy: trackById" [class.in-cart]="qty(p) > 0"
+              [class.out]="tagFor(p)?.cls === 'tag-out'">
+            <button type="button" class="mb-thumb" *ngIf="p.image" (click)="details.emit(p)" [attr.aria-label]="'Ver ' + p.strName">
+              <img [src]="p.image" [alt]="p.strName" loading="lazy">
+            </button>
+
+            <div class="mb-item-body" (click)="details.emit(p)">
+              <div class="mb-item-head">
+                <h3 class="mb-item-name">{{ p.strName }}</h3>
+                <span class="mb-leader" aria-hidden="true"></span>
+                <span class="mb-item-price"><s class="mb-was" *ngIf="p.listPrice > p.fltPrice">{{ price(p.listPrice) }}</s> {{ price(p.fltPrice) }}</span>
+              </div>
+              <p class="mb-item-desc" *ngIf="p.strDescription">{{ p.strDescription }}</p>
+              <span class="mb-promo" *ngIf="p.promoLabel">{{ p.promoLabel }}</span>
+              <span class="mb-tag" *ngIf="tagFor(p) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
+            </div>
+
+            <ng-container *ngTemplateOutlet="qtyCtl; context: { $implicit: p }"></ng-container>
+          </li>
+        </ul>
+      </ng-template>
     </section>
   </div>
 
@@ -82,3 +114,18 @@
     </button>
   </div>
 </div>
+
+<!-- Agregar / contador del plato (renglones y tarjetas) -->
+<ng-template #qtyCtl let-p>
+  <div class="mb-qty" (click)="$event.stopPropagation()">
+    <ng-container *ngIf="qty(p) > 0; else addBtn">
+      <button type="button" class="mb-qty-btn" (click)="decrease.emit(p)" [attr.aria-label]="'Quitar un ' + p.strName">−</button>
+      <span class="mb-qty-n">{{ qty(p) }}</span>
+      <button type="button" class="mb-qty-btn" (click)="add.emit(p)" [attr.aria-label]="'Agregar otro ' + p.strName">+</button>
+    </ng-container>
+    <ng-template #addBtn>
+      <button type="button" class="mb-add" (click)="add.emit(p)" [disabled]="tagFor(p)?.cls === 'tag-out'"
+              [attr.aria-label]="'Agregar ' + p.strName"><span aria-hidden="true">+</span> Agregar</button>
+    </ng-template>
+  </div>
+</ng-template>

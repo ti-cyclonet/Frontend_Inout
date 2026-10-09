@@ -1,23 +1,22 @@
 <div class="scroll-container">
-  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector">
-    <!-- Header -->
-    <header class="modern-header">
+  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector" [class.is-menu]="showMenuBoard">
+    <!-- Encabezado (barra oscura con vidrio, como la navegación de la landing de InOut) -->
+    <header class="modern-header" #mkHeader>
       <div class="header-top">
         <div class="brand-wrap">
-          <img *ngIf="tenantId !== 'home' && storeLogoUrl" class="store-logo" [src]="storeLogoUrl" [alt]="businessName || 'Logo de la tienda'">
+          <img *ngIf="tenantId !== 'home' && storeLogoUrl" class="store-logo" [src]="storeLogoUrl" [alt]="storeName || 'Logo de la tienda'">
           <div class="brand">
             <h1>CycloNet <span class="market">Market</span></h1>
-            <span class="business-name" *ngIf="tenantId !== 'home' && businessName">{{ businessName }}</span>
+            <span class="business-name" *ngIf="tenantId !== 'home' && storeName">{{ storeName }}</span>
           </div>
         </div>
         <div class="search-container">
           <div class="search-box">
-            <input type="text" placeholder="¿Qué estás buscando?" [(ngModel)]="searchTerm" (input)="onSearch()">
-            <button class="search-btn">🔍</button>
+            <svg class="mk-ico search-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#search"/></svg>
+            <input type="text" placeholder="¿Qué estás buscando?" [(ngModel)]="searchTerm" (input)="onSearch()" aria-label="Buscar productos">
           </div>
         </div>
         <div class="user-actions">
-          <span class="user-greeting" *ngIf="cart.length === 0 && !clientLoggedIn && tenantId !== 'home'">¡Bienvenido!</span>
           <!-- Sesión del cliente (rol clienteInout) -->
           <div class="session-chip-wrap" *ngIf="tenantId !== 'home'">
             <button type="button" class="session-chip" *ngIf="clientLoggedIn" (click)="sessionMenuOpen = !sessionMenuOpen" [attr.aria-expanded]="sessionMenuOpen" title="Mi cuenta">
@@ -38,15 +37,16 @@
               <button type="button" (click)="clientLogout()">Cerrar sesión</button>
             </div>
           </div>
-          <div class="cart-icon" (click)="openCheckout()" style="cursor: pointer;">
-            🛒 <span class="cart-count">{{ getCartCount() }}</span>
-          </div>
+          <button type="button" class="cart-icon" (click)="openCheckout()" [attr.aria-label]="'Ver mi pedido (' + getCartCount() + ')'">
+            <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#bag"/></svg>
+            <span class="cart-count">{{ getCartCount() }}</span>
+          </button>
         </div>
       </div>
 
-      <nav class="categories-nav" *ngIf="!showMenuBoard">
+      <nav class="categories-nav" *ngIf="!showMenuBoard" aria-label="Categorías">
         <button class="category-btn"
-                *ngFor="let category of getVisibleCategories()"
+                *ngFor="let category of getVisibleCategories(); trackBy: trackByValue"
                 [class.active]="selectedCategory === category.value"
                 (click)="selectedCategory = category.value; onCategoryChange()">
           {{ category.label }}
@@ -54,23 +54,123 @@
       </nav>
     </header>
 
+    <!-- ═══════ Encabezado de la tienda (hero oscuro de la landing de InOut) ═══════ -->
+    <section class="mk-hero" *ngIf="!loading && !showMenuBoard">
+      <div class="mk-hero-grid" aria-hidden="true"></div>
+      <div class="mk-glow mk-glow--a" aria-hidden="true"></div>
+      <div class="mk-glow mk-glow--b" aria-hidden="true"></div>
+
+      <div class="mk-hero-inner" [class.has-visual]="carouselProducts.length > 0">
+        <div class="mk-hero-copy">
+          <ng-container *ngIf="tenantId !== 'home'; else homeCopy">
+            <div class="mk-store-id">
+              <span class="mk-hero-logo" *ngIf="storeLogoUrl"><img [src]="storeLogoUrl" [alt]="storeName || 'Logo de la tienda'"></span>
+              <p class="mk-eyebrow">{{ sectorBanner.title }}</p>
+            </div>
+            <h2 class="mk-hero-title">
+              <span *ngIf="heroTitle.lead">{{ heroTitle.lead }} </span><em>{{ heroTitle.accent }}</em>
+            </h2>
+            <p class="mk-hero-lead">{{ storeWelcome || sectorBanner.subtitle }}</p>
+            <div class="mk-hero-ctas">
+              <button type="button" class="mk-btn mk-btn--orange" (click)="scrollToProducts()">
+                Ver productos
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#arrow-right"/></svg>
+              </button>
+              <a class="mk-btn mk-btn--glass" *ngIf="storeWhatsappLink" [href]="storeWhatsappLink" target="_blank" rel="noopener">
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#whatsapp"/></svg>
+                Escríbenos
+              </a>
+            </div>
+            <ul class="mk-pills">
+              <li *ngIf="todayHours as h" [class.is-closed]="!h.open">
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#clock"/></svg>{{ h.label }}
+              </li>
+              <li *ngIf="paymentSummary">
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#credit-card-2-front"/></svg>{{ paymentSummary }}
+              </li>
+              <li *ngIf="schedulingOptions">
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#calendar2-check"/></svg>Pedidos programados
+              </li>
+              <li>
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#truck"/></svg>Coordina la entrega
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #homeCopy>
+            <p class="mk-eyebrow">CycloNet Market</p>
+            <h2 class="mk-hero-title">Compra directo a los <em>negocios de tu ciudad</em>.</h2>
+            <p class="mk-hero-lead">Productos de tiendas que venden con InOut. Eliges, pides en línea y el negocio te confirma el pedido.</p>
+            <ul class="mk-pills">
+              <li><svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#shop"/></svg>Tiendas locales</li>
+              <li><svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#stars"/></svg>Filtra por sector</li>
+              <li><svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#whatsapp"/></svg>Confirmación por WhatsApp</li>
+            </ul>
+          </ng-template>
+        </div>
+
+        <!-- Carrusel: la tarjeta visual del hero -->
+        <div class="mk-hero-visual" *ngIf="carouselProducts.length > 0">
+          <div class="carousel-container">
+            <div class="carousel-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'">
+              <div class="carousel-slide" *ngFor="let product of carouselProducts; let i = index">
+                <div class="slide-image">
+                  <img *ngIf="product.image" [src]="product.image" [alt]="product.strName">
+                  <div *ngIf="!product.image" class="slide-placeholder">📦</div>
+                </div>
+                <div class="slide-overlay">
+                  <h3>{{ product.strName }}</h3>
+                  <p><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="carousel-arrow carousel-arrow-prev"
+                    *ngIf="carouselProducts.length > 1"
+                    (click)="prevSlide()" aria-label="Anterior">
+              <span aria-hidden="true">‹</span>
+            </button>
+            <button type="button" class="carousel-arrow carousel-arrow-next"
+                    *ngIf="carouselProducts.length > 1"
+                    (click)="nextSlide()" aria-label="Siguiente">
+              <span aria-hidden="true">›</span>
+            </button>
+
+            <div class="carousel-dots" *ngIf="carouselProducts.length > 1">
+              <button type="button" class="carousel-dot"
+                      *ngFor="let product of carouselProducts; let i = index"
+                      [class.active]="i === currentSlide"
+                      (click)="goToSlide(i)"
+                      [attr.aria-label]="'Ir al slide ' + (i + 1)">
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Loading -->
     <div *ngIf="loading" class="loading-modern">
       <div class="spinner-modern"></div>
       <p>Cargando productos...</p>
     </div>
 
+    <!-- Hoja clara que monta sobre el hero, como las secciones claras de la landing -->
+    <div class="mk-sheet">
+
       <!-- ═══════ Combos y promociones (ubicación destacada, primero que todo) ═══════ -->
       <section class="offers-section" *ngIf="!loading && tenantId !== 'home' && !showMenuBoard && offerProducts.length > 0" aria-label="Combos y promociones">
         <div class="offers-head">
           <div>
-            <h2>🔥 Combos y promociones</h2>
+            <p class="mk-eyebrow mk-eyebrow--dark">Ofertas</p>
+            <h2 class="mk-h2">Combos y <em>promociones</em></h2>
             <p class="offers-sub" *ngIf="livePromotions.length === 0">Arma tu pedido con nuestros combos.</p>
           </div>
           <button type="button" class="offers-all" (click)="showAllOffers()">Ver todas ›</button>
         </div>
         <div class="offers-banners" *ngIf="livePromotions.length > 0">
-          <span class="offers-banner" *ngFor="let promo of livePromotions">{{ promoBannerText(promo) }}</span>
+          <span class="offers-banner" *ngFor="let text of promoTexts">
+            <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#fire"/></svg>{{ text }}
+          </span>
         </div>
         <div class="offers-track">
           <article class="offer-card" *ngFor="let product of offerProducts" (click)="openProductDetails(product)">
@@ -94,112 +194,29 @@
         </div>
       </section>
 
-      <!-- Hero Carousel -->
-      <section class="hero-carousel" *ngIf="carouselProducts.length > 0 && !showMenuBoard">
-        <div class="carousel-container">
-          <div class="carousel-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'">
-            <div class="carousel-slide" *ngFor="let product of carouselProducts; let i = index">
-              <div class="slide-image">
-                <img *ngIf="product.image" [src]="product.image" [alt]="product.strName">
-                <div *ngIf="!product.image" class="slide-placeholder">📦</div>
-              </div>
-              <div class="slide-overlay">
-                <h3>{{ product.strName }}</h3>
-                <p><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Flechas de navegación -->
-          <button type="button" class="carousel-arrow carousel-arrow-prev"
-                  *ngIf="carouselProducts.length > 1"
-                  (click)="prevSlide()" aria-label="Anterior">
-            <span aria-hidden="true">‹</span>
-          </button>
-          <button type="button" class="carousel-arrow carousel-arrow-next"
-                  *ngIf="carouselProducts.length > 1"
-                  (click)="nextSlide()" aria-label="Siguiente">
-            <span aria-hidden="true">›</span>
-          </button>
-
-          <!-- Dots -->
-          <div class="carousel-dots" *ngIf="carouselProducts.length > 1">
-            <button type="button" class="carousel-dot"
-                    *ngFor="let product of carouselProducts; let i = index"
-                    [class.active]="i === currentSlide"
-                    (click)="goToSlide(i)"
-                    [attr.aria-label]="'Ir al slide ' + (i + 1)">
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Banner promocional por tipo de negocio -->
-      <section class="sector-banner" *ngIf="tenantId !== 'home' && !showMenuBoard">
-        <div class="sector-banner-inner">
-          <div class="sector-banner-text">
-            <h3>{{ sectorBanner.title }}</h3>
-            <p>{{ sectorBanner.subtitle }}</p>
-          </div>
-          <div class="sector-banner-emoji">{{ sectorBanner.emoji }}</div>
-        </div>
-      </section>
-
-      <!-- Franja de beneficios (estilo marketplace) -->
-      <section class="benefits-strip" *ngIf="tenantId !== 'home' && !showMenuBoard">
-        <div class="benefits-track">
-          <div class="benefit-card">
-            <div class="benefit-icon">🚚</div>
-            <div class="benefit-text">
-              <strong>Envío disponible</strong>
-              <span>Coordina la entrega a tu ubicación</span>
-            </div>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-icon">💳</div>
-            <div class="benefit-text">
-              <strong>Medios de pago</strong>
-              <span>Paga de contado o a crédito</span>
-            </div>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-icon">🕑</div>
-            <div class="benefit-text">
-              <strong>Pedidos programados</strong>
-              <span>Elige fecha y franja horaria</span>
-            </div>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-icon">✅</div>
-            <div class="benefit-text">
-              <strong>Compra segura</strong>
-              <span>Confirmación por WhatsApp</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Featured Products -->
+      <!-- Destacados: cinta continua (animación CSS, como la cinta de la landing) -->
       <section class="featured-section" *ngIf="featuredProducts.length > 0 && !showMenuBoard">
-        <div class="featured-container">
-          <h2 class="featured-title">⭐ Productos Destacados</h2>
-          <div class="featured-carousel">
-            <div class="featured-track" [style.transform]="'translateX(' + featuredTransform + 'px)'">
-              <div class="featured-card" *ngFor="let product of infiniteFeaturedProducts; let i = index" [style.left.px]="i * 200">
-                <div class="featured-image">
-                  <img *ngIf="product.image" [src]="product.image" [alt]="product.strName">
-                  <div *ngIf="!product.image" class="featured-placeholder">📦</div>
-                </div>
-                <div class="featured-info">
-                  <h4>{{ product.strName }}</h4>
-                  <div class="featured-rating" *ngIf="product.sales">
-                    <span class="rating-text">🛍️ {{ formatNumber(product.sales) }} vendidos</span>
-                  </div>
-                  <div class="featured-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</div>
-                  <span class="mk-promo" *ngIf="product.promoLabel">{{ product.promoLabel }}</span>
-                </div>
+        <div class="mk-section-head">
+          <p class="mk-eyebrow mk-eyebrow--dark">Lo más pedido</p>
+          <h2 class="mk-h2">Productos <em>destacados</em></h2>
+        </div>
+        <div class="featured-carousel" [class.is-static]="featuredProducts.length < 4">
+          <div class="featured-track" [style.animation-duration.s]="featuredProducts.length * 5">
+            <article class="featured-card" *ngFor="let product of (featuredProducts.length < 4 ? featuredProducts : infiniteFeaturedProducts)"
+                     (click)="openProductDetails(product)">
+              <div class="featured-image">
+                <img *ngIf="product.image" [src]="product.image" [alt]="product.strName" loading="lazy">
+                <div *ngIf="!product.image" class="featured-placeholder">📦</div>
               </div>
-            </div>
+              <div class="featured-info">
+                <h4>{{ product.strName }}</h4>
+                <div class="featured-rating" *ngIf="product.sales">
+                  <span class="rating-text">{{ formatNumber(product.sales) }} vendidos</span>
+                </div>
+                <div class="featured-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</div>
+                <span class="mk-promo" *ngIf="product.promoLabel">{{ product.promoLabel }}</span>
+              </div>
+            </article>
           </div>
         </div>
       </section>
@@ -345,10 +362,12 @@
       <app-menu-board *ngIf="showMenuBoard"
         [variant]="$any(displayMode)"
         [products]="filteredProducts"
-        [businessName]="businessName"
+        [businessName]="storeName"
         [logoUrl]="storeLogoUrl"
         [tagline]="storeWelcome"
         [whatsapp]="storeWhatsapp"
+        [hours]="todayHours"
+        [promos]="promoTexts"
         [quantities]="cartQuantities"
         [cartCount]="getCartCount()"
         [cartTotal]="getCartTotal()"
@@ -362,7 +381,10 @@
 
       <section class="products-section" *ngIf="!showMenuBoard">
         <div class="section-header">
-          <h2>Productos ({{ filteredProducts.length }})</h2>
+          <div>
+            <p class="mk-eyebrow mk-eyebrow--dark">{{ tenantId === 'home' ? 'Vitrina' : 'Catálogo' }}</p>
+            <h2 class="mk-h2">{{ tenantId === 'home' ? 'Todos los' : 'Nuestros' }} <em>productos</em> <span class="mk-count">{{ filteredProducts.length }}</span></h2>
+          </div>
           <div class="sort-controls">
             <select [(ngModel)]="sortBy" (change)="onSortChange()">
               <option value="name">Ordenar por Relevancia</option>
@@ -403,7 +425,7 @@
 
                 <div class="product-meta-modern">
                   <div class="rating" *ngIf="product.sales">🛍️ {{ formatNumber(product.sales) }} vendidos</div>
-                  <div class="location">📍 {{ product.strLocation }}</div>
+                  <div class="location" *ngIf="isAdminMode && product.strLocation">📍 {{ product.strLocation }}</div>
                 </div>
 
                 <div class="price-section">
@@ -414,7 +436,10 @@
                 </div>
 
                 <div class="product-actions-modern">
-                  <button class="btn-add-cart" (click)="addToCart(product)">Agregar al carrito</button>
+                  <button class="btn-add-cart" (click)="addToCart(product)">
+                    <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#bag"/></svg>
+                    {{ tenantId === 'home' ? 'Ver en la tienda' : 'Agregar' }}
+                  </button>
                   <button class="btn-details" (click)="openProductDetails(product)">Ver detalles</button>
                 </div>
               </div>
@@ -430,13 +455,15 @@
         </div>
       </section>
     </main>
+    </div>
 
     <!-- Tienda impulsada por InOut -->
-    <footer class="mk-footer">
+    <footer class="mk-footer" *ngIf="!loading">
       <a href="https://www.cyclonet.com.co/inout/" target="_blank" rel="noopener" title="Conoce InOut">
         <span>Tienda impulsada por</span>
         <img src="assets/img/logo_inout_marketplace.png" alt="InOut" width="72" height="28" loading="lazy">
       </a>
+      <small>Inventario, pedidos y tienda online para negocios que crecen.</small>
     </footer>
   </div>
 </div>

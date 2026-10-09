@@ -1,4 +1,6 @@
-import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { formatCop } from '../../../shared/utils/currency.util';
 
@@ -7,8 +9,8 @@ export type MenuVariant = 'menu' | 'menu-chalk' | 'menu-clean';
 
 export const MENU_VARIANTS: { value: MenuVariant; label: string; hint: string }[] = [
   { value: 'menu', label: 'Póster', hint: 'Colores cálidos y letras grandes, como un menú impreso' },
-  { value: 'menu-chalk', label: 'Pizarra', hint: 'Fondo oscuro con letra de tiza' },
-  { value: 'menu-clean', label: 'Elegante', hint: 'Claro y sobrio, tipografía clásica' },
+  { value: 'menu-chalk', label: 'Pizarra', hint: 'Pizarra verde con marco de madera y letra de tiza' },
+  { value: 'menu-clean', label: 'Elegante', hint: 'Fondo oscuro con dorado y tipografía clásica' },
 ];
 
 export function isMenuMode(mode: string | null | undefined): boolean {
@@ -18,6 +20,8 @@ export function isMenuMode(mode: string | null | undefined): boolean {
 interface MenuSection {
   name: string;
   items: any[];
+  /** Combos y promociones: tarjetas con foto en vez de renglones. */
+  featured: boolean;
 }
 
 /**
@@ -33,7 +37,7 @@ interface MenuSection {
   styleUrls: ['./menu-board.component.css'],
   host: { '[attr.data-variant]': 'variant' },
 })
-export class MenuBoardComponent implements OnInit, OnChanges {
+export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() variant: MenuVariant = 'menu';
   @Input() products: any[] = [];
   @Input() businessName = '';
@@ -41,6 +45,10 @@ export class MenuBoardComponent implements OnInit, OnChanges {
   @Input() logoUrl: string | null = null;
   @Input() tagline = '';
   @Input() whatsapp = '';
+  /** Horario de pedidos de hoy ("Pedidos hoy · 6:30 p. m. – 10:00 p. m."); null si no hay. */
+  @Input() hours: { open: boolean; label: string } | null = null;
+  /** Promociones en curso, ya en texto ("Hora feliz -20% · hasta las 7:00 p. m."). */
+  @Input() promos: string[] = [];
   /** Cantidad en el carrito por id de producto. */
   @Input() quantities: Record<string, number> = {};
   @Input() cartCount = 0;
@@ -55,11 +63,24 @@ export class MenuBoardComponent implements OnInit, OnChanges {
   @Output() details = new EventEmitter<any>();
   @Output() checkout = new EventEmitter<void>();
 
+  @ViewChild('tabsNav') private tabsNav?: ElementRef<HTMLElement>;
+  @ViewChildren('sectionEl') private sectionEls!: QueryList<ElementRef<HTMLElement>>;
+
   sections: MenuSection[] = [];
   heroImage: string | null = null;
   activeSection = '';
 
-  constructor(private host: ElementRef<HTMLElement>) {}
+  /** Contenedor con scroll de la página (la tienda usa .scroll-container, no window). */
+  private scroller: HTMLElement | Window | null = null;
+  private spyFrame = 0;
+  /** Mientras dura el scroll suave de goTo(), el seguimiento no cambia la pestaña. */
+  private spyLockedUntil = 0;
+  private readonly onScroll = () => {
+    if (this.spyFrame) return;
+    this.spyFrame = requestAnimationFrame(() => { this.spyFrame = 0; this.spy(); });
+  };
+
+  constructor(private host: ElementRef<HTMLElement>, private zone: NgZone) {}
 
   ngOnInit(): void {
     this.loadFonts();
@@ -75,16 +96,32 @@ export class MenuBoardComponent implements OnInit, OnChanges {
     }
     // Los combos van primero
     this.sections = [...groups.entries()]
-      .map(([name, items]) => ({ name, items }))
+      .map(([name, items]) => ({ name, items, featured: name === 'Combos' }))
       .sort((a, b) => Number(b.name === 'Combos') - Number(a.name === 'Combos'));
     // Promociones: los ítems con precio de promoción, también en su propia sección (después de Combos)
     const promos = (this.products || []).filter((p) => p.itemType !== 'combo' && p.itemType !== 'kit' && p.promoLabel);
     if (promos.length) {
       const at = this.sections[0]?.name === 'Combos' ? 1 : 0;
-      this.sections.splice(at, 0, { name: 'Promociones', items: promos });
+      this.sections.splice(at, 0, { name: 'Promociones', items: promos, featured: true });
+    }
+    // Las tarjetas con foto solo tienen sentido si los ítems tienen foto
+    for (const s of this.sections) {
+      if (s.featured && !s.items.some((p) => p.image)) s.featured = false;
     }
     if (!this.sections.some((s) => s.name === this.activeSection)) this.activeSection = this.sections[0]?.name || '';
     this.heroImage = (this.products || []).find((p) => p.image)?.image || null;
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof window === 'undefined') return;
+    this.scroller = this.findScroller();
+    // Fuera de Angular: solo se entra a la zona cuando cambia la sección
+    this.zone.runOutsideAngular(() => this.scroller!.addEventListener('scroll', this.onScroll, { passive: true }));
+  }
+
+  ngOnDestroy(): void {
+    this.scroller?.removeEventListener('scroll', this.onScroll);
+    if (this.spyFrame) cancelAnimationFrame(this.spyFrame);
   }
 
   /** El logo del negocio va en el círculo del encabezado; sin logo, la foto del primer plato. */
@@ -120,13 +157,65 @@ export class MenuBoardComponent implements OnInit, OnChanges {
   }
 
   goTo(section: MenuSection): void {
-    this.activeSection = section.name;
+    this.setActive(section.name);
+    this.spyLockedUntil = Date.now() + 900;
     const el = this.host.nativeElement.querySelector('#' + this.sectionId(section.name));
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   trackById(_: number, p: any): string {
     return p.strId;
+  }
+
+  trackBySection(_: number, s: MenuSection): string {
+    return s.name;
+  }
+
+  /**
+   * Pestaña activa según la sección que se está leyendo: la última cuyo título
+   * ya pasó bajo las pestañas fijas. Al llegar al final de la página, la última
+   * (puede ser corta y no alcanzar a subir hasta las pestañas).
+   */
+  private spy(): void {
+    if (Date.now() < this.spyLockedUntil) return;
+    const els = this.sectionEls?.toArray().map((r) => r.nativeElement) || [];
+    if (!els.length) return;
+    const line = (this.tabsNav?.nativeElement.getBoundingClientRect().bottom ?? 0) + 24;
+    let current = els[0];
+    let currentTop = -Infinity;
+    for (const el of els) {
+      const top = el.getBoundingClientRect().top;
+      // En la grilla de 2 columnas, entre secciones de la misma fila gana la primera
+      if (top <= line && top > currentTop + 1) { current = el; currentTop = top; }
+    }
+    if (this.atBottom()) current = els[els.length - 1];
+    const name = current.getAttribute('data-section');
+    if (name && name !== this.activeSection) this.zone.run(() => this.setActive(name));
+  }
+
+  private atBottom(): boolean {
+    const sc = this.scroller;
+    if (!sc) return false;
+    if (sc instanceof Window) return sc.innerHeight + sc.scrollY >= document.documentElement.scrollHeight - 4;
+    return sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4;
+  }
+
+  private findScroller(): HTMLElement | Window {
+    let el = this.host.nativeElement.parentElement;
+    while (el) {
+      const oy = getComputedStyle(el).overflowY;
+      if (oy === 'auto' || oy === 'scroll') return el;
+      el = el.parentElement;
+    }
+    return window;
+  }
+
+  /** Marca la pestaña y la centra en la fila de pestañas (sin mover la página). */
+  private setActive(name: string): void {
+    this.activeSection = name;
+    const nav = this.tabsNav?.nativeElement;
+    const tab = nav?.querySelector<HTMLElement>(`[data-tab="${CSS.escape(name)}"]`);
+    if (nav && tab) nav.scrollTo({ left: tab.offsetLeft - nav.clientWidth / 2 + tab.offsetWidth / 2, behavior: 'smooth' });
   }
 
   /** Fuentes de los diseños del menú: se cargan solo cuando se muestra un menú. */
