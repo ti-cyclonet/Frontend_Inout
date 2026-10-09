@@ -5,7 +5,9 @@ import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 import { splitPlanLabel } from '../order-tracking/order-labels';
-import { DEFAULT_THANKS_MESSAGES, THANKS_MAX_LENGTH, ThanksMessages, fillThanks } from '../order-tracking/thanks-messages';
+import {
+  DEFAULT_THANKS_MESSAGES, THANKS_MAX_LENGTH, THANKS_STYLES, ThanksMessages, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts,
+} from '../order-tracking/thanks-messages';
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -42,6 +44,7 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
   thanks: ThanksMessages | null = null;
   savingThanks = false;
   maxLen = THANKS_MAX_LENGTH;
+  thanksStyles = THANKS_STYLES;
   tagName = '{nombre}';
   tagOrder = '{pedido}';
   /** Datos de ejemplo para la vista previa. */
@@ -67,13 +70,14 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
     this.http.get<any>(`${this.base}/${this.tenantId}/payment-options`).subscribe({ next: (p) => (this.payments = p), error: () => {} });
     this.http.get<any>(`${this.base}/${this.tenantId}/scheduling`).subscribe({ next: (s) => (this.scheduling = s), error: () => {} });
     this.http.get<ThanksMessages>(`${this.base}/${this.tenantId}/thanks-messages`).subscribe({
-      next: (t) => (this.thanks = { ...DEFAULT_THANKS_MESSAGES, ...t }),
+      next: (t) => (this.thanks = { ...DEFAULT_THANKS_MESSAGES, ...t, style: isThanksStyle(t?.style) ? t.style : 'clasico' }),
       error: () => (this.thanks = { ...DEFAULT_THANKS_MESSAGES }),
     });
   }
 
   toggle(section: 'store' | 'payments' | 'scheduling' | 'thanks'): void {
     this.open = this.open === section ? null : section;
+    if (this.open === 'thanks') loadThanksFonts();
   }
 
   /** Dígitos del WhatsApp sin indicativo (+57). */
@@ -166,14 +170,14 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
   }
 
   /** Vista previa con un cliente de ejemplo. */
-  preview(key: Exclude<keyof ThanksMessages, 'enabled'>): string {
+  preview(key: ThanksTextKey): string {
     const value = this.thanks?.[key]?.trim() || DEFAULT_THANKS_MESSAGES[key];
     return fillThanks(value, this.previewName, this.previewCode);
   }
 
   resetThanks(): void {
     if (!this.thanks) return;
-    this.thanks = { ...DEFAULT_THANKS_MESSAGES, enabled: this.thanks.enabled };
+    this.thanks = { ...DEFAULT_THANKS_MESSAGES, enabled: this.thanks.enabled, style: this.thanks.style };
   }
 
   saveThanks(): void {
