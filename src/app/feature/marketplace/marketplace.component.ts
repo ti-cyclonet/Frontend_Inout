@@ -579,7 +579,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.businessSector = businessSector;
       this.businessName = contractResponse?.user?.basicData?.legalEntityData?.businessName || 
                           contractResponse?.user?.basicData?.naturalPersonData?.strFirstName || '';
-      
+      // Tienda personalizada: el tab muestra la razón social del negocio
+      const storeName = this.businessName || configResponse?.slug;
+      if (storeName) this.titleService.setTitle(storeName);
+
       this.customizeMarketplaceBySector(businessSector);
       await this.aplicarEstadisticas(this.products);
 
