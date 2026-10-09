@@ -166,9 +166,18 @@
         </div>
       </div>
 
+      <p class="ss-label">Estilo de la tarjeta</p>
+      <div class="ss-styles" role="radiogroup" aria-label="Estilo de la tarjeta de agradecimiento">
+        <button type="button" class="ss-style" *ngFor="let st of thanksStyles" role="radio"
+                [attr.aria-checked]="thanks.style === st.value" [class.active]="thanks.style === st.value" (click)="thanks.style = st.value">
+          <i class="ss-sw" [attr.data-style]="st.value" aria-hidden="true"></i>
+          <span><strong>{{ st.label }}</strong><small>{{ st.hint }}</small></span>
+        </button>
+      </div>
+
       <p class="ss-label">Vista previa</p>
-      <div class="ss-thanks-preview">
-        <div class="tp-hero"><span>🎁</span></div>
+      <div class="ss-thanks-preview" [attr.data-style]="thanks.style">
+        <div class="tp-hero"><span class="tp-photo">🎁</span><span class="tp-seal" aria-hidden="true">✓</span></div>
         <p class="tp-kicker">{{ preview('kicker') }}</p>
         <p class="tp-title">{{ preview('title') }}</p>
         <p class="tp-text">{{ preview('message') }}</p>

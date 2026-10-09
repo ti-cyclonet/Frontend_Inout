@@ -7,7 +7,7 @@ import { PaymentVoucherUploadComponent } from './payment-voucher-upload.componen
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { DisplayLine, groupComboLines } from '../../../shared/utils/combo-lines.util';
-import { DEFAULT_THANKS_MESSAGES, ThanksMessages, fillThanks } from './thanks-messages';
+import { DEFAULT_THANKS_MESSAGES, ThanksStyle, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts } from './thanks-messages';
 
 /** Cada cuánto se refresca el seguimiento mientras el pedido sigue en curso. */
 const REFRESH_MS = 60_000;
@@ -90,7 +90,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     if (!this.order?.thanks || !DELIVERED.includes(this.order.status) || this.showThanks) return;
     let seen = false;
     try { seen = localStorage.getItem(THANKS_KEY + this.token) === '1'; } catch { /* sin almacenamiento */ }
-    if (!seen) this.showThanks = true;
+    if (!seen) this.openThanks();
   }
 
   closeThanks(): void {
@@ -100,6 +100,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   /** Vuelve a abrir el agradecimiento desde la tarjeta del pedido. */
   openThanks(): void {
+    if (this.thanksStyle === 'postal') loadThanksFonts();
     this.showThanks = true;
   }
 
@@ -108,9 +109,15 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   /** Texto de la modal, configurado por la tienda, con sus marcadores reemplazados. */
-  thanksText(key: Exclude<keyof ThanksMessages, 'enabled'>): string {
+  thanksText(key: ThanksTextKey): string {
     const messages = this.order?.thanks?.messages || DEFAULT_THANKS_MESSAGES;
     return fillThanks(messages[key] || DEFAULT_THANKS_MESSAGES[key], this.firstName(), this.order?.orderCode || '');
+  }
+
+  /** Diseño de la tarjeta elegido por la tienda (clásico si no eligió). */
+  get thanksStyle(): ThanksStyle {
+    const s = this.order?.thanks?.messages?.style;
+    return isThanksStyle(s) ? s : 'clasico';
   }
 
   /** Color de la tienda para la modal (o el naranja de InOut). */
