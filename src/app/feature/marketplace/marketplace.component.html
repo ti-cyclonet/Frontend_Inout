@@ -4,9 +4,15 @@
     <header class="modern-header" #mkHeader>
       <div class="header-top">
         <div class="brand-wrap">
+          <!-- En la tienda de un negocio: volver a la vitrina general (recarga completa,
+               igual que el Home al abrir una tienda, para no arrastrar el estado de esta) -->
+          <a *ngIf="tenantId !== 'home'" class="mk-back" href="/marketplace/home" title="Volver a CycloNet Market" aria-label="Volver a CycloNet Market">
+            <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#arrow-left"/></svg>
+          </a>
           <img *ngIf="tenantId !== 'home' && storeLogoUrl" class="store-logo" [src]="storeLogoUrl" [alt]="storeName || 'Logo de la tienda'">
           <div class="brand">
-            <h1>CycloNet <span class="market">Market</span></h1>
+            <h1 *ngIf="tenantId === 'home'">CycloNet <span class="market">Market</span></h1>
+            <h1 *ngIf="tenantId !== 'home'"><a class="brand-link" href="/marketplace/home" title="Ver todas las tiendas">CycloNet <span class="market">Market</span></a></h1>
             <span class="business-name" *ngIf="tenantId !== 'home' && storeName">{{ storeName }}</span>
           </div>
         </div>
@@ -63,6 +69,10 @@
       <div class="mk-hero-inner" [class.has-visual]="carouselProducts.length > 0">
         <div class="mk-hero-copy">
           <ng-container *ngIf="tenantId !== 'home'; else homeCopy">
+            <a class="mk-crumb" href="/marketplace/home">
+              <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#arrow-left"/></svg>
+              Ver todas las tiendas en CycloNet Market
+            </a>
             <div class="mk-store-id">
               <span class="mk-hero-logo" *ngIf="storeLogoUrl"><img [src]="storeLogoUrl" [alt]="storeName || 'Logo de la tienda'"></span>
               <p class="mk-eyebrow">{{ sectorBanner.title }}</p>

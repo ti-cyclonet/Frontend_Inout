@@ -24,8 +24,22 @@
 .brand-wrap { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
 .store-logo { width: 42px; height: 42px; object-fit: contain; border-radius: 12px; background: #fff; padding: 3px; flex-shrink: 0; }
 .brand { display: flex; flex-direction: column; min-width: 0; }
-.brand h1 { margin: 0; font: 800 1.15rem/1.1 var(--mk-font-d); letter-spacing: -0.02em; color: #fff; white-space: nowrap; }
+.brand h1 { margin: 0; font: 800 1.15rem/1.1 var(--mk-font-d); letter-spacing: -0.02em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand .market { background: linear-gradient(90deg, var(--mk-blue-l), var(--mk-orange)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand-link { color: inherit; text-decoration: none; }
+.brand-link:hover .market { filter: brightness(1.2); }
+.mk-back {
+  display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; color: #fff; font-size: 1rem;
+  background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); transition: background 0.2s, transform 0.2s var(--mk-ease);
+}
+.mk-back:hover { background: rgba(255, 255, 255, 0.14); color: #fff; transform: translateX(-2px); }
+.mk-crumb {
+  display: inline-flex; align-items: center; gap: 0.45rem; margin-bottom: 1.1rem; font-size: 0.82rem; font-weight: 500;
+  color: var(--mk-muted-d); text-decoration: none; transition: color 0.2s;
+}
+.mk-crumb:hover { color: #fff; }
+.mk-crumb:hover .mk-ico { transform: translateX(-3px); }
+.mk-crumb .mk-ico { color: var(--mk-orange); transition: transform 0.2s var(--mk-ease); }
 .business-name { font-size: 0.76rem; color: var(--mk-muted-d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-container { flex: 1; min-width: 0; }
 .search-box {
@@ -272,6 +286,8 @@
 }
 @media (max-width: 420px) {
   .session-login { padding: 0.5rem 0.8rem; }
+  /* El logo de la tienda ya está en su encabezado: en la barra deja espacio a la flecha */
+  .header-top .store-logo { display: none; }
   .brand h1 { font-size: 1.02rem; }
   .mk-pills li { font-size: 0.76rem; }
 }
