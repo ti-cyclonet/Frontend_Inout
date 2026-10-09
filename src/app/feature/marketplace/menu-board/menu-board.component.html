@@ -2,7 +2,6 @@
   <!-- Encabezado del menú -->
   <header class="mb-hero">
     <div class="mb-hero-text">
-      <img *ngIf="logoUrl" class="mb-logo" [src]="logoUrl" [alt]="businessName || 'Logo'">
       <h1 class="mb-title">
         <span class="mb-title-first">{{ titleWords.first }}</span>
         <span class="mb-title-rest" *ngIf="titleWords.rest">{{ titleWords.rest }}</span>
@@ -10,8 +9,9 @@
       <div class="mb-ribbon">{{ sections.length === 1 ? sections[0].name : 'Nuestro menú' }}</div>
       <p class="mb-tagline">{{ tagline || 'Hecho con un sabor único · pide en línea' }}</p>
     </div>
-    <div class="mb-hero-photo" *ngIf="heroImage">
-      <img [src]="heroImage" alt="" loading="eager">
+    <!-- El círculo lleva el logo del negocio; sin logo, la foto del primer plato -->
+    <div class="mb-hero-photo" *ngIf="circuloSrc" [class.mb-hero-photo--logo]="circuloEsLogo">
+      <img [src]="circuloSrc" [alt]="circuloEsLogo ? (businessName || 'Logo') : ''" loading="eager">
     </div>
   </header>
 

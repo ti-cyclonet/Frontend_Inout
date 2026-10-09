@@ -403,15 +403,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/products`, { params: { limit: '5000' } }).toPromise(),
       this.http.get<any>(`${this.baseUrl}/sales`).toPromise()
-    ]).then(([productsResponse, salesResponse]) => {
+    ]).then(async ([productsResponse, salesResponse]) => {
       this.products = (productsResponse.data || []).map((product: any) => ({
         ...product,
-        views: Math.floor(Math.random() * 500) + 50,
-        sales: Math.floor(Math.random() * 100) + 10,
-        rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
         image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null
       }));
-      
+      await this.aplicarEstadisticas(this.products);
+
       this.calculateStats();
       this.filteredProducts = [...this.products];
       this.loading = false;
@@ -438,12 +436,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
       const products: Product[] = raw.map((product: any) => ({
         ...product,
-        views: Math.floor(Math.random() * 500) + 50,
-        sales: Math.floor(Math.random() * 100) + 10,
-        rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
         image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null,
       }));
       this.products = this.interleaveByTenant(products);
+      await this.aplicarEstadisticas(this.products);
 
       this.calculateStats();
       this.filteredProducts = [...this.products];
@@ -515,15 +511,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       // Combos y kits de la tienda, y promociones en curso
       this.http.get<any[]>(`${this.baseUrl}/combos/tenant/${tenantId}/catalog`).toPromise().catch(() => []),
       this.http.get<any[]>(`${this.baseUrl}/promotions/tenant/${tenantId}/live`).toPromise().catch(() => []),
-    ]).then(([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions]) => {
+    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions]) => {
+      this.storeContract = contractResponse || null;
       this.paymentOptions = paymentOptions || null;
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
       this.products = (productsResponse.data || []).map((product: any) => ({
         ...product,
         itemType: 'product',
-        views: Math.floor(Math.random() * 500) + 50,
-        sales: Math.floor(Math.random() * 100) + 10,
-        rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
         image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null
       }));
       
@@ -543,9 +537,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       const resaleItems: Product[] = (resaleResponse || []).map((item: any) => ({
         ...item,
         intCategoryId: item.categoryId,
-        views: Math.floor(Math.random() * 500) + 50,
-        sales: Math.floor(Math.random() * 100) + 10,
-        rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
         image: item.images && item.images.length > 0 ? item.images[0].strImageUrl : null
       }));
       this.products = [...this.products, ...resaleItems];
@@ -590,7 +581,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
                           contractResponse?.user?.basicData?.naturalPersonData?.strFirstName || '';
       
       this.customizeMarketplaceBySector(businessSector);
-      
+      await this.aplicarEstadisticas(this.products);
+
       this.calculateStats();
       this.filteredProducts = [...this.products];
       this.createProductGroups();
@@ -796,8 +788,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.stats.mostSoldProduct = this.products.reduce((max, p) => 
       (p.sales || 0) > (max?.sales || 0) ? p : max, this.products[0] || null);
     
-    this.stats.topRatedProduct = this.products.reduce((max, p) => 
-      (p.rating || 0) > (max?.rating || 0) ? p : max, this.products[0] || null);
+    // No hay calificaciones reales: el "mejor" es el más vendido
+    this.stats.topRatedProduct = this.stats.mostSoldProduct;
   }
 
   onSearch(): void {
@@ -835,8 +827,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           return (b.views || 0) - (a.views || 0);
         case 'sales':
           return (b.sales || 0) - (a.sales || 0);
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
+        case 'rating': // opción vieja: se ordena por más vendidos
+          return (b.sales || 0) - (a.sales || 0);
         default:
           return a.strName.localeCompare(b.strName);
       }
@@ -997,7 +989,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       productsToUse = [];
     }
     
-    this.featuredProducts = productsToUse.filter(p => p.rating && p.rating >= 4.5).slice(0, 10);
+    // Destacados = los más vendidos de verdad (antes: calificación inventada >= 4.5)
+    this.featuredProducts = productsToUse.filter(p => (p.sales || 0) > 0)
+      .sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 10);
     if (this.featuredProducts.length === 0) {
       this.featuredProducts = productsToUse.slice(0, 10);
     }
@@ -1354,6 +1348,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   openProductDetails(product: Product): void {
     this.selectedProduct = product;
     this.loadProviderInfo(product);
+    this.registrarVista(product);
   }
 
   closeProductDetails(): void {
@@ -1361,40 +1356,105 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.providerInfo = null;
   }
 
+  /** Tienda a la que pertenece un ítem (los combos no traen strTenantId: son de la tienda abierta). */
+  private tenantDe(product: Product): string | null {
+    const id = (product as any)?.strTenantId || (this.tenantId !== 'home' && this.tenantId !== 'current-tenant' ? this.tenantId : null);
+    return id && /^[0-9a-fA-F-]{8,64}$/.test(id) ? id : null;
+  }
+
+  /**
+   * Vistas y unidades vendidas reales de cada ítem (antes eran Math.random()).
+   * Se piden por tienda: en la vitrina general hay productos de varias.
+   */
+  private async aplicarEstadisticas(items: Product[]): Promise<void> {
+    const tenants = [...new Set(items.map((p) => this.tenantDe(p)).filter(Boolean))] as string[];
+    const porTenant = await Promise.all(tenants.map((t) =>
+      this.http.get<Record<string, { views: number; sold: number }>>(`${this.baseUrl}/marketplace-config/${t}/stats`).toPromise()
+        .then((r) => r || {}).catch(() => ({} as Record<string, { views: number; sold: number }>))));
+    const stats = new Map(tenants.map((t, i) => [t, porTenant[i]]));
+    for (const p of items) {
+      const s = stats.get(this.tenantDe(p) || '')?.[p.strId];
+      p.views = s?.views || 0;
+      p.sales = s?.sold || 0;
+    }
+  }
+
+  /** Suma una vista al abrir el detalle, una sola vez por visitante y sesión. */
+  private registrarVista(product: Product): void {
+    const tenant = this.tenantDe(product);
+    if (!tenant || !product?.strId || this.isAdminMode || typeof sessionStorage === 'undefined') return;
+    const clave = `mk-visto-${tenant}-${product.strId}`;
+    try {
+      if (sessionStorage.getItem(clave)) return;
+      sessionStorage.setItem(clave, '1');
+    } catch { return; }
+    this.http.post(`${this.baseUrl}/marketplace-config/${tenant}/items/${product.strId}/view`, {}).subscribe({
+      next: () => { product.views = (product.views || 0) + 1; },
+      error: () => {},
+    });
+  }
+
+  /** Contrato del negocio de la tienda abierta (Authoriza): nombre y contacto del proveedor. */
+  private storeContract: any = null;
+
+  /** Etiqueta del sector del negocio ("restaurant" → "Alimentos y restaurantes"). */
+  private sectorLabel(sector?: string | null): string {
+    const etiquetas: Record<string, string> = {
+      restaurant: 'Alimentos y restaurantes', fashion: 'Moda', beauty: 'Belleza', hardware: 'Ferretería',
+      electronics: 'Electrónicos', automotive: 'Automotriz', health: 'Salud', sports: 'Deportes',
+      home: 'Hogar', services: 'Servicios', retail: 'Tienda de barrio',
+    };
+    const valor = (sector || '').trim();
+    if (!valor || valor.toLowerCase() === 'general') return '';
+    // Clave en inglés ("restaurant") o el nombre que el negocio escribió ("Alimentos y bebidas")
+    return etiquetas[valor.toLowerCase()] || (/^[a-z_]+$/.test(valor) ? '' : valor);
+  }
+
+  /**
+   * Datos reales del negocio: razón social o nombre, correo y teléfono de
+   * contacto (Authoriza) y el WhatsApp configurado en la tienda. Antes se
+   * leían campos que no existen y siempre salían datos de ejemplo
+   * ("Proveedor", contacto@proveedor.com, 3001234567).
+   */
+  private providerDesde(contract: any, whatsappTienda = ''): any {
+    const bd = contract?.user?.basicData;
+    const le = bd?.legalEntityData;
+    const np = bd?.naturalPersonData;
+    const nombre = le?.businessName || [np?.firstName, np?.firstSurname].filter(Boolean).join(' ') || '';
+    const telefono = (le?.contactPhone || np?.phone || '').toString().trim();
+    return {
+      businessName: nombre,
+      sector: this.sectorLabel(contract?.businessSector),
+      email: (le?.contactEmail || '').trim(),
+      phone: telefono,
+      whatsapp: (whatsappTienda || telefono || '').toString().trim(),
+    };
+  }
+
   loadProviderInfo(product: Product): void {
-    const tenantId = (product as any).strTenantId;
-    if (!tenantId) {
-      this.providerInfo = {
-        businessName: 'Proveedor',
-        sector: 'General',
-        email: 'contacto@proveedor.com',
-        phone: '3001234567',
-        address: 'Dirección no disponible'
-      };
+    const tenantId = this.tenantDe(product);
+    this.providerInfo = null;
+    if (!tenantId) return;
+
+    // La tienda abierta: ya se cargó su contrato y su WhatsApp
+    if (tenantId === this.tenantId && this.storeContract) {
+      this.providerInfo = this.providerDesde(this.storeContract, this.storeWhatsapp);
       return;
     }
-
     this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
       .then((contract) => {
-        this.providerInfo = {
-          businessName: contract?.user?.basicData?.legalEntityData?.businessName || 
-                       contract?.user?.basicData?.naturalPersonData?.strFirstName || 'Proveedor',
-          sector: contract?.businessSector || 'General',
-          email: contract?.user?.basicData?.strEmail || 'contacto@proveedor.com',
-          phone: contract?.user?.basicData?.strPhoneNumber || '3001234567',
-          address: contract?.user?.basicData?.legalEntityData?.strAddress || 
-                  contract?.user?.basicData?.naturalPersonData?.strAddress || 'Dirección no disponible'
-        };
+        if (this.selectedProduct === product) this.providerInfo = this.providerDesde(contract);
       })
-      .catch(() => {
-        this.providerInfo = {
-          businessName: 'Proveedor',
-          sector: 'General',
-          email: 'contacto@proveedor.com',
-          phone: '3001234567',
-          address: 'Dirección no disponible'
-        };
-      });
+      .catch(() => { this.providerInfo = null; });
+  }
+
+  /** Enlace de WhatsApp con el producto en el mensaje. Número colombiano de 10 dígitos → +57. */
+  whatsappProducto(numero: string | null | undefined, product: Product | null): string | null {
+    const digitos = (numero || '').replace(/\D/g, '');
+    if (digitos.length < 10) return null;
+    const destino = digitos.length === 10 ? '57' + digitos : digitos;
+    const texto = product ? `Hola, me interesa "${product.strName}" que vi en tu tienda de CycloNet Market.` : 'Hola, vi tu tienda en CycloNet Market.';
+    return `https://wa.me/${destino}?text=${encodeURIComponent(texto)}`;
   }
 
   // ═══════ CART & CHECKOUT ═══════
