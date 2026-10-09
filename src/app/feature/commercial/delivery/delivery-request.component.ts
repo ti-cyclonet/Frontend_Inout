@@ -829,7 +829,7 @@ export class DeliveryRequestComponent implements OnDestroy {
     if (!this.originCoords || !this.destCoords) return;
     const { lat: oLat, lng: oLng } = this.originCoords;
     const { lat: dLat, lng: dLng } = this.destCoords;
-    const url = `https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${dLng},${dLat}?overview=full&geometry=geojson`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${dLng},${dLat}?overview=full&geometries=geojson`;
 
     fetch(url)
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
