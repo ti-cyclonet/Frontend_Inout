@@ -6,6 +6,9 @@ import { ProductsService, SellableItem } from '../../../shared/services/products
 import { Customer } from '../../../shared/model/customer.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { customerHint, leadToCustomer, mergeCustomers, promptQuickCustomer } from '../../../shared/utils/quick-customer';
 import Swal from 'sweetalert2';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { PromotionsService } from '../../../shared/services/promotions.service';
@@ -110,12 +113,31 @@ export class OrderFormComponent implements OnInit {
   }
 
   loadCustomers(): void {
-    this.customersService.getCustomers().subscribe({
-      next: (customers) => {
-        this.customers = customers;
-        this.filteredCustomers = customers;
+    // Con cuenta (clienteInout) + clientes rápidos (clientes potenciales del negocio)
+    forkJoin([
+      this.customersService.getCustomers().pipe(catchError((error) => { console.error('Error loading customers:', error); return of([]); })),
+      this.customersService.getPotentialCustomers().pipe(catchError(() => of([]))),
+    ]).subscribe(([clients, leads]) => {
+      this.customers = mergeCustomers(clients, leads);
+      this.filterCustomers();
+    });
+  }
+
+  customerHint = customerHint;
+
+  /** Registra un cliente con solo el nombre (teléfono y correo opcionales) y lo deja seleccionado. */
+  async createQuickCustomer(): Promise<void> {
+    this.showCustomerDropdown = false;
+    const data = await promptQuickCustomer(this.customerSearchTerm.trim());
+    if (!data) return;
+    this.customersService.createQuickCustomer(data).subscribe({
+      next: (lead) => {
+        const customer = leadToCustomer(lead);
+        this.customers = [...this.customers.filter((c) => c.potentialUserId !== customer.potentialUserId || !!c.id), customer];
+        this.selectCustomer(customer);
+        Swal.fire({ icon: 'success', title: 'Cliente registrado', text: data.name, timer: 1300, showConfirmButton: false, toast: true, position: 'top-end' });
       },
-      error: (error) => console.error('Error loading customers:', error)
+      error: (err) => Swal.fire('No se pudo registrar el cliente', err?.error?.message || 'Intenta de nuevo.', 'error'),
     });
   }
 
@@ -157,7 +179,7 @@ export class OrderFormComponent implements OnInit {
     if (query) {
       this.filteredCustomers = this.customers.filter(customer => {
         const displayName = this.getCustomerDisplayName(customer).toLowerCase();
-        return displayName.includes(query) || customer.email?.toLowerCase().includes(query);
+        return displayName.includes(query) || customer.email?.toLowerCase().includes(query) || (customer.phone || '').includes(query);
       });
     } else {
       this.filteredCustomers = this.customers;
