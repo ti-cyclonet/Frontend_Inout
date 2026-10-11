@@ -44,6 +44,7 @@
           {{ it.quantity }} × {{ it.name }}
           <small class="tracking-promo" *ngIf="it.promotionName"> · {{ it.promotionName }}</small>
           <small class="tracking-includes" *ngIf="it.components?.length"><br>Incluye: {{ it.components!.join(', ') }}</small>
+          <small class="tracking-includes" *ngFor="let o of it.options || []"><br>{{ o }}</small>
         </span>
         <span>{{ formatCurrency(it.subtotal) }}</span>
       </div>

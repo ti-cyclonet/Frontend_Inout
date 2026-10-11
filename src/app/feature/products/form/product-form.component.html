@@ -138,6 +138,36 @@
                 <small class="text-muted">Se usa para estimar cuándo estará listo el pedido y qué franjas de entrega ofrecer.</small>
               </div>
             </div>
+
+            <!-- Producto para armar: el cliente escoge de las listas de la carta -->
+            <div class="form-group full-width choice-groups">
+              <label>Opciones que escoge el cliente <small class="text-muted">(MarketPlace)</small></label>
+              <small class="text-muted d-block">
+                Para productos "para armar": por ejemplo, una arepa combinada en la que el cliente marca 2 proteínas.
+                Las listas son las de MarketPlace → Información de la carta. Las opciones no cambian el precio.
+              </small>
+              <p class="choice-empty" *ngIf="menuBlocksLoaded && !menuBlocks.length && !choiceGroups.length">
+                Aún no hay listas en la carta. Créalas en MarketPlace → Información de la carta (Proteínas, Salsas, Adiciones…).
+              </p>
+              <div class="choice-row" *ngFor="let g of choiceGroups; let i = index">
+                <select class="form-control" [(ngModel)]="g.block" [ngModelOptions]="{standalone: true}" [attr.aria-label]="'Lista ' + (i + 1)">
+                  <option value="" disabled>Escoge una lista…</option>
+                  <option *ngFor="let b of menuBlocks" [value]="b.title">{{ b.title }} ({{ b.count }})</option>
+                  <option *ngIf="blockMissing(g.block)" [value]="g.block">{{ g.block }} (ya no está en la carta)</option>
+                </select>
+                <label class="choice-num">Mín
+                  <input type="number" class="form-control" min="0" max="10" [(ngModel)]="g.min" [ngModelOptions]="{standalone: true}">
+                </label>
+                <label class="choice-num">Máx
+                  <input type="number" class="form-control" min="1" max="10" [(ngModel)]="g.max" [ngModelOptions]="{standalone: true}">
+                </label>
+                <span class="choice-rule">{{ choiceRule(g) }}</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeChoiceGroup(i)" aria-label="Quitar lista">✕</button>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="menuBlocks.length && choiceGroups.length < maxChoiceGroups" (click)="addChoiceGroup()">
+                + Agregar lista de opciones
+              </button>
+            </div>
           </div>
 
           <div *ngIf="showCategoryForm" style="margin-top: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
