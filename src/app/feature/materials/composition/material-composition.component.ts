@@ -464,7 +464,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   loadAvailableMaterials(): void {
-    this.materialService.getMaterials().subscribe({
+    this.materialService.getAllMaterials().subscribe({
       next: (response) => {
         this.availableMaterials = response.data;
         this.extractAvailableLocations();

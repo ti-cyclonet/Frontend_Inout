@@ -242,7 +242,7 @@ export class InventoryComponent implements OnInit {
   }
 
   loadMaterials(): void {
-    this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+    this.materialService.getAllMaterials().subscribe({
       next: (res) => { this.materials = (res.data || []).map((m: any) => ({ id: m.id, name: m.name, code: m.strCode })); },
       error: () => { this.materials = []; }
     });

@@ -126,7 +126,7 @@ export class KardexComponent implements OnInit {
   }
 
   loadMaterials(): void {
-    this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+    this.materialService.getAllMaterials().subscribe({
       next: (response) => {
         this.materials = response.data.map((m: Material) => ({
           id: m.id,
@@ -168,7 +168,7 @@ export class KardexComponent implements OnInit {
 
   searchMaterials(): void {
     if (this.materials.length === 0) {
-      this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+      this.materialService.getAllMaterials().subscribe({
         next: (response) => {
           this.materials = response.data.map((m: Material) => ({
             id: m.id,
@@ -337,7 +337,7 @@ export class KardexComponent implements OnInit {
   /** Carga la lista del tipo de entidad activo (sin disparar la búsqueda/alerta) solo para armar las sugerencias. */
   private loadMaterialsForSuggestions(): void {
     if (this.entityType === 'material') {
-      this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+      this.materialService.getAllMaterials().subscribe({
         next: (response) => {
           this.materials = response.data.map((m: Material) => ({
             id: m.id, code: m.strCode || 'N/A', name: m.name, supplier: 'N/A',

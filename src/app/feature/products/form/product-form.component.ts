@@ -16,6 +16,8 @@ import Swal from 'sweetalert2';
 interface ExtendedMaterial extends Material {
   isComposite?: boolean;
   categoryId?: number;
+  /** Material de la receta que no está en la lista cargada (ver missingMaterial). */
+  missing?: boolean;
 }
 
 interface ProductComposition {
@@ -57,6 +59,8 @@ export class ProductFormComponent implements OnInit {
 
   // Materials
   availableMaterials: ExtendedMaterial[] = [];
+  /** Falló la carga de materiales: la receta podría estar incompleta, no se guarda. */
+  materialsLoadFailed = false;
   compositions: ProductComposition[] = [];
   selectedMaterials: Map<number, number> = new Map();
   
@@ -183,22 +187,36 @@ export class ProductFormComponent implements OnInit {
     }
   }
 
+  /**
+   * La receta guardada usa un material que no está en la lista cargada (falló la
+   * carga, o el material ya no existe): la línea se conserva con este marcador en
+   * vez de descartarse. Antes se descartaba en silencio y, como al guardar el
+   * backend reemplaza la receta completa, el producto perdía ingredientes.
+   */
+  private missingMaterial(id: string, isComposite: boolean): any {
+    return { id, name: 'Material no disponible', price: 0, measurementUnit: '', dischargeUnit: '', isComposite, missing: true };
+  }
+
+  /** No se puede guardar con la receta incompleta: se perderían ingredientes o costo. */
+  get recipeIncomplete(): boolean {
+    return this.materialsLoadFailed || this.compositions.some((c) => c.componentMaterial?.missing);
+  }
+
   loadProductCompositions(): void {
     if (!this.productData?.strId) return;
 
     this.productService.getCompositionTwo(this.productData.strId).subscribe({
       next: (compositionTwo: any) => {
         compositionTwo.forEach((comp: any) => {
-          const material = this.availableMaterials.find(m => m.id === comp.strMaterialId);
-          if (material) {
-            this.compositions.push({
-              id: Date.now() + Math.random(),
-              productId: 0,
-              componentMaterialId: comp.strMaterialId,
-              quantity: comp.fltQuantity,
-              componentMaterial: material
-            });
-          }
+          const material = this.availableMaterials.find(m => m.id === comp.strMaterialId && !m.isComposite)
+            || this.missingMaterial(comp.strMaterialId, false);
+          this.compositions.push({
+            id: Date.now() + Math.random(),
+            productId: 0,
+            componentMaterialId: comp.strMaterialId,
+            quantity: comp.fltQuantity,
+            componentMaterial: material
+          });
         });
       }
     });
@@ -206,24 +224,24 @@ export class ProductFormComponent implements OnInit {
     this.productService.getCompositionThree(this.productData.strId).subscribe({
       next: (compositionThree: any) => {
         compositionThree.forEach((comp: any) => {
-          const material = this.availableMaterials.find(m => m.id === comp.strTransformedMaterialId && m.isComposite);
-          if (material) {
-            this.compositions.push({
-              id: Date.now() + Math.random(),
-              productId: 0,
-              componentMaterialId: comp.strTransformedMaterialId,
-              quantity: comp.fltQuantity,
-              componentMaterial: material
-            });
-          }
+          const material = this.availableMaterials.find(m => m.id === comp.strTransformedMaterialId && m.isComposite)
+            || this.missingMaterial(comp.strTransformedMaterialId, true);
+          this.compositions.push({
+            id: Date.now() + Math.random(),
+            productId: 0,
+            componentMaterialId: comp.strTransformedMaterialId,
+            quantity: comp.fltQuantity,
+            componentMaterial: material
+          });
         });
       }
     });
   }
 
   loadAvailableMaterials(): void {
-    // Load regular materials
-    this.materialService.getMaterials().subscribe({
+    this.materialsLoadFailed = false;
+    // Todos los materiales del tenant: getMaterials() solo traía los primeros 10
+    this.materialService.getAllMaterials().subscribe({
       next: (response) => {
         const regularMaterials = response.data.map((m: any) => ({
           ...m,
@@ -257,6 +275,7 @@ export class ProductFormComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error loading composite materials:', error);
+            this.materialsLoadFailed = true;
             this.availableMaterials = regularMaterials;
             this.extractAvailableLocations();
             
@@ -268,6 +287,9 @@ export class ProductFormComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading materials:', error);
+        this.materialsLoadFailed = true;
+        // La receta se muestra igual (con marcadores) para no perderla de vista
+        if (this.isEditMode) this.loadProductCompositions();
       }
     });
   }
@@ -598,6 +620,17 @@ export class ProductFormComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.isFormValid()) return;
+
+    if (this.recipeIncomplete) {
+      Swal.fire(
+        'Receta incompleta',
+        this.materialsLoadFailed
+          ? 'No se pudieron cargar todos los materiales. Recarga la página antes de guardar para no perder ingredientes de la receta.'
+          : 'La receta tiene materiales que ya no están disponibles (marcados en rojo). Quítalos o reemplázalos antes de guardar.',
+        'warning',
+      );
+      return;
+    }
 
     if (this.priceBelowMinimum) {
       Swal.fire('Precio muy bajo', `El precio no puede ser menor al mínimo calculado (${this.formatCurrency(this.suggestedPrice)}), que cubre costo de materiales, costo indirecto y margen de ganancia.`, 'warning');
