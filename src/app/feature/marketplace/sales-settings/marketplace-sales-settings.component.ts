@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 import { splitPlanLabel } from '../order-tracking/order-labels';
+import { DEFAULT_DELIVERY_OPTIONS, DeliveryOptions } from '../delivery-options';
 import {
   DEFAULT_THANKS_MESSAGES, THANKS_MAX_LENGTH, THANKS_STYLES, ThanksMessages, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts,
 } from '../order-tracking/thanks-messages';
@@ -53,7 +54,9 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
   storeInfo: StoreInfo | null = null;
   savingStoreInfo = false;
   welcomeMax = WELCOME_MAX_LENGTH;
-  open: 'store' | 'payments' | 'scheduling' | 'thanks' | null = null;
+  delivery: DeliveryOptions | null = null;
+  savingDelivery = false;
+  open: 'store' | 'delivery' | 'payments' | 'scheduling' | 'thanks' | null = null;
   days = DAYS;
   splitPlanLabel = splitPlanLabel;
 
@@ -67,6 +70,10 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
       next: (i) => (this.storeInfo = { whatsapp: this.formatPhone(i?.whatsapp || ''), welcomeMessage: i?.welcomeMessage || '' }),
       error: () => (this.storeInfo = { whatsapp: '', welcomeMessage: '' }),
     });
+    this.http.get<DeliveryOptions>(`${this.base}/${this.tenantId}/delivery-options`).subscribe({
+      next: (d) => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...d }),
+      error: () => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS }),
+    });
     this.http.get<any>(`${this.base}/${this.tenantId}/payment-options`).subscribe({ next: (p) => (this.payments = p), error: () => {} });
     this.http.get<any>(`${this.base}/${this.tenantId}/scheduling`).subscribe({ next: (s) => (this.scheduling = s), error: () => {} });
     this.http.get<ThanksMessages>(`${this.base}/${this.tenantId}/thanks-messages`).subscribe({
@@ -75,7 +82,7 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
     });
   }
 
-  toggle(section: 'store' | 'payments' | 'scheduling' | 'thanks'): void {
+  toggle(section: 'store' | 'delivery' | 'payments' | 'scheduling' | 'thanks'): void {
     this.open = this.open === section ? null : section;
     if (this.open === 'thanks') loadThanksFonts();
   }
@@ -124,6 +131,42 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
       },
       error: (err) => {
         this.savingStoreInfo = false;
+        Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err?.error?.message || 'Intenta de nuevo.' });
+      },
+    });
+  }
+
+  /** Resumen en el encabezado de la sección Entrega. */
+  get deliverySummary(): string {
+    const d = this.delivery;
+    if (!d) return 'Cargando…';
+    const parts = [
+      d.deliveryEnabled ? `Domicilio ${d.deliveryFee > 0 ? '$' + Number(d.deliveryFee).toLocaleString('es-CO') : 'gratis'}` : '',
+      d.pickupEnabled ? 'Recoger en tienda' : '',
+    ].filter(Boolean);
+    return parts.join(' · ') || 'Sin configurar';
+  }
+
+  saveDelivery(): void {
+    const d = this.delivery;
+    if (!d) return;
+    if (!d.deliveryEnabled && !d.pickupEnabled) {
+      Swal.fire({ icon: 'warning', title: 'Activa una forma de entrega', text: 'Los clientes necesitan recibir su pedido a domicilio o recogerlo en la tienda.' });
+      return;
+    }
+    if (d.pickupEnabled && (d.pickupAddress || '').trim().length < 5) {
+      Swal.fire({ icon: 'warning', title: 'Dirección del local', text: 'Escribe la dirección donde el cliente recoge su pedido.' });
+      return;
+    }
+    this.savingDelivery = true;
+    this.http.patch<DeliveryOptions>(`${this.base}/${this.tenantId}/delivery-options`, { ...d, deliveryFee: Number(d.deliveryFee) || 0 }).subscribe({
+      next: (saved) => {
+        this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...saved };
+        this.savingDelivery = false;
+        Swal.fire({ icon: 'success', title: 'Entrega guardada', timer: 1500, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingDelivery = false;
         Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err?.error?.message || 'Intenta de nuevo.' });
       },
     });

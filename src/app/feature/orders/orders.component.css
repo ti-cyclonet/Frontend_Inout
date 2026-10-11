@@ -510,3 +510,4 @@
 /* Entrega con Shotra (avanza sola) */
 .card-badge.badge-shotra { background: #fde8e8; color: #7a0000; }
 .shotra-managed-note { display: block; width: 100%; margin-top: 6px; font-size: 0.78rem; color: #7a0000; background: #fdf0f0; border-radius: 8px; padding: 6px 10px; }
+.card-fulfillment { margin-left: 0.3rem; font-size: 0.8rem; }

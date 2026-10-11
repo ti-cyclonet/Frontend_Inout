@@ -13,6 +13,7 @@ import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
+import { DeliveryOptions } from './delivery-options';
 import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
@@ -178,6 +179,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   cart: { product: Product; quantity: number }[] = [];
   showCheckout = false;
   checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: '', notes: '' };
+  /** Formas de entrega de la tienda (GET marketplace-config/:tenantId/delivery-options). */
+  deliveryOptions: DeliveryOptions | null = null;
+  /** Cómo recibe el cliente su pedido. */
+  fulfillment: 'DELIVERY' | 'PICKUP' = 'DELIVERY';
   checkoutSending = false;
   orderSuccess: any = null;
 
@@ -529,10 +534,14 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.http.get<any[]>(`${this.baseUrl}/promotions/tenant/${tenantId}/live`).toPromise().catch(() => []),
       // Nombre del negocio configurado en los parámetros del período (título del tab)
       this.http.get<{ name: string | null }>(`${this.baseUrl}/marketplace-config/${tenantId}/store-name`).toPromise().catch(() => null),
-    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions, storeNameResponse]) => {
+      this.http.get<DeliveryOptions>(`${this.baseUrl}/marketplace-config/${tenantId}/delivery-options`).toPromise().catch(() => null),
+    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions, storeNameResponse, deliveryOptions]) => {
       this.storeContract = contractResponse || null;
       this.paymentOptions = paymentOptions || null;
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
+      this.deliveryOptions = deliveryOptions || null;
+      // Por defecto, la modalidad que ofrezca la tienda (domicilio si ofrece ambas)
+      this.fulfillment = this.deliveryOptions && !this.deliveryOptions.deliveryEnabled ? 'PICKUP' : 'DELIVERY';
       this.products = (productsResponse.data || []).map((product: any) => ({
         ...product,
         itemType: 'product',
@@ -1652,11 +1661,26 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Valor del domicilio que se suma al pedido (0 si recoge en la tienda). */
+  get deliveryFeeApplied(): number {
+    return this.fulfillment === 'DELIVERY' ? Number(this.deliveryOptions?.deliveryFee) || 0 : 0;
+  }
+
+  /** Total a pagar: productos + domicilio. El servidor lo recalcula igual. */
+  get orderTotal(): number {
+    return this.getCartTotal() + this.deliveryFeeApplied;
+  }
+
+  /** La tienda ofrece las dos modalidades: el cliente elige. */
+  get canChooseFulfillment(): boolean {
+    return !!this.deliveryOptions?.deliveryEnabled && !!this.deliveryOptions?.pickupEnabled;
+  }
+
   /** Formas de pago que ofrece la tienda para este carrito y este comprador. */
   get planChoices(): PlanChoice[] {
     const o = this.paymentOptions;
     if (!o) return [];
-    const total = this.getCartTotal();
+    const total = this.orderTotal;
     const pct = (p: number) => Math.round((total * p) / 100);
     const choices: PlanChoice[] = [];
 
@@ -1964,7 +1988,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Crédito aprobado, sin mora, y el total cabe en el cupo disponible. */
   get canPayWithCredit(): boolean {
     const e = this.clientCredit?.eligibility;
-    return !!e?.eligible && this.getCartTotal() <= (e.available || 0) + 0.005;
+    return !!e?.eligible && this.orderTotal <= (e.available || 0) + 0.005;
   }
 
   /** Texto de estado del crédito para el checkout (o null si no aplica). */
@@ -1974,7 +1998,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const e = c.eligibility;
     if (c.suspended) return 'Tu crédito en esta tienda está suspendido.';
     if (e?.approvedLimit > 0 && !e.eligible) return e.reason;
-    if (e?.eligible && this.getCartTotal() > e.available) return `Tu pedido supera tu cupo disponible (${this.formatCurrency(e.available)}).`;
+    if (e?.eligible && this.orderTotal > e.available) return `Tu pedido supera tu cupo disponible (${this.formatCurrency(e.available)}).`;
     if (['SOLICITADA', 'VALIDADA', 'CUPO_ASIGNADO'].includes(c.requestStatus)) return 'Tu solicitud de crédito está en trámite. Te avisaremos cuando sea aprobada.';
     if (c.requestStatus === 'RECHAZADA' && !(e?.approvedLimit > 0)) return `Tu solicitud de crédito no fue aprobada${c.rejectionReason ? ': ' + c.rejectionReason : ''}.`;
     return null;
@@ -2360,6 +2384,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // A domicilio la dirección es obligatoria (el servidor también lo exige)
+    if (this.deliveryOptions && this.fulfillment === 'DELIVERY' && this.checkoutData.customerAddress.trim().length < 5) {
+      Swal.fire({ icon: 'warning', title: 'Dirección de entrega', text: 'Escribe la dirección donde quieres recibir tu pedido (calle, número, barrio).' });
+      return;
+    }
+
     const plan = this.paymentOptions ? this.effectivePlan : null;
     if (this.paymentOptions && !plan) {
       Swal.fire({ icon: 'warning', title: 'Forma de pago', text: 'No hay una forma de pago disponible para este pedido. Revisa las opciones o contacta a la tienda.' });
@@ -2382,15 +2412,17 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       tenantId: this.tenantId,
       customerName: this.checkoutData.customerName.trim(),
       customerPhone: this.checkoutData.customerPhone.trim(),
-      customerAddress: this.checkoutData.customerAddress.trim() || undefined,
+      customerAddress: this.fulfillment === 'PICKUP' ? undefined : this.checkoutData.customerAddress.trim() || undefined,
       customerEmail: this.checkoutData.customerEmail.trim() || undefined,
       items: this.orderItemsPayload(),
       notes: this.checkoutData.notes.trim() || undefined,
       subtotal: Number(subtotal),
       tax: 0,
-      total: Number(subtotal),
+      total: Number(subtotal) + this.deliveryFeeApplied,
+      // Sin opciones de entrega cargadas (falló la consulta), como antes
+      ...(this.deliveryOptions ? { fulfillment: this.fulfillment } : {}),
       ...(this.clientLoggedIn ? {} : this.consentPayload()),
-      ...(this.deliveryLocation ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
+      ...(this.deliveryLocation && this.fulfillment !== 'PICKUP' ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
       // Formas de pago configuradas por la tienda; sin ellas, el checkout clásico
       ...(plan
         ? { paymentPlan: plan }
@@ -2422,7 +2454,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           ? ` - ${planLabel(o.paymentPlan, o).replace(/^\S+\s/, '')}`
           : o.requestedPaymentType === 'CREDITO' ? ' - A crédito' : ' - Contra-entrega';
         const cuando = o.scheduledStart ? ` - Entrega: ${formatScheduleRange(o.scheduledStart, o.scheduledEnd)}` : '';
-        const msg = encodeURIComponent(`¡Nuevo pedido ${o.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(subtotal)}${pago}${cuando}`);
+        const entrega = o.fulfillment === 'PICKUP' ? ' - Recoge en tienda' : o.fulfillment === 'DELIVERY' ? ' - A domicilio' : '';
+        const msg = encodeURIComponent(`¡Nuevo pedido ${o.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(Number(o.total) || payload.total)}${entrega}${pago}${cuando}`);
         window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
       }
     };
