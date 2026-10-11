@@ -111,7 +111,7 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   }
 
   generateInventoryReport(): void {
-    this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+    this.materialService.getAllMaterials().subscribe({
       next: (response) => {
         const items = (response.data || []).map((m: any) => ({
           code: m.strCode || '-',

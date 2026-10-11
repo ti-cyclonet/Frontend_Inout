@@ -138,7 +138,7 @@ export class BulkEntryComponent implements OnInit {
 
   // --- Materials ---
   loadMaterials(): void {
-    this.materialService.getMaterials(undefined, 1, 1000).subscribe({
+    this.materialService.getAllMaterials().subscribe({
       next: (response) => {
         this.materials = (response.data || []).map((m: any) => ({
           id: m.id,
