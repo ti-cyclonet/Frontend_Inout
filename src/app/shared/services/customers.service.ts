@@ -33,6 +33,11 @@ export class CustomersService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
+  /** Cliente rápido del negocio en sesión (solo el nombre es obligatorio). */
+  createQuickCustomer(data: { name: string; phone?: string; email?: string }): Observable<any> {
+    return this.http.post<any>(`${this.authorizaUrl}/potential-users/mine`, data);
+  }
+
   /** Clientes potenciales (invitados del MarketPlace) del negocio en sesión. */
   getPotentialCustomers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.authorizaUrl}/potential-users/mine`);

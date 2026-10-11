@@ -11,6 +11,10 @@ import { CompositionService } from '../../../shared/services/composition.service
 import { Customer } from '../../../shared/model/customer.model';
 import { CreditService, CreditEligibility, PAYMENT_METHODS, PaymentType } from '../../../shared/services/credit.service';
 import { PromotionsService } from '../../../shared/services/promotions.service';
+import { ProfitBubbleService } from '../../../shared/services/profit-bubble.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { customerHint, leadToCustomer, mergeCustomers, promptQuickCustomer } from '../../../shared/utils/quick-customer';
 import Swal from 'sweetalert2';
 
 interface OrderItem {
@@ -86,7 +90,7 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService) {}
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -94,12 +98,31 @@ export class SaleFormComponent implements OnInit {
   }
 
   loadCustomers(): void {
-    this.customersService.getCustomers().subscribe({
-      next: (customers) => {
-        this.customers = customers;
-        this.filteredCustomers = customers;
+    // Con cuenta (clienteInout) + clientes rápidos (clientes potenciales del negocio)
+    forkJoin([
+      this.customersService.getCustomers().pipe(catchError((error) => { console.error('Error loading customers:', error); return of([]); })),
+      this.customersService.getPotentialCustomers().pipe(catchError(() => of([]))),
+    ]).subscribe(([clients, leads]) => {
+      this.customers = mergeCustomers(clients, leads);
+      this.filterCustomers();
+    });
+  }
+
+  customerHint = customerHint;
+
+  /** Registra un cliente con solo el nombre (teléfono y correo opcionales) y lo deja seleccionado. */
+  async createQuickCustomer(): Promise<void> {
+    this.showCustomerDropdown = false;
+    const data = await promptQuickCustomer(this.customerSearchTerm.trim());
+    if (!data) return;
+    this.customersService.createQuickCustomer(data).subscribe({
+      next: (lead) => {
+        const customer = leadToCustomer(lead);
+        this.customers = [...this.customers.filter((c) => c.potentialUserId !== customer.potentialUserId || !!c.id), customer];
+        this.selectCustomer(customer);
+        Swal.fire({ icon: 'success', title: 'Cliente registrado', text: data.name, timer: 1300, showConfirmButton: false, toast: true, position: 'top-end' });
       },
-      error: (error) => console.error('Error loading customers:', error)
+      error: (err) => Swal.fire('No se pudo registrar el cliente', err?.error?.message || 'Intenta de nuevo.', 'error'),
     });
   }
 
@@ -150,7 +173,7 @@ export class SaleFormComponent implements OnInit {
     if (query) {
       this.filteredCustomers = this.customers.filter(customer => {
         const displayName = this.getCustomerDisplayName(customer).toLowerCase();
-        return displayName.includes(query) || customer.email?.toLowerCase().includes(query);
+        return displayName.includes(query) || customer.email?.toLowerCase().includes(query) || (customer.phone || '').includes(query);
       });
     } else {
       this.filteredCustomers = this.customers;
@@ -384,6 +407,8 @@ export class SaleFormComponent implements OnInit {
     this.salesService.createSale(saleData).subscribe({
       next: (response) => {
         console.log('Sale created:', response);
+        // Burbuja con la ganancia de esta venta (con sonido)
+        this.profitBubble.show((response as any)?.profit, `la venta ${(response as any)?.sale?.strInvoiceCode || ''}`.trim());
         
         // Registrar movimientos en kardex
         this.registerKardexMovements(response, this.orderData.items);

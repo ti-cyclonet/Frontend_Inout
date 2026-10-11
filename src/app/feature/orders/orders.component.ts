@@ -14,6 +14,7 @@ import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service'
 import { DeliveryLauncherService } from '../../shared/services/delivery-launcher.service';
 import { CreditService, CreditEligibility, PAYMENT_METHODS, paymentMethodLabel } from '../../shared/services/credit.service';
 import { formatCop } from '../../shared/utils/currency.util';
+import { ProfitBubbleService } from '../../shared/services/profit-bubble.service';
 import { DisplayLine, documentLines, groupComboLines } from '../../shared/utils/combo-lines.util';
 
 interface OrderItem {
@@ -154,7 +155,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
     private stockAlertsService: StockAlertsService,
     private uiPrefs: UiPrefsService,
     private deliveryLauncher: DeliveryLauncherService,
-    private creditService: CreditService
+    private creditService: CreditService,
+    private profitBubble: ProfitBubbleService
   ) {}
 
   private ordersChangedSub?: { unsubscribe(): void };
@@ -683,8 +685,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   private applyStatus(order: Order, next: string, extra: Record<string, any> = {}): void {
     this.http.patch<any>(`${this.baseUrl}/${order.id}/status`, { status: next, ...extra }).subscribe({
-      next: () => {
+      next: (res) => {
         Swal.fire({ icon: 'success', title: 'Estado actualizado', text: `Pedido avanzó a: ${this.getStatusLabel(next)}`, timer: 1500, showConfirmButton: false });
+        // Facturado: burbuja con la ganancia del pedido (con sonido)
+        if (next === 'INVOICED') this.profitBubble.show(res?.profit, `el pedido ${order.orderCode}`);
         this.loadOrders();
         this.loadStats();
         // Entregar un pedido descuenta stock real del producto: refrescar
