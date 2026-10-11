@@ -978,17 +978,43 @@
         </div>
       </div>
 
+      <ng-container *ngIf="deliveryFeeApplied > 0">
+        <div class="checkout-line"><span>Productos</span><span>{{ formatCurrency(getCartTotal()) }}</span></div>
+        <div class="checkout-line"><span>🛵 Domicilio</span><span>{{ formatCurrency(deliveryFeeApplied) }}</span></div>
+      </ng-container>
       <div class="checkout-total">
         <span>Total</span>
-        <strong>{{ formatCurrency(getCartTotal()) }}</strong>
+        <strong>{{ formatCurrency(orderTotal) }}</strong>
       </div>
   </ng-container>
 </ng-template>
 
 <!-- Dirección de entrega + ubicación exacta por GPS -->
 <ng-template #deliveryAddress>
-  <div class="form-field">
-    <label>Dirección de entrega <small class="optional-tag">(opcional)</small></label>
+  <!-- ¿Cómo recibes tu pedido? (solo si la tienda ofrece las dos modalidades) -->
+  <div class="form-field" *ngIf="canChooseFulfillment">
+    <label>¿Cómo recibes tu pedido?</label>
+    <div class="when-toggle fulfillment-toggle">
+      <button type="button" [class.active]="fulfillment === 'DELIVERY'" (click)="fulfillment = 'DELIVERY'">
+        🛵 A domicilio<small>{{ deliveryOptions!.deliveryFee > 0 ? '+ ' + formatCurrency(deliveryOptions!.deliveryFee) : 'Sin costo' }}</small>
+      </button>
+      <button type="button" [class.active]="fulfillment === 'PICKUP'" (click)="fulfillment = 'PICKUP'">
+        🏪 Recoger en la tienda<small>Sin costo</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- Recoger: dónde -->
+  <div class="pickup-info" *ngIf="fulfillment === 'PICKUP'">
+    <strong>📍 Recoges en: {{ deliveryOptions?.pickupAddress }}</strong>
+    <small *ngIf="deliveryOptions?.pickupNotes">{{ deliveryOptions?.pickupNotes }}</small>
+  </div>
+
+  <div class="form-field" *ngIf="fulfillment === 'DELIVERY'">
+    <label>Dirección de entrega
+      <small class="optional-tag" *ngIf="!deliveryOptions">(opcional)</small>
+      <small class="optional-tag" *ngIf="deliveryOptions && !canChooseFulfillment && deliveryOptions.deliveryFee > 0">· domicilio {{ formatCurrency(deliveryOptions.deliveryFee) }}</small>
+    </label>
     <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Calle, número, barrio, referencias…">
     <div class="geo-row">
       <button type="button" class="btn-geo" (click)="captureDeliveryLocation()" [disabled]="geoLoading">

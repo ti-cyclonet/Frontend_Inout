@@ -27,6 +27,39 @@
   </div>
 </div>
 
+<!-- ─── Entrega: a domicilio (con su valor) y/o recoger en la tienda ─── -->
+<div class="ss-block">
+  <button type="button" class="ss-header" (click)="toggle('delivery')">
+    <span><i class="bi bi-truck me-1"></i> Entrega</span>
+    <small>{{ deliverySummary }} {{ open === 'delivery' ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="ss-body" *ngIf="open === 'delivery' && delivery">
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="delivery.deliveryEnabled">
+      <span><strong>🛵 A domicilio</strong><small>El cliente escribe su dirección (obligatoria) y se le suma el valor del domicilio.</small></span>
+    </label>
+    <div class="ss-sub" *ngIf="delivery.deliveryEnabled">
+      <label for="ss-fee">Valor del domicilio (COP)</label>
+      <input id="ss-fee" type="number" min="0" step="500" [(ngModel)]="delivery.deliveryFee" style="max-width: 180px">
+      <small class="ss-help">Se suma al total del pedido. Es también el valor con el que se publica el domicilio en Shotra. 0 = domicilio gratis.</small>
+    </div>
+
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="delivery.pickupEnabled">
+      <span><strong>🏪 Recoger en la tienda</strong><small>El cliente pasa por su pedido; sin costo de domicilio.</small></span>
+    </label>
+    <div class="ss-sub" *ngIf="delivery.pickupEnabled">
+      <label for="ss-pickup">Dirección del local</label>
+      <input id="ss-pickup" type="text" maxlength="200" [(ngModel)]="delivery.pickupAddress" placeholder="Calle 10 # 20-30, Turbaco">
+      <label for="ss-pickup-notes">Indicaciones <small>(opcional)</small></label>
+      <input id="ss-pickup-notes" type="text" maxlength="300" [(ngModel)]="delivery.pickupNotes" placeholder="Horario de recogida, local, referencia…">
+    </div>
+
+    <button type="button" class="ss-save" [disabled]="savingDelivery" (click)="saveDelivery()">{{ savingDelivery ? 'Guardando…' : 'Guardar entrega' }}</button>
+  </div>
+</div>
+
 <!-- ─── Formas de pago ─── -->
 <div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('payments')">

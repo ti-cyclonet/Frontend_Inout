@@ -25,7 +25,7 @@
           <div class="kanban-cards">
             <div class="kanban-card" *ngFor="let order of getOrdersByStatus(status)" (click)="selectOrder(order)">
               <div class="card-code">{{ order.orderCode }}</div>
-              <div class="card-customer">{{ order.customerName || 'Sin cliente' }}</div>
+              <div class="card-customer">{{ order.customerName || 'Sin cliente' }}<span class="card-fulfillment" *ngIf="order.fulfillment" [title]="order.fulfillment === 'PICKUP' ? 'Recoge en la tienda' : 'A domicilio'">{{ order.fulfillment === 'PICKUP' ? '🏪' : '🛵' }}</span></div>
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
               <div class="card-credit" *ngIf="order.requestedPaymentType === 'CREDITO' && !order.paymentType">💳 Pide crédito</div>
               <div class="card-schedule" *ngIf="scheduleLabel(order) as sched">{{ sched }}</div>
@@ -173,7 +173,11 @@
         </div>
 
         <!-- Contacto y entrega (pedidos del MarketPlace) -->
-        <div class="detail-delivery" *ngIf="selectedOrder.customerPhone || selectedOrder.customerAddress || deliveryMapsLink(selectedOrder)">
+        <div class="detail-delivery" *ngIf="selectedOrder.customerPhone || selectedOrder.customerAddress || deliveryMapsLink(selectedOrder) || selectedOrder.fulfillment">
+          <div *ngIf="selectedOrder.fulfillment"><span class="detail-label">Entrega</span>
+            {{ selectedOrder.fulfillment === 'PICKUP' ? '🏪 Recoge en la tienda' : '🛵 A domicilio' }}
+            <ng-container *ngIf="selectedOrder.fulfillment === 'DELIVERY' && +(selectedOrder.deliveryFee || 0) > 0"> · {{ formatCurrency(+(selectedOrder.deliveryFee || 0)) }}</ng-container>
+          </div>
           <div *ngIf="selectedOrder.customerPhone"><span class="detail-label">Teléfono</span> <a [href]="'tel:' + selectedOrder.customerPhone">{{ selectedOrder.customerPhone }}</a></div>
           <div *ngIf="selectedOrder.customerAddress"><span class="detail-label">Dirección</span> {{ selectedOrder.customerAddress }}</div>
           <div *ngIf="deliveryMapsLink(selectedOrder) as mapLink"><span class="detail-label">Ubicación</span> <a [href]="mapLink" target="_blank" rel="noopener">📍 Ver en mapa</a></div>
@@ -232,7 +236,7 @@
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' || selectedOrder.status === 'OUT_FOR_DELIVERY' || selectedOrder.status === 'DELIVERED'" (click)="generateDeliveryNote(selectedOrder)" type="button" title="Nota de entrega">📋 Remisión</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status === 'READY' && !isShotraManaged(selectedOrder)" (click)="deliverWithoutShipping(selectedOrder)" type="button" title="El cliente recoge el pedido">✔ Entregar sin reparto</button>
         <button class="btn-detail-action" *ngIf="selectedOrder.status !== 'DRAFT' && selectedOrder.status !== 'CANCELLED'" (click)="generateInvoicePdf(selectedOrder)" type="button">📄 Factura</button>
-        <button class="btn-detail-action advance" *ngIf="canAdvanceManually(selectedOrder)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(getNextStatus(selectedOrder.status)!) }}</button>
+        <button class="btn-detail-action advance" *ngIf="canAdvanceManually(selectedOrder)" (click)="advanceStatus(selectedOrder)" type="button">▶ {{ getStatusLabel(nextStatusFor(selectedOrder)!) }}</button>
         <span class="shotra-managed-note" *ngIf="isShotraManaged(selectedOrder)">🛵 Se entrega con Shotra: pasa a En reparto y a Entregado automáticamente según el contrato del domiciliario.</span>
         <button class="btn-detail-action cancel" *ngIf="canCancel(selectedOrder)" (click)="cancelOrder(selectedOrder)" type="button">✕ Cancelar</button>
       </div>

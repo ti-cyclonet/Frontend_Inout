@@ -47,7 +47,13 @@
         </span>
         <span>{{ formatCurrency(it.subtotal) }}</span>
       </div>
+      <div class="tracking-item" *ngIf="order.deliveryFee > 0"><span>🛵 Domicilio</span><span>{{ formatCurrency(order.deliveryFee) }}</span></div>
       <div class="tracking-item total"><span>Total</span><span>{{ formatCurrency(order.total) }}</span></div>
+      <!-- Recoger en la tienda: dónde -->
+      <div class="tracking-pickup" *ngIf="order.fulfillment === 'PICKUP'">
+        <strong>🏪 Recoges en la tienda{{ order.pickupAddress ? ': ' + order.pickupAddress : '' }}</strong>
+        <small *ngIf="order.pickupNotes">{{ order.pickupNotes }}</small>
+      </div>
     </div>
 
     <!-- Pago -->
