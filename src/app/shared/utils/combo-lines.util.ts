@@ -17,6 +17,16 @@ export interface DisplayLine {
   components?: string[];
   /** Unidades por fabricar (pedidos bajo pedido). */
   toManufacture?: number;
+  /** Producto "para armar": lo escogido ("Proteínas: Pollo, Cerdo"). */
+  options?: string[];
+}
+
+/** Lo escogido en una línea: ["Proteínas: Pollo, Cerdo"]. Mismo criterio que el backend (products/product-choices.ts). */
+export function choicesText(choices: any): string[] {
+  if (!Array.isArray(choices)) return [];
+  return choices
+    .filter((c: any) => c && typeof c.group === 'string' && Array.isArray(c.options) && c.options.length)
+    .map((c: any) => `${c.group}: ${c.options.join(', ')}`);
 }
 
 const num = (v: any) => Number(v) || 0;
@@ -36,6 +46,7 @@ export function groupComboLines(items: any[] | null | undefined): DisplayLine[] 
         subtotal: lineSubtotal(it),
         ...(promo ? { promotionName: promo.name, listPrice: num(it?.listPrice) } : {}),
         ...(num(it?.toManufacture) > 0 ? { toManufacture: num(it.toManufacture) } : {}),
+        ...(choicesText(it?.choices).length ? { options: choicesText(it.choices) } : {}),
       });
       continue;
     }
@@ -66,7 +77,9 @@ export function groupComboLines(items: any[] | null | undefined): DisplayLine[] 
  */
 export function documentLines(items: any[] | null | undefined): { productName: string; quantity: number; unitPrice: number; subtotal: number }[] {
   return groupComboLines(items).map((l) => ({
-    productName: l.components?.length ? `${l.name} (${l.components.join(', ')})` : l.name,
+    productName: l.components?.length
+      ? `${l.name} (${l.components.join(', ')})`
+      : l.options?.length ? `${l.name} (${l.options.join(' · ')})` : l.name,
     quantity: l.quantity,
     unitPrice: l.unitPrice,
     subtotal: l.subtotal,

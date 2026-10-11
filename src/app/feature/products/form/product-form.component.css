@@ -831,3 +831,13 @@
     margin: 0 0.5rem;
   }
 }
+
+/* Producto para armar: listas de la carta que escoge el cliente */
+.choice-groups { display: flex; flex-direction: column; gap: 0.5rem; }
+.choice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.choice-row select { flex: 1 1 200px; }
+.choice-num { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; margin: 0; }
+.choice-num input { width: 70px; }
+.choice-rule { font-size: 0.8rem; color: #6b7280; min-width: 110px; }
+.choice-empty { font-size: 0.85rem; color: #92400e; background: #fffbeb; border-radius: 8px; padding: 0.5rem 0.75rem; margin: 0; }
+.choice-groups > .btn { align-self: flex-start; }

@@ -50,3 +50,20 @@
 .pickup-info { display: flex; flex-direction: column; gap: 2px; margin: 0.25rem 0 0.75rem; padding: 0.6rem 0.8rem; border-radius: 10px; background: #f0fdf4; color: #166534; font-size: 0.85rem; }
 .pickup-info small { color: #15803d; }
 .checkout-line { display: flex; justify-content: space-between; font-size: 0.86rem; color: #4b5563; padding: 0.15rem 0; }
+
+/* ─── Producto para armar: opciones de la carta ─── */
+.choice-overlay { z-index: 1100; }
+.choice-modal { max-width: 480px; }
+.choice-title { margin: 0.1rem 2rem 0 0; font-size: 1.25rem; font-weight: 800; color: var(--mk-text); }
+.choice-price { margin: 0 0 0.75rem; color: var(--mk-muted); font-weight: 600; }
+.choice-group { border: 1px solid var(--mk-border); border-radius: 14px; padding: 0.6rem 0.8rem 0.8rem; margin: 0 0 0.75rem; }
+.choice-group legend { float: none; width: auto; padding: 0 0.35rem; margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--mk-text); }
+.choice-rule { margin-left: 0.4rem; font-size: 0.75rem; font-weight: 600; color: #b45309; }
+.choice-rule.ok { color: #15803d; }
+.choice-options { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.4rem; }
+.choice-option { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.8rem; border: 1.5px solid var(--mk-border); border-radius: 999px; cursor: pointer; font-size: 0.88rem; user-select: none; }
+.choice-option input { accent-color: var(--mk-sector); margin: 0; }
+.choice-option.checked { border-color: var(--mk-sector); background: var(--mk-sector-soft); color: var(--mk-sector-ink); font-weight: 600; }
+.choice-option.disabled { opacity: 0.45; cursor: not-allowed; }
+.choice-confirm { width: 100%; margin-top: 0.25rem; }
+.item-choices { display: block; font-size: 0.76rem; color: var(--mk-muted); line-height: 1.3; }

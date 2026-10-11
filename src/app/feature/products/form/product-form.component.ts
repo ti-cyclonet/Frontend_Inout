@@ -11,6 +11,7 @@ import { Material } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import { environment } from '../../../../environments/environment';
 import { convertUnits } from '../../../shared/utils/unit-conversion.util';
+import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
 
 interface ExtendedMaterial extends Material {
@@ -19,6 +20,15 @@ interface ExtendedMaterial extends Material {
   /** Material de la receta que no está en la lista cargada (ver missingMaterial). */
   missing?: boolean;
 }
+
+/** Producto "para armar": lista de la carta de la que el cliente escoge (ej. 2 proteínas). */
+interface ChoiceGroup {
+  block: string;
+  min: number;
+  max: number;
+}
+
+const MAX_CHOICE_GROUPS = 4;
 
 interface ProductComposition {
   id: number;
@@ -105,6 +115,11 @@ export class ProductFormComponent implements OnInit {
   /** El negocio decidió incluir su plan de InOut en el costeo (Configuración). */
   overheadIncludesInoutPlan = false;
   marginPercent: number = 0;
+  /** Listas de la carta (MarketPlace → Información de la carta) y las que usa este producto. */
+  menuBlocks: { title: string; count: number }[] = [];
+  menuBlocksLoaded = false;
+  choiceGroups: ChoiceGroup[] = [];
+  readonly maxChoiceGroups = MAX_CHOICE_GROUPS;
   loadingPricing = false;
   pricingError = false;
 
@@ -122,6 +137,7 @@ export class ProductFormComponent implements OnInit {
     this.initForm();
     this.loadCategories();
     this.loadAvailableMaterials();
+    this.loadMenuBlocks();
     // Cargar ubicaciones ANTES de parchar el producto: si loadProductData()
     // setea strLocation antes de que existan las <option> del select, el
     // navegador no preselecciona nada (el <select> nativo ignora un value
@@ -178,6 +194,8 @@ export class ProductFormComponent implements OnInit {
       productionLeadHours: this.productData.intProductionLeadHours ?? null
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
+    this.choiceGroups = (Array.isArray(this.productData.jsonChoiceGroups) ? this.productData.jsonChoiceGroups : [])
+      .map((g: any) => ({ block: String(g.block || ''), min: Number(g.min) || 0, max: Number(g.max) || 1 }));
 
     if (this.productData.images && this.productData.images.length > 0) {
       this.productImages = this.productData.images.map((img: any) => ({
@@ -614,6 +632,58 @@ export class ProductFormComponent implements OnInit {
     }).format(value);
   }
 
+  /** Listas de la carta del negocio (endpoint público del MarketPlace). */
+  private loadMenuBlocks(): void {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const tenantId = token ? decodeJwtPayload(token)?.tenantId : null;
+    if (!tenantId) { this.menuBlocksLoaded = true; return; }
+    this.http.get<any>(`${environment.apiUrl}/marketplace-config/${tenantId}/menu-extras`).subscribe({
+      next: (extras) => {
+        this.menuBlocks = (extras?.blocks || [])
+          .filter((b: any) => b?.title && Array.isArray(b.items) && b.items.length)
+          .map((b: any) => ({ title: b.title, count: b.items.length }));
+        this.menuBlocksLoaded = true;
+      },
+      error: () => (this.menuBlocksLoaded = true),
+    });
+  }
+
+  /** Lista guardada que ya no está en la carta (se borró o renombró). */
+  blockMissing(block: string): boolean {
+    return this.menuBlocksLoaded && !!block && !this.menuBlocks.some((b) => b.title === block);
+  }
+
+  addChoiceGroup(): void {
+    if (this.choiceGroups.length >= MAX_CHOICE_GROUPS) return;
+    const used = new Set(this.choiceGroups.map((g) => g.block));
+    const free = this.menuBlocks.find((b) => !used.has(b.title));
+    this.choiceGroups.push({ block: free?.title || '', min: 1, max: 1 });
+  }
+
+  removeChoiceGroup(index: number): void {
+    this.choiceGroups.splice(index, 1);
+  }
+
+  /** Mensaje si los grupos no tienen sentido (el backend valida lo mismo). */
+  private choiceGroupsError(): string | null {
+    const seen = new Set<string>();
+    for (const g of this.choiceGroups) {
+      if (!g.block) return 'Escoge la lista de cada grupo de opciones (o quítalo).';
+      if (seen.has(g.block)) return `La lista "${g.block}" está repetida en las opciones.`;
+      seen.add(g.block);
+      const min = Number(g.min), max = Number(g.max);
+      if (!Number.isInteger(max) || max < 1 || max > 10) return `En "${g.block}" el máximo debe estar entre 1 y 10.`;
+      if (!Number.isInteger(min) || min < 0 || min > max) return `En "${g.block}" el mínimo debe estar entre 0 y ${max}.`;
+    }
+    return null;
+  }
+
+  /** "Escoge 2", "Hasta 3", "De 1 a 2". */
+  choiceRule(g: ChoiceGroup): string {
+    const min = Number(g.min) || 0, max = Number(g.max) || 0;
+    return min === max ? `Escoge ${max}` : min === 0 ? `Hasta ${max} (opcional)` : `De ${min} a ${max}`;
+  }
+
   isFormValid(): boolean {
     return !!(this.productForm.valid && this.compositions.length > 0 && this.productImages.length > 0);
   }
@@ -634,6 +704,12 @@ export class ProductFormComponent implements OnInit {
 
     if (this.priceBelowMinimum) {
       Swal.fire('Precio muy bajo', `El precio no puede ser menor al mínimo calculado (${this.formatCurrency(this.suggestedPrice)}), que cubre costo de materiales, costo indirecto y margen de ganancia.`, 'warning');
+      return;
+    }
+
+    const choiceError = this.choiceGroupsError();
+    if (choiceError) {
+      Swal.fire('Opciones del producto', choiceError, 'warning');
       return;
     }
 
@@ -666,6 +742,7 @@ export class ProductFormComponent implements OnInit {
       categoryId: +formData.categoryId,
       blnMarketplaceVisible: formData.marketplaceVisible !== false,
       blnMadeToOrder: !!formData.madeToOrder,
+      jsonChoiceGroups: this.choiceGroups.map((g) => ({ block: g.block, min: Number(g.min), max: Number(g.max) })),
       ...(formData.productionLeadHours !== null && formData.productionLeadHours !== ''
         ? { intProductionLeadHours: Math.max(0, Math.round(+formData.productionLeadHours)) }
         : {})
