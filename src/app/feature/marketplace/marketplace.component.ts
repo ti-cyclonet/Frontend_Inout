@@ -50,10 +50,33 @@ interface Product {
   /** Se fabrica bajo pedido: se puede pedir sin stock. */
   blnMadeToOrder?: boolean;
   intProductionLeadHours?: number | null;
+  /** Producto "para armar": listas de la carta de las que el cliente escoge. */
+  jsonChoiceGroups?: { block: string; min: number; max: number }[] | null;
   views?: number;
   sales?: number;
   rating?: number;
   image?: string;
+}
+
+/** Lo escogido de una lista de la carta (producto "para armar"). */
+interface LineChoice {
+  group: string;
+  options: string[];
+}
+
+/** Línea del carrito: el mismo producto armado distinto va en líneas aparte. */
+interface CartLine {
+  product: Product;
+  quantity: number;
+  choices?: LineChoice[];
+}
+
+/** Grupo de opciones vigente (su lista existe en la carta). */
+interface ActiveChoiceGroup {
+  title: string;
+  items: string[];
+  min: number;
+  max: number;
 }
 
 interface MarketStats {
@@ -176,7 +199,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   readonly menuTagFor = (p: Product) => this.stockTag(p);
 
   // Cart
-  cart: { product: Product; quantity: number }[] = [];
+  cart: CartLine[] = [];
+  /** Modal "Arma tu producto": lo que el cliente va marcando. */
+  choicePicker: { product: Product; groups: ActiveChoiceGroup[]; selected: Record<string, string[]> } | null = null;
   showCheckout = false;
   checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: '', notes: '' };
   /** Formas de entrega de la tienda (GET marketplace-config/:tenantId/delivery-options). */
@@ -1156,16 +1181,19 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const key = this.cart.map((i) => `${i.product.strId}:${i.quantity}`).join('|');
     if (key !== this.menuQtyKey) {
       this.menuQtyKey = key;
-      this.menuQuantities = Object.fromEntries(this.cart.map((i) => [i.product.strId, i.quantity]));
+      const totals: Record<string, number> = {};
+      for (const i of this.cart) totals[i.product.strId] = (totals[i.product.strId] || 0) + i.quantity;
+      this.menuQuantities = totals;
     }
     return this.menuQuantities;
   }
 
   decreaseFromMenu(product: Product): void {
-    const item = this.cart.find((i) => i.product.strId === product.strId);
+    // Producto armado: se quita de la última combinación agregada
+    const item = [...this.cart].reverse().find((i) => i.product.strId === product.strId);
     if (!item) return;
-    if (item.quantity > 1) this.updateCartQuantity(product.strId, item.quantity - 1);
-    else this.removeFromCart(product.strId);
+    if (item.quantity > 1) this.updateCartQuantity(item, item.quantity - 1);
+    else this.removeFromCart(item);
   }
 
   saveDisplayMode(): void {
@@ -1589,9 +1617,21 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (tenant) window.location.href = `/marketplace/${this.homeStoreSlugs[tenant] || tenant}`;
       return;
     }
-    const existing = this.cart.find(item => item.product.strId === product.strId);
+    // Producto para armar: primero el cliente escoge sus opciones
+    const groups = this.activeChoiceGroups(product);
+    if (groups.length) {
+      this.choicePicker = { product, groups, selected: Object.fromEntries(groups.map((g) => [g.title, []])) };
+      return;
+    }
+    this.addLine(product);
+  }
+
+  /** Suma una unidad a la línea del producto con esas opciones (o crea la línea). */
+  private addLine(product: Product, choices?: LineChoice[]): void {
+    const key = this.choicesKey(choices);
+    const existing = this.cart.find((item) => item.product.strId === product.strId && this.choicesKey(item.choices) === key);
     const available = this.getAvailableStock(product);
-    const wanted = (existing?.quantity || 0) + 1;
+    const wanted = this.cartQuantityOf(product.strId) + 1;
     // Los productos "bajo pedido" se fabrican: no se limitan por el stock
     if (available !== null && wanted > available && !this.isMadeToOrder(product)) {
       this.warnStock(product, available);
@@ -1600,29 +1640,102 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (existing) {
       existing.quantity++;
     } else {
-      this.cart.push({ product, quantity: 1 });
+      this.cart.push({ product, quantity: 1, ...(choices?.length ? { choices } : {}) });
     }
     this.refreshSlotsIfScheduled();
     Swal.fire({ icon: 'success', title: 'Agregado', text: `${product.strName} añadido al carrito`, timer: 1200, showConfirmButton: false, position: 'top-end', toast: true });
   }
 
-  removeFromCart(productId: string): void {
-    this.cart = this.cart.filter(item => item.product.strId !== productId);
+  /** Unidades del producto en el carrito (todas sus combinaciones). */
+  private cartQuantityOf(productId: string): number {
+    return this.cart.filter((i) => i.product.strId === productId).reduce((s, i) => s + i.quantity, 0);
+  }
+
+  private choicesKey(choices?: LineChoice[]): string {
+    return (choices || []).map((c) => `${c.group}:${c.options.join(',')}`).join('|');
+  }
+
+  /** Grupos del producto cuya lista existe en la carta (máximo ≤ opciones de la lista). */
+  activeChoiceGroups(product: Product): ActiveChoiceGroup[] {
+    if ((product.itemType || 'product') !== 'product' || !product.jsonChoiceGroups?.length) return [];
+    const out: ActiveChoiceGroup[] = [];
+    for (const g of product.jsonChoiceGroups) {
+      const block = this.menuExtras.blocks.find((b) => b.title.trim().toLowerCase() === String(g.block || '').trim().toLowerCase());
+      if (!block || !block.items.length) continue;
+      const max = Math.min(Number(g.max) || 1, block.items.length);
+      out.push({ title: block.title, items: block.items.map((i) => i.name), max, min: Math.min(Number(g.min) || 0, max) });
+    }
+    return out;
+  }
+
+  /** "Escoge 2", "Hasta 3 (opcional)", "De 1 a 2". */
+  choiceRule(g: ActiveChoiceGroup): string {
+    return g.min === g.max ? `Escoge ${g.max}` : g.min === 0 ? `Hasta ${g.max} (opcional)` : `Escoge de ${g.min} a ${g.max}`;
+  }
+
+  isChoiceSelected(group: string, option: string): boolean {
+    return !!this.choicePicker?.selected[group]?.includes(option);
+  }
+
+  /** Lleno: ya escogió el máximo (las demás opciones quedan deshabilitadas). */
+  isChoiceGroupFull(g: ActiveChoiceGroup): boolean {
+    return (this.choicePicker?.selected[g.title]?.length || 0) >= g.max;
+  }
+
+  toggleChoice(g: ActiveChoiceGroup, option: string): void {
+    const p = this.choicePicker;
+    if (!p) return;
+    const list = p.selected[g.title] || [];
+    if (list.includes(option)) {
+      p.selected[g.title] = list.filter((o) => o !== option);
+    } else if (g.max === 1) {
+      p.selected[g.title] = [option]; // una sola: cambia la escogida
+    } else if (list.length < g.max) {
+      p.selected[g.title] = [...list, option];
+    }
+  }
+
+  get choicePickerReady(): boolean {
+    const p = this.choicePicker;
+    return !!p && p.groups.every((g) => (p.selected[g.title]?.length || 0) >= g.min);
+  }
+
+  confirmChoices(): void {
+    const p = this.choicePicker;
+    if (!p || !this.choicePickerReady) return;
+    // En el orden de la lista de la carta
+    const choices: LineChoice[] = p.groups
+      .map((g) => ({ group: g.title, options: g.items.filter((o) => p.selected[g.title]?.includes(o)) }))
+      .filter((c) => c.options.length);
+    this.choicePicker = null;
+    this.addLine(p.product, choices);
+  }
+
+  closeChoicePicker(): void {
+    this.choicePicker = null;
+  }
+
+  /** ["Proteínas: Pollo, Cerdo"] para mostrar en el carrito. */
+  choiceLines(item: CartLine): string[] {
+    return (item.choices || []).map((c) => `${c.group}: ${c.options.join(', ')}`);
+  }
+
+  removeFromCart(item: CartLine): void {
+    this.cart = this.cart.filter((i) => i !== item);
     this.refreshSlotsIfScheduled();
   }
 
-  updateCartQuantity(productId: string, qty: number): void {
-    const item = this.cart.find(i => i.product.strId === productId);
-    if (item) {
-      const available = this.getAvailableStock(item.product);
-      if (available !== null && qty > available && !this.isMadeToOrder(item.product)) {
-        this.warnStock(item.product, available);
-        item.quantity = Math.max(1, available);
-        return;
-      }
-      item.quantity = Math.max(1, qty);
-      this.refreshSlotsIfScheduled();
+  updateCartQuantity(item: CartLine, qty: number): void {
+    if (!this.cart.includes(item)) return;
+    const available = this.getAvailableStock(item.product);
+    const others = this.cartQuantityOf(item.product.strId) - item.quantity;
+    if (available !== null && others + qty > available && !this.isMadeToOrder(item.product)) {
+      this.warnStock(item.product, available);
+      item.quantity = Math.max(1, available - others);
+      return;
     }
+    item.quantity = Math.max(1, qty);
+    this.refreshSlotsIfScheduled();
   }
 
   /** Tiene precio con promoción (o es un combo con ahorro). */
@@ -1817,6 +1930,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       quantity: Number(item.quantity),
       unitPrice: Number(item.product.fltPrice),
       subtotal: Number(item.product.fltPrice) * Number(item.quantity),
+      ...(item.choices?.length ? { choices: item.choices } : {}),
     }));
   }
 

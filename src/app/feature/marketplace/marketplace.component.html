@@ -587,6 +587,40 @@
   </div>
 </div>
 
+<!-- Arma tu producto: el cliente marca sus opciones de las listas de la carta -->
+<div class="product-modal-overlay choice-overlay" *ngIf="choicePicker as p" (click)="closeChoicePicker()">
+  <div class="checkout-modal choice-modal" role="dialog" aria-modal="true" [attr.aria-label]="'Arma tu ' + p.product.strName" (click)="$event.stopPropagation()">
+    <button class="modal-close" type="button" (click)="closeChoicePicker()" aria-label="Cerrar">&times;</button>
+    <p class="mk-eyebrow mk-eyebrow--dark">Arma tu pedido</p>
+    <h3 class="choice-title">{{ p.product.strName }}</h3>
+    <p class="choice-price">{{ formatCurrency(p.product.fltPrice) }}</p>
+
+    <fieldset class="choice-group" *ngFor="let g of p.groups">
+      <legend>
+        {{ g.title }}
+        <span class="choice-rule" [class.ok]="(p.selected[g.title].length || 0) >= g.min">
+          {{ choiceRule(g) }} · {{ p.selected[g.title].length || 0 }}/{{ g.max }}
+        </span>
+      </legend>
+      <div class="choice-options">
+        <label class="choice-option" *ngFor="let o of g.items"
+               [class.checked]="isChoiceSelected(g.title, o)"
+               [class.disabled]="g.max > 1 && !isChoiceSelected(g.title, o) && isChoiceGroupFull(g)">
+          <input type="checkbox"
+                 [checked]="isChoiceSelected(g.title, o)"
+                 [disabled]="g.max > 1 && !isChoiceSelected(g.title, o) && isChoiceGroupFull(g)"
+                 (change)="toggleChoice(g, o)">
+          <span>{{ o }}</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <button type="button" class="btn-checkout-primary choice-confirm" [disabled]="!choicePickerReady" (click)="confirmChoices()">
+      {{ choicePickerReady ? 'Agregar al pedido' : 'Escoge tus opciones' }}
+    </button>
+  </div>
+</div>
+
 <!-- Floating Cart Button (mobile) -->
 <div class="floating-cart" *ngIf="cart.length > 0 && !showCheckout && !showMenuBoard" (click)="openCheckout()">
   🛒 {{ getCartCount() }} items · {{ formatCurrency(getCartTotal()) }}
@@ -966,13 +1000,14 @@
         <div class="checkout-item" *ngFor="let item of cart">
           <div class="item-info">
             <strong>{{ item.product.strName }}</strong>
+            <small class="item-choices" *ngFor="let c of choiceLines(item)">{{ c }}</small>
             <span class="item-price"><s class="mk-was" *ngIf="hasPromo(item.product)">{{ formatCurrency(item.product.listPrice!) }}</s> {{ formatCurrency(item.product.fltPrice) }}</span>
           </div>
           <div class="item-controls">
-            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity - 1)" type="button">−</button>
+            <button class="qty-btn" (click)="updateCartQuantity(item, item.quantity - 1)" type="button">−</button>
             <span class="qty-value">{{ item.quantity }}</span>
-            <button class="qty-btn" (click)="updateCartQuantity(item.product.strId, item.quantity + 1)" type="button">+</button>
-            <button class="remove-btn" (click)="removeFromCart(item.product.strId)" type="button">🗑</button>
+            <button class="qty-btn" (click)="updateCartQuantity(item, item.quantity + 1)" type="button">+</button>
+            <button class="remove-btn" (click)="removeFromCart(item)" type="button">🗑</button>
           </div>
           <div class="item-subtotal">{{ formatCurrency(item.product.fltPrice * item.quantity) }}</div>
         </div>

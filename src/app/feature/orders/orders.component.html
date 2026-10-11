@@ -196,6 +196,7 @@
                 </span>
                 <span class="comanda-qty">x{{ item.quantity }}</span>
                 <span class="comanda-includes" *ngIf="item.components?.length">Incluye: {{ item.components!.join(', ') }}</span>
+                <span class="comanda-includes comanda-options" *ngFor="let o of item.options || []">{{ o }}</span>
               </div>
               <div class="comanda-price">{{ formatCurrency(item.subtotal) }}</div>
             </div>
