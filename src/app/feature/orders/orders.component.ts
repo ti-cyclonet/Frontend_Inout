@@ -62,6 +62,10 @@ interface Order {
   updatedAt: string;
   /** Solicitud de domicilio en Shotra que entrega este pedido. */
   shotraRequestId?: string | null;
+  /** 'DELIVERY' (a domicilio) | 'PICKUP' (recoge en la tienda); null en pedidos anteriores. */
+  fulfillment?: 'DELIVERY' | 'PICKUP' | null;
+  /** Valor del domicilio cobrado al cliente (incluido en total): presupuesto del domicilio en Shotra. */
+  deliveryFee?: number | string | null;
 }
 
 interface OrderStats {
@@ -221,7 +225,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** ¿Se puede avanzar a mano? (no si el siguiente paso lo controla Shotra) */
   canAdvanceManually(order: Order): boolean {
-    return !!this.getNextStatus(order.status) && !this.isShotraManaged(order);
+    return !!this.nextStatusFor(order) && !this.isShotraManaged(order);
   }
 
   /** Insignias de pago / fabricación de una tarjeta del kanban. */
@@ -478,8 +482,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return flow[status] || null;
   }
 
+  /** Recoge en la tienda: de Listo pasa directo a Entregado (no hay reparto). */
+  nextStatusFor(order: Order): string | null {
+    if (order.fulfillment === 'PICKUP' && order.status === 'READY') return 'DELIVERED';
+    return this.getNextStatus(order.status);
+  }
+
   advanceStatus(order: Order): void {
-    const next = this.getNextStatus(order.status);
+    const next = this.nextStatusFor(order);
     if (!next) return;
     if (this.isShotraManaged(order)) {
       Swal.fire('Entrega con Shotra', 'Este pedido pasa a En reparto y a Entregado automáticamente según el contrato del domiciliario en Shotra.', 'info');
@@ -649,11 +659,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
   private buildDeliveryPrefill(order: Order) {
     const items = (order.items || []).map((i) => `${i.quantity} x ${i.productName}`).join(', ');
     const map = this.deliveryMapsLink(order);
+    const fee = Number(order.deliveryFee) || 0;
     const lines = [
       `Entrega del pedido ${order.orderCode}.`,
       `Cliente: ${order.customerName || 'Sin nombre'}${order.customerPhone ? ` · Tel. ${order.customerPhone}` : ''}.`,
       items ? `Productos: ${items}.` : '',
-      `Valor del pedido: ${this.formatCurrency(order.total)} (pago contra entrega).`,
+      fee > 0
+        ? `Valor del pedido: ${this.formatCurrency(order.total)}, incluye el domicilio de ${this.formatCurrency(fee)}.`
+        : `Valor del pedido: ${this.formatCurrency(order.total)} (pago contra entrega).`,
       order.customerAddress ? `Dirección: ${order.customerAddress}.` : '',
       map ? `Ubicación exacta del cliente: ${map}` : '',
       order.notes ? `Notas del cliente: ${order.notes}` : '',
@@ -663,6 +676,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       description: lines.join('\n'),
       address: order.customerAddress || undefined,
       orderId: order.id,
+      // El domicilio se publica por el valor que pagó el cliente
+      ...(fee > 0 ? { budget: fee } : {}),
     };
   }
 

@@ -158,3 +158,7 @@
 .tracking-eta.late { background: #fff4e5; color: #92400e; }
 .tracking-eta.late .eta-label { color: #b45309; }
 .eta-late-note { display: block; margin-top: 4px; font-size: 0.8rem; color: #92400e; line-height: 1.4; }
+
+/* Recoger en la tienda */
+.tracking-pickup { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #f0fdf4; color: #166534; font-size: 0.85rem; }
+.tracking-pickup small { color: #15803d; }

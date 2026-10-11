@@ -574,6 +574,11 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.pendingOrderId = prefill.orderId || null;
     this.form.title = prefill.title.slice(0, 120);
     this.form.description = prefill.description;
+    // Presupuesto = valor del domicilio que pagó el cliente (mínimo y máximo iguales)
+    if (prefill.budget && prefill.budget > 0) {
+      this.form.budgetMin = prefill.budget;
+      this.form.budgetMax = prefill.budget;
+    }
     if (prefill.address?.trim()) {
       this.form.address = prefill.address.trim();
       this.onAddressChange(); // ubica el destino en el mini-mapa
@@ -854,17 +859,15 @@ export class DeliveryRequestComponent implements OnDestroy {
     );
   }
 
-  /** La dirección de entrega es deseable pero no siempre se conoce de
-   * antemano (ej. el restaurante aún no tiene la dirección exacta del
-   * cliente): basta con tener AL MENOS un punto geográfico — la dirección de
-   * entrega escrita, o el punto de recogida capturado por GPS — para poder
-   * publicar. El domiciliario puede coordinar el destino exacto luego. */
+  /** La dirección de entrega es obligatoria: el domiciliario necesita saber a
+   * dónde va (Shotra también la exige en las categorías de Delivery). El
+   * punto de recogida (📍) sigue siendo opcional. */
   canSubmit(): boolean {
     return (
       !!this.form.categoryId &&
       !!this.form.title?.trim() &&
       !!this.form.description?.trim() &&
-      (!!this.form.address?.trim() || !!this.originCoords)
+      (this.form.address?.trim().length || 0) >= 5
     );
   }
 
