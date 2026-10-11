@@ -8,6 +8,8 @@ import { ProductsService, Product } from '../../../shared/services/products.serv
 import { KardexService } from '../../../shared/services/kardex.service';
 import { groupComboLines } from '../../../shared/utils/combo-lines.util';
 import { environment } from '../../../../environments/environment';
+import { dailyDocs, downloadDailySalesXlsx, localDay } from '../../../shared/utils/daily-sales-xlsx';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-sales-list',
@@ -45,6 +47,14 @@ import { environment } from '../../../../environments/environment';
               <svg viewBox="0 0 16 16" width="16" height="16"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" /></svg>
             </button>
           </div>
+
+          <a class="action-link" (click)="downloadDaily()" style="cursor:pointer;" [class.disabled]="exporting"
+             title="Ventas directas y pedidos facturados del día, en Excel">
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-spreadsheet" />
+            </svg>
+            {{ exporting ? 'Generando…' : 'Ventas del día (.xlsx)' }}
+          </a>
 
           <a class="action-link action-link-primary" (click)="openCreateModal.emit()" style="cursor:pointer;">
             <svg viewBox="0 0 16 16" width="16" height="16">
@@ -295,6 +305,8 @@ import { environment } from '../../../../environments/environment';
       height: 15px;
       fill: currentColor;
     }
+
+    .action-link.disabled { opacity: 0.6; pointer-events: none; }
 
     .action-link:hover {
       color: #495057;
@@ -683,6 +695,7 @@ export class SalesListComponent implements OnInit {
   showFilters = false;
   viewMode: 'table' | 'cards' = 'table';
   showViewModal = false;
+  exporting = false;
 
   constructor(private salesService: SalesService, private productsService: ProductsService, private kardexService: KardexService, private http: HttpClient) {}
 
@@ -714,6 +727,48 @@ export class SalesListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  /**
+   * Descarga en .xlsx las ventas de un día (hoy por defecto): ventas directas
+   * y pedidos facturados ese día, con resumen, documentos y detalle.
+   */
+  async downloadDaily(): Promise<void> {
+    if (this.exporting) return;
+    const today = localDay(new Date());
+    const pick = await Swal.fire({
+      title: 'Ventas del día',
+      text: 'Ventas directas y pedidos facturados del día, en Excel.',
+      input: 'date',
+      inputValue: today,
+      inputAttributes: { max: today },
+      showCancelButton: true,
+      confirmButtonText: 'Descargar .xlsx',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v ? 'Escoge el día' : null),
+    });
+    if (!pick.isConfirmed || !pick.value) return;
+    const day = String(pick.value);
+
+    this.exporting = true;
+    try {
+      const [sales, orders, params]: any[] = await Promise.all([
+        this.http.get<any>(`${environment.apiUrl}/sales`).toPromise(),
+        this.http.get<any>(`${environment.apiUrl}/orders`).toPromise().catch(() => []),
+        // Nombre del negocio (parámetros del período) para el título del archivo
+        this.http.get<any>(`${environment.apiUrl}/business-params`).toPromise().catch(() => null),
+      ]);
+      const docs = dailyDocs(sales?.data || sales || [], orders?.data || orders || [], day);
+      if (!docs.length) {
+        Swal.fire({ icon: 'info', title: 'Sin ventas', text: 'No hay ventas ni pedidos facturados ese día.' });
+        return;
+      }
+      await downloadDailySalesXlsx(docs, day, String(params?.NEGOCIO_NOMBRE || '').trim());
+    } catch (err: any) {
+      Swal.fire('No se pudo generar el archivo', err?.error?.message || 'Intenta de nuevo.', 'error');
+    } finally {
+      this.exporting = false;
+    }
   }
 
   filterSales(): void {
