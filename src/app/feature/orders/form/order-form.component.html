@@ -28,10 +28,14 @@
             <div class="select-dropdown" *ngIf="showCustomerDropdown">
               <div class="select-option" *ngFor="let customer of filteredCustomers" (mousedown)="selectCustomer(customer)">
                 <strong>{{ getCustomerDisplayName(customer) }}</strong>
-                <small>{{ customer.email }}</small>
+                <small>{{ customerHint(customer) }}</small>
               </div>
               <div class="select-option no-results" *ngIf="filteredCustomers.length === 0">
                 No se encontraron clientes
+              </div>
+              <div class="select-option quick-customer-option" (mousedown)="$event.preventDefault(); createQuickCustomer()">
+                <strong>+ {{ customerSearchTerm.trim() ? 'Crear cliente «' + customerSearchTerm.trim() + '»' : 'Nuevo cliente' }}</strong>
+                <small>Solo el nombre es obligatorio</small>
               </div>
             </div>
           </div>
