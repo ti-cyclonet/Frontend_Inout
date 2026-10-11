@@ -18,6 +18,44 @@ export class MaterialService {
   ) {}
 
   getMaterials(filters?: MaterialFilters, page: number = 1, limit: number = 10): Observable<PaginatedResponse<Material>> {
+    return this.http.get<any>(this.apiConfig.ENDPOINTS.MATERIALS, {
+      params: this.materialParams(filters, page, limit)
+    }).pipe(
+      map(response => ({
+        ...response,
+        data: response.data.map((item: any) => this.toMaterial(item))
+      })),
+      catchError(error => {
+        return this.getFallbackMaterials(filters, page, limit);
+      })
+    );
+  }
+
+  /**
+   * TODOS los materiales del tenant (todas las páginas), con la misma forma que
+   * getMaterials. Para recetas y selectores: getMaterials() trae 10 por defecto
+   * y un tope fijo (p. ej. 1000) deja por fuera materiales de los tenants grandes.
+   * Sin respaldo vacío: si falla, el error llega al llamador (una lista vacía
+   * haría que el formulario de producto descartara la receta al guardar).
+   */
+  getAllMaterials(filters?: MaterialFilters): Observable<PaginatedResponse<Material>> {
+    const PAGE_SIZE = 500;
+    const fetchPage = (page: number) =>
+      this.http.get<any>(this.apiConfig.ENDPOINTS.MATERIALS, { params: this.materialParams(filters, page, PAGE_SIZE) });
+    return fetchPage(1).pipe(
+      switchMap((first: any) => {
+        const pages = Math.max(1, Number(first?.totalPages) || Math.ceil((Number(first?.total) || 0) / PAGE_SIZE));
+        const rest = Array.from({ length: pages - 1 }, (_, i) => fetchPage(i + 2));
+        return rest.length ? forkJoin(rest).pipe(map((others: any[]) => [first, ...others])) : of([first]);
+      }),
+      map((responses: any[]) => {
+        const data = responses.flatMap((r) => (r?.data || []).map((item: any) => this.toMaterial(item)));
+        return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
+      })
+    );
+  }
+
+  private materialParams(filters: MaterialFilters | undefined, page: number, limit: number): HttpParams {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
@@ -43,37 +81,32 @@ export class MaterialService {
       }
     }
 
-    return this.http.get<any>(this.apiConfig.ENDPOINTS.MATERIALS, {
-      params
-    }).pipe(
-      map(response => ({
-        ...response,
-        data: response.data.map((item: any) => ({
-          id: item.strId,
-          strCode: item.strCode,
-          name: item.strName,
-          description: item.strDescription,
-          measurementUnit: item.strUnitMeasure,
-          dischargeUnit: item.strDischargeUnit,
-          price: item.fltPrice,
-          stockMax: item.ingMaxStock,
-          stockMin: item.ingMinStock,
-          currentStock: item.ingQuantity,
-          status: item.strStatus.toLowerCase(),
-          ubicacion: item.strLocation,
-          location: item.strLocation,
-          createDate: new Date(item.dtmCreationDate),
-          updateDate: new Date(item.dtmUpdateDate || item.dtmCreationDate),
-          images: item.images || [],
-          categoryId: item.categoryId || item.category?.id,
-          categoryName: item.category?.name || null,
-          expirationDate: item.dtmExpirationDate || null
-        }))
-      })),
-      catchError(error => {
-        return this.getFallbackMaterials(filters, page, limit);
-      })
-    );
+    return params;
+  }
+
+  /** Material del API (strName, fltPrice…) → modelo de la app. */
+  private toMaterial(item: any): Material {
+    return {
+      id: item.strId,
+      strCode: item.strCode,
+      name: item.strName,
+      description: item.strDescription,
+      measurementUnit: item.strUnitMeasure,
+      dischargeUnit: item.strDischargeUnit,
+      price: item.fltPrice,
+      stockMax: item.ingMaxStock,
+      stockMin: item.ingMinStock,
+      currentStock: item.ingQuantity,
+      status: String(item.strStatus || '').toLowerCase(),
+      ubicacion: item.strLocation,
+      location: item.strLocation,
+      createDate: new Date(item.dtmCreationDate),
+      updateDate: new Date(item.dtmUpdateDate || item.dtmCreationDate),
+      images: item.images || [],
+      categoryId: item.categoryId || item.category?.id,
+      categoryName: item.category?.name || null,
+      expirationDate: item.dtmExpirationDate || null
+    } as Material;
   }
 
   getMaterialById(id: number): Observable<Material | undefined> {

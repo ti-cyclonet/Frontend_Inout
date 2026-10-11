@@ -304,6 +304,11 @@
             
             <div class="ingredients-list" *ngIf="showSelectedMaterials" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
             <h5>Materiales Seleccionados ({{ compositions.length }})</h5>
+            <div *ngIf="recipeIncomplete" style="background: #fdecea; color: #b91c1c; border-radius: 8px; padding: 0.55rem 0.75rem; margin-bottom: 0.6rem; font-size: 0.85rem;">
+              {{ materialsLoadFailed
+                ? 'No se pudieron cargar todos los materiales: recarga la página antes de guardar para no perder ingredientes.'
+                : 'Hay materiales de la receta que ya no están disponibles (en rojo): quítalos o reemplázalos antes de guardar.' }}
+            </div>
             <table class="ingredients-table">
               <thead>
                 <tr>
@@ -315,7 +320,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let comp of getPaginatedCompositions()">
-                  <td class="ingredient-name">
+                  <td class="ingredient-name" [style.color]="comp.componentMaterial?.missing ? '#b91c1c' : null">
                     {{ comp.componentMaterial?.name }}
                     <div style="font-size: 0.75rem; color: #6c757d; margin-top: 0.25rem;">
                       {{ comp.componentMaterial?.ubicacion }} ({{ comp.componentMaterial?.measurementUnit }})
