@@ -162,7 +162,8 @@
                 [config]="resaleConfig"
                 [unitCost]="+(materialForm.get('price')?.value || 0)"
                 [unitMeasure]="materialForm.get('measurementUnit')?.value || ''"
-                [currentStock]="+(materialForm.get('currentStock')?.value || 0)">
+                [currentStock]="+(materialForm.get('currentStock')?.value || 0)"
+                [categoryId]="materialForm.get('categoryId')?.value">
               </app-resale-pricing>
             </div>
           </div>
