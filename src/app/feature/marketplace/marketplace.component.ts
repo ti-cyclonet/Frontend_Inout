@@ -14,6 +14,11 @@ import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
 import { DeliveryOptions } from './delivery-options';
+import { GiftCardBuyComponent } from './gift-cards/gift-card-buy.component';
+import {
+  GIFT_CARD_ITEM_TYPE, GIFT_CARD_PRODUCT_ID, GiftCardDraft, GiftCardOptions, GiftCardView,
+  allocateGiftCards, formatExpiry, giftCardOptionsFrom,
+} from './gift-cards/gift-cards';
 import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
@@ -37,7 +42,7 @@ interface Product {
   intCategoryId: number;
   strStatus: string;
   /** 'product', material de reventa ('material' | 'material_t', por presentación), kit armado o combo. */
-  itemType?: 'product' | 'material' | 'material_t' | 'kit' | 'combo';
+  itemType?: 'product' | 'material' | 'material_t' | 'kit' | 'combo' | 'gift_card';
   /** Precio normal cuando hay promoción vigente (fltPrice ya trae el precio con promoción). */
   listPrice?: number;
   /** Etiqueta de la promoción ("-20%", "-$3.000") o del ahorro del combo. */
@@ -69,6 +74,8 @@ interface CartLine {
   product: Product;
   quantity: number;
   choices?: LineChoice[];
+  /** Bono de regalo: valor y para quién (una línea por bono). */
+  giftCard?: GiftCardDraft;
 }
 
 /** Grupo de opciones vigente (su lista existe en la carta). */
@@ -91,7 +98,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css']
 })
@@ -200,6 +207,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   // Cart
   cart: CartLine[] = [];
+  /** Bonos de regalo: opciones de la tienda, formulario de compra y bonos del cliente con sesión. */
+  giftCardOptions: GiftCardOptions | null = null;
+  showGiftBuy = false;
+  myGiftCards: GiftCardView[] = [];
+  selectedGiftCardIds = new Set<string>();
+  giftClaimCode = '';
+  giftClaiming = false;
+  giftCardsLoading = false;
+  formatExpiry = formatExpiry;
   /** Modal "Arma tu producto": lo que el cliente va marcando. */
   choicePicker: { product: Product; groups: ActiveChoiceGroup[]; selected: Record<string, string[]> } | null = null;
   showCheckout = false;
@@ -560,7 +576,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       // Nombre del negocio configurado en los parámetros del período (título del tab)
       this.http.get<{ name: string | null }>(`${this.baseUrl}/marketplace-config/${tenantId}/store-name`).toPromise().catch(() => null),
       this.http.get<DeliveryOptions>(`${this.baseUrl}/marketplace-config/${tenantId}/delivery-options`).toPromise().catch(() => null),
-    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions, storeNameResponse, deliveryOptions]) => {
+      this.http.get<any>(`${this.baseUrl}/marketplace-config/${tenantId}/gift-cards`).toPromise().catch(() => null),
+    ]).then(async ([productsResponse, contractResponse, configResponse, resaleResponse, paymentOptions, scheduling, combosResponse, livePromotions, storeNameResponse, deliveryOptions, giftCardOptions]) => {
+      this.giftCardOptions = giftCardOptionsFrom(giftCardOptions);
+      if (this.clientLoggedIn && this.giftCardOptions.enabled) this.loadMyGiftCards();
       this.storeContract = contractResponse || null;
       this.paymentOptions = paymentOptions || null;
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
@@ -1726,7 +1745,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   updateCartQuantity(item: CartLine, qty: number): void {
-    if (!this.cart.includes(item)) return;
+    if (!this.cart.includes(item) || item.giftCard) return; // un bono por línea
     const available = this.getAvailableStock(item.product);
     const others = this.cartQuantityOf(item.product.strId) - item.quantity;
     if (available !== null && others + qty > available && !this.isMadeToOrder(item.product)) {
@@ -1776,7 +1795,103 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** Valor del domicilio que se suma al pedido (0 si recoge en la tienda). */
   get deliveryFeeApplied(): number {
+    if (this.cartIsGiftOnly) return 0; // un bono no se entrega a domicilio
     return this.fulfillment === 'DELIVERY' ? Number(this.deliveryOptions?.deliveryFee) || 0 : 0;
+  }
+
+  // ─── Bonos de regalo ───
+
+  get cartHasGiftCards(): boolean {
+    return this.cart.some((i) => !!i.giftCard);
+  }
+
+  /** Solo bonos: no hay nada que entregar (ni domicilio ni dirección). */
+  get cartIsGiftOnly(): boolean {
+    return this.cart.length > 0 && this.cart.every((i) => !!i.giftCard);
+  }
+
+  /** La tienda vende bonos (botón en la tienda pública). */
+  get canBuyGiftCards(): boolean {
+    return !!this.giftCardOptions?.enabled && this.tenantId !== 'home' && !this.isAdminMode;
+  }
+
+  openGiftBuy(): void {
+    this.sessionMenuOpen = false;
+    this.showGiftBuy = true;
+  }
+
+  addGiftCardToCart(draft: GiftCardDraft): void {
+    this.showGiftBuy = false;
+    this.cart.push({
+      product: { strId: GIFT_CARD_PRODUCT_ID, strName: '🎁 BONO DE REGALO', strDescription: '', fltPrice: draft.amount, strLocation: '', intCategoryId: 0, strStatus: 'active', itemType: GIFT_CARD_ITEM_TYPE },
+      quantity: 1,
+      giftCard: draft,
+    });
+    Swal.fire({ icon: 'success', title: 'Bono agregado', text: `Bono de ${this.formatCurrency(draft.amount)} para ${draft.recipientName}`, timer: 1500, showConfirmButton: false, position: 'top-end', toast: true });
+  }
+
+  /** Bonos que puede usar el cliente con sesión (activos y con saldo). */
+  get usableGiftCards(): GiftCardView[] {
+    return this.myGiftCards.filter((c) => c.status === 'ACTIVO' && c.balance > 0);
+  }
+
+  /** Lo que pagan los bonos escogidos (no se pueden pagar bonos con bonos). */
+  get giftCardApplied(): number {
+    if (!this.clientLoggedIn || this.cartHasGiftCards) return 0;
+    const chosen = this.usableGiftCards.filter((c) => this.selectedGiftCardIds.has(c.id));
+    return allocateGiftCards(this.orderTotal, chosen).reduce((s, a) => s + a.amount, 0);
+  }
+
+  /** Lo que queda por pagar con la forma de pago elegida. */
+  get amountDue(): number {
+    return Math.max(0, Math.round((this.orderTotal - this.giftCardApplied) * 100) / 100);
+  }
+
+  toggleGiftCard(card: GiftCardView): void {
+    if (this.selectedGiftCardIds.has(card.id)) this.selectedGiftCardIds.delete(card.id);
+    else this.selectedGiftCardIds.add(card.id);
+    this.selectedGiftCardIds = new Set(this.selectedGiftCardIds);
+  }
+
+  /** Bonos de la cuenta del cliente (fetch con su token, como el checkout). */
+  loadMyGiftCards(): void {
+    if (!this.clientToken) return;
+    this.giftCardsLoading = true;
+    fetch(`${this.baseUrl}/gift-cards/marketplace/mine`, { headers: { Authorization: `Bearer ${this.clientToken}` } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: GiftCardView[]) => {
+        this.myGiftCards = Array.isArray(rows) ? rows : [];
+        // Los que ya no se pueden usar salen de la selección
+        const usable = new Set(this.usableGiftCards.map((c) => c.id));
+        this.selectedGiftCardIds = new Set([...this.selectedGiftCardIds].filter((id) => usable.has(id)));
+      })
+      .catch(() => (this.myGiftCards = []))
+      .finally(() => (this.giftCardsLoading = false));
+  }
+
+  /** El cliente escribe el código que le compartieron: queda en su cuenta y se aplica. */
+  claimGiftCard(): void {
+    const code = this.giftClaimCode.trim();
+    if (!code || !this.clientToken || this.giftClaiming) return;
+    this.giftClaiming = true;
+    fetch(`${this.baseUrl}/gift-cards/marketplace/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.clientToken}` },
+      body: JSON.stringify({ code }),
+    })
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data?.message || 'No se pudo agregar el bono.');
+        return data as GiftCardView;
+      })
+      .then((card) => {
+        this.giftClaimCode = '';
+        this.myGiftCards = [card, ...this.myGiftCards.filter((c) => c.id !== card.id)];
+        if (card.status === 'ACTIVO' && card.balance > 0) this.selectedGiftCardIds = new Set([...this.selectedGiftCardIds, card.id]);
+        Swal.fire({ icon: 'success', title: 'Bono agregado a tu cuenta', text: `Saldo: ${this.formatCurrency(card.balance)}`, timer: 1800, showConfirmButton: false, toast: true, position: 'top-end' });
+      })
+      .catch((err) => Swal.fire({ icon: 'warning', title: 'Bono', text: err?.message || 'No se pudo agregar el bono.' }))
+      .finally(() => (this.giftClaiming = false));
   }
 
   /** Total a pagar: productos + domicilio. El servidor lo recalcula igual. */
@@ -1793,7 +1908,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   get planChoices(): PlanChoice[] {
     const o = this.paymentOptions;
     if (!o) return [];
-    const total = this.orderTotal;
+    // Las formas de pago aplican sobre lo que queda después de los bonos
+    const total = this.amountDue;
     const pct = (p: number) => Math.round((total * p) / 100);
     const choices: PlanChoice[] = [];
 
@@ -1931,6 +2047,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       unitPrice: Number(item.product.fltPrice),
       subtotal: Number(item.product.fltPrice) * Number(item.quantity),
       ...(item.choices?.length ? { choices: item.choices } : {}),
+      ...(item.giftCard ? { giftCard: item.giftCard } : {}),
     }));
   }
 
@@ -2068,6 +2185,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       else this.fetchClientProfile();
       this.prefillFromLastOrder();
       this.loadClientCredit();
+      this.loadMyGiftCards();
     } else {
       sessionStorage.removeItem(this.clientTokenKey);
       sessionStorage.removeItem(this.clientProfileKey);
@@ -2102,7 +2220,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Crédito aprobado, sin mora, y el total cabe en el cupo disponible. */
   get canPayWithCredit(): boolean {
     const e = this.clientCredit?.eligibility;
-    return !!e?.eligible && this.orderTotal <= (e.available || 0) + 0.005;
+    return !!e?.eligible && this.amountDue <= (e.available || 0) + 0.005;
   }
 
   /** Texto de estado del crédito para el checkout (o null si no aplica). */
@@ -2112,7 +2230,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const e = c.eligibility;
     if (c.suspended) return 'Tu crédito en esta tienda está suspendido.';
     if (e?.approvedLimit > 0 && !e.eligible) return e.reason;
-    if (e?.eligible && this.orderTotal > e.available) return `Tu pedido supera tu cupo disponible (${this.formatCurrency(e.available)}).`;
+    if (e?.eligible && this.amountDue > e.available) return `Tu pedido supera tu cupo disponible (${this.formatCurrency(e.available)}).`;
     if (['SOLICITADA', 'VALIDADA', 'CUPO_ASIGNADO'].includes(c.requestStatus)) return 'Tu solicitud de crédito está en trámite. Te avisaremos cuando sea aprobada.';
     if (c.requestStatus === 'RECHAZADA' && !(e?.approvedLimit > 0)) return `Tu solicitud de crédito no fue aprobada${c.rejectionReason ? ': ' + c.rejectionReason : ''}.`;
     return null;
@@ -2282,6 +2400,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     });
     this.prefillFromLastOrder();
     this.loadClientCredit();
+    this.loadMyGiftCards();
     // Aceptó estas mismas versiones al crear/vincular su cuenta
     if (this.accountConsents.terms && this.accountConsents.habeasData) {
       this.orderConsents = { terms: true, habeasData: true };
@@ -2470,6 +2589,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.clientEmail = '';
     this.clientProfile = null;
     this.clientCredit = null;
+    this.myGiftCards = [];
+    this.selectedGiftCardIds = new Set();
     this.paymentPreference = 'CONTADO';
     this.sessionMenuOpen = false;
     this.setAccountMode('guest');
@@ -2498,14 +2619,16 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // A domicilio la dirección es obligatoria (el servidor también lo exige)
-    if (this.deliveryOptions && this.fulfillment === 'DELIVERY' && this.checkoutData.customerAddress.trim().length < 5) {
+    // A domicilio la dirección es obligatoria (el servidor también lo exige); un bono no se entrega
+    if (!this.cartIsGiftOnly && this.deliveryOptions && this.fulfillment === 'DELIVERY' && this.checkoutData.customerAddress.trim().length < 5) {
       Swal.fire({ icon: 'warning', title: 'Dirección de entrega', text: 'Escribe la dirección donde quieres recibir tu pedido (calle, número, barrio).' });
       return;
     }
 
-    const plan = this.paymentOptions ? this.effectivePlan : null;
-    if (this.paymentOptions && !plan) {
+    // Si los bonos cubren todo, no hace falta forma de pago
+    const coveredByGiftCards = this.giftCardApplied > 0 && this.amountDue < 1;
+    const plan = this.paymentOptions && !coveredByGiftCards ? this.effectivePlan : null;
+    if (this.paymentOptions && !plan && !coveredByGiftCards) {
       Swal.fire({ icon: 'warning', title: 'Forma de pago', text: 'No hay una forma de pago disponible para este pedido. Revisa las opciones o contacta a la tienda.' });
       return;
     }
@@ -2526,21 +2649,23 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       tenantId: this.tenantId,
       customerName: this.checkoutData.customerName.trim(),
       customerPhone: this.checkoutData.customerPhone.trim(),
-      customerAddress: this.fulfillment === 'PICKUP' ? undefined : this.checkoutData.customerAddress.trim() || undefined,
+      customerAddress: this.fulfillment === 'PICKUP' || this.cartIsGiftOnly ? undefined : this.checkoutData.customerAddress.trim() || undefined,
       customerEmail: this.checkoutData.customerEmail.trim() || undefined,
       items: this.orderItemsPayload(),
       notes: this.checkoutData.notes.trim() || undefined,
       subtotal: Number(subtotal),
       tax: 0,
       total: Number(subtotal) + this.deliveryFeeApplied,
-      // Sin opciones de entrega cargadas (falló la consulta), como antes
-      ...(this.deliveryOptions ? { fulfillment: this.fulfillment } : {}),
+      // Sin opciones de entrega cargadas (falló la consulta), como antes; un bono no se entrega
+      ...(this.deliveryOptions && !this.cartIsGiftOnly ? { fulfillment: this.fulfillment } : {}),
+      // Bonos con los que paga (solo con sesión; el servidor valida saldo y dueño)
+      ...(this.giftCardApplied > 0 ? { giftCardIds: [...this.selectedGiftCardIds] } : {}),
       ...(this.clientLoggedIn ? {} : this.consentPayload()),
-      ...(this.deliveryLocation && this.fulfillment !== 'PICKUP' ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
+      ...(this.deliveryLocation && this.fulfillment !== 'PICKUP' && !this.cartIsGiftOnly ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
       // Formas de pago configuradas por la tienda; sin ellas, el checkout clásico
       ...(plan
         ? { paymentPlan: plan }
-        : this.clientLoggedIn ? { paymentPreference: this.canPayWithCredit && this.paymentPreference === 'CREDITO' ? 'CREDITO' : 'CONTADO' } : {}),
+        : coveredByGiftCards ? {} : this.clientLoggedIn ? { paymentPreference: this.canPayWithCredit && this.paymentPreference === 'CREDITO' ? 'CREDITO' : 'CONTADO' } : {}),
       ...(this.deliveryMode === 'SCHEDULED' && this.scheduledStart ? { scheduledStart: this.scheduledStart } : {}),
     };
 
@@ -2550,7 +2675,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.cart = [];
       this.checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: this.clientEmail, notes: '' };
       this.deliveryLocation = null;
+      this.selectedGiftCardIds = new Set();
       if (this.clientLoggedIn) {
+        this.loadMyGiftCards();
         this.prefillFromProfile(this.clientProfile);
         this.prefillFromLastOrder();
         this.loadClientCredit();

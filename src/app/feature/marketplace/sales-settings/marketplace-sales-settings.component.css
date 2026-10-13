@@ -93,3 +93,7 @@
 
 .ss-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 .ss-reset { margin-top: 0.75rem; border: none; background: none; color: #6b7280; font-size: 0.82rem; text-decoration: underline; cursor: pointer; }
+
+/* Bonos de regalo: mínimo y máximo lado a lado */
+.ss-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+@media (max-width: 480px) { .ss-grid2 { grid-template-columns: 1fr; } }

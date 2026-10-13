@@ -60,6 +60,40 @@
   </div>
 </div>
 
+<!-- ─── Bonos de regalo ─── -->
+<div class="ss-block">
+  <button type="button" class="ss-header" (click)="toggle('gifts')">
+    <span><i class="bi bi-gift me-1"></i> Bonos de regalo</span>
+    <small>{{ giftCardsSummary }} {{ open === 'gifts' ? '▲' : '▼' }}</small>
+  </button>
+
+  <div class="ss-body" *ngIf="open === 'gifts' && giftCards">
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="giftCards.enabled">
+      <span><strong>🎁 Vender bonos de regalo en la tienda</strong><small>Tus clientes compran un bono para otra persona con tus formas de pago. Se activa cuando el pago queda completo (o al facturar a crédito) y quien lo recibe lo usa como pago, con su cuenta en la tienda.</small></span>
+    </label>
+    <div class="ss-sub" *ngIf="giftCards.enabled">
+      <div class="ss-grid2">
+        <div>
+          <label for="ss-gift-min">Valor mínimo (COP)</label>
+          <input id="ss-gift-min" type="number" min="1000" step="1000" [(ngModel)]="giftCards.minAmount">
+        </div>
+        <div>
+          <label for="ss-gift-max">Valor máximo (COP)</label>
+          <input id="ss-gift-max" type="number" min="1000" step="1000" [(ngModel)]="giftCards.maxAmount">
+        </div>
+      </div>
+      <label for="ss-gift-presets">Valores sugeridos</label>
+      <input id="ss-gift-presets" type="text" [(ngModel)]="giftPresetsText" placeholder="20000, 50000, 100000">
+      <small class="ss-help">Separados por comas. El cliente también puede escribir otro valor dentro del rango.</small>
+      <label for="ss-gift-months">Vigencia (meses desde que se activa)</label>
+      <input id="ss-gift-months" type="number" min="1" max="60" [(ngModel)]="giftCards.validityMonths" style="max-width: 120px">
+      <small class="ss-help">Revisa la vigencia mínima que exige la normativa de protección al consumidor para tu caso.</small>
+    </div>
+    <button type="button" class="ss-save" [disabled]="savingGiftCards" (click)="saveGiftCards()">{{ savingGiftCards ? 'Guardando…' : 'Guardar bonos' }}</button>
+  </div>
+</div>
+
 <!-- ─── Formas de pago ─── -->
 <div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('payments')">

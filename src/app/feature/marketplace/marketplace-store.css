@@ -291,3 +291,9 @@
   .brand h1 { font-size: 1.02rem; }
   .mk-pills li { font-size: 0.76rem; }
 }
+
+/* Botón "Regala un bono" en el encabezado de la tienda */
+.gift-btn { display: inline-flex; align-items: center; gap: 0.35rem; height: 38px; padding: 0 0.85rem; margin-right: 0.4rem; border: 0; border-radius: 999px; cursor: pointer;
+  font-weight: 700; font-size: 0.82rem; color: #fff; background: linear-gradient(135deg, #a855f7, var(--mk-orange-d)); box-shadow: 0 8px 20px -10px rgba(168, 85, 247, 0.8); }
+.gift-btn:hover { filter: brightness(1.08); }
+@media (max-width: 640px) { .gift-btn__label { display: none; } .gift-btn { width: 38px; padding: 0; justify-content: center; font-size: 1.05rem; } }
