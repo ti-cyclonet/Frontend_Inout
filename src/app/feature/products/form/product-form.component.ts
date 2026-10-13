@@ -12,6 +12,7 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
 import { environment } from '../../../../environments/environment';
 import { convertUnits } from '../../../shared/utils/unit-conversion.util';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
+import { actualMargin, effectiveMargin, inheritedMarginLabel, marginPayload, priceWithMargin } from '../../../shared/utils/pricing-margin';
 import Swal from 'sweetalert2';
 
 interface ExtendedMaterial extends Material {
@@ -114,7 +115,12 @@ export class ProductFormComponent implements OnInit {
   overheadBreakdown: { arriendo: number; agua: number; energia: number; gas: number; internet: number; nomina: number; planInout?: number } | null = null;
   /** El negocio decidió incluir su plan de InOut en el costeo (Configuración). */
   overheadIncludesInoutPlan = false;
+  /** Margen del período (PORCENTAJE_GANANCIA) y mínimo permitido (MARGEN_MINIMO). */
   marginPercent: number = 0;
+  minMarginPercent = 0;
+  /** Margen del producto: heredado (categoría o período) o propio. */
+  marginMode: 'inherit' | 'custom' = 'inherit';
+  customMargin: number | null = null;
   /** Listas de la carta (MarketPlace → Información de la carta) y las que usa este producto. */
   menuBlocks: { title: string; count: number }[] = [];
   menuBlocksLoaded = false;
@@ -194,6 +200,9 @@ export class ProductFormComponent implements OnInit {
       productionLeadHours: this.productData.intProductionLeadHours ?? null
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
+    const ownMargin = this.productData.fltMarginPercent;
+    this.marginMode = ownMargin !== null && ownMargin !== undefined && ownMargin !== '' ? 'custom' : 'inherit';
+    this.customMargin = this.marginMode === 'custom' ? Number(ownMargin) : null;
     this.choiceGroups = (Array.isArray(this.productData.jsonChoiceGroups) ? this.productData.jsonChoiceGroups : [])
       .map((g: any) => ({ block: String(g.block || ''), min: Number(g.min) || 0, max: Number(g.max) || 1 }));
 
@@ -541,15 +550,51 @@ export class ProductFormComponent implements OnInit {
     return this.getTotalCost() + (this.directLaborCost || 0) + this.indirectCostPerUnit;
   }
 
-  /** Precio sugerido = costo total + margen de ganancia configurado. Es el
-   * precio mínimo permitido: nunca se debe vender por debajo de esto. */
+  /** Categoría elegida en el formulario (para su margen). */
+  private get selectedCategory(): any {
+    const id = this.productForm?.get('categoryId')?.value;
+    return this.categories.find((c: any) => String(c.id) === String(id)) || null;
+  }
+
+  /** Margen que aplica: el propio, el de la categoría o el del período. */
+  get effective() {
+    return effectiveMargin({
+      item: this.marginMode === 'custom' ? this.customMargin : null,
+      category: (this.selectedCategory as any)?.fltMarginPercent,
+      period: this.marginPercent,
+    });
+  }
+
+  get inheritedLabel(): string {
+    const c: any = this.selectedCategory;
+    return inheritedMarginLabel(c?.name || null, c?.fltMarginPercent, this.marginPercent);
+  }
+
+  /** Precio sugerido = costo total + margen que aplica (objetivo). */
   get suggestedPrice(): number {
-    return this.totalUnitCost * (1 + (this.marginPercent || 0) / 100);
+    return priceWithMargin(this.totalUnitCost, this.effective.percent);
+  }
+
+  /** Piso: costo total + margen mínimo del período (0 = no vender bajo costo). */
+  get minimumPrice(): number {
+    return priceWithMargin(this.totalUnitCost, this.minMarginPercent);
+  }
+
+  private get priceValue(): number {
+    return +this.productForm?.get('fltPrice')?.value || 0;
   }
 
   get priceBelowMinimum(): boolean {
-    const price = +this.productForm?.get('fltPrice')?.value || 0;
-    return this.suggestedPrice > 0 && price < this.suggestedPrice;
+    return this.minimumPrice > 0 && this.priceValue + 0.005 < this.minimumPrice;
+  }
+
+  /** Entre el piso y el sugerido: se permite con aviso. */
+  get priceBelowTarget(): boolean {
+    return this.suggestedPrice > 0 && this.priceValue + 0.5 < this.suggestedPrice;
+  }
+
+  get realMargin(): number | null {
+    return actualMargin(this.priceValue, this.totalUnitCost);
   }
 
   /** Carga el costo indirecto mensual y el % de ganancia configurados en el
@@ -566,6 +611,7 @@ export class ProductFormComponent implements OnInit {
       this.overheadBreakdown = overhead?.breakdown || null;
       this.overheadIncludesInoutPlan = !!overhead?.includesInoutPlan;
       this.marginPercent = params?.PORCENTAJE_GANANCIA || 0;
+      this.minMarginPercent = Math.max(0, Number(params?.MARGEN_MINIMO) || 0);
       this.loadingPricing = false;
     }).catch(() => {
       this.loadingPricing = false;
@@ -688,7 +734,7 @@ export class ProductFormComponent implements OnInit {
     return !!(this.productForm.valid && this.compositions.length > 0 && this.productImages.length > 0);
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (!this.isFormValid()) return;
 
     if (this.recipeIncomplete) {
@@ -702,9 +748,24 @@ export class ProductFormComponent implements OnInit {
       return;
     }
 
-    if (this.priceBelowMinimum) {
-      Swal.fire('Precio muy bajo', `El precio no puede ser menor al mínimo calculado (${this.formatCurrency(this.suggestedPrice)}), que cubre costo de materiales, costo indirecto y margen de ganancia.`, 'warning');
+    if (this.marginMode === 'custom' && !(Number(this.customMargin) >= 0 && Number(this.customMargin) <= 1000)) {
+      Swal.fire('Margen del producto', 'Escribe un margen entre 0 % y 1000 %, o usa el de la categoría o el del período.', 'warning');
       return;
+    }
+    if (this.priceBelowMinimum) {
+      Swal.fire('Precio muy bajo', `El precio no puede ser menor al mínimo (${this.formatCurrency(this.minimumPrice)}): ${this.minMarginPercent > 0 ? `costo total más el ${this.minMarginPercent} % mínimo del período` : 'quedarías vendiendo bajo costo'}.`, 'warning');
+      return;
+    }
+    if (this.priceBelowTarget) {
+      const ok = await Swal.fire({
+        icon: 'question',
+        title: 'Por debajo del margen objetivo',
+        text: `Con ${this.formatCurrency(this.priceValue)} el margen real es ${this.realMargin} % y el objetivo es ${this.effective.percent} % (precio sugerido ${this.formatCurrency(this.suggestedPrice)}). ¿Guardar con este precio?`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, guardar',
+        cancelButtonText: 'Revisar',
+      });
+      if (!ok.isConfirmed) return;
     }
 
     const choiceError = this.choiceGroupsError();
@@ -743,6 +804,7 @@ export class ProductFormComponent implements OnInit {
       blnMarketplaceVisible: formData.marketplaceVisible !== false,
       blnMadeToOrder: !!formData.madeToOrder,
       jsonChoiceGroups: this.choiceGroups.map((g) => ({ block: g.block, min: Number(g.min), max: Number(g.max) })),
+      fltMarginPercent: marginPayload(this.marginMode, this.customMargin),
       ...(formData.productionLeadHours !== null && formData.productionLeadHours !== ''
         ? { intProductionLeadHours: Math.max(0, Math.round(+formData.productionLeadHours)) }
         : {})

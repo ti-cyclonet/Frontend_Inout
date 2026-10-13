@@ -514,13 +514,25 @@
                   <span>Costo total por unidad</span>
                   <strong>{{ formatCurrency(totalUnitCost) }}</strong>
                 </div>
-                <div class="pricing-row">
-                  <span>Margen de ganancia ({{ marginPercent }}%)</span>
-                  <strong>+ {{ formatCurrency(totalUnitCost * marginPercent / 100) }}</strong>
+                <div class="pricing-row margin-row">
+                  <span>Margen de ganancia
+                    <select class="margin-mode" [(ngModel)]="marginMode" [ngModelOptions]="{standalone: true}" aria-label="Origen del margen">
+                      <option value="inherit">{{ inheritedLabel }}</option>
+                      <option value="custom">Propio de {{ 'este producto' }}</option>
+                    </select>
+                    <span class="margin-custom" *ngIf="marginMode === 'custom'">
+                      <input type="number" min="0" max="1000" step="1" [(ngModel)]="customMargin" [ngModelOptions]="{standalone: true}" aria-label="Margen propio (%)"> %
+                    </span>
+                  </span>
+                  <strong>+ {{ formatCurrency(totalUnitCost * effective.percent / 100) }}</strong>
                 </div>
                 <div class="pricing-row suggested">
-                  <span>Precio sugerido (mínimo)</span>
+                  <span>Precio sugerido <small>({{ effective.percent }} % sobre el costo)</small></span>
                   <strong>{{ formatCurrency(suggestedPrice) }}</strong>
+                </div>
+                <div class="pricing-row floor-row">
+                  <span>Precio mínimo permitido <small>{{ minMarginPercent > 0 ? '(costo + ' + minMarginPercent + ' % del período)' : '(el costo total)' }}</small></span>
+                  <strong>{{ formatCurrency(minimumPrice) }}</strong>
                 </div>
                 <button type="button" class="btn-use-suggested" (click)="useSuggestedPrice()">
                   Usar precio sugerido
@@ -534,7 +546,10 @@
                 <input type="number" class="form-control" formControlName="fltPrice" min="0" placeholder="0.00"
                        [class.is-invalid]="priceBelowMinimum" />
                 <small *ngIf="priceBelowMinimum" class="price-warning">
-                  No puede ser menor al precio sugerido ({{ formatCurrency(suggestedPrice) }}).
+                  No puede ser menor al precio mínimo ({{ formatCurrency(minimumPrice) }}): {{ minMarginPercent > 0 ? 'costo total + ' + minMarginPercent + ' % del período' : 'quedarías vendiendo bajo costo' }}.
+                </small>
+                <small *ngIf="!priceBelowMinimum && priceBelowTarget" class="price-note">
+                  Por debajo de su margen objetivo ({{ effective.percent }} %): margen real {{ realMargin }} %. Se puede guardar.
                 </small>
               </div>
               <div class="form-group">

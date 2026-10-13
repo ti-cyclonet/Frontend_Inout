@@ -8,6 +8,8 @@ import { MaterialMetrics } from '../../../shared/models/material.model';
 import { MetricCardComponent } from '../../../shared/components/metric-card/metric-card.component';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { CategoryService } from '../../../shared/services/category/category.service';
 import { PLANTILLA_MATERIALES_BASE64 } from './plantilla-materiales';
 import { MaterialsInsightsComponent } from './materials-insights.component';
@@ -50,7 +52,7 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   categoriesExpanded = true;
   uploadingCategories = false;
 
-  constructor(private materialService: MaterialService, private router: Router, private categoryService: CategoryService, private documentsService: DocumentsService) {}
+  constructor(private materialService: MaterialService, private router: Router, private categoryService: CategoryService, private documentsService: DocumentsService, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.loadMetrics();
@@ -315,7 +317,30 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
     }
   }
 
+  /** Margen del período (PORCENTAJE_GANANCIA), de referencia en la tabla de categorías. */
+  periodMargin: number | null = null;
+
+  /** Guarda el margen de una categoría (vacío = heredar el del período). */
+  saveCategoryMargin(cat: any, raw: string): void {
+    const value = raw === '' || raw === null ? null : Number(raw);
+    if (value !== null && !(value >= 0 && value <= 1000)) {
+      Swal.fire('Margen de la categoría', 'Escribe un margen entre 0 % y 1000 %, o déjalo vacío para usar el del período.', 'warning');
+      return;
+    }
+    this.categoryService.update(cat.id, { fltMarginPercent: value } as any).subscribe({
+      next: (saved: any) => {
+        cat.fltMarginPercent = saved?.fltMarginPercent ?? value;
+        Swal.fire({ icon: 'success', title: value === null ? `${cat.name}: usa el margen del período` : `${cat.name}: margen ${value} %`, timer: 1400, showConfirmButton: false, toast: true, position: 'top-end' });
+      },
+      error: (err) => Swal.fire('No se pudo guardar', err?.error?.message || 'Intenta de nuevo.', 'error'),
+    });
+  }
+
   loadCategories(): void {
+    this.http.get<any>(`${environment.apiUrl}/business-params`).subscribe({
+      next: (p) => (this.periodMargin = Number(p?.PORCENTAJE_GANANCIA) || 0),
+      error: () => (this.periodMargin = null),
+    });
     this.categoryService.getAll().subscribe({
       next: (categories: any[]) => {
         this.categories = categories;
