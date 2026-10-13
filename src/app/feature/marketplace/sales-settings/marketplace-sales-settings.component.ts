@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 import { splitPlanLabel } from '../order-tracking/order-labels';
 import { DEFAULT_DELIVERY_OPTIONS, DeliveryOptions } from '../delivery-options';
+import { DEFAULT_GIFT_CARD_OPTIONS, GiftCardOptions, giftCardOptionsFrom } from '../gift-cards/gift-cards';
 import {
   DEFAULT_THANKS_MESSAGES, THANKS_MAX_LENGTH, THANKS_STYLES, ThanksMessages, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts,
 } from '../order-tracking/thanks-messages';
@@ -56,7 +57,11 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
   welcomeMax = WELCOME_MAX_LENGTH;
   delivery: DeliveryOptions | null = null;
   savingDelivery = false;
-  open: 'store' | 'delivery' | 'payments' | 'scheduling' | 'thanks' | null = null;
+  giftCards: GiftCardOptions | null = null;
+  /** Valores sugeridos como texto ("20000, 50000, 100000"). */
+  giftPresetsText = '';
+  savingGiftCards = false;
+  open: 'store' | 'delivery' | 'gifts' | 'payments' | 'scheduling' | 'thanks' | null = null;
   days = DAYS;
   splitPlanLabel = splitPlanLabel;
 
@@ -70,6 +75,10 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
       next: (i) => (this.storeInfo = { whatsapp: this.formatPhone(i?.whatsapp || ''), welcomeMessage: i?.welcomeMessage || '' }),
       error: () => (this.storeInfo = { whatsapp: '', welcomeMessage: '' }),
     });
+    this.http.get<any>(`${this.base}/${this.tenantId}/gift-cards`).subscribe({
+      next: (g) => this.setGiftCards(giftCardOptionsFrom(g)),
+      error: () => this.setGiftCards({ ...DEFAULT_GIFT_CARD_OPTIONS }),
+    });
     this.http.get<DeliveryOptions>(`${this.base}/${this.tenantId}/delivery-options`).subscribe({
       next: (d) => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...d }),
       error: () => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS }),
@@ -82,7 +91,7 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
     });
   }
 
-  toggle(section: 'store' | 'delivery' | 'payments' | 'scheduling' | 'thanks'): void {
+  toggle(section: 'store' | 'delivery' | 'gifts' | 'payments' | 'scheduling' | 'thanks'): void {
     this.open = this.open === section ? null : section;
     if (this.open === 'thanks') loadThanksFonts();
   }
@@ -131,6 +140,37 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
       },
       error: (err) => {
         this.savingStoreInfo = false;
+        Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err?.error?.message || 'Intenta de nuevo.' });
+      },
+    });
+  }
+
+  private setGiftCards(g: GiftCardOptions): void {
+    this.giftCards = g;
+    this.giftPresetsText = g.presets.join(', ');
+  }
+
+  get giftCardsSummary(): string {
+    const g = this.giftCards;
+    if (!g) return 'Cargando…';
+    return g.enabled ? `Activos · $${g.minAmount.toLocaleString('es-CO')} a $${g.maxAmount.toLocaleString('es-CO')}` : 'Inactivos';
+  }
+
+  saveGiftCards(): void {
+    const g = this.giftCards;
+    if (!g) return;
+    const presets = this.giftPresetsText.split(/[,;\s]+/).map((x) => Number(x.replace(/[^\d]/g, ''))).filter((n) => n > 0);
+    this.savingGiftCards = true;
+    this.http.patch<GiftCardOptions>(`${this.base}/${this.tenantId}/gift-cards`, {
+      enabled: !!g.enabled, minAmount: Number(g.minAmount), maxAmount: Number(g.maxAmount), presets, validityMonths: Number(g.validityMonths),
+    }).subscribe({
+      next: (saved) => {
+        this.setGiftCards(giftCardOptionsFrom(saved));
+        this.savingGiftCards = false;
+        Swal.fire({ icon: 'success', title: 'Bonos guardados', timer: 1500, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingGiftCards = false;
         Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err?.error?.message || 'Intenta de nuevo.' });
       },
     });

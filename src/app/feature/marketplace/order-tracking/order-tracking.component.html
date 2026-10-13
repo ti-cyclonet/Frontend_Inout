@@ -26,7 +26,7 @@
     </div>
 
     <!-- Avance -->
-    <div class="tracking-steps" *ngIf="order.status !== 'CANCELLED'">
+    <div class="tracking-steps" *ngIf="order.status !== 'CANCELLED' && !giftOnly">
       <div class="tracking-step" *ngFor="let s of steps; let i = index" [class.done]="i <= stepIndex">
         <span class="dot"></span><span>{{ statusLabels[s] }}</span>
       </div>
@@ -78,12 +78,42 @@
       <div class="tracking-payments" *ngIf="order.payments?.length">
         <p class="tracking-label">Tus pagos</p>
         <div class="tracking-pay" *ngFor="let p of order.payments">
-          <span>{{ formatDate(p.createdAt, true) }} · {{ formatCurrency(p.amount) }}</span>
+          <span>{{ formatDate(p.createdAt, true) }} · {{ formatCurrency(p.amount) }}<ng-container *ngIf="paymentMethodText(p.method) as m"> · {{ m }}</ng-container></span>
           <span class="pay-badge" [ngClass]="p.status">
             {{ p.status === 'VERIFICADO' ? 'Confirmado' : p.status === 'RECHAZADO' ? 'Rechazado' : 'Por verificar' }}
           </span>
           <small *ngIf="p.rejectReason" class="reject">Motivo: {{ p.rejectReason }}</small>
         </div>
+      </div>
+    </div>
+
+    <!-- Bonos de regalo comprados en este pedido -->
+    <div class="tracking-gifts" *ngIf="order.giftCards?.length">
+      <p class="tracking-label">🎁 Bonos de regalo</p>
+      <div class="gift-ticket" *ngFor="let g of order.giftCards" [class.pending]="!g.code">
+        <div class="gift-ticket__head">
+          <strong>{{ formatCurrency(g.amount) }}</strong>
+          <span class="gift-ticket__status">{{ giftStatusLabel(g.status) }}</span>
+        </div>
+        <small>Para {{ g.recipientName }}{{ g.senderName ? ' · De ' + g.senderName : '' }}</small>
+        <ng-container *ngIf="g.code; else giftPending">
+          <div class="gift-ticket__code">{{ g.code }}</div>
+          <small *ngIf="g.expiresAt">Vence el {{ formatExpiry(g.expiresAt) }}{{ g.balance < g.amount ? ' · saldo ' + formatCurrency(g.balance) : '' }}</small>
+          <div class="gift-ticket__actions" *ngIf="g.status === 'ACTIVO'">
+            <button type="button" class="gift-btn gift-btn--copy" [class.done]="copiedCode === g.code" (click)="copyGiftCode(g)">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><use [attr.href]="'assets/icons/bootstrap-icons.svg#' + (copiedCode === g.code ? 'clipboard-check' : 'clipboard')"/></svg>
+              {{ copiedCode === g.code ? 'Copiado' : 'Copiar código' }}
+            </button>
+            <a class="gift-btn gift-btn--wa" [href]="giftShareUrl(g)" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#whatsapp"/></svg>
+              Compartir por WhatsApp
+            </a>
+          </div>
+          <small class="gift-ticket__hint" *ngIf="g.status === 'ACTIVO'">Quien lo recibe crea su cuenta en la tienda{{ g.recipientEmail ? ' con ' + g.recipientEmail : '' }} y lo usa al pagar.</small>
+        </ng-container>
+        <ng-template #giftPending>
+          <small class="gift-ticket__hint">{{ g.status === 'ANULADO' ? 'Este bono fue anulado.' : 'El código aparece aquí cuando se confirme el pago del pedido.' }}</small>
+        </ng-template>
       </div>
     </div>
 

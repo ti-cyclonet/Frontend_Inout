@@ -7,6 +7,7 @@ import { PaymentVoucherUploadComponent } from './payment-voucher-upload.componen
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { DisplayLine, groupComboLines } from '../../../shared/utils/combo-lines.util';
+import { GIFT_CARD_STATUS_LABELS, GiftCardView, formatExpiry, giftCardShareText, whatsappShareUrl } from '../gift-cards/gift-cards';
 import { DEFAULT_THANKS_MESSAGES, ThanksStyle, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts } from './thanks-messages';
 
 /** Cada cuánto se refresca el seguimiento mientras el pedido sigue en curso. */
@@ -32,6 +33,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   token = '';
   storeId = '';
   order: any = null;
+  /** Nombre de la tienda (para el mensaje del bono de regalo). */
+  storeName = '';
+  copiedCode = '';
+  giftStatusLabel(status: string): string {
+    return (GIFT_CARD_STATUS_LABELS as Record<string, string>)[status] || status;
+  }
+  formatExpiry = formatExpiry;
   loading = true;
   notFound = false;
 
@@ -75,6 +83,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       next: (order) => {
         this.order = order;
         this.loading = false;
+        if (order?.giftCards?.length && !this.storeName) this.loadStoreName(order.tenantId);
         this.maybeShowThanks();
         this.lastUpdated = new Date();
         this.now = Date.now();
@@ -225,6 +234,42 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   schedule(): string | null {
     return this.order?.scheduledStart ? formatScheduleRange(this.order.scheduledStart, this.order.scheduledEnd) : null;
+  }
+
+  /** Pedido solo de bonos de regalo: no hay preparación ni reparto que mostrar. */
+  get giftOnly(): boolean {
+    const items: any[] = this.order?.items || [];
+    return items.length > 0 && items.every((i) => i?.itemType === 'gift_card');
+  }
+
+  private loadStoreName(tenantId: string): void {
+    if (!tenantId) return;
+    this.http.get<{ name: string | null }>(`${environment.apiUrl}/marketplace-config/${tenantId}/store-name`).subscribe({
+      next: (r) => (this.storeName = r?.name || ''),
+      error: () => {},
+    });
+  }
+
+  /** Enlace de la tienda para que quien recibe el bono cree su cuenta. */
+  get storeUrl(): string {
+    return `${window.location.origin}/marketplace/${this.order?.storeSlug || this.storeId}`;
+  }
+
+  giftShareUrl(card: GiftCardView): string {
+    return whatsappShareUrl(giftCardShareText(card, this.storeName || 'la tienda', this.storeUrl), (card as any).recipientPhone);
+  }
+
+  copyGiftCode(card: GiftCardView): void {
+    if (!card.code) return;
+    navigator.clipboard?.writeText(card.code).then(() => {
+      this.copiedCode = card.code!;
+      setTimeout(() => (this.copiedCode = ''), 1800);
+    }).catch(() => {});
+  }
+
+  /** Forma de pago del abono: "Bono" para los pagos con bono de regalo. */
+  paymentMethodText(method: string): string {
+    return method === 'BONO' ? '🎁 Bono' : '';
   }
 
   /** Formato de pesos de los pedidos: "$2.362.200". */

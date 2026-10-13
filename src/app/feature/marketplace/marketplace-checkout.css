@@ -67,3 +67,21 @@
 .choice-option.disabled { opacity: 0.45; cursor: not-allowed; }
 .choice-confirm { width: 100%; margin-top: 0.25rem; }
 .item-choices { display: block; font-size: 0.76rem; color: var(--mk-muted); line-height: 1.3; }
+
+/* ─── Bonos de regalo ─── */
+.gift-pay { margin-top: 1rem; padding: 0.8rem 0.9rem; border: 1.5px dashed var(--mk-border); border-radius: 14px; }
+.gift-pay__title { margin: 0 0 0.5rem; font-weight: 700; font-size: 0.92rem; }
+.gift-pay__card { display: flex; gap: 0.6rem; align-items: center; padding: 0.5rem 0.7rem; margin-bottom: 0.4rem; border: 1.5px solid var(--mk-border); border-radius: 12px; cursor: pointer; }
+.gift-pay__card.active { border-color: var(--mk-sector); background: var(--mk-sector-soft); }
+.gift-pay__card input { accent-color: var(--mk-sector); }
+.gift-pay__card span { display: flex; flex-direction: column; font-size: 0.88rem; }
+.gift-pay__card small { font-size: 0.74rem; color: var(--mk-muted); letter-spacing: 0.02em; }
+.gift-pay__empty { margin: 0 0 0.5rem; font-size: 0.82rem; color: var(--mk-muted); }
+.gift-pay__claim { display: flex; gap: 0.4rem; }
+.gift-pay__claim input { flex: 1; min-width: 0; padding: 0.55rem 0.7rem; border: 1.5px solid var(--mk-border); border-radius: 10px; font-size: 0.85rem; text-transform: uppercase; }
+.gift-pay__claim button { padding: 0.55rem 0.9rem; border: none; border-radius: 10px; background: var(--mk-text); color: #fff; font-weight: 700; cursor: pointer; }
+.gift-pay__claim button:disabled { opacity: 0.5; cursor: not-allowed; }
+.gift-pay__hint { margin: 0.75rem 0 0; padding: 0.6rem 0.8rem; border-radius: 12px; background: #fdf4ff; color: #86198f; font-size: 0.84rem; }
+.gift-pay__hint--ok { background: #f0fdf4; color: #166534; }
+.gift-line span:last-child { color: #15803d; font-weight: 700; }
+.checkout-total--due { margin-top: 0.2rem; }
