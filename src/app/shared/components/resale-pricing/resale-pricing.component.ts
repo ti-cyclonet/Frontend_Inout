@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { actualMargin, effectiveMargin, inheritedMarginLabel, marginPayload, priceWithMargin } from '../../utils/pricing-margin';
 
 /**
  * Configuración de reventa de un material o material compuesto (tiendas de
@@ -18,6 +19,8 @@ export interface ResaleConfig {
   ingPlannedMonthlyUnits: number;
   /** Solo aplica si blnForResale: visible en el MarketPlace público. */
   blnMarketplaceVisible: boolean;
+  /** Margen propio del material (sobre el costo); null = el de la categoría o el del período. */
+  fltMarginPercent: number | null;
 }
 
 export function resaleConfigFrom(material?: any): ResaleConfig {
@@ -28,6 +31,7 @@ export function resaleConfigFrom(material?: any): ResaleConfig {
     fltSalePrice: Number(material?.fltSalePrice) || 0,
     ingPlannedMonthlyUnits: Number(material?.ingPlannedMonthlyUnits) || 0,
     blnMarketplaceVisible: material ? material.blnMarketplaceVisible !== false : true,
+    fltMarginPercent: material?.fltMarginPercent !== null && material?.fltMarginPercent !== undefined && material?.fltMarginPercent !== '' ? Number(material.fltMarginPercent) : null,
   };
 }
 
@@ -40,6 +44,7 @@ export function resaleConfigPayload(config: ResaleConfig) {
     fltSalePrice: Number(config.fltSalePrice) || 0,
     ingPlannedMonthlyUnits: Math.max(0, Math.floor(Number(config.ingPlannedMonthlyUnits) || 0)),
     blnMarketplaceVisible: config.blnMarketplaceVisible !== false,
+    fltMarginPercent: config.fltMarginPercent ?? null,
   };
 }
 
@@ -64,6 +69,10 @@ export class ResalePricingComponent implements OnInit {
   @Input() unitMeasure = '';
   /** Stock actual en unidad de medida (para mostrar cuántas presentaciones rinde). */
   @Input() currentStock: number | null = null;
+  /** Categoría del material (su margen se hereda si el material no tiene uno propio). */
+  @Input() categoryId: number | string | null = null;
+  categories: any[] = [];
+  minMarginPercent = 0;
 
   overheadTotal = 0;
   marginPercent = 0;
@@ -83,9 +92,12 @@ export class ResalePricingComponent implements OnInit {
     Promise.all([
       this.http.get<any>(`${environment.apiUrl}/business-params/overhead`).toPromise(),
       this.http.get<any>(`${environment.apiUrl}/business-params`).toPromise(),
-    ]).then(([overhead, params]) => {
+      this.http.get<any[]>(`${environment.apiUrl}/categories`).toPromise().catch(() => []),
+    ]).then(([overhead, params, categories]) => {
       this.overheadTotal = overhead?.total || 0;
       this.marginPercent = params?.PORCENTAJE_GANANCIA || 0;
+      this.minMarginPercent = Math.max(0, Number(params?.MARGEN_MINIMO) || 0);
+      this.categories = Array.isArray(categories) ? categories : [];
       this.loadingPricing = false;
     }).catch(() => {
       this.loadingPricing = false;
@@ -108,13 +120,44 @@ export class ResalePricingComponent implements OnInit {
     return this.presentationCost + this.indirectCostPerUnit;
   }
 
-  get suggestedPrice(): number {
-    return this.totalUnitCost * (1 + (this.marginPercent || 0) / 100);
+  /** Margen propio o heredado (los mismos tres niveles que los productos). */
+  get marginMode(): 'inherit' | 'custom' {
+    return this.config.fltMarginPercent === null || this.config.fltMarginPercent === undefined ? 'inherit' : 'custom';
   }
-
+  set marginMode(mode: 'inherit' | 'custom') {
+    this.config.fltMarginPercent = mode === 'custom' ? (this.config.fltMarginPercent ?? this.effective.percent) : null;
+  }
+  get customMargin(): number | null {
+    return this.config.fltMarginPercent;
+  }
+  set customMargin(v: number | null) {
+    this.config.fltMarginPercent = marginPayload('custom', v) ?? 0;
+  }
+  private get category(): any {
+    return this.categories.find((c) => String(c.id) === String(this.categoryId)) || null;
+  }
+  get effective() {
+    return effectiveMargin({ item: this.config.fltMarginPercent, category: this.category?.fltMarginPercent, period: this.marginPercent });
+  }
+  get inheritedLabel(): string {
+    return inheritedMarginLabel(this.category?.name || null, this.category?.fltMarginPercent, this.marginPercent);
+  }
+  get suggestedPrice(): number {
+    return priceWithMargin(this.totalUnitCost, this.effective.percent);
+  }
+  get minimumPrice(): number {
+    return priceWithMargin(this.totalUnitCost, this.minMarginPercent);
+  }
   get priceBelowMinimum(): boolean {
     const price = Number(this.config.fltSalePrice) || 0;
-    return this.suggestedPrice > 0 && price < this.suggestedPrice;
+    return this.minimumPrice > 0 && price + 0.005 < this.minimumPrice;
+  }
+  get priceBelowTarget(): boolean {
+    const price = Number(this.config.fltSalePrice) || 0;
+    return this.suggestedPrice > 0 && price + 0.5 < this.suggestedPrice;
+  }
+  get realMargin(): number | null {
+    return actualMargin(Number(this.config.fltSalePrice) || 0, this.totalUnitCost);
   }
 
   get presentationsInStock(): number | null {
@@ -134,7 +177,7 @@ export class ResalePricingComponent implements OnInit {
     if (!(Number(this.config.fltPresentationQuantity) > 0)) return `Indica cuánto contiene cada presentación (en ${this.unitMeasure || 'la unidad de medida'}).`;
     if (!(Number(this.config.fltSalePrice) > 0)) return 'Indica el precio de venta de la presentación.';
     if (this.priceBelowMinimum) {
-      return `El precio de venta no puede ser menor al mínimo calculado (${this.formatCurrency(this.suggestedPrice)}), que cubre costo de compra, costo indirecto y margen de ganancia.`;
+      return `El precio de venta no puede ser menor al mínimo (${this.formatCurrency(this.minimumPrice)}): ${this.minMarginPercent > 0 ? `costo total más el ${this.minMarginPercent} % mínimo del período` : 'quedarías vendiendo bajo costo'}.`;
     }
     return null;
   }

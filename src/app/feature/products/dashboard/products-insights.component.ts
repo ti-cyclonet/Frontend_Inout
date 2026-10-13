@@ -14,7 +14,7 @@ interface ProductsPanel {
   alerts: {
     lowStock: { id: string; name: string; stock: number; min: number }[];
     outOfStock: { id: string; name: string }[];
-    lowMargin: { id: string; name: string; margin: number }[];
+    lowMargin: { id: string; name: string; margin: number; target?: number }[];
     noSales: { id: string; name: string }[];
   };
   topSold: { name: string; quantity: number; value: number }[];
@@ -46,7 +46,7 @@ interface ProductsPanel {
           </app-pk-kpi>
           <app-pk-kpi icon="percent" tone="green" label="Margen promedio" [value]="d.kpis.avgMargin === null ? '—' : d.kpis.avgMargin + '%'" [alert]="d.alerts.lowMargin.length > 0">
             <span class="pk-chip" [class.warn]="d.alerts.lowMargin.length" [class.ok]="!d.alerts.lowMargin.length">
-              {{ d.alerts.lowMargin.length ? d.alerts.lowMargin.length + ' con margen bajo' : 'Márgenes sanos' }}
+              {{ d.alerts.lowMargin.length ? d.alerts.lowMargin.length + ' bajo su objetivo' : 'Márgenes en su objetivo' }}
             </span>
           </app-pk-kpi>
           <app-pk-kpi icon="box-seam" tone="orange" label="Por reponer" [value]="d.kpis.lowStock" [alert]="d.kpis.outOfStock > 0">
@@ -105,13 +105,13 @@ export class ProductsInsightsComponent extends LivePanel<ProductsPanel> implemen
     const a: PkAttention[] = [];
     if (d.kpis.outOfStock) a.push({ icon: 'x-octagon-fill', tone: 'danger', count: d.kpis.outOfStock, label: 'Productos agotados', detail: 'No se pueden vender hasta producir', link: '/products' });
     if (d.kpis.lowStock) a.push({ icon: 'exclamation-triangle-fill', tone: 'warning', count: d.kpis.lowStock, label: 'Bajo el mínimo', detail: 'Programa su producción', link: '/products' });
-    if (d.alerts.lowMargin.length) a.push({ icon: 'percent', tone: 'warning', count: d.alerts.lowMargin.length, label: 'Margen menor al 15 %', detail: 'Revisa su precio o su costo', link: '/products' });
+    if (d.alerts.lowMargin.length) a.push({ icon: 'percent', tone: 'warning', count: d.alerts.lowMargin.length, label: 'Por debajo de su margen objetivo', detail: 'Su precio no alcanza el margen del producto, su categoría o el período', link: '/products' });
     if (d.kpis.noSales30) a.push({ icon: 'hourglass-bottom', tone: 'info', count: d.kpis.noSales30, label: 'Sin ventas en 30 días', detail: 'Promociónalos o revisa si siguen en tu catálogo', link: '/products' });
     this.attention = a;
     this.rows = [
       ...d.alerts.outOfStock.map((p) => ({ tone: 'danger' as const, main: p.name, meta: 'agotado' })),
       ...d.alerts.lowStock.map((p) => ({ tone: 'warning' as const, main: p.name, meta: `${p.stock} de mín. ${p.min}` })),
-      ...d.alerts.lowMargin.map((p) => ({ tone: 'warning' as const, main: p.name, meta: `margen ${p.margin}%` })),
+      ...d.alerts.lowMargin.map((p) => ({ tone: 'warning' as const, main: p.name, meta: `margen ${p.margin}%${p.target !== undefined ? ` · objetivo ${p.target}%` : ''}` })),
       ...d.alerts.noSales.map((p) => ({ tone: 'info' as const, main: p.name, meta: 'sin ventas' })),
     ].slice(0, 8);
     this.top = this.withShare(d.topSold).map((t) => ({ ...t, label: this.compactMoney(t.value), sub: `${t.quantity} und` }));

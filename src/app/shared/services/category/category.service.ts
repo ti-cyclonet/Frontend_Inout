@@ -9,6 +9,8 @@ export interface Category {
   code: string;
   description?: string;
   status: string;
+  /** Margen de la categoría (sobre el costo); null = el del período. */
+  fltMarginPercent?: number | null;
   tenantId: number;
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +18,7 @@ export interface Category {
 
 export interface CreateCategoryDto {
   name: string;
+  fltMarginPercent?: number | null;
   description?: string;
   status?: string;
 }

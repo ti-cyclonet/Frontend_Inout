@@ -200,7 +200,8 @@
       </div>
       <div class="modal-body">
         <p style="font-size: 12px; color: #6c757d; margin-bottom: 12px; line-height: 1.4;">
-          Las categorías permiten clasificar y organizar los materiales y productos. Se pueden crear categorías una a una o usar la <strong>carga masiva</strong> descargando la plantilla Excel, completándola con los datos y subiéndola con el botón "Cargar".
+          Las categorías permiten clasificar y organizar los materiales y productos. En <strong>Margen %</strong> puedes darle a cada categoría su propio margen de ganancia (sobre el costo); vacío = el del período. Cada producto o material puede tener además el suyo.
+          <br> Se pueden crear categorías una a una o usar la <strong>carga masiva</strong> descargando la plantilla Excel, completándola con los datos y subiéndola con el botón "Cargar".
         </p>
         <div style="background: #f8f9fa; border-radius: 6px; overflow: hidden;">
           <div class="category-modal-header">
@@ -250,6 +251,7 @@
                     <th style="padding: 4px 8px; text-align: left;">ID</th>
                     <th style="padding: 4px 8px; text-align: left;">Código</th>
                     <th style="padding: 4px 8px; text-align: left;">Nombre</th>
+                    <th style="padding: 4px 8px; text-align: left;" title="Margen de ganancia de la categoría (sobre el costo). Vacío = el del período.">Margen %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -257,6 +259,11 @@
                     <td style="padding: 4px 8px;">{{ cat.id }}</td>
                     <td style="padding: 4px 8px;">{{ cat.code }}</td>
                     <td style="padding: 4px 8px;">{{ cat.name }}</td>
+                    <td style="padding: 2px 8px; white-space: nowrap;">
+                      <input type="number" min="0" max="1000" step="1" class="form-control form-control-sm d-inline-block" style="width: 104px; font-size: 12px;"
+                             [ngModel]="cat.fltMarginPercent" (change)="saveCategoryMargin(cat, $any($event.target).value)"
+                             [placeholder]="periodMargin !== null ? periodMargin + ' (período)' : 'período'" [attr.aria-label]="'Margen de ' + cat.name">
+                    </td>
                   </tr>
                 </tbody>
               </table>
