@@ -7,6 +7,7 @@ import { SalesListComponent } from '../sales/list/sales-list.component';
 import { SaleFormComponent } from '../sales/form/sale-form.component';
 import { OrdersComponent } from '../orders/orders.component';
 import { PortfolioComponent } from './portfolio/portfolio.component';
+import { GiftCardsAdminComponent } from './gift-cards/gift-cards-admin.component';
 
 @Component({
   selector: 'app-commercial',
@@ -18,7 +19,8 @@ import { PortfolioComponent } from './portfolio/portfolio.component';
     SalesListComponent,
     SaleFormComponent,
     OrdersComponent,
-    PortfolioComponent
+    PortfolioComponent,
+    GiftCardsAdminComponent
   ],
   template: `
     <div class="commercial-container">
@@ -37,6 +39,9 @@ import { PortfolioComponent } from './portfolio/portfolio.component';
         </button>
         <button class="tab-button" [class.active]="activeTab === 'portfolio'" (click)="activeTab = 'portfolio'">
           Cartera
+        </button>
+        <button class="tab-button" [class.active]="activeTab === 'giftcards'" (click)="activeTab = 'giftcards'">
+          🎁 Bonos
         </button>
       </div>
 
@@ -59,6 +64,11 @@ import { PortfolioComponent } from './portfolio/portfolio.component';
         <!-- Cartera: cuentas por cobrar y créditos de clientes -->
         <div *ngIf="activeTab === 'portfolio'">
           <app-portfolio></app-portfolio>
+        </div>
+
+        <!-- Bonos de regalo vendidos en el MarketPlace -->
+        <div *ngIf="activeTab === 'giftcards'">
+          <app-gift-cards-admin></app-gift-cards-admin>
         </div>
       </div>
 
@@ -138,7 +148,7 @@ export class CommercialComponent {
   // aparecía hasta recargar toda la página.
   @ViewChild(SaleFormComponent) saleForm?: SaleFormComponent;
 
-  activeTab: 'dashboard' | 'sales' | 'orders' | 'portfolio' = 'dashboard';
+  activeTab: 'dashboard' | 'sales' | 'orders' | 'portfolio' | 'giftcards' = 'dashboard';
   showSaleModal = false;
   refreshTrigger = 0;
 
@@ -148,6 +158,7 @@ export class CommercialComponent {
     const [path, query = ''] = this.router.url.split('?');
     const tab = new URLSearchParams(query).get('tab');
     if (tab === 'cartera' || tab === 'portfolio') this.activeTab = 'portfolio';
+    else if (tab === 'bonos') this.activeTab = 'giftcards';
     else if (path === '/orders') this.activeTab = 'orders';
     else if (path === '/sales') this.activeTab = 'sales';
   }

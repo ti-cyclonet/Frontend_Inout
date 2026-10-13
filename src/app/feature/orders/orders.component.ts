@@ -487,7 +487,19 @@ export class OrdersComponent implements OnInit, OnDestroy {
   /** Recoge en la tienda: de Listo pasa directo a Entregado (no hay reparto). */
   nextStatusFor(order: Order): string | null {
     if (order.fulfillment === 'PICKUP' && order.status === 'READY') return 'DELIVERED';
+    // Solo bonos de regalo: no hay nada que preparar ni repartir
+    if (this.isGiftOnly(order) && order.status === 'CONFIRMED') return 'DELIVERED';
     return this.getNextStatus(order.status);
+  }
+
+  hasGiftCards(order: Order): boolean {
+    return ((order.items as any) || []).some((i: any) => i?.itemType === 'gift_card');
+  }
+
+  /** Pedido solo de bonos de regalo (se activan al quedar pagado o facturado). */
+  isGiftOnly(order: Order): boolean {
+    const items: any[] = (order.items as any) || [];
+    return items.length > 0 && items.every((i) => i?.itemType === 'gift_card');
   }
 
   advanceStatus(order: Order): void {

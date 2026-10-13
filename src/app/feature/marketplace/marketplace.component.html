@@ -43,6 +43,9 @@
               <button type="button" (click)="clientLogout()">Cerrar sesión</button>
             </div>
           </div>
+          <button type="button" class="gift-btn" *ngIf="canBuyGiftCards" (click)="openGiftBuy()" aria-label="Regala un bono de esta tienda" title="Regala un bono">
+            🎁<span class="gift-btn__label">Regala un bono</span>
+          </button>
           <button type="button" class="cart-icon" (click)="openCheckout()" [attr.aria-label]="'Ver mi pedido (' + getCartCount() + ')'">
             <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#bag"/></svg>
             <span class="cart-count">{{ getCartCount() }}</span>
@@ -621,6 +624,10 @@
   </div>
 </div>
 
+<!-- Regala un bono -->
+<app-gift-card-buy *ngIf="showGiftBuy && giftCardOptions" [options]="giftCardOptions" [storeName]="storeName || businessName"
+  [defaultSender]="clientLoggedIn ? clientDisplayName : ''" (add)="addGiftCardToCart($event)" (close)="showGiftBuy = false"></app-gift-card-buy>
+
 <!-- Floating Cart Button (mobile) -->
 <div class="floating-cart" *ngIf="cart.length > 0 && !showCheckout && !showMenuBoard" (click)="openCheckout()">
   🛒 {{ getCartCount() }} items · {{ formatCurrency(getCartTotal()) }}
@@ -980,8 +987,9 @@
     <p class="schedule-hint" *ngIf="cartHasMadeToOrder">🛠 Parte de tu pedido se fabrica para ti; por eso algunas franjas pueden no estar disponibles.</p>
   </ng-container>
 
-  <ng-container *ngIf="paymentOptions">
-    <h3 class="checkout-subtitle">💰 ¿Cómo pagas?</h3>
+  <p class="gift-pay__hint gift-pay__hint--ok" *ngIf="giftCardApplied > 0 && amountDue < 1">🎁 Tus bonos cubren todo el pedido: no tienes que pagar nada más.</p>
+  <ng-container *ngIf="paymentOptions && !(giftCardApplied > 0 && amountDue < 1)">
+    <h3 class="checkout-subtitle">💰 ¿Cómo pagas?{{ giftCardApplied > 0 ? ' (lo que queda: ' + formatCurrency(amountDue) + ')' : '' }}</h3>
     <div class="pay-options">
       <label class="pay-option" *ngFor="let c of planChoices; trackBy: trackByPlan" [class.active]="effectivePlan === c.plan" [class.disabled]="c.disabled">
         <input type="radio" name="mkPlan" [value]="c.plan" [checked]="effectivePlan === c.plan" [disabled]="c.disabled" (change)="paymentPlan = c.plan">
@@ -1001,12 +1009,18 @@
           <div class="item-info">
             <strong>{{ item.product.strName }}</strong>
             <small class="item-choices" *ngFor="let c of choiceLines(item)">{{ c }}</small>
+            <ng-container *ngIf="item.giftCard">
+              <small class="item-choices">Para: {{ item.giftCard.recipientName }}{{ item.giftCard.senderName ? ' · De: ' + item.giftCard.senderName : '' }}</small>
+              <small class="item-choices" *ngIf="item.giftCard.message">“{{ item.giftCard.message }}”</small>
+            </ng-container>
             <span class="item-price"><s class="mk-was" *ngIf="hasPromo(item.product)">{{ formatCurrency(item.product.listPrice!) }}</s> {{ formatCurrency(item.product.fltPrice) }}</span>
           </div>
           <div class="item-controls">
-            <button class="qty-btn" (click)="updateCartQuantity(item, item.quantity - 1)" type="button">−</button>
-            <span class="qty-value">{{ item.quantity }}</span>
-            <button class="qty-btn" (click)="updateCartQuantity(item, item.quantity + 1)" type="button">+</button>
+            <ng-container *ngIf="!item.giftCard">
+              <button class="qty-btn" (click)="updateCartQuantity(item, item.quantity - 1)" type="button">−</button>
+              <span class="qty-value">{{ item.quantity }}</span>
+              <button class="qty-btn" (click)="updateCartQuantity(item, item.quantity + 1)" type="button">+</button>
+            </ng-container>
             <button class="remove-btn" (click)="removeFromCart(item)" type="button">🗑</button>
           </div>
           <div class="item-subtotal">{{ formatCurrency(item.product.fltPrice * item.quantity) }}</div>
@@ -1021,11 +1035,37 @@
         <span>Total</span>
         <strong>{{ formatCurrency(orderTotal) }}</strong>
       </div>
+
+      <!-- Bonos de regalo: solo con cuenta registrada en la tienda -->
+      <ng-container *ngIf="giftCardOptions?.enabled && !cartHasGiftCards">
+        <div class="gift-pay" *ngIf="clientLoggedIn; else giftLoginHint">
+          <p class="gift-pay__title">🎁 Tus bonos</p>
+          <label class="gift-pay__card" *ngFor="let c of usableGiftCards" [class.active]="selectedGiftCardIds.has(c.id)">
+            <input type="checkbox" [checked]="selectedGiftCardIds.has(c.id)" (change)="toggleGiftCard(c)">
+            <span><strong>{{ formatCurrency(c.balance) }}</strong> disponibles<small>{{ c.code }}{{ c.expiresAt ? ' · vence el ' + formatExpiry(c.expiresAt) : '' }}</small></span>
+          </label>
+          <p class="gift-pay__empty" *ngIf="!usableGiftCards.length && !giftCardsLoading">No tienes bonos activos en esta tienda.</p>
+          <div class="gift-pay__claim">
+            <input type="text" [(ngModel)]="giftClaimCode" placeholder="¿Te regalaron un bono? Escribe el código" (keyup.enter)="claimGiftCard()">
+            <button type="button" (click)="claimGiftCard()" [disabled]="giftClaiming || !giftClaimCode.trim()">{{ giftClaiming ? '…' : 'Agregar' }}</button>
+          </div>
+          <ng-container *ngIf="giftCardApplied > 0">
+            <div class="checkout-line gift-line"><span>🎁 Pagado con bonos</span><span>−{{ formatCurrency(giftCardApplied) }}</span></div>
+            <div class="checkout-total checkout-total--due"><span>Por pagar</span><strong>{{ formatCurrency(amountDue) }}</strong></div>
+          </ng-container>
+        </div>
+        <ng-template #giftLoginHint>
+          <p class="gift-pay__hint">🎁 ¿Tienes un bono? Inicia sesión o crea tu cuenta en esta tienda para usarlo.</p>
+        </ng-template>
+      </ng-container>
   </ng-container>
 </ng-template>
 
 <!-- Dirección de entrega + ubicación exacta por GPS -->
 <ng-template #deliveryAddress>
+  <!-- Solo bonos: no hay nada que entregar -->
+  <p class="gift-pay__hint" *ngIf="cartIsGiftOnly">🎁 Tu pedido es solo de bonos: no hay nada que entregar. Cuando se confirme el pago, el código queda en el enlace de seguimiento para que lo compartas.</p>
+  <ng-container *ngIf="!cartIsGiftOnly">
   <!-- ¿Cómo recibes tu pedido? (solo si la tienda ofrece las dos modalidades) -->
   <div class="form-field" *ngIf="canChooseFulfillment">
     <label>¿Cómo recibes tu pedido?</label>
@@ -1063,4 +1103,5 @@
     </div>
     <small class="geo-error" *ngIf="geoError">{{ geoError }}</small>
   </div>
+  </ng-container>
 </ng-template>
