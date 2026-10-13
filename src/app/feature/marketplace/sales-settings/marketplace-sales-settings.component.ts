@@ -237,13 +237,19 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
     });
   }
 
+  get schedulingSummary(): string {
+    const s = this.scheduling;
+    const parts = [s.onlyDuringHours ? 'Atiende en horario' : 'Pedidos a toda hora', s.enabled ? 'programados activos' : ''];
+    return parts.filter(Boolean).join(' · ');
+  }
+
   saveScheduling(): void {
     this.savingScheduling = true;
     this.http.patch<any>(`${this.base}/${this.tenantId}/scheduling`, this.scheduling).subscribe({
       next: (saved) => {
         this.scheduling = saved;
         this.savingScheduling = false;
-        Swal.fire({ icon: 'success', title: 'Programación guardada', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Horario guardado', timer: 1500, showConfirmButton: false });
       },
       error: (err) => {
         this.savingScheduling = false;
