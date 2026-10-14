@@ -1,5 +1,5 @@
 <div class="scroll-container">
-  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector" [class.is-menu]="showMenuBoard">
+  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector" [class.is-menu]="showMenuBoard" [class.is-home]="tenantId === 'home'">
     <!-- Encabezado (barra oscura con vidrio, como la navegación de la landing de InOut) -->
     <header class="modern-header" #mkHeader>
       <div class="header-top">
@@ -64,7 +64,13 @@
     </header>
 
     <!-- ═══════ Encabezado de la tienda (hero oscuro de la landing de InOut) ═══════ -->
-    <section class="mk-hero" *ngIf="!loading && !showMenuBoard">
+    <!-- CycloNet Market (home): portada propia, más audaz que la de las tiendas -->
+    <app-market-home *ngIf="!loading && tenantId === 'home'"
+      [products]="products" [featured]="featuredProducts" [stores]="homeStores" [sectors]="homeSectors"
+      (search)="onHomeSearch($event)" (sector)="onHomeSector($event)" (store)="onHomeStore($event)" (product)="openProductDetails($any($event))">
+    </app-market-home>
+
+    <section class="mk-hero" *ngIf="!loading && !showMenuBoard && tenantId !== 'home'">
       <div class="mk-hero-grid" aria-hidden="true"></div>
       <div class="mk-glow mk-glow--a" aria-hidden="true"></div>
       <div class="mk-glow mk-glow--b" aria-hidden="true"></div>
@@ -252,7 +258,7 @@
       </section>
 
       <!-- Destacados: cinta continua (animación CSS, como la cinta de la landing) -->
-      <section class="featured-section" *ngIf="featuredProducts.length > 0 && !showMenuBoard">
+      <section class="featured-section" *ngIf="featuredProducts.length > 0 && !showMenuBoard && tenantId !== 'home'">
         <div class="mk-section-head">
           <p class="mk-eyebrow mk-eyebrow--dark">Lo más pedido</p>
           <h2 class="mk-h2">Productos <em>destacados</em></h2>
@@ -509,6 +515,9 @@
       </section>
     </main>
     </div>
+
+    <!-- CycloNet Market: invitación a los negocios, después del catálogo -->
+    <app-market-home *ngIf="!loading && tenantId === 'home'" section="cta"></app-market-home>
 
     <!-- Tienda impulsada por InOut -->
     <footer class="mk-footer" *ngIf="!loading">
