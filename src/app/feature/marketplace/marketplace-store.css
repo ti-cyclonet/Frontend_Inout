@@ -312,3 +312,6 @@
 .mk-hours-row.is-today { font-weight: 700; color: var(--mk-orange); }
 .mk-hours-row.is-off span:last-child { color: #9ca3af; }
 .mk-hours-pop small { margin-top: 0.3rem; color: #6b7280; font-size: 0.76rem; }
+
+/* CycloNet Market: la portada (app-market-home) no monta la hoja sobre un hero */
+.is-home .mk-sheet { margin-top: 0; border-radius: 0; padding-top: clamp(2rem, 5vw, 3rem); }
