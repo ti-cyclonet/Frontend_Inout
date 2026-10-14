@@ -318,3 +318,11 @@
 .modal-gallery-thumbs button.active { opacity: 1; box-shadow: 0 0 0 2px var(--mk-orange); }
 .modal-gallery-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (prefers-reduced-motion: reduce) { .modal-gallery-track { transition: none; } }
+
+/* Administración de CycloNet Market: barra arriba de la portada y avisos */
+.home-admin-wrap .home-theme-bar { margin: 0 auto; padding: 0.9rem var(--mk-gutter); background: var(--mk-surface, #fff); box-shadow: inset 0 -1px 0 var(--mk-border); max-width: none; }
+.home-admin-wrap .home-theme-bar > * { max-width: 1200px; margin-inline: auto; }
+.home-admin-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.4rem 0.9rem; padding: 0.6rem var(--mk-gutter); font-size: 0.84rem; color: #92400e; background: #fffbeb; box-shadow: inset 0 -1px 0 #fde68a; }
+.home-admin-notice a { font-weight: 700; color: #b45309; }
+.mk-footer .home-admin-link { display: inline-block; margin-top: 0.9rem; padding: 0; background: none; box-shadow: none; font-size: 0.75rem; color: var(--mk-muted-d); text-decoration: underline; }
+.mk-footer .home-admin-link:hover { color: var(--mk-ink-d); }

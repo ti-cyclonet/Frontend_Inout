@@ -205,6 +205,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   savedDisplayMode = 'grid';
   /** Vitrina CycloNet Market: la cuenta de CycloNet puede cambiarle el tema. */
   canEditHomeTheme = false;
+  /** Acceso de administrador en la vitrina: sin sesión, revisando, permitido, sin permiso o sesión vencida. */
+  homeAdminState: 'none' | 'checking' | 'allowed' | 'denied' | 'expired' = 'none';
+  /** Tenant de la sesión (para decir cuál no tiene permiso). */
+  homeAdminTenant = '';
   savingHomeTheme = false;
   homeThemeSaved = 'grid';
   private previewMode: string | null = null;
@@ -519,9 +523,35 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     });
     const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('token') || localStorage.getItem('token') : null;
     if (!token) return;
+    this.homeAdminTenant = this.tenantOfToken(token);
+    this.homeAdminState = 'checking';
     this.http.get<{ canEdit: boolean }>(`${this.baseUrl}/marketplace-config/home/theme/permissions`, {
       headers: { Authorization: `Bearer ${token}` },
-    }).subscribe({ next: (r) => (this.canEditHomeTheme = !!r?.canEdit), error: () => (this.canEditHomeTheme = false) });
+    }).subscribe({
+      next: (r) => {
+        this.canEditHomeTheme = !!r?.canEdit;
+        this.homeAdminState = this.canEditHomeTheme ? 'allowed' : 'denied';
+      },
+      error: (err) => {
+        this.canEditHomeTheme = false;
+        this.homeAdminState = err?.status === 401 ? 'expired' : 'denied';
+      },
+    });
+  }
+
+  /** tenantId del JWT (solo para mostrarlo; el permiso lo decide el servidor). */
+  private tenantOfToken(token: string): string {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return String(payload?.tenantId || '');
+    } catch {
+      return '';
+    }
+  }
+
+  /** Inicia sesión en InOut y vuelve a la vitrina como administrador. */
+  get homeAdminLoginUrl(): string {
+    return '/login?returnUrl=' + encodeURIComponent('/marketplace/home');
   }
 
   saveHomeTheme(): void {

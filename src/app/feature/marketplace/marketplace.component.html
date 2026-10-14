@@ -64,6 +64,32 @@
     </header>
 
     <!-- ═══════ Encabezado de la tienda (hero oscuro de la landing de InOut) ═══════ -->
+    <!-- Sesión abierta sin permiso para administrar la vitrina: se dice por qué -->
+    <div class="home-admin-notice" *ngIf="!loading && tenantId === 'home' && (homeAdminState === 'denied' || homeAdminState === 'expired')" role="status">
+      <span *ngIf="homeAdminState === 'denied'">Tu sesión de InOut{{ homeAdminTenant ? ' (tenant ' + homeAdminTenant + ')' : '' }} no administra CycloNet Market. Entra con la cuenta de CycloNet.</span>
+      <span *ngIf="homeAdminState === 'expired'">Tu sesión de InOut venció.</span>
+      <a [href]="homeAdminLoginUrl">Iniciar sesión</a>
+    </div>
+    <div class="home-admin-wrap" *ngIf="!loading">
+      <!-- Tema de la vitrina: solo para la cuenta de CycloNet; se ve en vivo antes de guardar -->
+      <section class="home-theme-bar" *ngIf="tenantId === 'home' && canEditHomeTheme" aria-label="Administración de CycloNet Market">
+        <div class="home-theme-head">
+          <strong><i class="bi bi-palette"></i> Tema de CycloNet Market</strong>
+          <small>Solo lo ves tú (cuenta de CycloNet). El cambio se ve aquí al instante; guárdalo para publicarlo.</small>
+        </div>
+        <div class="menu-variants">
+          <button type="button" class="menu-variant" *ngFor="let t of gridThemes"
+                  [class.active]="displayMode === t.value" (click)="setDisplayMode(t.value)">
+            <i [ngClass]="'sw-' + t.value"></i>
+            <span><strong>{{ t.label }}{{ homeThemeSaved === t.value ? ' · publicado' : '' }}</strong><small>{{ t.hint }}</small></span>
+          </button>
+          <button type="button" class="home-theme-save" [disabled]="savingHomeTheme || displayMode === homeThemeSaved" (click)="saveHomeTheme()">
+            {{ savingHomeTheme ? 'Guardando…' : 'Guardar tema' }}
+          </button>
+        </div>
+      </section>
+    </div>
+
     <!-- CycloNet Market (home): portada propia, más audaz que la de las tiendas -->
     <app-market-home *ngIf="!loading && tenantId === 'home'"
       [products]="products" [featured]="featuredProducts" [stores]="homeStores" [sectors]="homeSectors"
@@ -189,23 +215,7 @@
     <!-- Hoja clara que monta sobre el hero, como las secciones claras de la landing -->
     <div class="mk-sheet">
 
-      <!-- Tema de la vitrina: solo para la cuenta de CycloNet; se ve en vivo antes de guardar -->
-      <section class="home-theme-bar" *ngIf="tenantId === 'home' && canEditHomeTheme" aria-label="Tema de CycloNet Market">
-        <div class="home-theme-head">
-          <strong><i class="bi bi-palette"></i> Tema de CycloNet Market</strong>
-          <small>Solo lo ves tú (cuenta de CycloNet). El cambio se ve aquí al instante; guárdalo para publicarlo.</small>
-        </div>
-        <div class="menu-variants">
-          <button type="button" class="menu-variant" *ngFor="let t of gridThemes"
-                  [class.active]="displayMode === t.value" (click)="setDisplayMode(t.value)">
-            <i [ngClass]="'sw-' + t.value"></i>
-            <span><strong>{{ t.label }}{{ homeThemeSaved === t.value ? ' · publicado' : '' }}</strong><small>{{ t.hint }}</small></span>
-          </button>
-          <button type="button" class="home-theme-save" [disabled]="savingHomeTheme || displayMode === homeThemeSaved" (click)="saveHomeTheme()">
-            {{ savingHomeTheme ? 'Guardando…' : 'Guardar tema' }}
-          </button>
-        </div>
-      </section>
+
 
       <!-- ═══════ Combos y promociones (ubicación destacada, primero que todo) ═══════ -->
       <section class="offers-section" *ngIf="!loading && tenantId !== 'home' && !showMenuBoard && offerProducts.length > 0" aria-label="Combos y promociones">
@@ -526,6 +536,7 @@
         <img src="assets/img/logo_inout_marketplace.png" alt="InOut" width="72" height="28" loading="lazy">
       </a>
       <small>Inventario, pedidos y tienda online para negocios que crecen.</small>
+      <a class="home-admin-link" *ngIf="tenantId === 'home' && homeAdminState !== 'allowed'" [href]="homeAdminLoginUrl">Administrar CycloNet Market</a>
     </footer>
   </div>
 </div>
