@@ -562,6 +562,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         next: (br) => { this.homeTenantLogos[id] = br?.logoWebUrl || null; this.buildHomeShowcase(); },
         error: () => {},
       }));
+      // Nombre de la tienda: el mismo que muestra su encabezado (parámetro
+      // NEGOCIO_NOMBRE); la razón social del contrato queda de respaldo
+      tenantIds.forEach((id) => this.http.get<{ name: string | null }>(`${this.baseUrl}/marketplace-config/${id}/store-name`).subscribe({
+        next: (r) => { if (r?.name?.trim()) { this.homeTenantNames[id] = r.name.trim(); this.buildHomeShowcase(); } },
+        error: () => {},
+      }));
 
       const products: Product[] = raw.map((product: any) => ({
         ...product,
