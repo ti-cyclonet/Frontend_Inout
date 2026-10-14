@@ -110,10 +110,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   @HostBinding('attr.data-sector') get sectorAttr(): string {
     return this.businessSector || 'general';
   }
-  /** Tema de la vista de tarjetas (marketplace-themes.css). La vitrina de
-   *  CycloNet Market y los diseños de menú conservan su propio estilo. */
+  /** Tema de la vista de tarjetas (marketplace-themes.css). En la vitrina de
+   *  CycloNet Market (home) es el que elige la cuenta de CycloNet; los
+   *  diseños de menú conservan su propio estilo. */
   @HostBinding('attr.data-theme') get themeAttr(): string | null {
-    return this.tenantId && this.tenantId !== 'home' && !this.showMenuBoard ? gridThemeAttr(this.displayMode) : null;
+    return this.tenantId && !this.showMenuBoard ? gridThemeAttr(this.displayMode) : null;
   }
   tenantId: string = '';
   businessName: string = '';
@@ -194,6 +195,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   displayMode: string = 'grid';
   readonly menuVariants = MENU_VARIANTS;
   readonly gridThemes = GRID_THEMES;
+  /** Vitrina CycloNet Market: la cuenta de CycloNet puede cambiarle el tema. */
+  canEditHomeTheme = false;
+  savingHomeTheme = false;
+  homeThemeSaved = 'grid';
   private previewMode: string | null = null;
   /** WhatsApp y mensaje de bienvenida de la tienda (se muestran en el menú). */
   storeWhatsapp = '';
@@ -443,6 +448,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   loadMarketplaceData(): void {
     // Para ruta pública general, cargar todos los productos
     if (this.tenantId === 'home') {
+      this.loadHomeTheme();
       this.loadAllProducts();
       return;
     }
@@ -489,6 +495,43 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.loading = false;
     }).catch(() => {
       this.loadExampleData();
+    });
+  }
+
+  /** Tema de la vitrina (público) y, con sesión de la cuenta de CycloNet, el permiso para cambiarlo. */
+  private loadHomeTheme(): void {
+    this.http.get<{ displayMode: string }>(`${this.baseUrl}/marketplace-config/home/theme`).subscribe({
+      next: (r) => {
+        if (isGridMode(r?.displayMode)) {
+          this.homeThemeSaved = r.displayMode;
+          this.displayMode = this.previewMode && isGridMode(this.previewMode) ? this.previewMode : r.displayMode;
+        }
+      },
+      error: () => {},
+    });
+    const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('token') || localStorage.getItem('token') : null;
+    if (!token) return;
+    this.http.get<{ canEdit: boolean }>(`${this.baseUrl}/marketplace-config/home/theme/permissions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).subscribe({ next: (r) => (this.canEditHomeTheme = !!r?.canEdit), error: () => (this.canEditHomeTheme = false) });
+  }
+
+  saveHomeTheme(): void {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) return;
+    this.savingHomeTheme = true;
+    this.http.patch<{ displayMode: string }>(`${this.baseUrl}/marketplace-config/home/theme`, { displayMode: this.displayMode }, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).subscribe({
+      next: (r) => {
+        this.savingHomeTheme = false;
+        this.homeThemeSaved = r.displayMode;
+        Swal.fire({ icon: 'success', title: 'Tema guardado', text: `CycloNet Market se mostrará con el tema ${this.displayModeLabel.replace('Tarjetas · ', '')}`, timer: 2000, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingHomeTheme = false;
+        Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err?.error?.message || 'Intenta de nuevo.' });
+      },
     });
   }
 
