@@ -264,7 +264,7 @@
 .sw-menu-clean { background: #0e0e10; border: 1px solid #c9a96e; }
 .sw-grid { background: radial-gradient(circle at 80% 20%, #ff7a1a 0 18%, transparent 20%), #050b1a; }
 .sw-grid-fresh { background: radial-gradient(circle at 75% 25%, #16a34a 0 22%, transparent 24%), #eaf7ee; border: 1px solid #cfe6d5; }
-.sw-grid-boutique { background: linear-gradient(135deg, #faf6ef 0 55%, #1c1917 55% 78%, #b4532a 78%); border: 1px solid #e7dccb; }
+.sw-grid-chic { background: linear-gradient(135deg, #faf6ef 0 55%, #1c1917 55% 78%, #b4532a 78%); border: 1px solid #e7dccb; }
 
 /* ─── Información de la carta en la vista en tarjetas (burbujas) ─── */
 .mk-extras { max-width: 1200px; margin: 0 auto 2.2rem; padding: 0 var(--mk-gutter); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1rem; }
@@ -283,3 +283,13 @@
 .mk-promo { display: inline-block; margin: 2px 0; padding: 1px 8px; border-radius: 999px; background: #ea580c; color: #fff; font-size: 0.72rem; font-weight: 700; }
 .combo-tag { background: #ede9fe; color: #6d28d9; }
 .mk-includes { margin: 6px 0 0; font-size: 0.85rem; color: #4b5563; }
+
+/* Tema de la vitrina CycloNet Market (solo la cuenta de CycloNet) */
+.home-theme-bar { max-width: 1200px; margin: 0 auto 1.6rem; padding: 0 var(--mk-gutter); }
+.home-theme-bar > * { position: relative; }
+.home-theme-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem; }
+.home-theme-head strong { font-size: 0.92rem; color: var(--mk-text); }
+.home-theme-head small { font-size: 0.78rem; color: var(--mk-muted); }
+.home-theme-bar .menu-variants { align-items: stretch; }
+.home-theme-save { border: 0; border-radius: 10px; padding: 0.5rem 1rem; font-weight: 700; font-size: 0.82rem; color: #fff; cursor: pointer; background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); }
+.home-theme-save:disabled { opacity: 0.45; cursor: default; }
