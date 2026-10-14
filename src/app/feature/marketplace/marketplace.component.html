@@ -386,6 +386,9 @@
                   <i class="bi bi-save"></i> Guardar modo
                 </button>
               </div>
+              <p class="display-unsaved" *ngIf="displayModeUnsaved" role="status">
+                <i class="bi bi-exclamation-circle"></i> Elegiste <strong>{{ displayModeLabel }}</strong> pero aún no lo guardas: pulsa <strong>Guardar modo</strong> para que tus clientes lo vean.
+              </p>
               <!-- Tema de las tarjetas: se ve de inmediato en esta página -->
               <div class="menu-variants" *ngIf="isGridMode()">
                 <button type="button" class="menu-variant" *ngFor="let t of gridThemes"
