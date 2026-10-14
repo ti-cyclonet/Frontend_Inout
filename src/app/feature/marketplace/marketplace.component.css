@@ -296,3 +296,7 @@
 
 /* Modo de visualización elegido pero sin guardar */
 .display-unsaved { margin: 0.6rem 0 0; padding: 0.5rem 0.75rem; border-radius: 10px; font-size: 0.8rem; color: #92400e; background: #fffbeb; box-shadow: inset 0 0 0 1px #fde68a; }
+
+/* Nota: la visibilidad se decide en el formulario de cada producto o material */
+.visibility-note { margin: 1rem 0 0; padding: 0.7rem 0.9rem; border-radius: 12px; font-size: 0.84rem; color: #1e3a5f; background: #eef4ff; box-shadow: inset 0 0 0 1px #c9d8f5; }
+.visibility-note .bi { margin-right: 0.25rem; }
