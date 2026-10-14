@@ -195,6 +195,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   displayMode: string = 'grid';
   readonly menuVariants = MENU_VARIANTS;
   readonly gridThemes = GRID_THEMES;
+  /** Modo guardado de la tienda: para avisar si el elegido aún no se guarda. */
+  savedDisplayMode = 'grid';
   /** Vitrina CycloNet Market: la cuenta de CycloNet puede cambiarle el tema. */
   canEditHomeTheme = false;
   savingHomeTheme = false;
@@ -699,6 +701,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       // Load display mode from config
       if (configResponse && configResponse.displayMode) {
         this.displayMode = configResponse.displayMode;
+        this.savedDisplayMode = configResponse.displayMode;
       }
       if (this.previewMode && !this.isAdminMode) this.displayMode = this.previewMode;
       this.storeWhatsapp = configResponse?.whatsapp || '';
@@ -1173,9 +1176,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
     
+    // También el modo elegido: este botón recarga la página y, sin enviarlo,
+    // un tema elegido sin pulsar "Guardar modo" se perdía.
     const payload = {
       tenantId: this.tenantId,
-      selectedProductIds: Array.from(this.selectedProductIds)
+      selectedProductIds: Array.from(this.selectedProductIds),
+      displayMode: this.displayMode
     };
     
     this.http.post(`${this.baseUrl}/marketplace-config`, payload, {
@@ -1246,6 +1252,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return isGridMode(this.displayMode);
   }
 
+  /** El modo elegido es distinto del guardado (en la tienda pública aún no se ve). */
+  get displayModeUnsaved(): boolean {
+    return this.displayMode !== this.savedDisplayMode;
+  }
+
   get displayModeLabel(): string {
     const v = MENU_VARIANTS.find((m) => m.value === this.displayMode);
     if (v) return `Menú · ${v.label}`;
@@ -1291,6 +1302,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: () => {
+        this.savedDisplayMode = this.displayMode;
         Swal.fire({
           icon: 'success',
           title: 'Modo de visualización guardado',
