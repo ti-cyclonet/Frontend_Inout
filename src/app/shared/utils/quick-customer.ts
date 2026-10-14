@@ -36,6 +36,8 @@ export async function promptQuickCustomer(initialName = ''): Promise<QuickCustom
     showCancelButton: true,
     confirmButtonText: 'Guardar cliente',
     cancelButtonText: 'Cancelar',
+    customClass: { popup: 'io-swal' },
+    buttonsStyling: false,
     didOpen: () => (document.getElementById('qc-name') as HTMLInputElement)?.focus(),
     preConfirm: () => {
       const val = (id: string) => ((document.getElementById(id) as HTMLInputElement)?.value || '').trim();
