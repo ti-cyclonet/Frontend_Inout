@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { LoginDTO } from '../../model/login';
 import { NAME_APP_SHORT } from '../../../config/config';
@@ -55,6 +55,7 @@ export class LoginComponent {
     private router: Router,
     private authService: AuthService, 
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
   ) {
     this.notifications = [];
     this.loginForm = this.fb.group({
@@ -126,7 +127,18 @@ export class LoginComponent {
   private completeLogin(response: any) {
     this.authService.setUserSession(response);
     this.showToast('Inicio de sesión exitoso', 'success', 'A', 0);
+    const back = this.safeReturnUrl();
+    if (back) {
+      this.router.navigateByUrl(back);
+      return;
+    }
     this.router.navigate(['/module-selector']);
+  }
+
+  /** ?returnUrl=… solo si es una ruta interna del MarketPlace (no se redirige a otros sitios). */
+  private safeReturnUrl(): string | null {
+    const raw = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    return /^\/marketplace\/[a-z0-9-]+(\?[a-z0-9=&-]*)?$/i.test(raw) ? raw : null;
   }
 
   // Funciones para NOTIFICACIONES
