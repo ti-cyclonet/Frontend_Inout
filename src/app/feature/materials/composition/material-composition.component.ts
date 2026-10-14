@@ -385,7 +385,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   private toStockUnit(material: Material | undefined, quantity: number): number {
     if (!material) return quantity;
     const dischargeUnit = material.dischargeUnit || material.measurementUnit;
-    return convertUnits(quantity, dischargeUnit, material.measurementUnit);
+    return convertUnits(quantity, dischargeUnit, material.measurementUnit, material.packSize);
   }
 
   private updateMaterialsStock(): void {

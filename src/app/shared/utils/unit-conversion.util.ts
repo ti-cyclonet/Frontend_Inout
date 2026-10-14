@@ -14,7 +14,7 @@ const FAMILY_UNITS: Record<string, string[]> = {
   length: ['mm', 'cm', 'm', 'km', 'in', 'ft'],
   area: ['m2'],
   volume3: ['m3'],
-  // Paquete = 6 unidades (equivalencia por defecto del catálogo)
+  // Paquete = 6 unidades si el material no indica cuántas trae
   count: ['units', 'pcs', 'doz', 'pack'],
   box: ['box'],
 };
@@ -29,18 +29,31 @@ const FACTOR_TO_BASE: Record<string, number> = {
   box: 1, pack: 6,
 };
 
-function familyOf(unit: string): string | null {
+/** Unidades cuyo contenido define cada material (unidades por paquete/caja). */
+export const PACK_UNITS = ['pack', 'box'];
+
+export const isPackUnit = (unit?: string | null): boolean => PACK_UNITS.includes(unit || '');
+
+/** Unidades por paquete/caja válidas: entero de 1 a 1.000.000, o null. */
+export function normalizePackSize(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 1_000_000 ? n : null;
+}
+
+function familyOf(unit: string, packSize?: number | null): string | null {
   const key = (unit || '').trim();
+  if (normalizePackSize(packSize) && PACK_UNITS.includes(key)) return 'count';
   for (const [family, units] of Object.entries(FAMILY_UNITS)) {
     if (units.includes(key)) return family;
   }
   return null;
 }
 
-export function areUnitsCompatible(unitA?: string, unitB?: string): boolean {
+export function areUnitsCompatible(unitA?: string, unitB?: string, packSize?: number | null): boolean {
   if (!unitA || !unitB || unitA === unitB) return true;
-  const famA = familyOf(unitA);
-  const famB = familyOf(unitB);
+  const famA = familyOf(unitA, packSize);
+  const famB = familyOf(unitB, packSize);
   if (!famA || !famB) return true;
   return famA === famB;
 }
@@ -49,14 +62,16 @@ export function areUnitsCompatible(unitA?: string, unitB?: string): boolean {
  * desconocida o familias distintas), retorna `value` sin cambios: el
  * formulario no debe romperse por una vista previa, el backend es quien
  * valida en serio al guardar. */
-export function convertUnits(value: number, fromUnit?: string, toUnit?: string): number {
+export function convertUnits(value: number, fromUnit?: string, toUnit?: string, packSize?: number | null): number {
   if (value == null || Number.isNaN(value)) return value;
   if (!fromUnit || !toUnit || fromUnit === toUnit) return value;
 
-  const factorFrom = FACTOR_TO_BASE[fromUnit];
-  const factorTo = FACTOR_TO_BASE[toUnit];
+  const size = normalizePackSize(packSize);
+  const factor = (unit: string) => (size && PACK_UNITS.includes(unit) ? size : FACTOR_TO_BASE[unit]);
+  const factorFrom = factor(fromUnit);
+  const factorTo = factor(toUnit);
   if (factorFrom === undefined || factorTo === undefined) return value;
-  if (familyOf(fromUnit) !== familyOf(toUnit)) return value;
+  if (familyOf(fromUnit, size) !== familyOf(toUnit, size)) return value;
 
   return (value * factorFrom) / factorTo;
 }
@@ -82,20 +97,28 @@ export const UNIT_OPTIONS: { value: string; label: string }[] = [
   { value: 'units', label: 'Unidades' },
   { value: 'pcs', label: 'Piezas' },
   { value: 'box', label: 'Cajas' },
-  { value: 'pack', label: 'Paquetes (6 und)' },
+  { value: 'pack', label: 'Paquetes' },
   { value: 'doz', label: 'Docenas' },
 ];
 
 /**
  * Unidades de descarga válidas para una unidad de medida: las de su misma
  * familia (convertibles entre sí), sin incluir la propia unidad de medida.
- * Ej.: 'm' -> km, cm, mm, in, ft. Vacío si no hay unidad o no tiene
- * relacionadas (m², m³, cajas, paquetes).
+ * Ej.: 'm' -> km, cm, mm, in, ft. Paquetes y cajas se relacionan con las
+ * unidades de conteo (con las unidades que trae cada uno). Vacío si no hay
+ * unidad o no tiene relacionadas (m², m³).
  */
 export function getDischargeUnitOptions(measureUnit?: string): { value: string; label: string }[] {
-  const family = familyOf(measureUnit || '');
+  const family = familyOf(measureUnit || '', 1);
   if (!family) return [];
-  return UNIT_OPTIONS.filter(o => o.value !== measureUnit && familyOf(o.value) === family);
+  return UNIT_OPTIONS.filter(o => o.value !== measureUnit && familyOf(o.value, 1) === family);
+}
+
+/** "Paquetes de 28 und" / "Cajas de 100 und" (o la etiqueta normal). */
+export function unitLabelWithPack(unit?: string, packSize?: number | null): string {
+  const size = normalizePackSize(packSize);
+  if (size && isPackUnit(unit)) return `${unit === 'box' ? 'Cajas' : 'Paquetes'} de ${size} und`;
+  return unitLabel(unit);
 }
 
 /** Etiqueta legible de una unidad (ej. 'kg' -> 'Kilogramos (kg)'). */

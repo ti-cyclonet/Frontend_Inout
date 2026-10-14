@@ -285,6 +285,7 @@ export class ProductFormComponent implements OnInit {
               price: m.fltPrice,
               measurementUnit: m.strUnitMeasure,
               dischargeUnit: m.strDischargeUnit,
+              packSize: m.intPackSize ?? null,
               currentStock: m.ingQuantity,
               stockMin: m.ingMinStock,
               stockMax: m.ingMaxStock,
@@ -519,7 +520,7 @@ export class ProductFormComponent implements OnInit {
     // La cantidad se ingresa en la unidad de DESCARGA del material; el stock
     // vive en su unidad de MEDIDA. Se convierte antes de comparar.
     const dischargeUnit = material.dischargeUnit || material.measurementUnit;
-    const quantityInStockUnit = convertUnits(quantity, dischargeUnit, material.measurementUnit);
+    const quantityInStockUnit = convertUnits(quantity, dischargeUnit, material.measurementUnit, material.packSize);
     const remainingStock = (material.currentStock || 0) - quantityInStockUnit;
     return remainingStock < (material.stockMin || 0);
   }
@@ -529,7 +530,7 @@ export class ProductFormComponent implements OnInit {
   getCompositionCost(comp: ProductComposition): number {
     const price = comp.componentMaterial?.price || 0;
     const dischargeUnit = comp.componentMaterial?.dischargeUnit || comp.componentMaterial?.measurementUnit;
-    const quantityInStockUnit = convertUnits(comp.quantity, dischargeUnit, comp.componentMaterial?.measurementUnit);
+    const quantityInStockUnit = convertUnits(comp.quantity, dischargeUnit, comp.componentMaterial?.measurementUnit, comp.componentMaterial?.packSize);
     return price * quantityInStockUnit;
   }
 

@@ -8,7 +8,7 @@ import { CategoryService, Category } from '../../../shared/services/category/cat
 import { WarehousesService, Warehouse } from '../../../shared/services/warehouses.service';
 import { Material, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
-import { UNIT_OPTIONS, getDischargeUnitOptions } from '../../../shared/utils/unit-conversion.util';
+import { UNIT_OPTIONS, getDischargeUnitOptions, isPackUnit, normalizePackSize } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 
 @Component({
@@ -102,6 +102,30 @@ export class MaterialFormComponent implements OnInit, OnChanges {
     }
   }
 
+  /** Se mide o se descarga en paquetes/cajas: hay que decir cuántas unidades trae cada uno. */
+  get usesPack(): boolean {
+    const v = this.materialForm?.value || {};
+    return isPackUnit(v.measurementUnit) || (this.useDifferentDischargeUnit && isPackUnit(v.dischargeUnit));
+  }
+
+  get packUnitName(): string {
+    const v = this.materialForm?.value || {};
+    return (isPackUnit(v.measurementUnit) ? v.measurementUnit : v.dischargeUnit) === 'box' ? 'caja' : 'paquete';
+  }
+
+  /** Falta el tamaño cuando el paquete/caja se descarga en unidades (o al revés). */
+  get packSizeMissing(): boolean {
+    const v = this.materialForm?.value || {};
+    const converts = this.useDifferentDischargeUnit && !!v.dischargeUnit && v.dischargeUnit !== v.measurementUnit;
+    return this.usesPack && converts && !normalizePackSize(v.packSize);
+  }
+
+  /** Ej.: "1 paquete = 28 unidades". */
+  get packSizeHint(): string {
+    const size = normalizePackSize(this.materialForm?.value?.packSize);
+    return size ? `1 ${this.packUnitName} = ${size} unidades` : '';
+  }
+
   createForm(): FormGroup {
     return this.fb.group({
       // Step 1: Basic Information
@@ -109,6 +133,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
       description: ['', [Validators.required, Validators.minLength(5)]],
       measurementUnit: ['', Validators.required],
       dischargeUnit: [''],
+      packSize: [null],
       categoryId: [null],
       
       // Step 2: Inventory
@@ -203,6 +228,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
             description: material.strDescription || material.description,
             measurementUnit: material.strUnitMeasure || material.measurementUnit,
             dischargeUnit: material.strDischargeUnit || material.dischargeUnit,
+            packSize: material.intPackSize ?? material.packSize ?? null,
             categoryId: material.categoryId,
             price: material.fltPrice || material.price,
             stockMin: material.ingMinStock || material.stockMin,
@@ -269,7 +295,8 @@ export class MaterialFormComponent implements OnInit, OnChanges {
       case 1:
         return this.materialForm.get('name')?.valid && 
                this.materialForm.get('description')?.valid && 
-               this.materialForm.get('measurementUnit')?.valid || false;
+               this.materialForm.get('measurementUnit')?.valid &&
+               !this.packSizeMissing || false;
       case 2:
         return this.materialForm.get('price')?.valid && 
                this.materialForm.get('stockMin')?.valid && 
@@ -290,7 +317,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   }
 
   onSubmit(): void {
-    if (this.materialForm.valid) {
+    if (this.materialForm.valid && !this.packSizeMissing) {
       this.saving = true;
       const formData = this.materialForm.value;
 
@@ -305,6 +332,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         strDescription: formData.description,
         strUnitMeasure: formData.measurementUnit,
         strDischargeUnit: this.useDifferentDischargeUnit && formData.dischargeUnit ? formData.dischargeUnit : formData.measurementUnit,
+        intPackSize: this.usesPack ? normalizePackSize(formData.packSize) : null,
         fltPrice: parseFloat(formData.price) || 0,
         ingMinStock: parseInt(formData.stockMin) || 0,
         ingMaxStock: parseInt(formData.stockMax) || 0,
