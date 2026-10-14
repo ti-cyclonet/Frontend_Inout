@@ -1,0 +1,388 @@
+/*
+ * Formularios amigables de InOut (el estilo del video promocional y la
+ * landing): tarjetas blancas muy redondeadas, títulos en Sora con la palabra
+ * clave en degradado azul → naranja, campos amplios con bordes suaves y
+ * botones tipo píldora.
+ *
+ * Se activa con la clase `io-form` en el contenedor de cada formulario. Los
+ * selectores van con la clase triple (.io-form.io-form.io-form) para ganarle a los
+ * estilos encapsulados de cada componente sin usar !important: Angular agrega
+ * un atributo a cada parte de sus selectores (.step.active[_ng] .step-number[_ng]
+ * pesa como cinco clases). Los diálogos
+ * de SweetAlert usan customClass: { popup: 'io-swal' }.
+ */
+
+.io-form,
+.io-swal {
+  --io-ink: #0b1530;
+  --io-muted: #4b5878;
+  --io-faint: #9aa3b5;
+  --io-line: #d6dceb;
+  --io-line-soft: #eef1f6;
+  --io-soft: #f7f9fc;
+  --io-bg: #f4f7fc;
+  --io-blue: #2f7bff;
+  --io-blue-d: #1647b8;
+  --io-orange: #ff7a1a;
+  --io-orange-d: #e85f00;
+  --io-orange-soft: #fff1e6;
+  --io-green: #22c55e;
+  --io-green-d: #15803d;
+  --io-red: #dc2626;
+  --io-radius: 24px;
+  --io-field-radius: 12px;
+  --io-shadow: 0 12px 30px rgba(11, 21, 48, 0.12);
+  --io-font: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --io-font-display: Sora, Inter, "Segoe UI", sans-serif;
+}
+
+/* ─── Base y tipografía ─── */
+.io-form.io-form.io-form {
+  font-family: var(--io-font);
+  color: var(--io-ink);
+}
+
+.io-form.io-form.io-form :is(h1, h2, h3, h4, .page-title, .form-title, .modal-title, .title-normal) {
+  font-family: var(--io-font-display);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--io-ink);
+}
+
+/* "Nueva VENTA": la palabra clave en degradado, como en el video */
+.io-form.io-form.io-form .title-bold {
+  font-family: var(--io-font-display);
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--io-blue-d), var(--io-orange-d));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.io-form.io-form.io-form .title-dot { color: var(--io-orange); }
+
+.io-form.io-form.io-form .step-header p,
+.io-form.io-form.io-form :is(small, .form-text, .text-muted, .help-text, .hint) {
+  color: var(--io-muted);
+}
+
+/* ─── Etiquetas ─── */
+.io-form.io-form.io-form :is(label, .form-label) {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--io-ink);
+}
+
+.io-form.io-form.io-form :is(label, .form-label) small { font-weight: 500; }
+
+/* ─── Campos ─── */
+.io-form.io-form.io-form :is(
+  .form-control,
+  .form-select,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="password"],
+  input[type="url"],
+  input:not([type]),
+  select,
+  textarea
+) {
+  font-family: var(--io-font);
+  font-size: 0.95rem;
+  color: var(--io-ink);
+  background-color: #fff;
+  border: 1.5px solid var(--io-line);
+  border-radius: var(--io-field-radius);
+  min-height: 44px;
+  padding: 0.55rem 0.9rem;
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.io-form.io-form.io-form :is(select, .form-select) { padding-right: 2.25rem; }
+.io-form.io-form.io-form textarea { min-height: 88px; line-height: 1.45; }
+
+.io-form.io-form.io-form :is(input, select, textarea, .form-control, .form-select)::placeholder { color: var(--io-faint); }
+
+.io-form.io-form.io-form :is(input, select, textarea, .form-control, .form-select):hover:not(:disabled):not(:focus) {
+  border-color: #c3cce0;
+}
+
+.io-form.io-form.io-form :is(input, select, textarea, .form-control, .form-select):focus {
+  outline: none;
+  border-color: var(--io-blue);
+  box-shadow: 0 0 0 4px rgba(47, 123, 255, 0.14);
+}
+
+.io-form.io-form.io-form :is(input, select, textarea, .form-control, .form-select):is(:disabled, [readonly]) {
+  background-color: var(--io-bg);
+  color: var(--io-muted);
+}
+
+.io-form.io-form.io-form :is(.is-invalid, .ng-invalid.ng-touched):is(input, select, textarea, .form-control, .form-select) {
+  border-color: var(--io-red);
+}
+
+.io-form.io-form.io-form :is(.is-invalid, .ng-invalid.ng-touched):is(input, select, textarea, .form-control, .form-select):focus {
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.14);
+}
+
+.io-form.io-form.io-form :is(.invalid-feedback, .error-message, .field-error) { color: var(--io-red); font-size: 0.8rem; }
+
+/* Casillas y opciones (las de Bootstrap, incluidos los interruptores, conservan su forma) */
+.io-form.io-form.io-form :is(input[type="checkbox"], input[type="radio"]):not(.form-check-input) {
+  accent-color: var(--io-orange-d);
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  cursor: pointer;
+  vertical-align: -3px;
+}
+
+.io-form.io-form.io-form .form-check-input:checked {
+  background-color: var(--io-orange-d);
+  border-color: var(--io-orange-d);
+}
+
+.io-form.io-form.io-form .form-check-input:focus { box-shadow: 0 0 0 4px rgba(255, 122, 26, 0.18); border-color: var(--io-orange); }
+
+/* Grupos con texto adjunto (unidades, $) */
+.io-form.io-form.io-form .input-group-text {
+  border: 1.5px solid var(--io-line);
+  background: var(--io-soft);
+  color: var(--io-muted);
+  font-weight: 600;
+  border-radius: var(--io-field-radius);
+}
+
+.io-form.io-form.io-form .input-group > :not(:first-child):is(.form-control, .form-select, .input-group-text) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.io-form.io-form.io-form .input-group > :not(:last-child):is(.form-control, .form-select, .input-group-text) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+
+/* ─── Botones tipo píldora ─── */
+.io-form.io-form.io-form .btn {
+  font-family: var(--io-font);
+  font-weight: 700;
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0.6rem 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+}
+
+.io-form.io-form.io-form .btn-sm { min-height: 34px; padding: 0.35rem 0.9rem; font-size: 0.82rem; }
+
+.io-form.io-form.io-form .btn:hover:not(:disabled) { transform: translateY(-1px); }
+.io-form.io-form.io-form .btn:active:not(:disabled) { transform: translateY(0); }
+.io-form.io-form.io-form .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(47, 123, 255, 0.25); }
+.io-form.io-form.io-form .btn:disabled { opacity: 0.5; box-shadow: none; transform: none; cursor: not-allowed; }
+
+.io-form.io-form.io-form .btn-primary {
+  color: #fff;
+  border: 0;
+  background: linear-gradient(135deg, var(--io-orange), var(--io-orange-d));
+  box-shadow: 0 10px 22px -10px rgba(232, 95, 0, 0.75);
+}
+
+.io-form.io-form.io-form .btn-primary:hover:not(:disabled) { color: #fff; filter: brightness(1.05); box-shadow: 0 14px 26px -10px rgba(232, 95, 0, 0.8); }
+
+.io-form.io-form.io-form .btn-success {
+  color: #fff;
+  border: 0;
+  background: linear-gradient(135deg, var(--io-green), var(--io-green-d));
+  box-shadow: 0 10px 22px -10px rgba(21, 128, 61, 0.7);
+}
+
+.io-form.io-form.io-form .btn-success:hover:not(:disabled) { color: #fff; filter: brightness(1.05); }
+
+.io-form.io-form.io-form .btn-outline-primary {
+  color: var(--io-blue-d);
+  background: #fff;
+  border: 1.5px solid #c9d6f2;
+}
+
+.io-form.io-form.io-form .btn-outline-primary:hover:not(:disabled) { color: var(--io-blue-d); background: #eef4ff; border-color: var(--io-blue); }
+
+.io-form.io-form.io-form :is(.btn-outline-secondary, .btn-secondary, .btn-light, .btn-cancel) {
+  color: var(--io-ink);
+  background: #fff;
+  border: 1.5px solid var(--io-line);
+}
+
+.io-form.io-form.io-form :is(.btn-outline-secondary, .btn-secondary, .btn-light, .btn-cancel):hover:not(:disabled) {
+  color: var(--io-ink);
+  background: var(--io-soft);
+  border-color: #c3cce0;
+}
+
+.io-form.io-form.io-form :is(.btn-danger, .btn-outline-danger) { border-radius: 999px; }
+
+/* ─── Pasos (asistentes de varios pasos) ─── */
+.io-form.io-form.io-form .step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: #eef2f8;
+  color: var(--io-muted);
+  font-family: var(--io-font-display);
+  font-weight: 800;
+  transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.io-form.io-form.io-form .step-label { font-weight: 600; color: var(--io-muted); }
+
+.io-form.io-form.io-form :is(.step.active, .step.current) .step-number {
+  color: #fff;
+  background: linear-gradient(135deg, var(--io-orange), var(--io-orange-d));
+  box-shadow: 0 0 0 6px rgba(255, 122, 26, 0.18);
+}
+
+.io-form.io-form.io-form :is(.step.active, .step.current) .step-label { color: var(--io-orange-d); font-weight: 700; }
+
+.io-form.io-form.io-form .step.completed .step-number { color: #fff; background: var(--io-green); box-shadow: none; }
+.io-form.io-form.io-form .step.completed .step-label { color: var(--io-green-d); }
+
+.io-form.io-form.io-form .step-connector { height: 3px; border-radius: 3px; background: #e3e8f2; }
+.io-form.io-form.io-form .step-connector.completed { background: var(--io-green); }
+
+/* ─── Superficies ─── */
+/* Fondo claro cuadriculado (como el video) y cada paso en una tarjeta blanca */
+.io-form.io-form.io-form:is(.material-form-container, .product-form-container, .sale-form-container, .order-form-container, .customer-form-container, .user-form-container) {
+  background-color: var(--io-bg);
+  background-image:
+    linear-gradient(rgba(11, 21, 48, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 21, 48, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+  border-radius: var(--io-radius);
+}
+
+/* Opciones de un toque (entrega: lo antes posible / programar, días, franjas, chips) */
+.io-form.io-form.io-form :is(.delivery-toggle, .schedule-dates, .schedule-slots, .chip-group) button {
+  border: 1.5px solid var(--io-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--io-ink);
+  font-weight: 600;
+  min-height: 40px;
+}
+
+.io-form.io-form.io-form :is(.delivery-toggle, .schedule-dates, .schedule-slots, .chip-group) button.active {
+  border-color: var(--io-orange-d);
+  background: var(--io-orange-soft);
+  color: #b54700;
+  font-weight: 700;
+}
+
+.io-form.io-form.io-form .form-step {
+  border-radius: var(--io-radius);
+  box-shadow: var(--io-shadow);
+}
+
+.io-form.io-form.io-form :is(.form-header, .modal-header) { border-bottom: 1px solid var(--io-line-soft); }
+
+.io-form.io-form.io-form .form-actions {
+  gap: 0.6rem;
+  border-top: 1px solid var(--io-line-soft);
+}
+
+.io-form.io-form.io-form :is(.review-section, .review-card, .summary-section, .info-box) {
+  background: var(--io-soft);
+  border: 1px solid var(--io-line-soft);
+  border-radius: 16px;
+}
+
+.io-form.io-form.io-form .card {
+  border: 1px solid var(--io-line-soft);
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(11, 21, 48, 0.05);
+}
+
+/* Listas desplegables propias (buscar cliente, producto, material) */
+.io-form.io-form.io-form :is(.select-dropdown, .dropdown-menu, .search-results, .customer-dropdown, .product-dropdown) {
+  border: 1px solid var(--io-line-soft);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -12px rgba(11, 21, 48, 0.28);
+  overflow: hidden;
+}
+
+.io-form.io-form.io-form .select-option:hover:not(.no-results) { background: var(--io-soft); }
+
+/* Tablas dentro de formularios */
+.io-form.io-form.io-form .table > thead th {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--io-muted);
+  border-bottom-color: var(--io-line-soft);
+}
+
+/* ─── Modales que contienen un formulario ─── */
+.modal-content.modal-content:has(.io-form),
+.modal-content.modal-content.io-form {
+  border: 0;
+  /* Valor directo: las variables --io-* viven dentro del formulario, no en el modal que lo envuelve */
+  border-radius: 24px;
+  box-shadow: 0 30px 80px -20px rgba(11, 21, 48, 0.45);
+}
+
+/* ─── Diálogos de SweetAlert con formulario ─── */
+.swal2-popup.io-swal {
+  border-radius: var(--io-radius);
+  padding: 1.6rem 1.5rem 1.4rem;
+  font-family: var(--io-font);
+  color: var(--io-ink);
+}
+
+.swal2-popup.io-swal .swal2-title { font-family: var(--io-font-display); font-weight: 800; color: var(--io-ink); font-size: 1.45rem; }
+
+.swal2-popup.io-swal :is(.swal2-input, .swal2-select, .swal2-textarea) {
+  font-family: var(--io-font);
+  font-size: 0.95rem;
+  height: 46px;
+  border: 1.5px solid var(--io-line);
+  border-radius: var(--io-field-radius);
+  box-shadow: none;
+  color: var(--io-ink);
+}
+
+.swal2-popup.io-swal :is(.swal2-input, .swal2-select, .swal2-textarea):focus {
+  border-color: var(--io-blue);
+  box-shadow: 0 0 0 4px rgba(47, 123, 255, 0.14);
+}
+
+.swal2-popup.io-swal .swal2-actions { gap: 0.5rem; }
+
+.swal2-popup.io-swal :is(.swal2-confirm, .swal2-cancel, .swal2-deny) {
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 700;
+  font-family: var(--io-font);
+  margin: 0;
+}
+
+.swal2-popup.io-swal .swal2-confirm {
+  color: #fff;
+  background: linear-gradient(135deg, var(--io-orange), var(--io-orange-d));
+  box-shadow: 0 10px 22px -10px rgba(232, 95, 0, 0.75);
+}
+
+.swal2-popup.io-swal .swal2-cancel {
+  color: var(--io-ink);
+  background: #fff;
+  border: 1.5px solid var(--io-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .io-form.io-form.io-form .btn { transition: none; }
+  .io-form.io-form.io-form .btn:hover:not(:disabled) { transform: none; }
+}
