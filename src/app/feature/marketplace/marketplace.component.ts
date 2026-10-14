@@ -22,6 +22,7 @@ import {
 import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
+import { GRID_THEMES, gridThemeAttr, isGridMode } from './grid-themes';
 import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
 import { StoreSchedule, isOpenAt, nextOpeningLabel, showsHours, todayStatus, weeklyHours } from './store-hours';
 
@@ -101,13 +102,18 @@ interface MarketStats {
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent],
   templateUrl: './marketplace.component.html',
-  styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css']
+  styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css', './marketplace-themes.css']
 })
 export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Tema visual por sector: los estilos leen :host([data-sector="…"]). En
    * el host (no en un div interno) para que los modales también lo hereden. */
   @HostBinding('attr.data-sector') get sectorAttr(): string {
     return this.businessSector || 'general';
+  }
+  /** Tema de la vista de tarjetas (marketplace-themes.css). La vitrina de
+   *  CycloNet Market y los diseños de menú conservan su propio estilo. */
+  @HostBinding('attr.data-theme') get themeAttr(): string | null {
+    return this.tenantId && this.tenantId !== 'home' && !this.showMenuBoard ? gridThemeAttr(this.displayMode) : null;
   }
   tenantId: string = '';
   businessName: string = '';
@@ -187,6 +193,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   // ('menu' Póster, 'menu-chalk' Pizarra, 'menu-clean' Elegante)
   displayMode: string = 'grid';
   readonly menuVariants = MENU_VARIANTS;
+  readonly gridThemes = GRID_THEMES;
   private previewMode: string | null = null;
   /** WhatsApp y mensaje de bienvenida de la tienda (se muestran en el menú). */
   storeWhatsapp = '';
@@ -425,7 +432,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(queryParams => {
       this.isAdminMode = queryParams['admin'] === 'true';
       // ?vista=menu-chalk: vista previa de un diseño sin guardarlo
-      this.previewMode = isMenuMode(queryParams['vista']) || queryParams['vista'] === 'grid' ? queryParams['vista'] : null;
+      this.previewMode = isMenuMode(queryParams['vista']) || GRID_THEMES.some((t) => t.value === queryParams['vista']) ? queryParams['vista'] : null;
       if (this.isAdminMode) {
         this.checkAuthentication();
         this.loadCurrentSlug();
@@ -1192,9 +1199,14 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return isMenuMode(this.displayMode);
   }
 
+  isGridMode(): boolean {
+    return isGridMode(this.displayMode);
+  }
+
   get displayModeLabel(): string {
     const v = MENU_VARIANTS.find((m) => m.value === this.displayMode);
-    return v ? `Menú · ${v.label}` : 'Tarjetas (Grid)';
+    if (v) return `Menú · ${v.label}`;
+    return `Tarjetas · ${GRID_THEMES.find((t) => t.value === this.displayMode)?.label || 'Nocturno'}`;
   }
 
   /** La tienda pública se muestra como menú de restaurante (vista completa). */
@@ -1239,7 +1251,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         Swal.fire({
           icon: 'success',
           title: 'Modo de visualización guardado',
-          text: this.isMenuMode() ? `Tu marketplace se mostrará como ${this.displayModeLabel.toLowerCase()}` : 'Tu marketplace se mostrará en tarjetas',
+          text: `Tu marketplace se mostrará como ${this.displayModeLabel.toLowerCase()}`,
           timer: 2000,
           showConfirmButton: false
         });

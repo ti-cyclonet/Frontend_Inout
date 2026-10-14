@@ -350,9 +350,9 @@
               </p>
               <div class="d-flex flex-wrap gap-2 align-items-center">
                 <button class="btn btn-sm"
-                        [class.btn-primary]="displayMode === 'grid'"
-                        [class.btn-outline-secondary]="displayMode !== 'grid'"
-                        (click)="setDisplayMode('grid')">
+                        [class.btn-primary]="isGridMode()"
+                        [class.btn-outline-secondary]="!isGridMode()"
+                        (click)="isGridMode() || setDisplayMode('grid')">
                   <i class="bi bi-grid-3x3-gap"></i> Tarjetas (Grid)
                 </button>
                 <button class="btn btn-sm"
@@ -366,6 +366,14 @@
                 </button>
                 <button class="btn btn-success btn-sm" (click)="saveDisplayMode()">
                   <i class="bi bi-save"></i> Guardar modo
+                </button>
+              </div>
+              <!-- Tema de las tarjetas: se ve de inmediato en esta página -->
+              <div class="menu-variants" *ngIf="isGridMode()">
+                <button type="button" class="menu-variant" *ngFor="let t of gridThemes"
+                        [class.active]="displayMode === t.value" (click)="setDisplayMode(t.value)">
+                  <i [ngClass]="'sw-' + t.value"></i>
+                  <span><strong>{{ t.label }}</strong><small>{{ t.hint }}</small></span>
                 </button>
               </div>
               <!-- Diseño del menú: la tienda pública cambia por completo -->
