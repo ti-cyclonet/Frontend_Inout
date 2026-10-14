@@ -93,6 +93,7 @@ export class MaterialService {
       description: item.strDescription,
       measurementUnit: item.strUnitMeasure,
       dischargeUnit: item.strDischargeUnit,
+      packSize: item.intPackSize ?? null,
       price: item.fltPrice,
       stockMax: item.ingMaxStock,
       stockMin: item.ingMinStock,
