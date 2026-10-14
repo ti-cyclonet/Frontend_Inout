@@ -217,7 +217,6 @@
   box-shadow: 0 1px 0 var(--mk-border), 0 18px 36px -26px rgba(11, 21, 48, 0.45); transition: box-shadow 0.3s var(--mk-ease), transform 0.3s var(--mk-ease);
 }
 .product-card-modern:hover { transform: translateY(-4px); box-shadow: 0 1px 0 var(--mk-border), 0 28px 50px -24px rgba(11, 21, 48, 0.5); }
-.product-card-modern.selected-product { outline: 2.5px solid var(--mk-orange); outline-offset: -2.5px; }
 .product-selection { position: absolute; top: 10px; left: 10px; z-index: 2; background: #fff; border-radius: 8px; padding: 2px 5px; box-shadow: var(--mk-shadow); }
 .resale-note { font-size: 0.7rem; font-weight: 600; color: var(--mk-muted); padding: 3px 8px; }
 .product-image-modern { position: relative; flex-shrink: 0; aspect-ratio: 4 / 3; overflow: hidden; background: var(--mk-sector-soft); }

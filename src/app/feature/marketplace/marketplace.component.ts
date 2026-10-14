@@ -147,7 +147,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return this.sectorBanners[this.businessSector] || this.sectorBanners['general'];
   }
   isAdminMode: boolean = false;
-  selectedProductIds: Set<string> = new Set();
   products: Product[] = [];
   filteredProducts: Product[] = [];
   productGroups: any[] = [];
@@ -651,16 +650,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null
       }));
       
-      // Cargar configuración guardada si existe
-      if (configResponse && configResponse.selectedProductIds) {
-        this.selectedProductIds = new Set(configResponse.selectedProductIds);
-        // Solo filtrar productos en modo público, no en modo admin
-        if (!this.isAdminMode) {
-          this.products = this.products.filter(product => 
-            this.selectedProductIds.has(product.strId)
-          );
-        }
-      }
+      // Visibilidad: la decide cada producto o material en su formulario
+      // («Mostrar en el catálogo del MarketPlace»); la API ya devuelve solo
+      // esos. Antes además había que marcarlos en «Productos visibles» de la
+      // configuración, y esa doble decisión confundía.
 
       // Los materiales de reventa NO dependen de la selección de productos del
       // MarketPlace: su visibilidad se configura en el propio material.
@@ -1009,17 +1002,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   setupCarousel(): void {
-    // Filtrar productos según configuración guardada
-    // (los materiales de reventa no dependen de esa selección)
-    let productsToUse = this.products;
-    if (this.selectedProductIds.size > 0) {
-      productsToUse = this.products.filter(p => this.isResale(p) || this.selectedProductIds.has(p.strId));
-    } else if (this.selectedProductIds.size === 0 && this.tenantId !== 'home') {
-      // Si no hay productos seleccionados, no mostrar ninguno (salvo reventa)
-      productsToUse = this.products.filter(p => this.isResale(p));
-    }
-    
-    this.carouselProducts = this.getRandomProducts(4, productsToUse);
+    this.carouselProducts = this.getRandomProducts(4, this.products);
     if (this.carouselProducts.length > 0) {
       this.startCarousel();
       this.startCarouselRotation();
@@ -1118,14 +1101,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   createFeaturedProducts(): void {
-    // Filtrar productos según configuración guardada
-    let productsToUse = this.products;
-    if (this.selectedProductIds.size > 0) {
-      productsToUse = this.products.filter(p => this.selectedProductIds.has(p.strId));
-    } else if (this.selectedProductIds.size === 0 && this.tenantId !== 'home') {
-      productsToUse = [];
-    }
-    
+    const productsToUse = this.products;
     // Destacados = los más vendidos de verdad (antes: calificación inventada >= 4.5)
     this.featuredProducts = productsToUse.filter(p => (p.sales || 0) > 0)
       .sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 10);
@@ -1142,94 +1118,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.selectedCategory = this.getSectorCategory(sector);
       this.filterProducts();
     }
-  }
-
-  toggleProductSelection(productId: string): void {
-    if (this.selectedProductIds.has(productId)) {
-      this.selectedProductIds.delete(productId);
-    } else {
-      this.selectedProductIds.add(productId);
-    }
-  }
-
-  isProductSelected(productId: string): boolean {
-    return this.selectedProductIds.has(productId);
-  }
-
-  saveSelectedProducts(): void {
-    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
-      return;
-    }
-    
-    const selectedProducts = this.filteredProducts.filter(p => 
-      this.selectedProductIds.has(p.strId)
-    );
-    
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    if (!token) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Sesión Expirada',
-        text: 'Por favor, inicia sesión nuevamente.',
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
-    
-    // También el modo elegido: este botón recarga la página y, sin enviarlo,
-    // un tema elegido sin pulsar "Guardar modo" se perdía.
-    const payload = {
-      tenantId: this.tenantId,
-      selectedProductIds: Array.from(this.selectedProductIds),
-      displayMode: this.displayMode
-    };
-    
-    this.http.post(`${this.baseUrl}/marketplace-config`, payload, {
-      headers: { Authorization: `Bearer ${token}` }
-    }).subscribe({
-      next: (response) => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Configuración Guardada',
-          text: `Se han seleccionado ${selectedProducts.length} productos para mostrar en el marketplace`,
-          timer: 2000,
-          showConfirmButton: false
-        }).then(() => {
-          window.location.reload();
-        });
-      },
-      error: (error) => {
-        console.error('Error al guardar configuración:', error);
-        if (error.status === 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión Expirada',
-            text: 'Por favor, inicia sesión nuevamente.',
-            confirmButtonText: 'Entendido'
-          }).then(() => {
-            localStorage.removeItem('token');
-            this.isAdminMode = false;
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Error al guardar la configuración',
-            confirmButtonText: 'Entendido'
-          });
-        }
-      }
-    });
-  }
-
-  selectAllProducts(): void {
-    this.filteredProducts.forEach(product => {
-      this.selectedProductIds.add(product.strId);
-    });
-  }
-
-  clearAllProducts(): void {
-    this.selectedProductIds.clear();
   }
 
   // ═══════ DISPLAY MODE ═══════
@@ -1294,7 +1182,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
     const payload = {
       tenantId: this.tenantId,
-      selectedProductIds: Array.from(this.selectedProductIds),
       displayMode: this.displayMode
     };
 
@@ -2833,9 +2720,30 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           this.marketplaceSlug = config.slug;
           this.savedSlug = config.slug;
           this.generateStoreQr();
+        } else if (this.isAdminMode) {
+          this.createStoreConfig();
         }
       },
       error: () => {}
+    });
+  }
+
+  /** Primera vez: crea la tienda (con su URL) sin pedir nada más. Antes se
+   *  creaba al guardar «Productos visibles», sección que ya no existe. */
+  private createStoreConfig(): void {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) return;
+    this.http.post<any>(`${this.baseUrl}/marketplace-config`, { tenantId: this.tenantId, displayMode: this.displayMode || 'grid' }, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).subscribe({
+      next: (config) => {
+        if (config?.slug) {
+          this.marketplaceSlug = config.slug;
+          this.savedSlug = config.slug;
+          this.generateStoreQr();
+        }
+      },
+      error: () => {},
     });
   }
 

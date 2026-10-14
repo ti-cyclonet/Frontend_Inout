@@ -408,23 +408,11 @@
             </div>
             </div>
 
-            <!-- Productos visibles: al final, debajo de las secciones plegables -->
-            <hr>
-
-            <p class="text-muted mb-3">
-              Selecciona los productos que quieres mostrar en tu marketplace público.
+            <!-- Qué se muestra: se decide en cada producto o material, no aquí -->
+            <p class="visibility-note">
+              <i class="bi bi-eye"></i> Tu tienda muestra los <strong>productos</strong>, <strong>materiales</strong> y <strong>materiales compuestos</strong>
+              que tienen marcada la opción <strong>Mostrar en el catálogo del MarketPlace</strong> en su propio formulario. Para quitar o agregar uno, edítalo allí.
             </p>
-            <div class="d-flex flex-wrap gap-2">
-              <button class="btn btn-outline-success btn-sm" (click)="selectAllProducts()">
-                <i class="bi bi-check-all"></i> Seleccionar Todos
-              </button>
-              <button class="btn btn-outline-danger btn-sm" (click)="clearAllProducts()">
-                <i class="bi bi-x-circle"></i> Limpiar Selección
-              </button>
-              <button class="btn btn-primary btn-sm" (click)="saveSelectedProducts()">
-                <i class="bi bi-save"></i> Guardar Configuración ({{ selectedProductIds.size }})
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -470,17 +458,10 @@
         <div class="products-sections">
           <!-- ═══════ GRID VIEW (Tarjetas) ═══════ -->
           <div class="products-grid-modern">
-            <div class="product-card-modern" *ngFor="let product of filteredProducts"
-                 [class.selected-product]="isAdminMode && isProductSelected(product.strId)">
-              <!-- Checkbox de selección en modo admin -->
-              <div *ngIf="isAdminMode && !isResale(product)" class="product-selection">
-                <input type="checkbox"
-                       class="form-check-input"
-                       [checked]="isProductSelected(product.strId)"
-                       (change)="toggleProductSelection(product.strId)">
-              </div>
-              <div *ngIf="isAdminMode && isResale(product)" class="product-selection resale-note" title="La visibilidad se configura en el material (sección Reventa)">
-                Reventa
+            <div class="product-card-modern" *ngFor="let product of filteredProducts">
+              <!-- Modo admin: de dónde viene la visibilidad -->
+              <div *ngIf="isAdminMode" class="product-selection resale-note" [title]="isResale(product) ? 'Visible porque el material lo tiene marcado en su formulario' : 'Visible porque el producto lo tiene marcado en su formulario'">
+                {{ isResale(product) ? 'Reventa' : 'Producto' }}
               </div>
 
               <div class="product-image-modern">
