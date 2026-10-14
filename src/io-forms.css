@@ -306,6 +306,17 @@
   box-shadow: 0 4px 14px rgba(11, 21, 48, 0.05);
 }
 
+/* Bloques con borde grueso (proveedor y documento del registro de compras, tablas
+   de movimientos): tarjeta blanca con borde suave, como el resto */
+.io-form.io-form.io-form :is(.search-section, .movements-table-container) {
+  border: 1px solid var(--io-line-soft);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(11, 21, 48, 0.05);
+}
+
+.io-form.io-form.io-form .search-section { padding: 1.1rem 1.5rem 1.25rem; }
+
 /* Listas desplegables propias (buscar cliente, producto, material) */
 .io-form.io-form.io-form :is(.select-dropdown, .dropdown-menu, .search-results, .customer-dropdown, .product-dropdown) {
   border: 1px solid var(--io-line-soft);
