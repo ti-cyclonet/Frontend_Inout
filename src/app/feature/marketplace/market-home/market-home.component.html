@@ -1,0 +1,130 @@
+<ng-container *ngIf="section === 'main'; else ctaTpl">
+  <!-- ═══════ Portada: aurora animada + collage flotante ═══════ -->
+  <section class="mh-hero" #hero (mousemove)="onHeroMove($event)" (mouseleave)="onHeroLeave()" aria-labelledby="mh-title">
+    <div class="mh-aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+    <div class="mh-grid" aria-hidden="true"></div>
+
+    <div class="mh-hero-inner">
+      <div class="mh-copy">
+        <span class="mh-live"><i></i> En vivo · {{ stores.length }} tiendas · {{ products.length }} productos</span>
+        <h1 class="mh-title" id="mh-title">
+          Todo lo bueno de tu ciudad,
+          <span class="mh-rotator" aria-live="polite">
+            <span class="mh-word" *ngFor="let w of words; let i = index; trackBy: trackByIndex" [class.on]="i === wordIndex" [attr.aria-hidden]="i !== wordIndex">{{ w }}</span>
+          </span>
+          <span class="mh-title-end">a un clic.</span>
+        </h1>
+        <p class="mh-lead">Productos de negocios locales que venden con InOut. Eliges, pides en línea y la tienda te confirma por WhatsApp.</p>
+
+        <form class="mh-search" (ngSubmit)="submitSearch()" role="search">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#search"/></svg>
+          <input type="search" name="mhTerm" [(ngModel)]="term" placeholder="¿Qué quieres hoy? Arepas, tornillos, un vestido…" aria-label="Buscar en CycloNet Market">
+          <button type="submit">Buscar</button>
+        </form>
+
+        <div class="mh-chips" *ngIf="sectors.length">
+          <button type="button" *ngFor="let s of sectors.slice(0, 5); trackBy: trackByValue" (click)="sector.emit(s.value)">
+            <span aria-hidden="true">{{ look(s.value).emoji }}</span> {{ s.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="mh-collage" *ngIf="collage.length" aria-label="Algunos productos de la vitrina">
+        <button type="button" class="mh-float" *ngFor="let p of collage; let i = index; trackBy: trackById"
+                [class]="'mh-float mh-f' + i" (click)="product.emit(p)" [attr.aria-label]="p.strName + ', ' + money(p.fltPrice)">
+          <img [src]="p.image" [alt]="p.strName" loading="eager">
+          <span class="mh-float-tag"><b>{{ money(p.fltPrice) }}</b><small>{{ p.strName }}</small></span>
+        </button>
+        <div class="mh-orbit" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <!-- Cinta continua con las tiendas -->
+    <div class="mh-marquee" *ngIf="marqueeStores.length" aria-label="Tiendas en CycloNet Market">
+      <div class="mh-marquee-track">
+        <button type="button" class="mh-marquee-item" *ngFor="let s of marqueeStores; trackBy: trackByIndex" (click)="store.emit(s)">
+          <img *ngIf="s.logo" [src]="s.logo" [alt]="''">
+          <span *ngIf="!s.logo" class="mh-marquee-dot" aria-hidden="true">{{ s.name.charAt(0) }}</span>
+          {{ s.name }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ Cifras ═══════ -->
+  <section class="mh-stats" #stats aria-label="CycloNet Market en cifras">
+    <div class="mh-stat" mhReveal="0"><b>{{ counters.stores }}</b><span>tiendas locales</span></div>
+    <div class="mh-stat" mhReveal="120"><b>{{ counters.products }}</b><span>productos para pedir</span></div>
+    <div class="mh-stat" mhReveal="240"><b>{{ counters.sectors }}</b><span>sectores</span></div>
+  </section>
+
+  <!-- ═══════ Sectores ═══════ -->
+  <section class="mh-section" *ngIf="sectors.length" aria-labelledby="mh-sectors">
+    <header class="mh-head" mhReveal>
+      <p class="mh-eyebrow">Explora</p>
+      <h2 id="mh-sectors">Encuentra por <em>sector</em></h2>
+    </header>
+    <div class="mh-bento">
+      <button type="button" class="mh-tile" *ngFor="let s of sectors; let i = index; trackBy: trackByValue"
+              [class]="'mh-tile mh-tile--' + look(s.value).hue + (i === 0 ? ' mh-tile--big' : '')"
+              [mhReveal]="i * 70" (click)="sector.emit(s.value)">
+        <span class="mh-tile-emoji" aria-hidden="true">{{ look(s.value).emoji }}</span>
+        <strong>{{ s.label }}</strong>
+        <small>{{ s.count }} producto{{ s.count === 1 ? '' : 's' }}</small>
+        <span class="mh-tile-go" aria-hidden="true">→</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════ Tiendas ═══════ -->
+  <section class="mh-section" *ngIf="stores.length" aria-labelledby="mh-stores">
+    <header class="mh-head" mhReveal>
+      <p class="mh-eyebrow">Hecho cerca de ti</p>
+      <h2 id="mh-stores">Conoce las <em>tiendas</em></h2>
+    </header>
+    <div class="mh-stores">
+      <button type="button" class="mh-store" *ngFor="let s of stores; let i = index; trackBy: trackByTenant" [mhReveal]="i * 80" (click)="store.emit(s)">
+        <span class="mh-store-cover">
+          <img *ngIf="s.cover" [src]="s.cover" [alt]="''" loading="lazy">
+        </span>
+        <span class="mh-store-logo">
+          <img *ngIf="s.logo" [src]="s.logo" [alt]="'Logo de ' + s.name">
+          <b *ngIf="!s.logo">{{ s.name.charAt(0) }}</b>
+        </span>
+        <strong>{{ s.name }}</strong>
+        <small>{{ s.sectorLabel }} · {{ s.count }} producto{{ s.count === 1 ? '' : 's' }}</small>
+        <span class="mh-store-go">Visitar tienda <span aria-hidden="true">→</span></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════ Lo más pedido ═══════ -->
+  <section class="mh-section" *ngIf="featured.length" aria-labelledby="mh-top">
+    <header class="mh-head" mhReveal>
+      <p class="mh-eyebrow">Lo más pedido</p>
+      <h2 id="mh-top">Los <em>favoritos</em> de la ciudad</h2>
+    </header>
+    <ol class="mh-top">
+      <li *ngFor="let p of featured.slice(0, 6); let i = index; trackBy: trackById" [mhReveal]="i * 80">
+        <button type="button" (click)="product.emit(p)">
+          <span class="mh-rank" aria-hidden="true">{{ pad(i) }}</span>
+          <span class="mh-top-img"><img *ngIf="p.image" [src]="p.image" [alt]="p.strName" loading="lazy"></span>
+          <span class="mh-top-info"><strong>{{ p.strName }}</strong><b>{{ money(p.fltPrice) }}</b></span>
+        </button>
+      </li>
+    </ol>
+  </section>
+</ng-container>
+
+<!-- ═══════ Franja para vendedores (después del catálogo) ═══════ -->
+<ng-template #ctaTpl>
+  <section class="mh-cta" mhReveal aria-labelledby="mh-cta-title">
+    <div class="mh-cta-glow" aria-hidden="true"></div>
+    <div class="mh-cta-copy">
+      <p class="mh-eyebrow">Para negocios</p>
+      <h2 id="mh-cta-title">¿Tienes un negocio? <em>Vende aquí.</em></h2>
+      <p>Con InOut tienes tu tienda en línea, tu inventario y tus pedidos en un solo lugar, y apareces en CycloNet Market.</p>
+    </div>
+    <a class="mh-cta-btn" [href]="sellerUrl" target="_blank" rel="noopener">Conoce InOut <span aria-hidden="true">→</span></a>
+  </section>
+</ng-template>

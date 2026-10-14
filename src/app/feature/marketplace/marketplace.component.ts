@@ -23,6 +23,7 @@ import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 import { GRID_THEMES, gridThemeAttr, isGridMode } from './grid-themes';
+import { HomeSector, HomeStore, MarketHomeComponent } from './market-home/market-home.component';
 import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
 import { StoreSchedule, isOpenAt, nextOpeningLabel, showsHours, todayStatus, weeklyHours } from './store-hours';
 
@@ -100,7 +101,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css', './marketplace-themes.css']
 })
@@ -147,7 +148,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return this.sectorBanners[this.businessSector] || this.sectorBanners['general'];
   }
   isAdminMode: boolean = false;
-  selectedProductIds: Set<string> = new Set();
   products: Product[] = [];
   filteredProducts: Product[] = [];
   productGroups: any[] = [];
@@ -548,10 +548,20 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       (configs || []).forEach((c: any) => { if (c?.tenantId && c?.slug) this.homeStoreSlugs[c.tenantId] = c.slug; });
 
       const tenantIds = [...new Set(raw.map((p) => p.strTenantId).filter(Boolean))] as string[];
-      const sectors = await Promise.all(tenantIds.map((id) =>
-        this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${id}`).toPromise()
-          .then((c) => c?.businessSector || 'general').catch(() => 'general')));
-      tenantIds.forEach((id, i) => { this.homeTenantSectors[id] = sectors[i]; });
+      const contracts = await Promise.all(tenantIds.map((id) =>
+        this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${id}`).toPromise().catch(() => null)));
+      tenantIds.forEach((id, i) => {
+        const c = contracts[i];
+        this.homeTenantSectors[id] = c?.businessSector || 'general';
+        const b = c?.user?.basicData || {};
+        const person = `${b.naturalPersonData?.firstName || ''} ${b.naturalPersonData?.firstSurname || ''}`.trim();
+        this.homeTenantNames[id] = b.legalEntityData?.businessName || person || this.homeStoreSlugs[id] || 'Tienda';
+      });
+      // Logos (Configuración > Identidad del negocio): no bloquean la vitrina
+      tenantIds.forEach((id) => this.brandingService.getPublic(id).subscribe({
+        next: (br) => { this.homeTenantLogos[id] = br?.logoWebUrl || null; this.buildHomeShowcase(); },
+        error: () => {},
+      }));
 
       const products: Product[] = raw.map((product: any) => ({
         ...product,
@@ -565,6 +575,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.createProductGroups();
       this.createFeaturedProducts();
       this.setupCarousel();
+      this.buildHomeShowcase();
       this.loading = false;
     }).catch(() => {
       this.products = [];
@@ -575,7 +586,58 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** Home: sector (contrato en Authoriza) y slug de la tienda de cada producto. */
   private homeTenantSectors: Record<string, string> = {};
+  /** Home (CycloNet Market): tiendas y sectores para la portada propia. */
+  homeStores: HomeStore[] = [];
+  homeSectors: HomeSector[] = [];
+  private homeTenantNames: Record<string, string> = {};
+  private homeTenantLogos: Record<string, string | null> = {};
   private homeStoreSlugs: Record<string, string> = {};
+
+  /** Tiendas y sectores de la portada de CycloNet Market (con lo que hay en la vitrina). */
+  private buildHomeShowcase(): void {
+    const labels = new Map(this.baseCategories().map((c) => [c.value, c.label]));
+    const byTenant = new Map<string, Product[]>();
+    for (const p of this.products) {
+      const t = (p as any).strTenantId;
+      if (t) byTenant.set(t, [...(byTenant.get(t) || []), p]);
+    }
+    this.homeStores = [...byTenant.entries()]
+      .filter(([t]) => this.homeStoreSlugs[t])
+      .map(([t, items]) => ({
+        tenantId: t,
+        slug: this.homeStoreSlugs[t],
+        name: this.homeTenantNames[t] || this.homeStoreSlugs[t],
+        logo: this.homeTenantLogos[t] || null,
+        sectorLabel: (() => { const cat = this.getSectorCategory(this.homeTenantSectors[t] || 'general'); return cat === 'all' ? 'Tienda local' : labels.get(cat) || 'Tienda local'; })(),
+        count: items.length,
+        cover: items.find((p) => p.image)?.image || null,
+      }))
+      .sort((a, b) => b.count - a.count);
+    const counts = new Map<string, number>();
+    for (const p of this.products) {
+      const cat = this.categoryOf(p);
+      if (cat && cat !== 'all') counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+    this.homeSectors = [...counts.entries()]
+      .map(([value, count]) => ({ value, label: labels.get(value) || 'Otros', count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  onHomeSearch(term: string): void {
+    this.searchTerm = term;
+    this.filterProducts();
+    this.scrollToProducts();
+  }
+
+  onHomeSector(value: string): void {
+    this.selectedCategory = value;
+    this.filterProducts();
+    this.scrollToProducts();
+  }
+
+  onHomeStore(store: HomeStore): void {
+    window.location.href = `/marketplace/${store.slug}`;
+  }
 
   /**
    * Orden aleatorio justo entre tiendas: se barajan las tiendas y los productos
@@ -651,16 +713,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null
       }));
       
-      // Cargar configuración guardada si existe
-      if (configResponse && configResponse.selectedProductIds) {
-        this.selectedProductIds = new Set(configResponse.selectedProductIds);
-        // Solo filtrar productos en modo público, no en modo admin
-        if (!this.isAdminMode) {
-          this.products = this.products.filter(product => 
-            this.selectedProductIds.has(product.strId)
-          );
-        }
-      }
+      // Visibilidad: la decide cada producto o material en su formulario
+      // («Mostrar en el catálogo del MarketPlace»); la API ya devuelve solo
+      // esos. Antes además había que marcarlos en «Productos visibles» de la
+      // configuración, y esa doble decisión confundía.
 
       // Los materiales de reventa NO dependen de la selección de productos del
       // MarketPlace: su visibilidad se configura en el propio material.
@@ -1009,17 +1065,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   setupCarousel(): void {
-    // Filtrar productos según configuración guardada
-    // (los materiales de reventa no dependen de esa selección)
-    let productsToUse = this.products;
-    if (this.selectedProductIds.size > 0) {
-      productsToUse = this.products.filter(p => this.isResale(p) || this.selectedProductIds.has(p.strId));
-    } else if (this.selectedProductIds.size === 0 && this.tenantId !== 'home') {
-      // Si no hay productos seleccionados, no mostrar ninguno (salvo reventa)
-      productsToUse = this.products.filter(p => this.isResale(p));
-    }
-    
-    this.carouselProducts = this.getRandomProducts(4, productsToUse);
+    this.carouselProducts = this.getRandomProducts(4, this.products);
     if (this.carouselProducts.length > 0) {
       this.startCarousel();
       this.startCarouselRotation();
@@ -1118,14 +1164,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   createFeaturedProducts(): void {
-    // Filtrar productos según configuración guardada
-    let productsToUse = this.products;
-    if (this.selectedProductIds.size > 0) {
-      productsToUse = this.products.filter(p => this.selectedProductIds.has(p.strId));
-    } else if (this.selectedProductIds.size === 0 && this.tenantId !== 'home') {
-      productsToUse = [];
-    }
-    
+    const productsToUse = this.products;
     // Destacados = los más vendidos de verdad (antes: calificación inventada >= 4.5)
     this.featuredProducts = productsToUse.filter(p => (p.sales || 0) > 0)
       .sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 10);
@@ -1142,94 +1181,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.selectedCategory = this.getSectorCategory(sector);
       this.filterProducts();
     }
-  }
-
-  toggleProductSelection(productId: string): void {
-    if (this.selectedProductIds.has(productId)) {
-      this.selectedProductIds.delete(productId);
-    } else {
-      this.selectedProductIds.add(productId);
-    }
-  }
-
-  isProductSelected(productId: string): boolean {
-    return this.selectedProductIds.has(productId);
-  }
-
-  saveSelectedProducts(): void {
-    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
-      return;
-    }
-    
-    const selectedProducts = this.filteredProducts.filter(p => 
-      this.selectedProductIds.has(p.strId)
-    );
-    
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    if (!token) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Sesión Expirada',
-        text: 'Por favor, inicia sesión nuevamente.',
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
-    
-    // También el modo elegido: este botón recarga la página y, sin enviarlo,
-    // un tema elegido sin pulsar "Guardar modo" se perdía.
-    const payload = {
-      tenantId: this.tenantId,
-      selectedProductIds: Array.from(this.selectedProductIds),
-      displayMode: this.displayMode
-    };
-    
-    this.http.post(`${this.baseUrl}/marketplace-config`, payload, {
-      headers: { Authorization: `Bearer ${token}` }
-    }).subscribe({
-      next: (response) => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Configuración Guardada',
-          text: `Se han seleccionado ${selectedProducts.length} productos para mostrar en el marketplace`,
-          timer: 2000,
-          showConfirmButton: false
-        }).then(() => {
-          window.location.reload();
-        });
-      },
-      error: (error) => {
-        console.error('Error al guardar configuración:', error);
-        if (error.status === 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión Expirada',
-            text: 'Por favor, inicia sesión nuevamente.',
-            confirmButtonText: 'Entendido'
-          }).then(() => {
-            localStorage.removeItem('token');
-            this.isAdminMode = false;
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Error al guardar la configuración',
-            confirmButtonText: 'Entendido'
-          });
-        }
-      }
-    });
-  }
-
-  selectAllProducts(): void {
-    this.filteredProducts.forEach(product => {
-      this.selectedProductIds.add(product.strId);
-    });
-  }
-
-  clearAllProducts(): void {
-    this.selectedProductIds.clear();
   }
 
   // ═══════ DISPLAY MODE ═══════
@@ -1294,7 +1245,6 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
     const payload = {
       tenantId: this.tenantId,
-      selectedProductIds: Array.from(this.selectedProductIds),
       displayMode: this.displayMode
     };
 
@@ -2833,9 +2783,30 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           this.marketplaceSlug = config.slug;
           this.savedSlug = config.slug;
           this.generateStoreQr();
+        } else if (this.isAdminMode) {
+          this.createStoreConfig();
         }
       },
       error: () => {}
+    });
+  }
+
+  /** Primera vez: crea la tienda (con su URL) sin pedir nada más. Antes se
+   *  creaba al guardar «Productos visibles», sección que ya no existe. */
+  private createStoreConfig(): void {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) return;
+    this.http.post<any>(`${this.baseUrl}/marketplace-config`, { tenantId: this.tenantId, displayMode: this.displayMode || 'grid' }, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).subscribe({
+      next: (config) => {
+        if (config?.slug) {
+          this.marketplaceSlug = config.slug;
+          this.savedSlug = config.slug;
+          this.generateStoreQr();
+        }
+      },
+      error: () => {},
     });
   }
 

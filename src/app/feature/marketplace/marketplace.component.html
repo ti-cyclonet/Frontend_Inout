@@ -1,5 +1,5 @@
 <div class="scroll-container">
-  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector" [class.is-menu]="showMenuBoard">
+  <div class="marketplace-modern" [ngClass]="'sector-' + businessSector" [class.is-menu]="showMenuBoard" [class.is-home]="tenantId === 'home'">
     <!-- Encabezado (barra oscura con vidrio, como la navegación de la landing de InOut) -->
     <header class="modern-header" #mkHeader>
       <div class="header-top">
@@ -64,7 +64,13 @@
     </header>
 
     <!-- ═══════ Encabezado de la tienda (hero oscuro de la landing de InOut) ═══════ -->
-    <section class="mk-hero" *ngIf="!loading && !showMenuBoard">
+    <!-- CycloNet Market (home): portada propia, más audaz que la de las tiendas -->
+    <app-market-home *ngIf="!loading && tenantId === 'home'"
+      [products]="products" [featured]="featuredProducts" [stores]="homeStores" [sectors]="homeSectors"
+      (search)="onHomeSearch($event)" (sector)="onHomeSector($event)" (store)="onHomeStore($event)" (product)="openProductDetails($any($event))">
+    </app-market-home>
+
+    <section class="mk-hero" *ngIf="!loading && !showMenuBoard && tenantId !== 'home'">
       <div class="mk-hero-grid" aria-hidden="true"></div>
       <div class="mk-glow mk-glow--a" aria-hidden="true"></div>
       <div class="mk-glow mk-glow--b" aria-hidden="true"></div>
@@ -252,7 +258,7 @@
       </section>
 
       <!-- Destacados: cinta continua (animación CSS, como la cinta de la landing) -->
-      <section class="featured-section" *ngIf="featuredProducts.length > 0 && !showMenuBoard">
+      <section class="featured-section" *ngIf="featuredProducts.length > 0 && !showMenuBoard && tenantId !== 'home'">
         <div class="mk-section-head">
           <p class="mk-eyebrow mk-eyebrow--dark">Lo más pedido</p>
           <h2 class="mk-h2">Productos <em>destacados</em></h2>
@@ -408,23 +414,11 @@
             </div>
             </div>
 
-            <!-- Productos visibles: al final, debajo de las secciones plegables -->
-            <hr>
-
-            <p class="text-muted mb-3">
-              Selecciona los productos que quieres mostrar en tu marketplace público.
+            <!-- Qué se muestra: se decide en cada producto o material, no aquí -->
+            <p class="visibility-note">
+              <i class="bi bi-eye"></i> Tu tienda muestra los <strong>productos</strong>, <strong>materiales</strong> y <strong>materiales compuestos</strong>
+              que tienen marcada la opción <strong>Mostrar en el catálogo del MarketPlace</strong> en su propio formulario. Para quitar o agregar uno, edítalo allí.
             </p>
-            <div class="d-flex flex-wrap gap-2">
-              <button class="btn btn-outline-success btn-sm" (click)="selectAllProducts()">
-                <i class="bi bi-check-all"></i> Seleccionar Todos
-              </button>
-              <button class="btn btn-outline-danger btn-sm" (click)="clearAllProducts()">
-                <i class="bi bi-x-circle"></i> Limpiar Selección
-              </button>
-              <button class="btn btn-primary btn-sm" (click)="saveSelectedProducts()">
-                <i class="bi bi-save"></i> Guardar Configuración ({{ selectedProductIds.size }})
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -470,17 +464,10 @@
         <div class="products-sections">
           <!-- ═══════ GRID VIEW (Tarjetas) ═══════ -->
           <div class="products-grid-modern">
-            <div class="product-card-modern" *ngFor="let product of filteredProducts"
-                 [class.selected-product]="isAdminMode && isProductSelected(product.strId)">
-              <!-- Checkbox de selección en modo admin -->
-              <div *ngIf="isAdminMode && !isResale(product)" class="product-selection">
-                <input type="checkbox"
-                       class="form-check-input"
-                       [checked]="isProductSelected(product.strId)"
-                       (change)="toggleProductSelection(product.strId)">
-              </div>
-              <div *ngIf="isAdminMode && isResale(product)" class="product-selection resale-note" title="La visibilidad se configura en el material (sección Reventa)">
-                Reventa
+            <div class="product-card-modern" *ngFor="let product of filteredProducts">
+              <!-- Modo admin: de dónde viene la visibilidad -->
+              <div *ngIf="isAdminMode" class="product-selection resale-note" [title]="isResale(product) ? 'Visible porque el material lo tiene marcado en su formulario' : 'Visible porque el producto lo tiene marcado en su formulario'">
+                {{ isResale(product) ? 'Reventa' : 'Producto' }}
               </div>
 
               <div class="product-image-modern">
@@ -528,6 +515,9 @@
       </section>
     </main>
     </div>
+
+    <!-- CycloNet Market: invitación a los negocios, después del catálogo -->
+    <app-market-home *ngIf="!loading && tenantId === 'home'" section="cta"></app-market-home>
 
     <!-- Tienda impulsada por InOut -->
     <footer class="mk-footer" *ngIf="!loading">
