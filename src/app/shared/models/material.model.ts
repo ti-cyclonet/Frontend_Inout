@@ -4,6 +4,8 @@ export interface Material {
   description: string;
   measurementUnit: string;
   dischargeUnit: string;
+  /** Unidades que trae cada paquete o caja (si se mide o descarga en paquetes/cajas). */
+  packSize?: number | null;
   price: number;
   stockMax: number;
   stockMin: number;

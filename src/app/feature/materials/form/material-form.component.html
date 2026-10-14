@@ -94,6 +94,14 @@
               <small class="text-muted d-block mt-1" *ngIf="!materialForm.get('measurementUnit')?.value">Primero selecciona la unidad de medida.</small>
               <small class="text-muted d-block mt-1" *ngIf="materialForm.get('measurementUnit')?.value && dischargeUnitOptions.length === 0">Esta unidad de medida no tiene unidades relacionadas para descarga.</small>
             </div>
+
+            <div class="form-group" *ngIf="usesPack">
+              <label for="packSize">¿Cuántas unidades trae cada {{ packUnitName }}?{{ useDifferentDischargeUnit ? ' *' : '' }}</label>
+              <input id="packSize" type="number" min="1" step="1" class="form-control" formControlName="packSize"
+                     placeholder="Ej. 5, 28, 100" [class.is-invalid]="packSizeMissing">
+              <small class="text-muted d-block mt-1" *ngIf="!packSizeMissing">{{ packSizeHint || 'Cada material puede traer una cantidad distinta. Se usa para descargar en unidades.' }}</small>
+              <div class="invalid-feedback" *ngIf="packSizeMissing">Indica cuántas unidades trae cada {{ packUnitName }} para poder descargarlo en unidades.</div>
+            </div>
             
             <div class="form-group full-width">
               <label for="description">Descripción *</label>
@@ -289,6 +297,10 @@
                 <div class="review-field" *ngIf="useDifferentDischargeUnit">
                   <span class="review-label">Unidad de Descarga</span>
                   <span class="review-value">{{ materialForm.get('dischargeUnit')?.value || '—' }}</span>
+                </div>
+                <div class="review-field" *ngIf="usesPack && packSizeHint">
+                  <span class="review-label">Contenido</span>
+                  <span class="review-value">{{ packSizeHint }}</span>
                 </div>
               </div>
             </div>

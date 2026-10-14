@@ -205,7 +205,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   inStockUnit(material: any, value: any): number {
     const qty = parseFloat(value || 0) || 0;
     if (!this.hasDischargeUnit(material)) return qty;
-    return convertUnits(qty, material.measurementUnit || material.strUnitMeasure, this.stockUnit(material));
+    return convertUnits(qty, material.measurementUnit || material.strUnitMeasure, this.stockUnit(material), material.packSize ?? material.intPackSize);
   }
 
   getStockStatusClass(material: any): string {
