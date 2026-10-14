@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, HostBinding } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, HostBinding, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -23,6 +23,7 @@ import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
+import { StoreSchedule, isOpenAt, nextOpeningLabel, showsHours, todayStatus, weeklyHours } from './store-hours';
 
 /** Forma de pago ofrecida en el checkout (ver Backend orders/payment-plans.ts). */
 interface PlanChoice {
@@ -193,6 +194,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Horario de pedidos de hoy y textos de las promociones en curso: se calculan
    *  al cargar la tienda (no son getters: el menú los recibe como @Input). */
   todayHours: { open: boolean; label: string } | null = null;
+  /** Horario de atención (aunque la programación esté inactiva) y su semana. */
+  storeSchedule: StoreSchedule | null = null;
+  weekHours: { day: string; text: string; today: boolean; closed: boolean }[] = [];
+  showWeekHours = false;
   /** Información de la carta (proteínas, salsas…, zonas de domicilio, solo domicilios). */
   menuExtras: MenuExtras = EMPTY_MENU_EXTRAS;
   extraThumb = extraThumb;
@@ -583,6 +588,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.storeContract = contractResponse || null;
       this.paymentOptions = paymentOptions || null;
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
+      this.storeSchedule = scheduling || null;
+      this.weekHours = showsHours(this.storeSchedule) ? weeklyHours(this.storeSchedule, new Date()) : [];
       this.deliveryOptions = deliveryOptions || null;
       // Por defecto, la modalidad que ofrezca la tienda (domicilio si ofrece ambas)
       this.fulfillment = this.deliveryOptions && !this.deliveryOptions.deliveryEnabled ? 'PICKUP' : 'DELIVERY';
@@ -1375,17 +1382,22 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
    * pedidos de la tienda. null si la tienda no la tiene configurada.
    */
   private computeTodayHours(): { open: boolean; label: string } | null {
-    const hours: any[] = this.schedulingOptions?.hours || [];
-    if (!hours.length) return null;
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
-    const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
-    const h = hours.find((x) => x.day === weekday);
-    if (!h?.active || !h.open || !h.close) return { open: false, label: 'Hoy no recibe pedidos' };
-    const fmt = (t: string) => {
-      const [hh, mm] = t.split(':').map(Number);
-      return new Date(2000, 0, 1, hh, mm || 0).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
-    };
-    return { open: true, label: `Pedidos hoy · ${fmt(h.open)} – ${fmt(h.close)}` };
+    return showsHours(this.storeSchedule) ? todayStatus(this.storeSchedule, new Date()) : null;
+  }
+
+  /** La tienda solo atiende en su horario y ahora está cerrada: no hay pedidos "lo antes posible". */
+  get closedNow(): boolean {
+    return !!this.storeSchedule?.onlyDuringHours && !isOpenAt(this.storeSchedule, new Date());
+  }
+
+  /** Cerrada y sin programación: solo se puede pedir en el horario (los bonos no dependen de él). */
+  get orderBlockedByHours(): boolean {
+    return this.closedNow && !this.schedulingOptions && !this.cartIsGiftOnly;
+  }
+
+  get closedMessage(): string {
+    const next = this.storeSchedule ? nextOpeningLabel(this.storeSchedule, new Date()) : null;
+    return next ? `La tienda está cerrada en este momento. Abrimos ${next}`.replace(/\.?$/, '.') : 'La tienda está cerrada en este momento.';
   }
 
   /** Nombre de la tienda para el encabezado: la última palabra va resaltada. */
@@ -1993,9 +2005,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   setDeliveryMode(mode: 'ASAP' | 'SCHEDULED'): void {
+    if (mode === 'ASAP' && this.closedNow && !this.cartIsGiftOnly) return;
     this.deliveryMode = mode;
     if (mode === 'SCHEDULED' && !this.scheduleDate && this.scheduleDates.length) {
-      this.selectScheduleDate(this.scheduleDates[0].value);
+      // Cerrada por el resto del día: se propone el próximo día de atención
+      const dates = this.scheduleDates;
+      const closedToday = this.closedNow && !nextOpeningLabel(this.storeSchedule!, new Date())?.startsWith('hoy');
+      this.selectScheduleDate((closedToday ? dates.find((d) => d.label !== 'Hoy') : null)?.value || dates[0].value);
     }
   }
 
@@ -2151,8 +2167,16 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   openCheckout(): void {
     if (this.cart.length === 0) return;
+    // Tienda cerrada que programa pedidos: se abre directo en "Programar"
+    if (this.closedNow && this.schedulingOptions && !this.cartIsGiftOnly) this.setDeliveryMode('SCHEDULED');
     this.showCheckout = true;
     this.orderSuccess = null;
+  }
+
+  /** El horario de la semana se cierra al tocar fuera de él. */
+  @HostListener('document:click', ['$event'])
+  closeWeekHours(event: Event): void {
+    if (this.showWeekHours && !(event.target as HTMLElement)?.closest?.('.mk-hours')) this.showWeekHours = false;
   }
 
   closeCheckout(): void {
@@ -2630,6 +2654,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const plan = this.paymentOptions && !coveredByGiftCards ? this.effectivePlan : null;
     if (this.paymentOptions && !plan && !coveredByGiftCards) {
       Swal.fire({ icon: 'warning', title: 'Forma de pago', text: 'No hay una forma de pago disponible para este pedido. Revisa las opciones o contacta a la tienda.' });
+      return;
+    }
+    if (!this.cartIsGiftOnly && this.closedNow && this.deliveryMode !== 'SCHEDULED') {
+      Swal.fire({ icon: 'info', title: 'Tienda cerrada', text: this.schedulingOptions ? `${this.closedMessage} Programa tu pedido para cuando estemos abiertos.` : `${this.closedMessage} Haz tu pedido dentro de nuestro horario de atención.` });
+      if (this.schedulingOptions) this.setDeliveryMode('SCHEDULED');
       return;
     }
     if (this.deliveryMode === 'SCHEDULED' && !this.scheduledStart) {
