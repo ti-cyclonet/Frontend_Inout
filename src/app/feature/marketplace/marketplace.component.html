@@ -538,9 +538,29 @@
     <div class="modal-content-grid">
       <!-- Imagen del Producto -->
       <div class="modal-image-section">
-        <div class="modal-product-image">
-          <img *ngIf="selectedProduct.image" [src]="selectedProduct.image" [alt]="selectedProduct.strName">
-          <div *ngIf="!selectedProduct.image" class="modal-placeholder">📦</div>
+        <div class="modal-product-image" (mouseenter)="stopModalCarousel()" (mouseleave)="startModalCarousel()"
+             (touchstart)="onModalTouchStart($event)" (touchend)="onModalTouchEnd($event)">
+          <ng-container *ngIf="modalImages.length; else noModalImage">
+            <div class="modal-gallery-track" [style.transform]="'translateX(' + (-modalImageIndex * 100) + '%)'">
+              <img *ngFor="let src of modalImages; let i = index; trackBy: trackByIndex" [src]="src"
+                   [alt]="selectedProduct.strName + (modalImages.length > 1 ? ' (foto ' + (i + 1) + ' de ' + modalImages.length + ')' : '')">
+            </div>
+            <ng-container *ngIf="modalImages.length > 1">
+              <button type="button" class="modal-gallery-arrow prev" (click)="goModalImage(modalImageIndex - 1)" aria-label="Foto anterior">‹</button>
+              <button type="button" class="modal-gallery-arrow next" (click)="goModalImage(modalImageIndex + 1)" aria-label="Foto siguiente">›</button>
+              <div class="modal-gallery-dots">
+                <button type="button" *ngFor="let src of modalImages; let i = index; trackBy: trackByIndex" [class.active]="i === modalImageIndex"
+                        (click)="goModalImage(i)" [attr.aria-label]="'Ver foto ' + (i + 1)"></button>
+              </div>
+            </ng-container>
+          </ng-container>
+          <ng-template #noModalImage><div class="modal-placeholder">📦</div></ng-template>
+        </div>
+        <div class="modal-gallery-thumbs" *ngIf="modalImages.length > 1">
+          <button type="button" *ngFor="let src of modalImages; let i = index; trackBy: trackByIndex" [class.active]="i === modalImageIndex"
+                  (click)="goModalImage(i)" [attr.aria-label]="'Ver foto ' + (i + 1)">
+            <img [src]="src" alt="">
+          </button>
         </div>
       </div>
 

@@ -64,6 +64,8 @@ interface Product {
   sales?: number;
   rating?: number;
   image?: string;
+  /** Todas las fotos del ítem (el detalle las muestra en carrusel). */
+  images?: { strImageUrl: string }[];
 }
 
 /** Lo escogido de una lista de la carta (producto "para armar"). */
@@ -173,6 +175,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   currentSlide = 0;
   private carouselInterval: any;
   selectedProduct: Product | null = null;
+  /** Carrusel de fotos del detalle del producto. */
+  modalImageIndex = 0;
+  private modalImageTimer: any = null;
+  private modalTouchX: number | null = null;
   providerInfo: any = null;
   
   // Slug editor
@@ -1130,6 +1136,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopModalCarousel();
     // Restaurar título original al salir del marketplace
     this.titleService.setTitle('InOut');
     this.headerObserver?.disconnect();
@@ -1531,13 +1538,59 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   openProductDetails(product: Product): void {
     this.selectedProduct = product;
+    this.modalImageIndex = 0;
+    this.startModalCarousel();
     this.loadProviderInfo(product);
     this.registrarVista(product);
   }
 
   closeProductDetails(): void {
+    this.stopModalCarousel();
     this.selectedProduct = null;
     this.providerInfo = null;
+  }
+
+  /** Fotos del ítem en el detalle: todas las que tiene (antes solo la primera). */
+  get modalImages(): string[] {
+    const p = this.selectedProduct;
+    if (!p) return [];
+    const urls = (p.images || []).map((i) => i?.strImageUrl).filter((u): u is string => !!u);
+    const unique = [...new Set(urls)];
+    return unique.length ? unique : p.image ? [p.image] : [];
+  }
+
+  /** Avanza solo cada 3,5 s; se pausa al pasar el mouse y no corre con "reducir movimiento". */
+  startModalCarousel(): void {
+    this.stopModalCarousel();
+    const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || this.modalImages.length < 2) return;
+    this.modalImageTimer = setInterval(() => this.goModalImage(this.modalImageIndex + 1, false), 3500);
+  }
+
+  trackByIndex = (i: number) => i;
+
+  stopModalCarousel(): void {
+    if (this.modalImageTimer) clearInterval(this.modalImageTimer);
+    this.modalImageTimer = null;
+  }
+
+  /** Va a una foto (con vuelta al inicio); `manual` reinicia el avance automático. */
+  goModalImage(index: number, manual = true): void {
+    const n = this.modalImages.length;
+    if (!n) return;
+    this.modalImageIndex = ((index % n) + n) % n;
+    if (manual) this.startModalCarousel();
+  }
+
+  onModalTouchStart(ev: TouchEvent): void {
+    this.modalTouchX = ev.touches[0]?.clientX ?? null;
+  }
+
+  onModalTouchEnd(ev: TouchEvent): void {
+    if (this.modalTouchX === null) return;
+    const dx = (ev.changedTouches[0]?.clientX ?? this.modalTouchX) - this.modalTouchX;
+    this.modalTouchX = null;
+    if (Math.abs(dx) > 40) this.goModalImage(this.modalImageIndex + (dx < 0 ? 1 : -1));
   }
 
   /** Tienda a la que pertenece un ítem (los combos no traen strTenantId: son de la tienda abierta). */
@@ -1622,14 +1675,20 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
     // La tienda abierta: ya se cargó su contrato y su WhatsApp
     if (tenantId === this.tenantId && this.storeContract) {
-      this.providerInfo = this.providerDesde(this.storeContract, this.storeWhatsapp);
+      this.providerInfo = this.conNombreDeTienda(this.providerDesde(this.storeContract, this.storeWhatsapp), tenantId);
       return;
     }
     this.http.get<any>(`${environment.auth.authorizaUrl}/contracts/tenant/${tenantId}`).toPromise()
       .then((contract) => {
-        if (this.selectedProduct === product) this.providerInfo = this.providerDesde(contract);
+        if (this.selectedProduct === product) this.providerInfo = this.conNombreDeTienda(this.providerDesde(contract), tenantId);
       })
       .catch(() => { this.providerInfo = null; });
+  }
+
+  /** El proveedor se muestra con el nombre de la tienda (NEGOCIO_NOMBRE), no con la razón social. */
+  private conNombreDeTienda(info: any, tenantId: string): any {
+    const nombre = tenantId === this.tenantId ? this.storeName : this.homeTenantNames[tenantId];
+    return nombre ? { ...info, businessName: nombre } : info;
   }
 
   /** Enlace de WhatsApp con el producto en el mensaje. Número colombiano de 10 dígitos → +57. */
