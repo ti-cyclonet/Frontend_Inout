@@ -161,14 +161,29 @@
   </div>
 </div>
 
-<!-- ─── Pedidos programados ─── -->
+<!-- ─── Horario de atención y pedidos programados ─── -->
 <div class="ss-block">
   <button type="button" class="ss-header" (click)="toggle('scheduling')">
-    <span><i class="bi bi-calendar-event me-1"></i> Pedidos programados</span>
-    <small>{{ scheduling ? (scheduling.enabled ? 'Activos' : 'Inactivos') : 'Cargando…' }} {{ open === 'scheduling' ? '▲' : '▼' }}</small>
+    <span><i class="bi bi-calendar-event me-1"></i> Horario de atención y pedidos programados</span>
+    <small>{{ scheduling ? schedulingSummary : 'Cargando…' }} {{ open === 'scheduling' ? '▲' : '▼' }}</small>
   </button>
 
   <div class="ss-body" *ngIf="open === 'scheduling' && scheduling">
+    <p class="ss-label">Horario de atención</p>
+    <div class="ss-day" *ngFor="let h of scheduling.hours">
+      <label class="ss-day-name"><input type="checkbox" [(ngModel)]="h.active"> {{ days[h.day] }}</label>
+      <ng-container *ngIf="h.active">
+        <input type="time" [(ngModel)]="h.open"> <span>a</span> <input type="time" [(ngModel)]="h.close">
+      </ng-container>
+      <small *ngIf="!h.active" class="ss-help">Cerrado</small>
+    </div>
+    <small class="ss-help">Hora de Colombia. Un día que cierra antes de abrir queda como cerrado.</small>
+
+    <label class="ss-check">
+      <input type="checkbox" [(ngModel)]="scheduling.onlyDuringHours">
+      <span><strong>Recibir pedidos solo dentro del horario</strong><small>La tienda muestra su horario y, si está cerrada, no recibe pedidos "lo antes posible". Con pedidos programados activos, el cliente puede programarlo para cuando abras.</small></span>
+    </label>
+
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="scheduling.enabled">
       <span><strong>Permitir programar la entrega</strong><small>El cliente elige día y franja horaria.</small></span>
@@ -188,18 +203,10 @@
         <div><label>Pedidos por franja <small>(opcional)</small></label><input type="number" min="1" [(ngModel)]="scheduling.maxOrdersPerSlot" placeholder="Sin límite"></div>
       </div>
 
-      <p class="ss-label">Horario de entregas</p>
-      <div class="ss-day" *ngFor="let h of scheduling.hours">
-        <label class="ss-day-name"><input type="checkbox" [(ngModel)]="h.active"> {{ days[h.day] }}</label>
-        <ng-container *ngIf="h.active">
-          <input type="time" [(ngModel)]="h.open"> <span>a</span> <input type="time" [(ngModel)]="h.close">
-        </ng-container>
-        <small *ngIf="!h.active" class="ss-help">Cerrado</small>
-      </div>
-      <small class="ss-help">Las franjas también respetan la cola de producción y el tiempo de fabricación de cada pedido.</small>
+      <small class="ss-help">Las franjas se arman dentro del horario de atención y respetan la cola de producción y el tiempo de fabricación de cada pedido.</small>
     </ng-container>
 
-    <button type="button" class="ss-save" [disabled]="savingScheduling" (click)="saveScheduling()">{{ savingScheduling ? 'Guardando…' : 'Guardar programación' }}</button>
+    <button type="button" class="ss-save" [disabled]="savingScheduling" (click)="saveScheduling()">{{ savingScheduling ? 'Guardando…' : 'Guardar horario' }}</button>
   </div>
 </div>
 

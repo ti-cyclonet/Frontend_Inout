@@ -95,8 +95,18 @@
               </a>
             </div>
             <ul class="mk-pills">
-              <li *ngIf="todayHours as h" [class.is-closed]="!h.open">
-                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#clock"/></svg>{{ h.label }}
+              <li *ngIf="todayHours as h" class="mk-hours" [class.is-closed]="!h.open">
+                <button type="button" class="mk-hours-btn" (click)="showWeekHours = !showWeekHours" [attr.aria-expanded]="showWeekHours" title="Ver horario de atención">
+                  <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#clock"/></svg>{{ h.label }}
+                  <span class="mk-hours-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="mk-hours-pop" *ngIf="showWeekHours" role="dialog" aria-label="Horario de atención">
+                  <strong>Horario de atención</strong>
+                  <div class="mk-hours-row" *ngFor="let d of weekHours" [class.is-today]="d.today" [class.is-off]="d.closed">
+                    <span>{{ d.day }}</span><span>{{ d.text }}</span>
+                  </div>
+                  <small *ngIf="storeSchedule?.onlyDuringHours">{{ schedulingOptions ? 'Fuera de este horario puedes programar tu pedido.' : 'Recibimos pedidos solo en este horario.' }}</small>
+                </div>
               </li>
               <li *ngIf="paymentSummary">
                 <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#credit-card-2-front"/></svg>{{ paymentSummary }}
@@ -722,7 +732,7 @@
           {{ clientCredit?.eligibility?.approvedLimit > 0 ? 'Solicitar aumento de cupo' : '¿Compras con frecuencia? Solicita crédito en esta tienda' }}
         </a>
 
-        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || cart.length === 0">
+        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || cart.length === 0 || orderBlockedByHours">
           {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
         </button>
       </ng-container>
@@ -910,7 +920,7 @@
           <ng-container *ngTemplateOutlet="consentChecks; context: { $implicit: orderConsents, id: 'order' }"></ng-container>
         </div>
 
-        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || !orderConsentsAccepted || cart.length === 0"
+        <button class="btn-checkout-primary" (click)="submitOrder()" [disabled]="checkoutSending || !orderConsentsAccepted || cart.length === 0 || orderBlockedByHours"
                 [title]="orderConsentsAccepted ? '' : 'Acepta los Términos y el tratamiento de datos para continuar'">
           {{ checkoutSending ? 'Enviando...' : 'Confirmar Pedido' }}
         </button>
@@ -962,10 +972,15 @@
 
 <!-- ¿Cuándo? y ¿Cómo pagas? (con y sin sesión) -->
 <ng-template #whenAndPay>
+  <div class="closed-note" *ngIf="closedNow && !cartIsGiftOnly">
+    🕒 {{ closedMessage }}
+    {{ schedulingOptions ? 'Programa tu pedido para una franja de nuestro horario.' : 'Haz tu pedido dentro de nuestro horario de atención.' }}
+  </div>
   <ng-container *ngIf="schedulingOptions">
     <h3 class="checkout-subtitle">🕒 ¿Cuándo lo quieres?</h3>
     <div class="when-toggle">
-      <button type="button" [class.active]="deliveryMode === 'ASAP'" (click)="setDeliveryMode('ASAP')">Lo antes posible</button>
+      <button type="button" [class.active]="deliveryMode === 'ASAP'" [disabled]="closedNow && !cartIsGiftOnly" (click)="setDeliveryMode('ASAP')"
+              [title]="closedNow && !cartIsGiftOnly ? 'La tienda está cerrada ahora' : ''">Lo antes posible</button>
       <button type="button" [class.active]="deliveryMode === 'SCHEDULED'" (click)="setDeliveryMode('SCHEDULED')">Programar</button>
     </div>
     <ng-container *ngIf="deliveryMode === 'SCHEDULED'">

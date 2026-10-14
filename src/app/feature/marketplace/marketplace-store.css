@@ -297,3 +297,19 @@
   font-weight: 700; font-size: 0.82rem; color: #fff; background: linear-gradient(135deg, #a855f7, var(--mk-orange-d)); box-shadow: 0 8px 20px -10px rgba(168, 85, 247, 0.8); }
 .gift-btn:hover { filter: brightness(1.08); }
 @media (max-width: 640px) { .gift-btn__label { display: none; } .gift-btn { width: 38px; padding: 0; justify-content: center; font-size: 1.05rem; } }
+
+/* Horario de atención: la píldora abre el horario de la semana */
+.mk-pills li.mk-hours { position: relative; padding: 0; }
+.mk-hours-btn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.8rem; border-radius: 999px; }
+.mk-hours-btn:focus-visible { outline: 2px solid var(--mk-orange); outline-offset: 2px; }
+.mk-hours-caret { font-size: 0.7em; opacity: 0.7; }
+.mk-hours-pop {
+  position: absolute; z-index: 30; bottom: calc(100% + 6px); left: 0; min-width: 250px;
+  display: grid; gap: 0.3rem; padding: 0.85rem 1rem; border-radius: 14px;
+  background: #fff; color: #1f2937; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22); font-size: 0.85rem; text-align: left;
+}
+.mk-hours-pop strong { font-size: 0.9rem; margin-bottom: 0.2rem; }
+.mk-hours-row { display: flex; justify-content: space-between; gap: 1rem; }
+.mk-hours-row.is-today { font-weight: 700; color: var(--mk-orange); }
+.mk-hours-row.is-off span:last-child { color: #9ca3af; }
+.mk-hours-pop small { margin-top: 0.3rem; color: #6b7280; font-size: 0.76rem; }
