@@ -326,3 +326,6 @@
 .home-admin-notice a { font-weight: 700; color: #b45309; }
 .mk-footer .home-admin-link { display: inline-block; margin-top: 0.9rem; padding: 0; background: none; box-shadow: none; font-size: 0.75rem; color: var(--mk-muted-d); text-decoration: underline; }
 .mk-footer .home-admin-link:hover { color: var(--mk-ink-d); }
+
+/* Adición con precio en las burbujas de la carta */
+.mk-extra li .mk-extra-price { font-size: 0.72rem; font-weight: 700; color: var(--mk-sector-ink); font-variant-numeric: tabular-nums; }

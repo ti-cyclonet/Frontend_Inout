@@ -1,3 +1,5 @@
+import { formatCop } from './currency.util';
+
 /**
  * Las ventas y pedidos guardan un combo como las líneas de sus componentes
  * (cada una con `combo.groupId`), para que el stock y el Kardex funcionen por
@@ -21,12 +23,14 @@ export interface DisplayLine {
   options?: string[];
 }
 
-/** Lo escogido en una línea: ["Proteínas: Pollo, Cerdo"]. Mismo criterio que el backend (products/product-choices.ts). */
+/** Lo escogido en una línea: ["Proteínas: Pollo, Cerdo", "Adiciones: Queso (+$3.000)"]. Mismo criterio que el backend (products/product-choices.ts). */
 export function choicesText(choices: any): string[] {
   if (!Array.isArray(choices)) return [];
   return choices
     .filter((c: any) => c && typeof c.group === 'string' && Array.isArray(c.options) && c.options.length)
-    .map((c: any) => `${c.group}: ${c.options.join(', ')}`);
+    .map((c: any) => `${c.group}: ${c.options
+      .map((o: string, i: number) => (Number(c.prices?.[i]) > 0 ? `${o} (+${formatCop(c.prices[i])})` : o))
+      .join(', ')}`);
 }
 
 const num = (v: any) => Number(v) || 0;
