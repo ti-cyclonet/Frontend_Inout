@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { formatCop } from '../../../shared/utils/currency.util';
-import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones } from './menu-extras';
+import { EMPTY_MENU_EXTRAS, MenuExtras, extraPriceLabel, extraThumb, joinZones } from './menu-extras';
 
 /** Diseños del menú de restaurante (valor guardado en marketplace_config.displayMode). */
 export type MenuVariant = 'menu' | 'menu-chalk' | 'menu-clean';
@@ -73,6 +73,7 @@ export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnD
   /** Pestañas: las secciones de platos y después los bloques de información. */
   tabs: string[] = [];
   thumb = extraThumb;
+  extraPrice = extraPriceLabel;
   heroImage: string | null = null;
   activeSection = '';
 

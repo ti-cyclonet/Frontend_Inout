@@ -261,7 +261,7 @@
           <ul [class.with-photos]="hasExtraPhotos(b)">
             <li *ngFor="let it of b.items">
               <img *ngIf="it.imageUrl" [src]="extraThumb(it.imageUrl, 96)" [alt]="it.name" loading="lazy">
-              <span><strong>{{ it.name }}</strong><em *ngIf="it.note">{{ it.note }}</em></span>
+              <span><strong>{{ it.name }}</strong><em *ngIf="it.note">{{ it.note }}</em><b class="mk-extra-price" *ngIf="it.price > 0">{{ extraPriceLabel(it.price) }}</b></span>
             </li>
           </ul>
         </div>
@@ -656,7 +656,7 @@
     <button class="modal-close" type="button" (click)="closeChoicePicker()" aria-label="Cerrar">&times;</button>
     <p class="mk-eyebrow mk-eyebrow--dark">Arma tu pedido</p>
     <h3 class="choice-title">{{ p.product.strName }}</h3>
-    <p class="choice-price">{{ formatCurrency(p.product.fltPrice) }}</p>
+    <p class="choice-price">{{ formatCurrency(choicePickerTotal) }}<small *ngIf="choicePickerTotal > p.product.fltPrice"> · base {{ formatCurrency(p.product.fltPrice) }}</small></p>
 
     <fieldset class="choice-group" *ngFor="let g of p.groups">
       <legend>
@@ -674,12 +674,13 @@
                  [disabled]="g.max > 1 && !isChoiceSelected(g.title, o) && isChoiceGroupFull(g)"
                  (change)="toggleChoice(g, o)">
           <span>{{ o }}</span>
+          <small class="choice-option-price" *ngIf="choiceOptionPrice(g, o)">{{ choiceOptionPrice(g, o) }}</small>
         </label>
       </div>
     </fieldset>
 
     <button type="button" class="btn-checkout-primary choice-confirm" [disabled]="!choicePickerReady" (click)="confirmChoices()">
-      {{ choicePickerReady ? 'Agregar al pedido' : 'Escoge tus opciones' }}
+      {{ choicePickerReady ? 'Agregar al pedido · ' + formatCurrency(choicePickerTotal) : 'Escoge tus opciones' }}
     </button>
   </div>
 </div>
@@ -1078,7 +1079,7 @@
               <small class="item-choices">Para: {{ item.giftCard.recipientName }}{{ item.giftCard.senderName ? ' · De: ' + item.giftCard.senderName : '' }}</small>
               <small class="item-choices" *ngIf="item.giftCard.message">“{{ item.giftCard.message }}”</small>
             </ng-container>
-            <span class="item-price"><s class="mk-was" *ngIf="hasPromo(item.product)">{{ formatCurrency(item.product.listPrice!) }}</s> {{ formatCurrency(item.product.fltPrice) }}</span>
+            <span class="item-price"><s class="mk-was" *ngIf="hasPromo(item.product)">{{ formatCurrency(item.product.listPrice! + (item.extra || 0)) }}</s> {{ formatCurrency(lineUnitPrice(item)) }}</span>
           </div>
           <div class="item-controls">
             <ng-container *ngIf="!item.giftCard">
@@ -1088,7 +1089,7 @@
             </ng-container>
             <button class="remove-btn" (click)="removeFromCart(item)" type="button">🗑</button>
           </div>
-          <div class="item-subtotal">{{ formatCurrency(item.product.fltPrice * item.quantity) }}</div>
+          <div class="item-subtotal">{{ formatCurrency(lineUnitPrice(item) * item.quantity) }}</div>
         </div>
       </div>
 
