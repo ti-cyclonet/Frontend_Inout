@@ -488,7 +488,6 @@
 
               <div class="product-info-modern">
                 <h3>{{ product.strName }}</h3>
-                <span class="resale-tag" *ngIf="isResale(product)">Reventa</span>
                 <span class="resale-tag combo-tag" *ngIf="product.itemType === 'combo' || product.itemType === 'kit'">{{ product.itemType === 'kit' ? 'Kit' : 'Combo' }}</span>
                 <p class="description">{{ product.strDescription }}</p>
 
