@@ -13,6 +13,7 @@ import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../environments/environment';
+import { convertUnits, isPackUnit } from '../../shared/utils/unit-conversion.util';
 
 @Component({
   selector: 'app-kardex',
@@ -138,7 +139,7 @@ export class KardexComponent implements OnInit {
           stockMax: m.stockMax,
           balance: m.currentStock || 0,
           price: m.price,
-          measureUnit: m.measurementUnit
+          measureUnit: m.measurementUnit, dischargeUnit: m.dischargeUnit, packSize: m.packSize
         }));
         if (this.materials.length > 0) {
           this.selectedMaterial = this.materials[0];
@@ -180,7 +181,7 @@ export class KardexComponent implements OnInit {
             stockMax: m.stockMax,
             balance: m.currentStock || 0,
             price: m.price,
-            measureUnit: m.measurementUnit,
+            measureUnit: m.measurementUnit, dischargeUnit: m.dischargeUnit, packSize: m.packSize,
             entityType: 'material'
           }));
           this.performSearch();
@@ -207,7 +208,7 @@ export class KardexComponent implements OnInit {
           stockMax: m.ingMaxStock,
           balance: m.ingQuantity || 0,
           price: m.fltPrice,
-          measureUnit: m.strUnitMeasure,
+          measureUnit: m.strUnitMeasure, dischargeUnit: m.strDischargeUnit, packSize: m.intPackSize,
           entityType: 'composite'
         }));
         this.performSearch();
@@ -342,7 +343,7 @@ export class KardexComponent implements OnInit {
           this.materials = response.data.map((m: Material) => ({
             id: m.id, code: m.strCode || 'N/A', name: m.name, supplier: 'N/A',
             location: m.location, stockMin: m.stockMin, stockMax: m.stockMax,
-            balance: m.currentStock || 0, price: m.price, measureUnit: m.measurementUnit,
+            balance: m.currentStock || 0, price: m.price, measureUnit: m.measurementUnit, dischargeUnit: m.dischargeUnit, packSize: m.packSize,
             entityType: 'material'
           }));
           this.filterNameSuggestions();
@@ -355,7 +356,7 @@ export class KardexComponent implements OnInit {
           this.materials = response.map((m: any) => ({
             id: m.strId, code: m.strCode || 'N/A', name: m.strName, supplier: 'N/A',
             location: m.strLocation, stockMin: m.ingMinStock, stockMax: m.ingMaxStock,
-            balance: m.ingQuantity || 0, price: m.fltPrice, measureUnit: m.strUnitMeasure,
+            balance: m.ingQuantity || 0, price: m.fltPrice, measureUnit: m.strUnitMeasure, dischargeUnit: m.strDischargeUnit, packSize: m.intPackSize,
             entityType: 'composite'
           }));
           this.filterNameSuggestions();
@@ -868,6 +869,30 @@ export class KardexComponent implements OnInit {
 
     this.movements = allMovements;
     this.page = 0;
+  }
+
+  /**
+   * Unidades que trae cada paquete/caja del material (null si no se compra por
+   * paquetes). El stock y el costo se llevan por paquete; esto es solo para
+   * mostrar también el valor de cada unidad (2 paquetes de 6 por $14.400 =
+   * $7.200 el paquete = $1.200 la unidad).
+   */
+  get entryUnitsPerPack(): number | null {
+    const m = this.selectedMaterial;
+    if (!m || !isPackUnit(m.measureUnit)) return null;
+    const n = convertUnits(1, m.measureUnit, 'units', m.packSize);
+    return Number.isFinite(n) && n > 1 ? n : null;
+  }
+
+  /** Valor de cada unidad del paquete en la entrada. */
+  get entryValuePerUnit(): number {
+    const n = this.entryUnitsPerPack;
+    return n ? this.entryData.unitValue / n : 0;
+  }
+
+  /** "paquete" / "caja" según la unidad del material. */
+  get entryPackName(): string {
+    return this.selectedMaterial?.measureUnit === 'box' ? 'caja' : 'paquete';
   }
 
   calculateUnitValue(): void {
