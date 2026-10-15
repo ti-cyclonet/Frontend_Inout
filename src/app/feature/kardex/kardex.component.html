@@ -693,6 +693,7 @@
                 <div class="entry-field">
                   <label>Cantidad * ({{ selectedMaterial?.measureUnit }})</label>
                   <input type="number" class="form-control form-control-sm" [(ngModel)]="entryData.quantity" min="0" step="0.01" (input)="calculateUnitValue()"/>
+                  <small class="text-muted" *ngIf="entryUnitsPerPack && entryData.quantity > 0">= {{ formatNumber(entryData.quantity * entryUnitsPerPack) }} und ({{ entryPackName }} de {{ entryUnitsPerPack }} und)</small>
                 </div>
                 <div class="entry-field">
                   <label>Precio Total de Compra *</label>
@@ -701,6 +702,11 @@
                 <div class="entry-field">
                   <label>Valor Unitario (por {{ selectedMaterial?.measureUnit }})</label>
                   <input type="text" class="form-control form-control-sm" [value]="'$' + formatNumber(entryData.unitValue)" readonly style="background-color: #e9ecef;"/>
+                </div>
+                <div class="entry-field" *ngIf="entryUnitsPerPack">
+                  <label>Valor por Unidad (por und)</label>
+                  <input type="text" class="form-control form-control-sm fw-bold" [value]="'$' + formatNumber(entryValuePerUnit)" readonly style="background-color: #e9ecef;"/>
+                  <small class="text-muted">Cada {{ entryPackName }} trae {{ entryUnitsPerPack }} und</small>
                 </div>
                 <div class="entry-field">
                   <label>Vencimiento</label>
@@ -737,11 +743,15 @@
                 </div>
                 <div class="summary-row">
                   <span class="summary-label">Cantidad</span>
-                  <span class="summary-value">{{ formatNumber(entryData.quantity) }}</span>
+                  <span class="summary-value">{{ formatNumber(entryData.quantity) }} {{ selectedMaterial?.measureUnit }}<ng-container *ngIf="entryUnitsPerPack"> = {{ formatNumber(entryData.quantity * entryUnitsPerPack) }} und</ng-container></span>
                 </div>
                 <div class="summary-row">
                   <span class="summary-label">Valor Unitario</span>
                   <span class="summary-value">${{ formatNumber(entryData.unitValue) }} / {{ selectedMaterial?.measureUnit }}</span>
+                </div>
+                <div class="summary-row" *ngIf="entryUnitsPerPack">
+                  <span class="summary-label">Valor por Unidad</span>
+                  <span class="summary-value fw-bold">${{ formatNumber(entryValuePerUnit) }} / und</span>
                 </div>
                 <div class="summary-row">
                   <span class="summary-label">Documento</span>
