@@ -91,7 +91,7 @@ export class MenuExtrasSettingsComponent implements OnChanges {
     if (!this.extras || this.extras.blocks.length >= this.limits.blocks) return;
     const block: MenuExtraBlock = template
       ? structuredClone(template)
-      : { title: '', items: [{ name: '', note: '', imageUrl: null, imagePublicId: null }] };
+      : { title: '', items: [{ name: '', note: '', price: 0, imageUrl: null, imagePublicId: null }] };
     this.extras.blocks.push(block);
   }
 
@@ -108,7 +108,7 @@ export class MenuExtrasSettingsComponent implements OnChanges {
 
   addItem(block: MenuExtraBlock): void {
     if (block.items.length >= this.limits.items) return;
-    block.items.push({ name: '', note: '', imageUrl: null, imagePublicId: null });
+    block.items.push({ name: '', note: '', price: 0, imageUrl: null, imagePublicId: null });
   }
 
   removeItem(block: MenuExtraBlock, i: number): void {

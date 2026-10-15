@@ -322,3 +322,6 @@
 /* Promociones y combos */
 .mb-was { opacity: 0.55; font-size: 0.8em; margin-right: 2px; }
 .mb-promo { display: inline-block; margin: 4px 6px 0 0; padding: 1px 8px; border-radius: 999px; background: var(--mb-accent-2); color: var(--mb-accent-ink); font-size: 0.72rem; font-weight: 700; }
+
+/* Adición con precio: lo que suma al plato */
+.mb-bubble-price { font-size: 0.75rem; font-weight: 700; color: var(--mb-accent-2, var(--mb-ink)); font-variant-numeric: tabular-nums; }

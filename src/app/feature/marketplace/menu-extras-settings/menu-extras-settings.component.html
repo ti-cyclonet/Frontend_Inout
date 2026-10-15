@@ -53,6 +53,10 @@
         </label>
         <input class="mx-input" type="text" [maxlength]="limits.itemName" [(ngModel)]="it.name" placeholder="Nombre (p. ej. Chorizo)" [attr.aria-label]="'Nombre del renglón ' + (ii + 1)">
         <input class="mx-input mx-note" type="text" [maxlength]="limits.itemNote" [(ngModel)]="it.note" placeholder="Nota opcional (p. ej. especial de la casa)" [attr.aria-label]="'Nota del renglón ' + (ii + 1)">
+        <label class="mx-price" [title]="'Valor que suma al producto cuando el cliente lo escoge (0 = sin costo)'">
+          <span>+$</span>
+          <input type="number" min="0" step="100" [max]="limits.itemPrice" inputmode="numeric" [(ngModel)]="it.price" placeholder="0" [attr.aria-label]="'Precio adicional del renglón ' + (ii + 1)">
+        </label>
         <button type="button" class="mx-icon" *ngIf="it.imageUrl" (click)="removeImage(it)" aria-label="Quitar foto" title="Quitar foto">🖼✕</button>
         <button type="button" class="mx-icon mx-danger" (click)="removeItem(b, ii)" aria-label="Eliminar renglón">×</button>
       </div>

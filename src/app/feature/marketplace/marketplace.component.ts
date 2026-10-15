@@ -20,7 +20,7 @@ import {
   allocateGiftCards, formatExpiry, giftCardOptionsFrom,
 } from './gift-cards/gift-cards';
 import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
-import { EMPTY_MENU_EXTRAS, MenuExtras, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
+import { EMPTY_MENU_EXTRAS, MenuExtras, extraPriceLabel, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 import { GRID_THEMES, gridThemeAttr, isGridMode } from './grid-themes';
 import { HomeSector, HomeStore, MarketHomeComponent } from './market-home/market-home.component';
@@ -72,6 +72,8 @@ interface Product {
 interface LineChoice {
   group: string;
   options: string[];
+  /** Lo que suma cada opción (mismo orden); el servidor lo toma de la carta. */
+  prices?: number[];
 }
 
 /** Línea del carrito: el mismo producto armado distinto va en líneas aparte. */
@@ -79,6 +81,8 @@ interface CartLine {
   product: Product;
   quantity: number;
   choices?: LineChoice[];
+  /** Lo que suman las adiciones escogidas a cada unidad. */
+  extra?: number;
   /** Bono de regalo: valor y para quién (una línea por bono). */
   giftCard?: GiftCardDraft;
 }
@@ -87,6 +91,8 @@ interface CartLine {
 interface ActiveChoiceGroup {
   title: string;
   items: string[];
+  /** Precio adicional de cada opción (mismo orden que items). */
+  prices: number[];
   min: number;
   max: number;
 }
@@ -225,6 +231,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Información de la carta (proteínas, salsas…, zonas de domicilio, solo domicilios). */
   menuExtras: MenuExtras = EMPTY_MENU_EXTRAS;
   extraThumb = extraThumb;
+  extraPriceLabel = extraPriceLabel;
   promoTexts: string[] = [];
   /** Barra superior: su altura se publica en --mk-header-h para las pestañas fijas del menú. */
   @ViewChild('mkHeader', { static: true }) private mkHeader?: ElementRef<HTMLElement>;
@@ -1783,7 +1790,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (existing) {
       existing.quantity++;
     } else {
-      this.cart.push({ product, quantity: 1, ...(choices?.length ? { choices } : {}) });
+      const extra = this.choicesExtra(choices);
+      this.cart.push({ product, quantity: 1, ...(choices?.length ? { choices } : {}), ...(extra > 0 ? { extra } : {}) });
     }
     this.refreshSlotsIfScheduled();
     Swal.fire({ icon: 'success', title: 'Agregado', text: `${product.strName} añadido al carrito`, timer: 1200, showConfirmButton: false, position: 'top-end', toast: true });
@@ -1806,7 +1814,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       const block = this.menuExtras.blocks.find((b) => b.title.trim().toLowerCase() === String(g.block || '').trim().toLowerCase());
       if (!block || !block.items.length) continue;
       const max = Math.min(Number(g.max) || 1, block.items.length);
-      out.push({ title: block.title, items: block.items.map((i) => i.name), max, min: Math.min(Number(g.min) || 0, max) });
+      out.push({ title: block.title, items: block.items.map((i) => i.name), prices: block.items.map((i) => i.price || 0), max, min: Math.min(Number(g.min) || 0, max) });
     }
     return out;
   }
@@ -1838,6 +1846,25 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Lo que suman las opciones escogidas a cada unidad. */
+  private choicesExtra(choices?: LineChoice[]): number {
+    return (choices || []).reduce((s, c) => s + (c.prices || []).reduce((a, p) => a + (p > 0 ? p : 0), 0), 0);
+  }
+
+  /** "+$3.000" de una opción del selector (vacío si no cuesta). */
+  choiceOptionPrice(g: ActiveChoiceGroup, option: string): string {
+    return extraPriceLabel(g.prices[g.items.indexOf(option)]);
+  }
+
+  /** Precio en vivo del producto armado (base + adiciones escogidas). */
+  get choicePickerTotal(): number {
+    const p = this.choicePicker;
+    if (!p) return 0;
+    const extra = p.groups.reduce((s, g) =>
+      s + (p.selected[g.title] || []).reduce((a, o) => a + (g.prices[g.items.indexOf(o)] || 0), 0), 0);
+    return Number(p.product.fltPrice) + extra;
+  }
+
   get choicePickerReady(): boolean {
     const p = this.choicePicker;
     return !!p && p.groups.every((g) => (p.selected[g.title]?.length || 0) >= g.min);
@@ -1848,7 +1875,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (!p || !this.choicePickerReady) return;
     // En el orden de la lista de la carta
     const choices: LineChoice[] = p.groups
-      .map((g) => ({ group: g.title, options: g.items.filter((o) => p.selected[g.title]?.includes(o)) }))
+      .map((g) => {
+        const options = g.items.filter((o) => p.selected[g.title]?.includes(o));
+        const prices = options.map((o) => g.prices[g.items.indexOf(o)] || 0);
+        return { group: g.title, options, ...(prices.some((x) => x > 0) ? { prices } : {}) };
+      })
       .filter((c) => c.options.length);
     this.choicePicker = null;
     this.addLine(p.product, choices);
@@ -1860,7 +1891,14 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** ["Proteínas: Pollo, Cerdo"] para mostrar en el carrito. */
   choiceLines(item: CartLine): string[] {
-    return (item.choices || []).map((c) => `${c.group}: ${c.options.join(', ')}`);
+    return (item.choices || []).map((c) => `${c.group}: ${c.options
+      .map((o, i) => (c.prices?.[i] ? `${o} (${extraPriceLabel(c.prices[i])})` : o))
+      .join(', ')}`);
+  }
+
+  /** Precio de la unidad en el carrito: producto + adiciones escogidas. */
+  lineUnitPrice(item: CartLine): number {
+    return Number(item.product.fltPrice) + (item.extra || 0);
   }
 
   removeFromCart(item: CartLine): void {
@@ -2172,8 +2210,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       itemType: item.product.itemType || 'product',
       productName: item.product.strName,
       quantity: Number(item.quantity),
-      unitPrice: Number(item.product.fltPrice),
-      subtotal: Number(item.product.fltPrice) * Number(item.quantity),
+      unitPrice: this.lineUnitPrice(item),
+      subtotal: this.lineUnitPrice(item) * Number(item.quantity),
       ...(item.choices?.length ? { choices: item.choices } : {}),
       ...(item.giftCard ? { giftCard: item.giftCard } : {}),
     }));
@@ -2270,7 +2308,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   getCartTotal(): number {
-    return this.cart.reduce((sum, item) => sum + (item.product.fltPrice * item.quantity), 0);
+    return this.cart.reduce((sum, item) => sum + (this.lineUnitPrice(item) * item.quantity), 0);
   }
 
   getCartCount(): number {

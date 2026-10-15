@@ -104,6 +104,7 @@
           <span class="mb-bubble-text">
             <strong>{{ it.name }}</strong>
             <em *ngIf="it.note">{{ it.note }}</em>
+            <small class="mb-bubble-price" *ngIf="it.price > 0">{{ extraPrice(it.price) }}</small>
           </span>
         </li>
       </ul>

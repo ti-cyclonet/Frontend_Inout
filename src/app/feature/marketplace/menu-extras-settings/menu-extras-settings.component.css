@@ -31,8 +31,8 @@
 .mx-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.6rem; margin-top: 0.5rem; background: #fcfcfd; display: flex; flex-direction: column; gap: 0.4rem; }
 .mx-card-head { display: flex; gap: 0.35rem; align-items: center; }
 .mx-title { flex: 1; font-weight: 600; }
-.mx-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr) auto auto; gap: 0.35rem; align-items: center; }
-.mx-row .mx-icon:only-of-type { grid-column: 5; }
+.mx-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr) 104px auto auto; gap: 0.35rem; align-items: center; }
+.mx-row .mx-icon:only-of-type { grid-column: 6; }
 .mx-photo { position: relative; width: 40px; height: 40px; border-radius: 50%; border: 1px dashed #9ca3af; display: grid; place-items: center; overflow: hidden; cursor: pointer; background: #fff; font-size: 0.95rem; margin: 0; }
 .mx-photo.has-img { border-style: solid; border-color: #e5e7eb; }
 .mx-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -49,3 +49,9 @@
   .mx-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
   .mx-row .mx-note { grid-column: 2 / -1; }
 }
+
+/* Precio adicional del renglón (adiciones que suman al producto) */
+.mx-price { display: flex; align-items: center; gap: 0.2rem; margin: 0; padding: 0 0.5rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; font-size: 0.8rem; color: #64748b; }
+.mx-price:focus-within { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15); }
+.mx-price input { width: 100%; min-width: 0; padding: 0.5rem 0; border: 0; outline: 0; background: transparent; font: inherit; color: #0f172a; }
+@media (max-width: 640px) { .mx-row .mx-price { grid-column: 2 / -1; } }
