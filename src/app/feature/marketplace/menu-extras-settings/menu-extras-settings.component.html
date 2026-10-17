@@ -12,15 +12,7 @@
     <input id="mx-subtitle" class="mx-input" type="text" [maxlength]="limits.subtitle" [(ngModel)]="extras.subtitle" placeholder="Arepas & Patacones">
     <small class="mx-hint">Va en la cinta bajo el nombre de la carta. Vacío = «Nuestro menú».</small>
 
-    <label class="mx-label" for="mx-zone">Zonas de domicilio <small>({{ extras.deliveryZones.length }}/{{ limits.zones }})</small></label>
-    <div class="mx-chips">
-      <span class="mx-chip" *ngFor="let z of extras.deliveryZones; let i = index; trackBy: trackByIndex">
-        {{ z }} <button type="button" (click)="removeZone(i)" [attr.aria-label]="'Quitar ' + z">×</button>
-      </span>
-      <input id="mx-zone" class="mx-chip-input" type="text" [maxlength]="limits.zone" [(ngModel)]="zoneDraft"
-             (keydown)="onZoneKey($event)" (blur)="addZones()" placeholder="Escribe una zona y presiona Enter"
-             [disabled]="extras.deliveryZones.length >= limits.zones">
-    </div>
+    <p class="mx-hint mx-hint--box">🛵 Las <strong>zonas de domicilio</strong> ahora se configuran con su valor en <strong>Configuración de ventas › Entrega</strong>. La carta las muestra desde ahí.</p>
 
     <label class="mx-check">
       <input type="checkbox" [(ngModel)]="extras.deliveryOnly">

@@ -25,7 +25,7 @@
           <div class="kanban-cards">
             <div class="kanban-card" *ngFor="let order of getOrdersByStatus(status)" (click)="selectOrder(order)">
               <div class="card-code">{{ order.orderCode }}</div>
-              <div class="card-customer">{{ order.customerName || 'Sin cliente' }}<span class="card-fulfillment" *ngIf="order.fulfillment" [title]="order.fulfillment === 'PICKUP' ? 'Recoge en la tienda' : 'A domicilio'">{{ order.fulfillment === 'PICKUP' ? '🏪' : '🛵' }}</span><span class="card-fulfillment" *ngIf="hasGiftCards(order)" title="Incluye bonos de regalo">🎁</span></div>
+              <div class="card-customer">{{ order.customerName || 'Sin cliente' }}<span class="card-fulfillment" *ngIf="order.fulfillment" [title]="order.fulfillment === 'PICKUP' ? 'Recoge en la tienda' : 'A domicilio' + (order.deliveryZone ? ' · ' + order.deliveryZone : '')">{{ order.fulfillment === 'PICKUP' ? '🏪' : '🛵' }}</span><span class="card-fulfillment" *ngIf="hasGiftCards(order)" title="Incluye bonos de regalo">🎁</span></div>
               <div class="card-total">{{ formatCurrency(order.total) }}</div>
               <div class="card-credit" *ngIf="order.requestedPaymentType === 'CREDITO' && !order.paymentType">💳 Pide crédito</div>
               <div class="card-schedule" *ngIf="scheduleLabel(order) as sched">{{ sched }}</div>
@@ -176,6 +176,7 @@
         <div class="detail-delivery" *ngIf="selectedOrder.customerPhone || selectedOrder.customerAddress || deliveryMapsLink(selectedOrder) || selectedOrder.fulfillment">
           <div *ngIf="selectedOrder.fulfillment"><span class="detail-label">Entrega</span>
             {{ selectedOrder.fulfillment === 'PICKUP' ? '🏪 Recoge en la tienda' : '🛵 A domicilio' }}
+            <ng-container *ngIf="selectedOrder.fulfillment === 'DELIVERY' && selectedOrder.deliveryZone"> · {{ selectedOrder.deliveryZone }}</ng-container>
             <ng-container *ngIf="selectedOrder.fulfillment === 'DELIVERY' && +(selectedOrder.deliveryFee || 0) > 0"> · {{ formatCurrency(+(selectedOrder.deliveryFee || 0)) }}</ng-container>
           </div>
           <div *ngIf="selectedOrder.customerPhone"><span class="detail-label">Teléfono</span> <a [href]="'tel:' + selectedOrder.customerPhone">{{ selectedOrder.customerPhone }}</a></div>

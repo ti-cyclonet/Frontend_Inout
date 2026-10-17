@@ -91,3 +91,10 @@
 /* Arma tu pedido: lo que suma cada adición y el precio base */
 .choice-option-price { font-size: 0.76rem; font-weight: 700; color: var(--mk-sector-ink, #9a3412); font-variant-numeric: tabular-nums; }
 .choice-price small { font-weight: 500; font-size: 0.8rem; }
+
+/* Zona de entrega (domicilio por zona) */
+.zone-select { width: 100%; border: 1px solid #d6dbe3; border-radius: 10px; padding: 0.55rem 0.7rem; font-size: 0.9rem; font-family: inherit; background: var(--mk-surface, #fff); color: var(--mk-text, #111827); outline: none; }
+.zone-select:focus { border-color: var(--mk-sector); box-shadow: 0 0 0 3px var(--mk-sector-soft); }
+.zone-select--empty { color: var(--mk-muted, #6b7280); }
+.zone-help { font-size: 0.76rem; color: var(--mk-muted, #6b7280); }
+.zone-line { font-weight: 500; color: var(--mk-muted, #6b7280); }

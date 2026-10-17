@@ -1094,7 +1094,7 @@
 
       <ng-container *ngIf="deliveryFeeApplied > 0">
         <div class="checkout-line"><span>Productos</span><span>{{ formatCurrency(getCartTotal()) }}</span></div>
-        <div class="checkout-line"><span>🛵 Domicilio</span><span>{{ formatCurrency(deliveryFeeApplied) }}</span></div>
+        <div class="checkout-line"><span>🛵 Domicilio<small class="zone-line" *ngIf="hasDeliveryZones && deliveryZone"> · {{ deliveryZone === OTHER_ZONE ? 'Otra zona' : deliveryZone }}</small></span><span>{{ formatCurrency(deliveryFeeApplied) }}</span></div>
       </ng-container>
       <div class="checkout-total">
         <span>Total</span>
@@ -1136,7 +1136,7 @@
     <label>¿Cómo recibes tu pedido?</label>
     <div class="when-toggle fulfillment-toggle">
       <button type="button" [class.active]="fulfillment === 'DELIVERY'" (click)="fulfillment = 'DELIVERY'">
-        🛵 A domicilio<small>{{ deliveryOptions!.deliveryFee > 0 ? '+ ' + formatCurrency(deliveryOptions!.deliveryFee) : 'Sin costo' }}</small>
+        🛵 A domicilio<small>{{ deliveryFeeHint }}</small>
       </button>
       <button type="button" [class.active]="fulfillment === 'PICKUP'" (click)="fulfillment = 'PICKUP'">
         🏪 Recoger en la tienda<small>Sin costo</small>
@@ -1150,10 +1150,21 @@
     <small *ngIf="deliveryOptions?.pickupNotes">{{ deliveryOptions?.pickupNotes }}</small>
   </div>
 
+  <!-- Zona de entrega: el valor del domicilio depende de ella -->
+  <div class="form-field" *ngIf="fulfillment === 'DELIVERY' && hasDeliveryZones">
+    <label for="mk-zone">Zona de entrega</label>
+    <select id="mk-zone" class="zone-select" [(ngModel)]="deliveryZone" [class.zone-select--empty]="!deliveryZone">
+      <option value="" disabled>Elige tu zona</option>
+      <option *ngFor="let z of deliveryOptions!.zones" [value]="z.name">{{ z.name }} · {{ zoneFeeLabel(z.fee) }}</option>
+      <option *ngIf="deliveryOptions!.otherZones" [value]="OTHER_ZONE">Otra zona · {{ zoneFeeLabel(deliveryOptions!.deliveryFee) }}</option>
+    </select>
+    <small class="zone-help" *ngIf="!deliveryOptions!.otherZones">¿No está tu zona? La tienda no hace domicilios allá{{ deliveryOptions!.pickupEnabled ? '; puedes recoger tu pedido en la tienda' : '' }}.</small>
+  </div>
+
   <div class="form-field" *ngIf="fulfillment === 'DELIVERY'">
     <label>Dirección de entrega
       <small class="optional-tag" *ngIf="!deliveryOptions">(opcional)</small>
-      <small class="optional-tag" *ngIf="deliveryOptions && !canChooseFulfillment && deliveryOptions.deliveryFee > 0">· domicilio {{ formatCurrency(deliveryOptions.deliveryFee) }}</small>
+      <small class="optional-tag" *ngIf="deliveryOptions && !hasDeliveryZones && !canChooseFulfillment && deliveryOptions.deliveryFee > 0">· domicilio {{ formatCurrency(deliveryOptions.deliveryFee) }}</small>
     </label>
     <input type="text" [(ngModel)]="checkoutData.customerAddress" placeholder="Calle, número, barrio, referencias…">
     <div class="geo-row">
