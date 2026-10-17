@@ -25,6 +25,8 @@ export interface InoutOverview {
   receivables: { balance: number; count: number; overdueBalance: number; overdueCount: number };
   inventory: { value: number; materialsValue: number; productsValue: number; productsCount: number; materialsCount: number; lowStockCount: number; healthPercent: number | null };
   customers: { total: number; newThisMonth: number };
+  /** Solicitudes de crédito en trámite y las recién llegadas (ausente en backends anteriores). */
+  credit?: { pendingRequests: number; newRequests: { id: string; customer: string; amount: number; at: string }[] };
   alerts: {
     lowStock: { name: string; stock: number; min: number; kind: string; unit?: string }[];
     delayedOrders: { id: string; code: string; customer: string; status: string; minutesLate: number }[];
@@ -99,6 +101,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private clockTimer: any;
   private sub?: Subscription;
   private seen = new Set<string>();
+  /** Solicitudes de crédito ya vistas (id:fecha): avisa solo las que llegan con el tablero abierto. */
+  private seenCredit: Set<string> | null = null;
   private readonly isBrowser: boolean;
 
   constructor(
@@ -144,6 +148,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (o) => {
         this.markFresh(o, first);
+        this.notifyNewCreditRequests(o);
         this.overview = o;
         this.attention = this.buildAttention(o);
         this.pipeline = this.buildPipeline(o);
@@ -212,6 +217,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private buildAttention(o: InoutOverview): AttentionItem[] {
     const items: AttentionItem[] = [];
     if (this.newOrders) items.push({ icon: 'bell-fill', tone: 'info', count: this.newOrders, label: this.newOrders === 1 ? 'Pedido nuevo' : 'Pedidos nuevos', detail: 'Recibidos y aún sin empezar a preparar', link: '/orders' });
+    if (o.credit?.pendingRequests) items.push({ icon: 'person-lines-fill', tone: 'info', count: o.credit.pendingRequests, label: o.credit.pendingRequests === 1 ? 'Solicitud de crédito' : 'Solicitudes de crédito', detail: 'Clientes esperando aprobación de cupo', link: '/sales', query: { tab: 'cartera', vista: 'creditos' } });
     if (o.orders.pendingPayments) items.push({ icon: 'cash-stack', tone: 'warning', count: o.orders.pendingPayments, label: 'Pagos por verificar', detail: 'Comprobantes enviados por tus clientes', link: '/orders' });
     if (o.orders.delayed) items.push({ icon: 'alarm-fill', tone: 'danger', count: o.orders.delayed, label: 'Pedidos atrasados', detail: 'Superaron el tiempo de su etapa', link: '/orders' });
     if (o.orders.scheduledToday) items.push({ icon: 'calendar-check', tone: 'info', count: o.orders.scheduledToday, label: 'Entregas programadas hoy', detail: 'Pedidos con fecha de entrega para hoy', link: '/orders' });
@@ -229,6 +235,66 @@ export class HomeComponent implements OnInit, OnDestroy {
   private buildTop(o: InoutOverview) {
     const max = Math.max(1, ...o.series.topProducts.map((p) => p.value));
     return o.series.topProducts.map((p) => ({ ...p, share: Math.round((p.value / max) * 100) }));
+  }
+
+  /**
+   * Nueva solicitud de crédito mientras el tablero está abierto: aviso con
+   * sonido y acceso a Cartera › Créditos. La primera carga solo memoriza.
+   */
+  private notifyNewCreditRequests(o: InoutOverview): void {
+    const list = o.credit?.newRequests || [];
+    const keys = list.map((r) => `${r.id}:${r.at}`);
+    if (this.seenCredit === null) {
+      this.seenCredit = new Set(keys);
+      return;
+    }
+    const fresh = list.filter((r) => !this.seenCredit!.has(`${r.id}:${r.at}`));
+    keys.forEach((k) => this.seenCredit!.add(k));
+    if (!fresh.length) return;
+    this.playChime();
+    const first = fresh[0];
+    const text = fresh.length === 1
+      ? `${first.customer} pide un cupo de ${this.money(first.amount)}.`
+      : `${fresh.length} clientes piden cupo de crédito.`;
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'info',
+      title: fresh.length === 1 ? '💳 Nueva solicitud de crédito' : '💳 Nuevas solicitudes de crédito',
+      text,
+      showConfirmButton: true,
+      confirmButtonText: 'Revisar',
+      showCloseButton: true,
+      timer: 15000,
+      timerProgressBar: true,
+    }).then((r) => {
+      if (r.isConfirmed) this.router.navigate(['/sales'], { queryParams: { tab: 'cartera', vista: 'creditos' } });
+    });
+  }
+
+  /** Dos notas suaves (Web Audio, sin archivos). Si el navegador lo bloquea, no suena. */
+  private playChime(): void {
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      [660, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = ctx.currentTime + i * 0.18;
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.4);
+      });
+      setTimeout(() => ctx.close?.(), 1000);
+    } catch {
+      // sin audio
+    }
   }
 
   private markFresh(o: InoutOverview, first: boolean): void {
@@ -271,6 +337,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     IN_PRODUCTION: { icon: 'gear-wide-connected', label: 'En producción' },
     READY: { icon: 'check2-circle', label: 'Listo' },
     OUT_FOR_DELIVERY: { icon: 'truck', label: 'En reparto' },
+    CREDIT_REQUEST: { icon: 'person-lines-fill', label: 'Pide cupo' },
   };
   activityIcon(kind: string): string { return this.activityMeta[kind]?.icon || 'dot'; }
   activityLabel(kind: string): string { return this.activityMeta[kind]?.label || kind; }
