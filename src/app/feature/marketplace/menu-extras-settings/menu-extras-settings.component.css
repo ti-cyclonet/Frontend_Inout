@@ -55,3 +55,6 @@
 .mx-price:focus-within { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15); }
 .mx-price input { width: 100%; min-width: 0; padding: 0.5rem 0; border: 0; outline: 0; background: transparent; font: inherit; color: #0f172a; }
 @media (max-width: 640px) { .mx-row .mx-price { grid-column: 2 / -1; } }
+
+/* Aviso: las zonas de domicilio se configuran en Entrega */
+.mx-hint--box { display: block; margin: 0.6rem 0; padding: 0.6rem 0.75rem; border-radius: 10px; background: #eff6ff; color: #1e3a8a; font-size: 0.8rem; }

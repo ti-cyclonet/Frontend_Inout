@@ -8,8 +8,11 @@ export interface DeliveryPrefill {
   address?: string;
   /** Pedido de InOut que se entrega con este domicilio (avanza solo con el contrato de Shotra). */
   orderId?: string;
-  /** Valor del domicilio que pagó el cliente: presupuesto de la solicitud en Shotra. */
+  /** Valor del domicilio que pagó el cliente: presupuesto MÍNIMO de la solicitud en Shotra. */
   budget?: number;
+  /** Ubicación exacta del cliente (GPS del pedido): destino en el mapa, sin geocodificar. */
+  latitude?: number;
+  longitude?: number;
 }
 
 /**

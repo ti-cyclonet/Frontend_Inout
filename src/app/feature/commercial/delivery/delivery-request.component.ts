@@ -574,14 +574,22 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.pendingOrderId = prefill.orderId || null;
     this.form.title = prefill.title.slice(0, 120);
     this.form.description = prefill.description;
-    // Presupuesto = valor del domicilio que pagó el cliente (mínimo y máximo iguales)
+    // Presupuesto: el valor del domicilio que pagó el cliente es el MÍNIMO; el
+    // domiciliario puede ofertar más (la diferencia la decide la tienda)
     if (prefill.budget && prefill.budget > 0) {
       this.form.budgetMin = prefill.budget;
-      this.form.budgetMax = prefill.budget;
+      this.form.budgetMax = undefined;
     }
+    const hasGps = Number.isFinite(prefill.latitude) && Number.isFinite(prefill.longitude);
     if (prefill.address?.trim()) {
       this.form.address = prefill.address.trim();
-      this.onAddressChange(); // ubica el destino en el mini-mapa
+      // Con la ubicación exacta del pedido no hace falta geocodificar la dirección
+      if (!hasGps) this.onAddressChange(); // ubica el destino en el mini-mapa
+    }
+    if (hasGps) {
+      this.destCoords = { lat: prefill.latitude!, lng: prefill.longitude! };
+      this.geocodeFailed = false;
+      this.drawRoute();
     }
   }
 
