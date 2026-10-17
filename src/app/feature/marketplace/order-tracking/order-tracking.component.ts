@@ -47,7 +47,18 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   planLabel = planLabel;
   paymentStatusLabels = PAYMENT_STATUS_LABELS;
   statusLabels = ORDER_STATUS_LABELS;
-  steps = ['CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+  private static readonly ALL_STEPS = ['CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+
+  /**
+   * Pasos del pedido: sin "En preparación" si no hay nada que fabricar (solo se
+   * alista) y sin "En reparto" si el cliente recoge en la tienda.
+   */
+  get steps(): string[] {
+    const o = this.order;
+    const noProduction = o?.needsProduction === false && o?.status !== 'IN_PRODUCTION';
+    const pickup = o?.fulfillment === 'PICKUP' && o?.status !== 'OUT_FOR_DELIVERY';
+    return OrderTrackingComponent.ALL_STEPS.filter((s) => !(noProduction && s === 'IN_PRODUCTION') && !(pickup && s === 'OUT_FOR_DELIVERY'));
+  }
   lastUpdated: Date | null = null;
   /** Modal de agradecimiento al entregarse el pedido. */
   showThanks = false;
@@ -177,7 +188,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   deliveryStatusText(): string | null {
     if (!this.order || this.isFinal || this.deliveryText()) return null;
     const texts: Record<string, string> = {
-      CONFIRMED: 'Recibimos tu pedido; pronto empezaremos a prepararlo.',
+      CONFIRMED: this.order.needsProduction === false
+        ? 'Recibimos tu pedido y lo estamos alistando.'
+        : 'Recibimos tu pedido; pronto empezaremos a prepararlo.',
       IN_PRODUCTION: 'Estamos preparando tu pedido.',
       READY: 'Tu pedido está listo y pronto saldrá a reparto.',
       OUT_FOR_DELIVERY: '¡Tu pedido va en camino!',
