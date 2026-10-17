@@ -92,6 +92,10 @@ export class PortfolioComponent implements OnInit, OnDestroy {
     this.canOperate = this.isAdmin || ['operatorInout', 'operator'].includes(role);
     this.loadSummary();
     this.loadSettings();
+    // Desde el aviso del tablero (?vista=creditos): directo a las solicitudes
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('vista') === 'creditos') {
+      this.setView('credits');
+    }
     this.liveTimer = setInterval(() => {
       if (this.view === 'summary' && !document.hidden) this.loadSummary(true);
     }, 60_000);
