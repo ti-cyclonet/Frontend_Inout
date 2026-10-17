@@ -94,6 +94,8 @@ interface QueueInfo {
   waitMinutes: number | null;
   estimatedStartAt: string | null;
   estimatedReadyAt: string | null;
+  /** false = nada por fabricar: de Confirmado (alistando) pasa a Listo. */
+  needsProduction?: boolean;
 }
 
 interface TimingSettings {
@@ -244,6 +246,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
       badges.push({ text: plan + status, cls: order.paymentStatus === 'ANTICIPO_PENDIENTE' ? 'badge-warn' : 'badge-plan' });
     }
     if ((order.items || []).some((i: any) => Number(i.toManufacture) > 0)) badges.push({ text: '🛠 Por fabricar', cls: 'badge-make' });
+    else if (['CONFIRMED', 'IN_PRODUCTION'].includes(order.status) && !this.isGiftOnly(order) && !this.needsProduction(order)) {
+      badges.push({ text: '📦 Sin producción · solo alistar', cls: 'badge-ready' });
+    }
     if (this.isShotraManaged(order)) badges.push({ text: '🛵 Entrega con Shotra · avanza sola', cls: 'badge-shotra' });
     if (order.refundPending) badges.push({ text: '↩ Devolución pendiente', cls: 'badge-refund' });
     return badges;
@@ -358,6 +363,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const q = this.queueInfo.get(order.id);
     if (!q?.estimatedReadyAt) return null;
     const ready = this.formatClock(q.estimatedReadyAt);
+    if (order.status === 'CONFIRMED' && !this.needsProduction(order)) return `Alistando · listo ~${ready}`;
     if (order.status === 'CONFIRMED' && q.queuePosition) {
       const start = q.waitMinutes ? ` · inicia ~${this.formatClock(q.estimatedStartAt!)}` : ' · puede iniciar ya';
       return `#${q.queuePosition} en cola${start} · listo ~${ready}`;
@@ -486,11 +492,24 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return flow[status] || null;
   }
 
+  /**
+   * El pedido pasa por producción solo si algo se fabrica (bajo pedido, sin
+   * stock). Reventa, productos en stock y combos/kits armados solo se alistan.
+   * Lo decide el servidor (needsProduction en la cola); sin ese dato, por las líneas.
+   */
+  needsProduction(order: Order): boolean {
+    const q = this.queueInfo.get(order.id);
+    if (typeof q?.needsProduction === 'boolean') return q.needsProduction;
+    return ((order.items as any) || []).some((i: any) => Number(i?.toManufacture) > 0) || Number((order as any).productionLeadHours) > 0;
+  }
+
   /** Recoge en la tienda: de Listo pasa directo a Entregado (no hay reparto). */
   nextStatusFor(order: Order): string | null {
     if (order.fulfillment === 'PICKUP' && order.status === 'READY') return 'DELIVERED';
     // Solo bonos de regalo: no hay nada que preparar ni repartir
     if (this.isGiftOnly(order) && order.status === 'CONFIRMED') return 'DELIVERED';
+    // Nada por fabricar: de Confirmado (alistando) directo a Listo
+    if (order.status === 'CONFIRMED' && !this.needsProduction(order)) return 'READY';
     return this.getNextStatus(order.status);
   }
 
