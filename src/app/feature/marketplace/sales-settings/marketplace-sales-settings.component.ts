@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 import { splitPlanLabel } from '../order-tracking/order-labels';
-import { DEFAULT_DELIVERY_OPTIONS, DeliveryOptions } from '../delivery-options';
+import { DEFAULT_DELIVERY_OPTIONS, DELIVERY_ZONE_LIMITS, DeliveryOptions } from '../delivery-options';
 import { DEFAULT_GIFT_CARD_OPTIONS, GiftCardOptions, giftCardOptionsFrom } from '../gift-cards/gift-cards';
 import {
   DEFAULT_THANKS_MESSAGES, THANKS_MAX_LENGTH, THANKS_STYLES, ThanksMessages, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts,
@@ -57,6 +57,7 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
   welcomeMax = WELCOME_MAX_LENGTH;
   delivery: DeliveryOptions | null = null;
   savingDelivery = false;
+  zoneLimits = DELIVERY_ZONE_LIMITS;
   giftCards: GiftCardOptions | null = null;
   /** Valores sugeridos como texto ("20000, 50000, 100000"). */
   giftPresetsText = '';
@@ -80,8 +81,8 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
       error: () => this.setGiftCards({ ...DEFAULT_GIFT_CARD_OPTIONS }),
     });
     this.http.get<DeliveryOptions>(`${this.base}/${this.tenantId}/delivery-options`).subscribe({
-      next: (d) => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...d }),
-      error: () => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS }),
+      next: (d) => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...d, zones: (d?.zones || []).map((z) => ({ ...z })) }),
+      error: () => (this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, zones: [] }),
     });
     this.http.get<any>(`${this.base}/${this.tenantId}/payment-options`).subscribe({ next: (p) => (this.payments = p), error: () => {} });
     this.http.get<any>(`${this.base}/${this.tenantId}/scheduling`).subscribe({ next: (s) => (this.scheduling = s), error: () => {} });
@@ -176,12 +177,37 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
     });
   }
 
+  /** Agrega una zona vacía para escribirla (el foco va a su nombre). */
+  addZone(): void {
+    const d = this.delivery;
+    if (!d || d.zones.length >= this.zoneLimits.zones) return;
+    d.zones.push({ name: '', fee: d.deliveryFee || 0 });
+    setTimeout(() => (document.querySelector('.ss-zone:last-child input') as HTMLInputElement | null)?.focus());
+  }
+
+  removeZone(i: number): void {
+    this.delivery?.zones.splice(i, 1);
+  }
+
+  /** "$1.000 – $5.000" para el resumen. */
+  private zonesRange(d: DeliveryOptions): string {
+    const fees = d.zones.map((z) => Number(z.fee) || 0);
+    const fmt = (n: number) => (n > 0 ? '$' + n.toLocaleString('es-CO') : 'gratis');
+    const min = Math.min(...fees);
+    const max = Math.max(...fees);
+    return min === max ? fmt(min) : `${fmt(min)} – ${fmt(max)}`;
+  }
+
   /** Resumen en el encabezado de la sección Entrega. */
   get deliverySummary(): string {
     const d = this.delivery;
     if (!d) return 'Cargando…';
     const parts = [
-      d.deliveryEnabled ? `Domicilio ${d.deliveryFee > 0 ? '$' + Number(d.deliveryFee).toLocaleString('es-CO') : 'gratis'}` : '',
+      d.deliveryEnabled
+        ? d.zones.length
+          ? `Domicilio a ${d.zones.length} zona${d.zones.length === 1 ? '' : 's'} (${this.zonesRange(d)})`
+          : `Domicilio ${d.deliveryFee > 0 ? '$' + Number(d.deliveryFee).toLocaleString('es-CO') : 'gratis'}`
+        : '',
       d.pickupEnabled ? 'Recoger en tienda' : '',
     ].filter(Boolean);
     return parts.join(' · ') || 'Sin configurar';
@@ -198,10 +224,29 @@ export class MarketplaceSalesSettingsComponent implements OnChanges {
       Swal.fire({ icon: 'warning', title: 'Dirección del local', text: 'Escribe la dirección donde el cliente recoge su pedido.' });
       return;
     }
+    // Filas sin nombre ni valor se descartan; con valor pero sin nombre, se avisa
+    const zones = d.zones
+      .map((z) => ({ name: (z.name || '').trim(), fee: Number(z.fee) || 0 }))
+      .filter((z) => z.name || z.fee);
+    if (zones.some((z) => !z.name)) {
+      Swal.fire({ icon: 'warning', title: 'Zona sin nombre', text: 'Escribe el nombre de cada zona de entrega (o quítala).' });
+      return;
+    }
+    const seen = new Set<string>();
+    const repeated = zones.find((z) => {
+      const k = z.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (seen.has(k)) return true;
+      seen.add(k);
+      return false;
+    });
+    if (repeated) {
+      Swal.fire({ icon: 'warning', title: 'Zona repetida', text: `«${repeated.name}» está dos veces. Si tiene dos valores, llámalas distinto, p. ej. «${repeated.name} (cerca)» y «${repeated.name} (lejos)».` });
+      return;
+    }
     this.savingDelivery = true;
-    this.http.patch<DeliveryOptions>(`${this.base}/${this.tenantId}/delivery-options`, { ...d, deliveryFee: Number(d.deliveryFee) || 0 }).subscribe({
+    this.http.patch<DeliveryOptions>(`${this.base}/${this.tenantId}/delivery-options`, { ...d, zones, deliveryFee: Number(d.deliveryFee) || 0 }).subscribe({
       next: (saved) => {
-        this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...saved };
+        this.delivery = { ...DEFAULT_DELIVERY_OPTIONS, ...saved, zones: (saved?.zones || []).map((z) => ({ ...z })) };
         this.savingDelivery = false;
         Swal.fire({ icon: 'success', title: 'Entrega guardada', timer: 1500, showConfirmButton: false });
       },

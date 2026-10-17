@@ -37,12 +37,40 @@
   <div class="ss-body" *ngIf="open === 'delivery' && delivery">
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="delivery.deliveryEnabled">
-      <span><strong>🛵 A domicilio</strong><small>El cliente escribe su dirección (obligatoria) y se le suma el valor del domicilio.</small></span>
+      <span><strong>🛵 A domicilio</strong><small>El cliente escribe su dirección (obligatoria) y se le suma el valor del domicilio. Ese valor es tuyo, para tu domiciliario; si lo envías por Shotra, es el valor mínimo del domicilio.</small></span>
     </label>
     <div class="ss-sub" *ngIf="delivery.deliveryEnabled">
-      <label for="ss-fee">Valor del domicilio (COP)</label>
-      <input id="ss-fee" type="number" min="0" step="500" [(ngModel)]="delivery.deliveryFee" style="max-width: 180px">
-      <small class="ss-help">Se suma al total del pedido. Es también el valor con el que se publica el domicilio en Shotra. 0 = domicilio gratis.</small>
+      <!-- Zonas con su valor -->
+      <label class="ss-zones-title">Valor por zona <small>(opcional · {{ delivery.zones.length }}/{{ zoneLimits.zones }})</small></label>
+      <small class="ss-help">Si cobras distinto según el sitio, agrega cada zona con su valor y el cliente elige la suya. Si un sitio tiene dos valores, crea dos zonas: «Bonanza (cerca)» y «Bonanza (lejos)».</small>
+      <div class="ss-zones" *ngIf="delivery.zones.length">
+        <div class="ss-zone" *ngFor="let z of delivery.zones; let i = index">
+          <input type="text" [maxlength]="zoneLimits.name" [(ngModel)]="z.name" placeholder="Zona o barrio (p. ej. Turbaco)" [attr.aria-label]="'Nombre de la zona ' + (i + 1)">
+          <span class="ss-zone-fee">
+            <span>$</span>
+            <input type="number" min="0" step="500" [(ngModel)]="z.fee" [attr.aria-label]="'Valor del domicilio a la zona ' + (i + 1)">
+          </span>
+          <button type="button" class="ss-zone-del" (click)="removeZone(i)" [attr.aria-label]="'Quitar zona ' + (i + 1)" title="Quitar">×</button>
+        </div>
+      </div>
+      <button type="button" class="ss-zone-add" (click)="addZone()" [disabled]="delivery.zones.length >= zoneLimits.zones">+ Agregar zona</button>
+
+      <ng-container *ngIf="delivery.zones.length; else oneFee">
+        <label class="ss-check ss-check--inner">
+          <input type="checkbox" [(ngModel)]="delivery.otherZones">
+          <span><strong>Aceptar otras zonas</strong><small>El cliente puede elegir «Otra zona» si la suya no está en la lista.</small></span>
+        </label>
+        <ng-container *ngIf="delivery.otherZones">
+          <label for="ss-fee">Valor para otras zonas (COP)</label>
+          <input id="ss-fee" type="number" min="0" step="500" [(ngModel)]="delivery.deliveryFee" style="max-width: 180px">
+        </ng-container>
+        <small class="ss-help" *ngIf="!delivery.otherZones">Si la zona del cliente no está en la lista, no puede pedir a domicilio (puede recoger en la tienda, si lo ofreces).</small>
+      </ng-container>
+      <ng-template #oneFee>
+        <label for="ss-fee">Valor del domicilio (COP)</label>
+        <input id="ss-fee" type="number" min="0" step="500" [(ngModel)]="delivery.deliveryFee" style="max-width: 180px">
+        <small class="ss-help">El mismo valor para cualquier dirección. Se suma al total del pedido. 0 = domicilio gratis.</small>
+      </ng-template>
     </div>
 
     <label class="ss-check">

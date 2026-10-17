@@ -97,3 +97,16 @@
 /* Bonos de regalo: mínimo y máximo lado a lado */
 .ss-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
 @media (max-width: 480px) { .ss-grid2 { grid-template-columns: 1fr; } }
+
+/* Valor del domicilio por zona */
+.ss-zones-title { font-weight: 600; font-size: 0.85rem; }
+.ss-zones { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.35rem; }
+.ss-zone { display: grid; grid-template-columns: minmax(0, 1fr) 130px 32px; gap: 0.4rem; align-items: center; }
+.ss-zone-fee { display: flex; align-items: center; gap: 0.25rem; color: #6b7280; }
+.ss-zone-fee input { width: 100%; min-width: 0; }
+.ss-zone-del { width: 32px; height: 32px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #b91c1c; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.ss-zone-del:hover { background: #fde8e8; }
+.ss-zone-add { align-self: flex-start; margin-top: 0.4rem; border: 1px dashed #93c5fd; border-radius: 8px; background: #eff6ff; color: #1d4ed8; font-weight: 600; font-size: 0.82rem; padding: 0.35rem 0.75rem; cursor: pointer; }
+.ss-zone-add:disabled { opacity: 0.5; cursor: default; }
+.ss-check--inner { margin-top: 0.75rem; }
+@media (max-width: 480px) { .ss-zone { grid-template-columns: minmax(0, 1fr) 100px 32px; } }

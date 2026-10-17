@@ -65,8 +65,10 @@ interface Order {
   shotraRequestId?: string | null;
   /** 'DELIVERY' (a domicilio) | 'PICKUP' (recoge en la tienda); null en pedidos anteriores. */
   fulfillment?: 'DELIVERY' | 'PICKUP' | null;
-  /** Valor del domicilio cobrado al cliente (incluido en total): presupuesto del domicilio en Shotra. */
+  /** Valor del domicilio cobrado al cliente (incluido en total): presupuesto mínimo del domicilio en Shotra. */
   deliveryFee?: number | string | null;
+  /** Zona de entrega que eligió el cliente ("Turbaco", "Otra zona"). */
+  deliveryZone?: string | null;
 }
 
 interface OrderStats {
@@ -674,24 +676,30 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const items = (order.items || []).map((i) => `${i.quantity} x ${i.productName}`).join(', ');
     const map = this.deliveryMapsLink(order);
     const fee = Number(order.deliveryFee) || 0;
+    const zone = order.fulfillment === 'DELIVERY' ? order.deliveryZone || '' : '';
     const lines = [
-      `Entrega del pedido ${order.orderCode}.`,
+      `Entrega del pedido ${order.orderCode}${zone ? ` · Zona: ${zone}` : ''}.`,
       `Cliente: ${order.customerName || 'Sin nombre'}${order.customerPhone ? ` · Tel. ${order.customerPhone}` : ''}.`,
       items ? `Productos: ${items}.` : '',
       fee > 0
-        ? `Valor del pedido: ${this.formatCurrency(order.total)}, incluye el domicilio de ${this.formatCurrency(fee)}.`
+        ? `Valor del pedido: ${this.formatCurrency(order.total)}, incluye el domicilio de ${this.formatCurrency(fee)} (valor mínimo del domicilio).`
         : `Valor del pedido: ${this.formatCurrency(order.total)} (pago contra entrega).`,
       order.customerAddress ? `Dirección: ${order.customerAddress}.` : '',
       map ? `Ubicación exacta del cliente: ${map}` : '',
       order.notes ? `Notas del cliente: ${order.notes}` : '',
     ].filter(Boolean);
+    const lat = Number(order.deliveryLatitude);
+    const lng = Number(order.deliveryLongitude);
+    const hasGps = order.deliveryLatitude != null && order.deliveryLongitude != null && Number.isFinite(lat) && Number.isFinite(lng);
     return {
-      title: `Entregar pedido ${order.orderCode}`,
+      title: `Entregar pedido ${order.orderCode}${zone ? ` · ${zone}` : ''}`,
       description: lines.join('\n'),
-      address: order.customerAddress || undefined,
+      address: [order.customerAddress, zone && zone !== 'Otra zona' ? zone : ''].filter(Boolean).join(', ') || undefined,
       orderId: order.id,
-      // El domicilio se publica por el valor que pagó el cliente
+      // El valor que pagó el cliente es el mínimo con el que se publica el domicilio
       ...(fee > 0 ? { budget: fee } : {}),
+      // La ubicación exacta del cliente (si la compartió) es el destino en el mapa
+      ...(hasGps ? { latitude: lat, longitude: lng } : {}),
     };
   }
 

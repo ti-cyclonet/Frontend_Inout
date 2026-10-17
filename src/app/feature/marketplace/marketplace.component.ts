@@ -13,7 +13,7 @@ import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
-import { DeliveryOptions } from './delivery-options';
+import { DeliveryOptions, OTHER_ZONE } from './delivery-options';
 import { GiftCardBuyComponent } from './gift-cards/gift-card-buy.component';
 import {
   GIFT_CARD_ITEM_TYPE, GIFT_CARD_PRODUCT_ID, GiftCardDraft, GiftCardOptions, GiftCardView,
@@ -260,6 +260,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   deliveryOptions: DeliveryOptions | null = null;
   /** Cómo recibe el cliente su pedido. */
   fulfillment: 'DELIVERY' | 'PICKUP' = 'DELIVERY';
+  /** Zona de entrega elegida (nombre de la zona u OTHER_ZONE); '' = sin elegir. */
+  deliveryZone = '';
+  readonly OTHER_ZONE = OTHER_ZONE;
   checkoutSending = false;
   orderSuccess: any = null;
 
@@ -812,6 +815,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.storeWhatsapp = configResponse?.whatsapp || '';
       this.storeWelcome = configResponse?.welcomeMessage || '';
       this.menuExtras = menuExtrasFrom(configResponse?.menuExtras);
+      // Las zonas con valor (Entrega) son las que muestra la carta
+      if (this.deliveryOptions?.zones?.length) {
+        this.menuExtras = { ...this.menuExtras, deliveryZones: this.deliveryOptions.zones.map((z) => z.name) };
+      }
       
       // Obtener nombre del negocio y sector
       const businessSector = contractResponse?.businessSector || 'general';
@@ -1955,10 +1962,45 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** La tienda cobra el domicilio según la zona. */
+  get hasDeliveryZones(): boolean {
+    return !!this.deliveryOptions?.deliveryEnabled && !!this.deliveryOptions?.zones?.length;
+  }
+
+  /** Valor del domicilio a la zona elegida (null si aún no elige). */
+  private zoneFee(zone: string): number | null {
+    const o = this.deliveryOptions;
+    if (!o || !zone) return null;
+    if (zone === OTHER_ZONE) return o.otherZones ? Number(o.deliveryFee) || 0 : null;
+    const z = o.zones.find((x) => x.name === zone);
+    return z ? Number(z.fee) || 0 : null;
+  }
+
+  /** "+ $5.000" / "Sin costo" para la lista de zonas. */
+  zoneFeeLabel(fee: number): string {
+    return fee > 0 ? '+ ' + this.formatCurrency(fee) : 'Sin costo';
+  }
+
+  /** En el botón "A domicilio": el valor, o "desde $1.000" si depende de la zona. */
+  get deliveryFeeHint(): string {
+    const o = this.deliveryOptions;
+    if (!o) return '';
+    if (this.hasDeliveryZones) {
+      const chosen = this.zoneFee(this.deliveryZone);
+      if (chosen !== null) return this.zoneFeeLabel(chosen);
+      const fees = [...o.zones.map((z) => Number(z.fee) || 0), ...(o.otherZones ? [Number(o.deliveryFee) || 0] : [])];
+      const min = Math.min(...fees);
+      return min > 0 ? 'Desde ' + this.formatCurrency(min) : 'Según la zona';
+    }
+    return o.deliveryFee > 0 ? '+ ' + this.formatCurrency(o.deliveryFee) : 'Sin costo';
+  }
+
   /** Valor del domicilio que se suma al pedido (0 si recoge en la tienda). */
   get deliveryFeeApplied(): number {
     if (this.cartIsGiftOnly) return 0; // un bono no se entrega a domicilio
-    return this.fulfillment === 'DELIVERY' ? Number(this.deliveryOptions?.deliveryFee) || 0 : 0;
+    if (this.fulfillment !== 'DELIVERY') return 0;
+    if (this.hasDeliveryZones) return this.zoneFee(this.deliveryZone) ?? 0;
+    return Number(this.deliveryOptions?.deliveryFee) || 0;
   }
 
   // ─── Bonos de regalo ───
@@ -2793,6 +2835,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Con zonas, el valor del domicilio depende de la que elija (el servidor también lo exige)
+    if (!this.cartIsGiftOnly && this.fulfillment === 'DELIVERY' && this.hasDeliveryZones && this.zoneFee(this.deliveryZone) === null) {
+      Swal.fire({ icon: 'warning', title: 'Zona de entrega', text: 'Elige la zona donde recibes tu pedido: el valor del domicilio depende de ella.' });
+      return;
+    }
+
     // A domicilio la dirección es obligatoria (el servidor también lo exige); un bono no se entrega
     if (!this.cartIsGiftOnly && this.deliveryOptions && this.fulfillment === 'DELIVERY' && this.checkoutData.customerAddress.trim().length < 5) {
       Swal.fire({ icon: 'warning', title: 'Dirección de entrega', text: 'Escribe la dirección donde quieres recibir tu pedido (calle, número, barrio).' });
@@ -2837,6 +2885,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       total: Number(subtotal) + this.deliveryFeeApplied,
       // Sin opciones de entrega cargadas (falló la consulta), como antes; un bono no se entrega
       ...(this.deliveryOptions && !this.cartIsGiftOnly ? { fulfillment: this.fulfillment } : {}),
+      ...(this.hasDeliveryZones && this.fulfillment === 'DELIVERY' && !this.cartIsGiftOnly && this.deliveryZone ? { deliveryZone: this.deliveryZone } : {}),
       // Bonos con los que paga (solo con sesión; el servidor valida saldo y dueño)
       ...(this.giftCardApplied > 0 ? { giftCardIds: [...this.selectedGiftCardIds] } : {}),
       ...(this.clientLoggedIn ? {} : this.consentPayload()),
