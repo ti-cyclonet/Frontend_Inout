@@ -71,6 +71,9 @@ export class KardexComponent implements OnInit {
   };
   
   productIngredients: any[] = [];
+  /** Receta del material compuesto en producción (rendimiento y unidad). */
+  compositeRecipe: { fltRecipeYield: number; strUnitMeasure: string } | null = null;
+  savingProduction = false;
   
   newSupplier = {
     name: '',
@@ -910,12 +913,8 @@ export class KardexComponent implements OnInit {
     }
     
     if (this.entityType === 'composite') {
-      this.router.navigate(['/materials'], { 
-        queryParams: { 
-          edit: this.selectedMaterial.id, 
-          step: 3 
-        } 
-      });
+      // Producir más con la receta: solo se indica la cantidad a producir
+      this.loadCompositeRecipe();
     } else if (this.entityType === 'product') {
       this.loadProductIngredients();
       this.showProductEntryModal = true;
@@ -956,6 +955,62 @@ export class KardexComponent implements OnInit {
     });
   }
 
+  get isCompositeEntry(): boolean {
+    return this.entityType === 'composite';
+  }
+
+  /** Unidad de lo que se produce: la del compuesto o "unidades" en productos. */
+  get productionUnit(): string {
+    return this.isCompositeEntry ? (this.compositeRecipe?.strUnitMeasure || '') : 'unidades';
+  }
+
+  /**
+   * Receta del compuesto: cuánto rinde y cuánto de cada material se usa por
+   * unidad producida. Sin rendimiento (compuestos anteriores) hay que
+   * completarla antes de producir.
+   */
+  loadCompositeRecipe(): void {
+    const id = this.selectedMaterial.id;
+    this.http.get<any>(`${this.baseUrl}/materials-t/${id}/recipe`).subscribe({
+      next: (r) => {
+        if (!r?.fltRecipeYield) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Completa la receta',
+            text: 'Indica cuánto rinde la receta de este material compuesto. Después solo tendrás que escribir la cantidad a producir.',
+            showCancelButton: true,
+            confirmButtonText: 'Completar receta',
+            cancelButtonText: 'Cancelar',
+          }).then((res) => {
+            if (res.isConfirmed) this.router.navigate(['/materials'], { queryParams: { edit: id, step: 3 } });
+          });
+          return;
+        }
+        this.compositeRecipe = { fltRecipeYield: Number(r.fltRecipeYield), strUnitMeasure: r.strUnitMeasure };
+        this.productIngredients = (r.components || []).map((c: any) => ({
+          name: c.name,
+          quantity: c.quantity,
+          unit: c.unit,
+          // Por cada unidad producida, en la unidad del stock del material
+          quantityInStockUnit: Number(c.perUnitInStockUnit) || 0,
+          stock: Number(c.stock) || 0,
+          stockUnit: c.stockUnit || c.unit,
+          unitPrice: Number(c.unitPrice) || 0,
+          type: 'material',
+        }));
+        this.productEntryData.quantity = Number(r.fltRecipeYield);
+        this.calculateProductCost();
+        this.showProductEntryModal = true;
+      },
+      error: () => Swal.fire('Error', 'No se pudo cargar la receta', 'error'),
+    });
+  }
+
+  /** Total a descontar de un ingrediente para la cantidad a producir. */
+  ingredientNeed(ing: any): number {
+    return Math.round(ing.quantityInStockUnit * this.productEntryData.quantity * 10000) / 10000;
+  }
+
   closeProductEntryModal(): void {
     this.showProductEntryModal = false;
     this.productStep = 1;
@@ -966,6 +1021,7 @@ export class KardexComponent implements OnInit {
       unitCost: 0
     };
     this.productIngredients = [];
+    this.compositeRecipe = null;
   }
 
   calculateProductCost(): void {
@@ -984,7 +1040,7 @@ export class KardexComponent implements OnInit {
     if (this.productStep === 1) {
       const hasDate = !!this.productEntryData.date;
       const hasQuantity = this.productEntryData.quantity > 0;
-      const hasStock = this.productIngredients.every(ing => ing.stock >= (ing.quantityInStockUnit * this.productEntryData.quantity));
+      const hasStock = this.productIngredients.every(ing => ing.stock >= this.ingredientNeed(ing));
       return hasDate && hasQuantity && hasStock;
     }
     return false;
@@ -1005,6 +1061,11 @@ export class KardexComponent implements OnInit {
   saveProductEntry(): void {
     if (this.productEntryData.quantity <= 0) {
       Swal.fire('Error', 'La cantidad debe ser mayor a 0', 'error');
+      return;
+    }
+
+    if (this.isCompositeEntry) {
+      this.saveCompositeProduction();
       return;
     }
 
@@ -1033,6 +1094,30 @@ export class KardexComponent implements OnInit {
       error: () => {
         Swal.fire('Error', 'No se pudo registrar la producción', 'error');
       }
+    });
+  }
+
+  /** Producir el compuesto: el servidor descuenta la receta escalada. */
+  private saveCompositeProduction(): void {
+    if (this.savingProduction) return;
+    this.savingProduction = true;
+    const id = this.selectedMaterial.id;
+    this.http.post<any>(`${this.baseUrl}/materials-t/${id}/produce`, {
+      quantity: Number(this.productEntryData.quantity),
+      date: this.productEntryData.date,
+    }).subscribe({
+      next: (r) => {
+        this.savingProduction = false;
+        if (r?.ingQuantity !== undefined) this.selectedMaterial.balance = Number(r.ingQuantity);
+        this.loadMovements(id);
+        this.stockAlertsService.refreshAlerts();
+        Swal.fire('Éxito', 'Producción registrada: se descontaron los materiales de la receta.', 'success');
+        this.closeProductEntryModal();
+      },
+      error: (err) => {
+        this.savingProduction = false;
+        Swal.fire('Error', err?.error?.message || 'No se pudo registrar la producción', 'error');
+      },
     });
   }
 

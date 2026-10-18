@@ -557,7 +557,43 @@
             <!-- Step 3: Materials -->
             <div class="step-content" *ngIf="currentStep === 3">
               <div class="form-step">
-                <h4>Materiales</h4>
+                <h4>Receta</h4>
+
+                <!-- Rendimiento: cuánto producen las cantidades de la receta -->
+                <div class="recipe-box">
+                  <p class="recipe-help">
+                    Agrega los materiales con la cantidad que usa la receta e indica cuánto <strong>{{ newMaterial.name || 'material compuesto' }}</strong> obtienes con ella. No tiene que ser la suma de los materiales: puede rendir más o menos.
+                  </p>
+                  <div class="recipe-fields">
+                    <div class="recipe-field">
+                      <label for="recipeYield">Esta receta rinde *</label>
+                      <div class="input-group">
+                        <input id="recipeYield" type="number" class="form-control" min="0.01" step="any"
+                          [ngModel]="recipeYield" (ngModelChange)="onRecipeYieldChange($event)" placeholder="Ej: 1000" />
+                        <span class="input-group-text">{{ newMaterial.measurementUnit || '—' }}</span>
+                      </div>
+                    </div>
+                    <div class="recipe-field" *ngIf="!editingMaterialId">
+                      <label for="produceNow">Producir ahora</label>
+                      <div class="input-group">
+                        <input id="produceNow" type="number" class="form-control" min="0" step="any"
+                          [ngModel]="produceNow" (ngModelChange)="onProduceNowChange($event)" placeholder="0" />
+                        <span class="input-group-text">{{ newMaterial.measurementUnit || '—' }}</span>
+                      </div>
+                      <small class="text-muted">Se descuentan los materiales en proporción. Con 0 solo se guarda la receta.</small>
+                    </div>
+                    <div class="recipe-field recipe-cost">
+                      <span class="recipe-cost-label">Costo por {{ newMaterial.measurementUnit || 'unidad' }}</span>
+                      <span class="recipe-cost-value">{{ formatCurrency(getUnitPrice()) }}</span>
+                    </div>
+                  </div>
+                  <div class="recipe-note warn" *ngIf="isLegacyRecipe">
+                    Este material se creó antes de las recetas: las cantidades de abajo son lo que se consumió la primera vez. Ajústalas si hace falta y escribe cuánto rinden.
+                  </div>
+                  <div class="recipe-note" *ngIf="editingMaterialId">
+                    Editar la receta no mueve el inventario. Para producir más ve a <strong>Kardex › Entrada</strong>: solo escribes la cantidad y se descuentan los materiales.
+                  </div>
+                </div>
 
                 <!-- Materials Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; cursor: pointer; border-left: 4px solid #2196F3;" (click)="showAvailableMaterials = !showAvailableMaterials">
@@ -747,8 +783,8 @@
                     <thead>
                       <tr>
                         <th>Material</th>
-                        <th>Cantidad Base</th>
-                        <th *ngIf="editingMaterialId">Cantidad Adicional</th>
+                        <th>En la receta</th>
+                        <th *ngIf="!editingMaterialId">Se descuenta</th>
                         <th>Costo</th>
                         <th>Acciones</th>
                       </tr>
@@ -757,7 +793,7 @@
                       <tr *ngFor="let comp of compositions">
                         <td class="ingredient-name">
                           {{ comp.componentMaterial?.name }}
-                          <div *ngIf="editingMaterialId" style="font-size: 0.75rem; color: #6c757d; margin-top: 0.25rem;">
+                          <div style="font-size: 0.75rem; color: #6c757d; margin-top: 0.25rem;">
                             {{ comp.componentMaterial?.ubicacion }} ({{ comp.componentMaterial?.measurementUnit }})
                             <br>
                             Stock mínimo: {{ (comp.componentMaterial?.stockMin || 0) | numberFormat: 2 }} | 
@@ -778,17 +814,9 @@
                             step="0.01"
                           />
                         </td>
-                        <td *ngIf="editingMaterialId">
-                          <input
-                            type="number"
-                            class="form-control edit-input"
-                            [value]="additionalQuantities.get(comp.id) || 0"
-                            (input)="additionalQuantities.set(comp.id, +$any($event.target).value)"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                          />
-                          <small class="text-muted">{{ getCompositionUnit(comp) }}</small>
+                        <td *ngIf="!editingMaterialId" [class.text-danger]="hasShortage(comp)">
+                          {{ formatNumber(needFor(comp)) }} {{ comp.componentMaterial?.measurementUnit }}
+                          <div *ngIf="hasShortage(comp)" class="small">⚠ Stock insuficiente</div>
                         </td>
                         <td class="ingredient-cost">
                           {{ formatCurrency(getCompositionCost(comp)) }}
@@ -799,7 +827,6 @@
                               *ngIf="editingComposition !== comp.id"
                               class="btn btn-sm btn-outline-primary"
                               (click)="startEditing(comp.id)"
-                              [disabled]="editingMaterialId"
                               title="Editar">
                               <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg>
                             </button>
@@ -818,7 +845,6 @@
                             <button
                               class="btn btn-sm btn-outline-danger"
                               (click)="removeIngredient(comp)"
-                              [disabled]="editingMaterialId"
                               title="Eliminar">
                               <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#trash" /></svg>
                             </button>
@@ -836,7 +862,7 @@
                         <div class="ingredient-card-actions">
                           <button *ngIf="editingComposition !== comp.id"
                             class="btn btn-sm btn-outline-primary" (click)="startEditing(comp.id)"
-                            [disabled]="editingMaterialId" title="Editar">
+                            title="Editar">
                             <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg>
                           </button>
                           <button *ngIf="editingComposition === comp.id"
@@ -848,27 +874,24 @@
                             <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#x" /></svg>
                           </button>
                           <button class="btn btn-sm btn-outline-danger" (click)="removeIngredient(comp)"
-                            [disabled]="editingMaterialId" title="Eliminar">
+                            title="Eliminar">
                             <svg viewBox="0 0 16 16" width="12" height="12"><use xlink:href="./assets/icons/bootstrap-icons.svg#trash" /></svg>
                           </button>
                         </div>
                       </div>
                       <div class="ingredient-card-meta">
                         {{ comp.componentMaterial?.ubicacion }} · {{ comp.componentMaterial?.measurementUnit }}
-                        <span *ngIf="editingMaterialId"> · Disp: {{ (comp.componentMaterial?.currentStock || 0) | numberFormat:2 }}</span>
+                        <span> · Disp: {{ (comp.componentMaterial?.currentStock || 0) | numberFormat:2 }}</span>
                       </div>
                       <div class="ingredient-card-body">
                         <div class="ingredient-card-field">
-                          <span class="ingredient-card-label">Cant. Base</span>
+                          <span class="ingredient-card-label">En la receta</span>
                           <span class="ingredient-card-value" *ngIf="editingComposition !== comp.id">{{ formatNumber(comp.quantity) }} {{ getCompositionUnit(comp) }}</span>
                           <input *ngIf="editingComposition === comp.id" type="number" class="form-control edit-input" [(ngModel)]="tempQuantity" min="0.01" step="0.01" />
                         </div>
-                        <div class="ingredient-card-field" *ngIf="editingMaterialId">
-                          <span class="ingredient-card-label">Cant. Adicional ({{ getCompositionUnit(comp) }})</span>
-                          <input type="number" class="form-control edit-input"
-                            [value]="additionalQuantities.get(comp.id) || 0"
-                            (input)="additionalQuantities.set(comp.id, +$any($event.target).value)"
-                            min="0" step="0.01" placeholder="0" />
+                        <div class="ingredient-card-field" *ngIf="!editingMaterialId">
+                          <span class="ingredient-card-label">Se descuenta</span>
+                          <span class="ingredient-card-value" [class.text-danger]="hasShortage(comp)">{{ formatNumber(needFor(comp)) }} {{ comp.componentMaterial?.measurementUnit }}<span *ngIf="hasShortage(comp)"> ⚠</span></span>
                         </div>
                         <div class="ingredient-card-field">
                           <span class="ingredient-card-label">Costo</span>
@@ -967,16 +990,20 @@
                     </div>
                     <div class="review-fields">
                       <div class="review-field">
-                        <span class="review-label">Costo Total</span>
+                        <span class="review-label">Rinde la receta</span>
+                        <span class="review-value">{{ formatNumber(yieldValue) }} {{ newMaterial.measurementUnit }}</span>
+                      </div>
+                      <div class="review-field">
+                        <span class="review-label">Costo de la receta</span>
                         <span class="review-value review-highlight">{{ formatCurrency(getTotalCost()) }}</span>
                       </div>
                       <div class="review-field">
-                        <span class="review-label">Precio Unitario</span>
+                        <span class="review-label">Costo por {{ newMaterial.measurementUnit || 'unidad' }}</span>
                         <span class="review-value review-highlight">{{ formatCurrency(getUnitPrice()) }}</span>
                       </div>
-                      <div class="review-field">
-                        <span class="review-label">Cantidad</span>
-                        <span class="review-value">{{ formatNumber(getTotalQuantity()) }} {{ newMaterial.measurementUnit }}</span>
+                      <div class="review-field" *ngIf="!editingMaterialId">
+                        <span class="review-label">Producir ahora</span>
+                        <span class="review-value">{{ formatNumber(getProduceQuantity()) }} {{ newMaterial.measurementUnit }}</span>
                       </div>
                       <div class="review-field">
                         <span class="review-label">Stock Mín.</span>
@@ -994,7 +1021,7 @@
                       <svg viewBox="0 0 16 16" width="13" height="13" fill="#0066CC">
                         <use xlink:href="./assets/icons/bootstrap-icons.svg#diagram-3" />
                       </svg>
-                      <span>Componentes ({{ compositions.length }})</span>
+                      <span>Receta ({{ compositions.length }} materiales)</span>
                     </div>
                     <div class="review-fields">
                       <div class="review-field full" *ngFor="let comp of compositions">
@@ -1136,6 +1163,10 @@
           <div class="view-detail-item">
             <span class="view-label">Estado</span>
             <span class="status-badge status-active">{{ selectedViewMaterial.status }}</span>
+          </div>
+          <div class="view-detail-item">
+            <span class="view-label">Rinde la receta</span>
+            <span class="view-value">{{ selectedViewMaterial.recipeYield ? ((selectedViewMaterial.recipeYield | numberFormat:2) + ' ' + selectedViewMaterial.measurementUnit) : 'Sin definir' }}</span>
           </div>
           <div class="view-detail-item full">
             <span class="view-label">Componentes</span>

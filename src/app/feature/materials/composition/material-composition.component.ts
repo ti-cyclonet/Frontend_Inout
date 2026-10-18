@@ -88,7 +88,16 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   // Editing
   editingComposition: number | null = null;
   tempQuantity: number = 0;
-  additionalQuantities: Map<number, number> = new Map();
+
+  // Receta: las cantidades de los materiales rinden `recipeYield` del compuesto
+  // (en su unidad de medida). Producir más va por Kardex › Entrada.
+  recipeYield: number | null = null;
+  /** Al crear: cantidad a producir ahora (0 = solo guardar la receta). */
+  produceNow: number | null = null;
+  /** El usuario cambió "Producir ahora" (deja de seguir al rendimiento). */
+  private produceTouched = false;
+  /** Compuesto creado antes de las recetas: falta indicar cuánto rinde. */
+  isLegacyRecipe = false;
   
   // UI State
   showFilters = false;
@@ -211,6 +220,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
             stockMin: item.ingMinStock,
             status: item.strStatus,
             measurementUnit: item.strUnitMeasure,
+            recipeYield: item.fltRecipeYield != null ? Number(item.fltRecipeYield) : null,
             price: item.fltPrice,
             location: item.strLocation,
             createDate: new Date(item.dtmCreationDate),
@@ -277,7 +287,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       case 2:
         return true; // Images are optional
       case 3:
-        return true; // Materials selection
+        return this.recipeStepValid();
       case 4:
         // Stock config + reventa (si está activa, debe estar completa y con
         // precio >= sugerido; el componente está montado en este paso)
@@ -306,7 +316,6 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       strName: this.newMaterial.name,
       strDescription: this.newMaterial.description,
       strUnitMeasure: this.newMaterial.measurementUnit,
-      fltPrice: this.getUnitPrice(),
       ingMinStock: Number(this.newMaterial.stockMin),
       ingMaxStock: Number(this.newMaterial.stockMax),
       strLocation: this.newMaterial.ubicacion,
@@ -320,25 +329,17 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       materialData.categoryId = Number(this.newMaterial.categoryId);
     }
 
-    // Calcular ingQuantity correctamente
-    if (this.editingMaterialId && this.getTotalQuantity() <= 0) {
-      // Edición sin producir más (nombre, precio, MarketPlace…): no se envían la
-      // cantidad ni la receta, para no pisar el stock con el valor que tenía al
-      // abrir el formulario (pudo cambiar por ventas) ni tocar las composiciones.
-    } else if (this.editingMaterialId) {
-      const additionalQty = this.getTotalQuantity();
-      materialData.ingQuantity = Number(this.newMaterial.quantityToGenerate) + Number(additionalQty);
-      // En ediciÃ³n, enviar composiciones con cantidades base + adicionales
-      materialData.composition = this.compositions.map(comp => ({
-        componentMaterialId: comp.componentMaterialId,
-        quantity: Number(comp.quantity) + (this.additionalQuantities.get(comp.id) || 0)
-      }));
-    } else {
-      materialData.ingQuantity = Number(this.getTotalQuantity());
-      materialData.composition = this.compositions.map(comp => ({
-        componentMaterialId: comp.componentMaterialId,
-        quantity: Number(comp.quantity)
-      }));
+    // Receta: cantidades de cada material y cuánto rinden. Al editar solo se
+    // guarda la receta (no mueve inventario ni el costo promedio); al crear se
+    // produce `produceNow` y el servidor descuenta la receta en proporción.
+    materialData.fltRecipeYield = Number(this.recipeYield);
+    materialData.composition = this.compositions.map(comp => ({
+      componentMaterialId: comp.componentMaterialId,
+      quantity: Number(comp.quantity)
+    }));
+    if (!this.editingMaterialId) {
+      materialData.ingQuantity = this.getProduceQuantity();
+      materialData.fltPrice = this.getUnitPrice();
     }
 
     // Solo incluir estos campos en creación
@@ -359,11 +360,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
 
     request.subscribe({
       next: () => {
-        if (this.editingMaterialId) {
-          this.updateMaterialsStockForEdit();
-        } else {
-          this.updateMaterialsStock();
-        }
+        if (!this.editingMaterialId) this.updateMaterialsStock();
         this.saving = false;
         this.closeModal();
         this.loadTransformedMaterials();
@@ -392,35 +389,56 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     this.compositions.forEach(comp => {
       const material = this.availableMaterials.find(m => m.id === comp.componentMaterialId);
       if (material) {
-        const newStock = (material.currentStock || 0) - this.toStockUnit(material, comp.quantity);
-        material.currentStock = Math.max(0, newStock);
+        material.currentStock = Math.max(0, (material.currentStock || 0) - this.needFor(comp));
       }
     });
   }
 
-  private updateMaterialsStockForEdit(): void {
-    this.compositions.forEach(comp => {
-      const additional = this.additionalQuantities.get(comp.id) || 0;
-      if (additional > 0) {
-        const material = this.availableMaterials.find(m => m.id === comp.componentMaterialId);
-        if (material) {
-          const newStock = (material.currentStock || 0) - this.toStockUnit(material, additional);
-          material.currentStock = Math.max(0, newStock);
-        }
-      }
-    });
-  }
-
-  /** Cantidad efectiva de una línea (según si se está editando o no). */
-  getCompositionQuantity(comp: MaterialComposition): number {
-    return this.editingMaterialId ? (this.additionalQuantities.get(comp.id) || 0) : comp.quantity;
-  }
-
-  /** Costo de una línea, convirtiendo su cantidad (unidad de descarga) a la
-   * unidad de medida en la que está expresado el precio del componente. */
+  /** Costo de una línea de la receta, convirtiendo su cantidad (unidad de
+   * descarga) a la unidad de medida en la que está el precio del componente. */
   getCompositionCost(comp: MaterialComposition): number {
     const materialCost = comp.componentMaterial?.price || 0;
-    return materialCost * this.toStockUnit(comp.componentMaterial, this.getCompositionQuantity(comp));
+    return materialCost * this.toStockUnit(comp.componentMaterial, comp.quantity);
+  }
+
+  /** Rendimiento válido de la receta (o 0). */
+  get yieldValue(): number {
+    const y = Number(this.recipeYield);
+    return y > 0 ? y : 0;
+  }
+
+  onRecipeYieldChange(value: number | null): void {
+    this.recipeYield = value;
+    // Al crear, "Producir ahora" sigue al rendimiento hasta que lo cambien
+    if (!this.editingMaterialId && !this.produceTouched) this.produceNow = value;
+  }
+
+  onProduceNowChange(value: number | null): void {
+    this.produceNow = value;
+    this.produceTouched = true;
+  }
+
+  /** Cantidad a producir al guardar (solo al crear). */
+  getProduceQuantity(): number {
+    return this.editingMaterialId ? 0 : Math.max(0, Number(this.produceNow) || 0);
+  }
+
+  /** Lo que se descuenta de un material al producir, en su unidad de stock. */
+  needFor(comp: MaterialComposition): number {
+    if (!this.yieldValue) return 0;
+    return this.toStockUnit(comp.componentMaterial, comp.quantity) * this.getProduceQuantity() / this.yieldValue;
+  }
+
+  hasShortage(comp: MaterialComposition): boolean {
+    return this.needFor(comp) > (Number(comp.componentMaterial?.currentStock) || 0) + 1e-6;
+  }
+
+  /** Paso 3 completo: materiales, rendimiento y stock suficiente para producir. */
+  recipeStepValid(): boolean {
+    return this.compositions.length > 0
+      && this.compositions.every(c => Number(c.quantity) > 0)
+      && this.yieldValue > 0
+      && !this.compositions.some(c => this.hasShortage(c));
   }
 
   /** Unidad en la que se entiende la cantidad de una línea de receta:
@@ -433,34 +451,22 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     return this.compositions.reduce((total, comp) => total + this.getCompositionCost(comp), 0);
   }
 
-  getTotalQuantity(): number {
-    if (this.editingMaterialId) {
-      let additionalTotal = 0;
-      this.compositions.forEach(comp => {
-        const additional = this.additionalQuantities.get(comp.id) || 0;
-        additionalTotal += additional;
-      });
-      return additionalTotal > 0 ? additionalTotal : 0;
-    }
-    return this.compositions.reduce((total, comp) => total + comp.quantity, 0);
-  }
-
   /** Stock que tendrá el material compuesto al guardar (para la sección de reventa). */
   getResultingStock(): number {
     return this.editingMaterialId
-      ? Number(this.newMaterial.quantityToGenerate || 0) + this.getTotalQuantity()
-      : this.getTotalQuantity();
+      ? Number(this.newMaterial.quantityToGenerate || 0)
+      : this.getProduceQuantity();
   }
 
-  /** Costo por unidad de medida para el precio de reventa. */
+  /** Costo por unidad de medida para el precio de reventa: al editar, el
+   * costo promedio actual del stock; al crear, el de la receta. */
   getResaleUnitCost(): number {
-    return this.getUnitPrice() || this.storedUnitCost;
+    return this.editingMaterialId ? (this.storedUnitCost || this.getUnitPrice()) : this.getUnitPrice();
   }
 
+  /** Costo de producir una unidad del compuesto con la receta. */
   getUnitPrice(): number {
-    const totalCost = this.getTotalCost();
-    const totalQuantity = this.getTotalQuantity();
-    return totalQuantity > 0 ? totalCost / totalQuantity : 0;
+    return this.yieldValue > 0 ? this.getTotalCost() / this.yieldValue : 0;
   }
 
   loadAvailableMaterials(): void {
@@ -502,7 +508,10 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     this.storedUnitCost = 0;
     this.compositions = [];
     this.selectedMaterials.clear();
-    this.additionalQuantities.clear();
+    this.recipeYield = null;
+    this.produceNow = null;
+    this.produceTouched = false;
+    this.isLegacyRecipe = false;
     this.currentPage = 1;
     this.resetIngredientForm();
     this.materialImages = [];
@@ -676,14 +685,12 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   isFormValid(): boolean {
-    // Al editar, producir más es opcional (la cantidad adicional puede ser 0):
-    // así se pueden cambiar solo los datos, como quitarlo del MarketPlace.
-    return !!(this.newMaterial.name && 
-             this.newMaterial.description && 
-             this.newMaterial.measurementUnit && 
-             this.newMaterial.ubicacion && 
-             (this.editingMaterialId || this.getTotalQuantity() > 0) &&
-             this.compositions.length > 0);
+    // Producir al crear es opcional (0 = solo la receta); al editar no se produce.
+    return !!(this.newMaterial.name &&
+             this.newMaterial.description &&
+             this.newMaterial.measurementUnit &&
+             this.newMaterial.ubicacion &&
+             this.recipeStepValid());
   }
 
   getStockStatus(material: any): 'low' | 'normal' | 'high' {
@@ -821,7 +828,6 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     const materialId = typeof materialIdOrObject === 'string' ? materialIdOrObject : materialIdOrObject.id;
     this.selectedViewMaterial = null;
     this.editingMaterialId = materialId;
-    this.additionalQuantities.clear();
     this.materialService.getTransformedMaterialById(materialId).subscribe({
       next: (data) => {
         this.newMaterial = {
@@ -838,6 +844,9 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         };
         this.resaleConfig = resaleConfigFrom(data);
         this.storedUnitCost = Number(data.fltPrice) || 0;
+        this.recipeYield = Number(data.fltRecipeYield) > 0 ? Number(data.fltRecipeYield) : null;
+        this.isLegacyRecipe = !this.recipeYield;
+        this.produceNow = null;
         this.useDifferentDischargeUnit = data.strDischargeUnit !== data.strUnitMeasure;
         
         // Map images to the correct format
@@ -853,7 +862,6 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         this.compositions = (data.compositions || []).map((comp: any) => {
           const componentMaterial = this.availableMaterials.find(m => m.id === comp.strComponentMaterialId);
           const compId = comp.strId || Date.now() + Math.random();
-          this.additionalQuantities.set(compId, 0);
           return {
             id: compId,
             materialId: materialId,
