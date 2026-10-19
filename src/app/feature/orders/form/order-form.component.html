@@ -61,9 +61,8 @@
 
         <!-- La tienda no tiene programación activa: hora libre -->
         <div class="schedule-row" *ngIf="!slotsLoading && schedulingEnabled === false">
-          <label for="freeDateTime">Fecha y hora</label>
+          <label for="freeDateTime">Fecha y hora <app-info-tip>Activa "Pedidos programados" en el MarketPlace para usar franjas, cupos y la cola.</app-info-tip></label>
           <input type="datetime-local" id="freeDateTime" class="form-control" [(ngModel)]="freeDateTime" [ngModelOptions]="{standalone: true}">
-          <small class="schedule-hint">Activa "Pedidos programados" en el MarketPlace para usar franjas, cupos y la cola.</small>
         </div>
 
         <ng-container *ngIf="!slotsLoading && schedulingEnabled">

@@ -7,6 +7,7 @@ import { environment } from '../../../../environments/environment';
 import {
   EMPTY_MENU_EXTRAS, MENU_EXTRAS_LIMITS, MENU_EXTRA_TEMPLATES, MenuExtraBlock, MenuExtraItem, MenuExtras, extraThumb, menuExtrasFrom,
 } from '../menu-board/menu-extras';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 /** Formatos y peso de las fotos (iguales al backend: menu-extras.ts). */
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
@@ -20,7 +21,7 @@ const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
 @Component({
   selector: 'app-menu-extras-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [InfoTipComponent, CommonModule, FormsModule],
   templateUrl: './menu-extras-settings.component.html',
   styleUrls: ['./menu-extras-settings.component.css'],
 })

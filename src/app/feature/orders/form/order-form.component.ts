@@ -12,6 +12,7 @@ import { customerHint, leadToCustomer, mergeCustomers, promptQuickCustomer } fro
 import Swal from 'sweetalert2';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { PromotionsService } from '../../../shared/services/promotions.service';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 interface OrderItem {
   productId: string;
@@ -42,7 +43,7 @@ type Product = SellableItem;
 @Component({
   selector: 'app-order-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [InfoTipComponent, CommonModule, FormsModule],
   templateUrl: './order-form.component.html',
   styleUrls: ['./order-form.component.css']
 })

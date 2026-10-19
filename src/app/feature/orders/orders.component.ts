@@ -16,6 +16,7 @@ import { CreditService, CreditEligibility, PAYMENT_METHODS, paymentMethodLabel }
 import { formatCop } from '../../shared/utils/currency.util';
 import { ProfitBubbleService } from '../../shared/services/profit-bubble.service';
 import { DisplayLine, documentLines, groupComboLines } from '../../shared/utils/combo-lines.util';
+import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
 
 interface OrderItem {
   productId: string;
@@ -112,7 +113,7 @@ const REFRESH_MS = 20_000;
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, OrderFormComponent, OrderPaymentsPanelComponent],
+  imports: [InfoTipComponent, CommonModule, FormsModule, OrderFormComponent, OrderPaymentsPanelComponent],
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.css'],
 })

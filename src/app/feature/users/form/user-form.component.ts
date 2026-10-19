@@ -4,11 +4,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } 
 import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 @Component({
   selector: 'app-user-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [InfoTipComponent, CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css'],
 })

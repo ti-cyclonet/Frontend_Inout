@@ -228,7 +228,7 @@
 
         <!-- Role Assignment -->
         <div class="detail-section">
-          <label class="detail-label">Rol en el equipo</label>
+          <label class="detail-label">Rol en el equipo <app-info-tip>Define qué puede hacer el usuario en el panel de InOut</app-info-tip></label>
           <select class="form-select" [(ngModel)]="selectedUserRole">
             <option value="">Sin rol de equipo</option>
             <option *ngFor="let item of staffRoles" 
@@ -238,7 +238,6 @@
               {{ item.role.strDescription1 || item.role.strName }} ({{ item.available }} disponibles)
             </option>
           </select>
-          <small class="text-muted">Define qué puede hacer el usuario en el panel de InOut</small>
         </div>
 
         <!-- Cliente del negocio: independiente del rol de equipo -->
