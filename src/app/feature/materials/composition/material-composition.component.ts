@@ -10,11 +10,12 @@ import { Material, MaterialComposition, MaterialImage } from '../../../shared/mo
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import { convertUnits, UNIT_OPTIONS, getDischargeUnitOptions, unitLabel } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 @Component({
   selector: 'app-material-composition',
   standalone: true,
-  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent],
+  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent, InfoTipComponent],
   templateUrl: './material-composition.component.html',
   styleUrl: './material-composition.component.css'
 })
