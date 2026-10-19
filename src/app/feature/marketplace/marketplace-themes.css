@@ -357,3 +357,53 @@
   border-image: linear-gradient(90deg, transparent, var(--rt-1), var(--rt-3), transparent) 1;
 }
 :host([data-theme="retail"]) .mk-footer a { color: var(--rt-2); background: #fff; box-shadow: inset 0 0 0 1px var(--rt-border); }
+
+/* ── Minorista: cada paleta con su propia tarjeta y distribución ──
+ *  · Rosa  — boutique: 3 columnas amplias, tarjeta muy redondeada y el
+ *            precio flotando sobre la foto.
+ *  · Rojo  — volante de ofertas: 5 columnas compactas, foto cuadrada,
+ *            títulos en mayúsculas y precio grande sin descripción.
+ *  · Azul  — catálogo: 2 columnas de tarjetas horizontales (foto a la
+ *            izquierda, datos a la derecha).
+ */
+:host([data-theme="retail"][data-palette="rosa"]) .products-grid-modern { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 1.6rem; }
+:host([data-theme="retail"][data-palette="rosa"]) .product-card-modern { position: relative; border-radius: 28px; padding: 10px; }
+:host([data-theme="retail"][data-palette="rosa"]) .product-image-modern { border-radius: 20px; aspect-ratio: 1 / 1; }
+:host([data-theme="retail"][data-palette="rosa"]) .product-info-modern { padding: 0.9rem 0.6rem 0.4rem; text-align: center; align-items: center; }
+:host([data-theme="retail"][data-palette="rosa"]) .product-info-modern .description { -webkit-line-clamp: 2; }
+:host([data-theme="retail"][data-palette="rosa"]) .price-section { justify-content: center; }
+:host([data-theme="retail"][data-palette="rosa"]) .current-price { position: absolute; top: 22px; right: 22px; z-index: 2; font-size: 1.05rem; padding: 0.3rem 0.85rem; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--rt-2) 80%, transparent); }
+:host([data-theme="retail"][data-palette="rosa"]) .product-actions-modern { justify-content: center; width: 100%; }
+:host([data-theme="retail"][data-palette="rosa"]) .btn-add-cart { flex: 1; justify-content: center; }
+
+:host([data-theme="retail"][data-palette="rojo"]) .products-grid-modern { grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr)); gap: 0.75rem; }
+:host([data-theme="retail"][data-palette="rojo"]) .product-card-modern { border-radius: 10px; border-width: 2px; }
+:host([data-theme="retail"][data-palette="rojo"]) .product-image-modern { aspect-ratio: 1 / 1; border-bottom: 3px solid var(--rt-1); }
+:host([data-theme="retail"][data-palette="rojo"]) .product-info-modern { padding: 0.6rem 0.65rem 0.7rem; gap: 0.2rem; }
+:host([data-theme="retail"][data-palette="rojo"]) .product-info-modern h3 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.25; }
+:host([data-theme="retail"][data-palette="rojo"]) .product-info-modern .description,
+:host([data-theme="retail"][data-palette="rojo"]) .product-meta-modern { display: none; }
+:host([data-theme="retail"][data-palette="rojo"]) .current-price { display: block; padding: 0; color: var(--rt-1); background: none; font-size: 1.3rem; font-weight: 900; letter-spacing: -0.02em; white-space: nowrap; }
+:host([data-theme="retail"][data-palette="rojo"]) .product-actions-modern { flex-direction: column; align-items: stretch; gap: 0.25rem; margin-top: 0.4rem; }
+:host([data-theme="retail"][data-palette="rojo"]) .btn-add-cart { justify-content: center; border-radius: 8px; padding: 0.45rem 0.6rem; font-size: 0.85rem; }
+:host([data-theme="retail"][data-palette="rojo"]) .btn-details { padding: 0.2rem; font-size: 0.75rem; }
+
+:host([data-theme="retail"][data-palette="azul"]) .products-grid-modern { grid-template-columns: repeat(auto-fill, minmax(min(440px, 100%), 1fr)); gap: 1rem; }
+:host([data-theme="retail"][data-palette="azul"]) .product-card-modern { display: grid; grid-template-columns: 42% 1fr; border-radius: 14px; }
+:host([data-theme="retail"][data-palette="azul"]) .product-image-modern { aspect-ratio: auto; height: 100%; min-height: 190px; }
+:host([data-theme="retail"][data-palette="azul"]) .product-image-modern img { height: 100%; object-fit: cover; }
+:host([data-theme="retail"][data-palette="azul"]) .product-info-modern { padding: 1rem 1.1rem; border-left: 1.5px solid var(--rt-border); }
+:host([data-theme="retail"][data-palette="azul"]) .product-info-modern h3 { font-size: 1.05rem; }
+:host([data-theme="retail"][data-palette="azul"]) .current-price { border-radius: 6px; font-size: 1.05rem; }
+:host([data-theme="retail"][data-palette="azul"]) .product-actions-modern { flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  :host([data-theme="retail"][data-palette="rosa"]) .products-grid-modern { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+  :host([data-theme="retail"][data-palette="rosa"]) .product-card-modern { border-radius: 20px; padding: 6px; }
+  :host([data-theme="retail"][data-palette="rosa"]) .current-price { top: 14px; right: 14px; font-size: 0.85rem; padding: 0.2rem 0.6rem; }
+  :host([data-theme="retail"][data-palette="rojo"]) .products-grid-modern { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+  :host([data-theme="retail"][data-palette="azul"]) .products-grid-modern { grid-template-columns: 1fr; }
+  :host([data-theme="retail"][data-palette="azul"]) .product-card-modern { grid-template-columns: 38% 1fr; }
+  :host([data-theme="retail"][data-palette="azul"]) .product-image-modern { min-height: 150px; }
+  :host([data-theme="retail"][data-palette="azul"]) .product-info-modern { padding: 0.7rem 0.8rem; }
+}

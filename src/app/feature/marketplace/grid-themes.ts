@@ -6,7 +6,8 @@
  * La columna displayMode admite 10 caracteres: Boutique se guarda como grid-chic.
  *
  * Minorista es un tema para el comercio minorista (sector retail) en tres
- * paletas: grid-rosa, grid-rojo y grid-azul (mismo diseño, otro color).
+ * versiones: grid-rosa (boutique), grid-rojo (volante de ofertas) y grid-azul
+ * (catálogo), cada una con su color, su tarjeta y su distribución.
  */
 export type GridTheme = 'grid' | 'grid-fresh' | 'grid-chic' | 'grid-rosa' | 'grid-rojo' | 'grid-azul';
 
@@ -24,9 +25,9 @@ export const GRID_THEMES: GridThemeOption[] = [
   { value: 'grid', label: 'Nocturno', hint: 'Fondo oscuro con brillos azul y naranja: el estilo de InOut' },
   { value: 'grid-fresh', label: 'Fresco', hint: 'Claro y natural, acento verde y tarjetas suaves' },
   { value: 'grid-chic', label: 'Boutique', hint: 'Marfil y negro, títulos con serifa y líneas finas' },
-  { value: 'grid-rosa', label: 'Minorista · Rosa', hint: 'Vitrina de tienda: precios destacados y tarjetas con borde, en rosa', retail: true, swatch: '#db2777' },
-  { value: 'grid-rojo', label: 'Minorista · Rojo', hint: 'Vitrina de tienda: precios destacados y tarjetas con borde, en rojo', retail: true, swatch: '#dc2626' },
-  { value: 'grid-azul', label: 'Minorista · Azul', hint: 'Vitrina de tienda: precios destacados y tarjetas con borde, en azul', retail: true, swatch: '#2563eb' },
+  { value: 'grid-rosa', label: 'Minorista · Rosa', hint: 'Boutique: 3 columnas amplias con el precio sobre la foto, en rosa', retail: true, swatch: '#db2777' },
+  { value: 'grid-rojo', label: 'Minorista · Rojo', hint: 'Volante de ofertas: 5 columnas compactas y precio grande, en rojo', retail: true, swatch: '#dc2626' },
+  { value: 'grid-azul', label: 'Minorista · Azul', hint: 'Catálogo: tarjetas horizontales en 2 columnas, en azul', retail: true, swatch: '#2563eb' },
 ];
 
 /** Paleta del tema Minorista (null = no es el tema Minorista). */
