@@ -1,4 +1,5 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ProductsDashboardComponent } from './dashboard/products-dashboard.component';
 import { ProductsListComponent } from './products-list.component';
@@ -90,9 +91,20 @@ import { ProductsListComponent } from './products-list.component';
     }
   `]
 })
-export class ProductsDemoComponent {
+export class ProductsDemoComponent implements OnInit {
   @ViewChild('productsList') productsList?: ProductsListComponent;
   activeTab: 'dashboard' | 'list' = 'dashboard';
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    // Accesos de "Requiere atención": abren la pestaña exacta
+    this.route.queryParamMap.subscribe((q) => {
+      const tab = q.get('tab');
+      if (tab === 'productos') this.activeTab = 'list';
+      else if (tab === 'panel') this.activeTab = 'dashboard';
+    });
+  }
   
   showCreateModal() {
     this.activeTab = 'list';
