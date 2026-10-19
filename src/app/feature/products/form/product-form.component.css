@@ -851,10 +851,6 @@
 .price-note { display: block; margin-top: 0.35rem; color: #b45309; font-size: 0.8rem; font-weight: 500; }
 
 /* Presentaciones de venta */
-.presentations .pres-own { display: flex; align-items: center; gap: 0.6rem; margin: 0.35rem 0 0.6rem; }
-.presentations .pres-own span { font-size: 0.85rem; color: #4b5563; white-space: nowrap; }
-.presentations .pres-own input { max-width: 180px; }
-.pres-list { list-style: none; padding: 0; margin: 0 0 0.6rem; border: 1px solid #e5e7eb; border-radius: 8px; }
 .pres-list li { display: grid; grid-template-columns: 80px minmax(0, 1fr) auto auto; gap: 0.6rem; align-items: center; padding: 0.45rem 0.7rem; font-size: 0.85rem; }
 .pres-list li + li { border-top: 1px solid #f1f5f9; }
 .pres-list li.current { background: #fff7ed; }
@@ -862,3 +858,15 @@
 .pres-list .pres-price { font-weight: 600; }
 .pres-list .pres-tag { font-size: 0.72rem; color: #c2410c; font-weight: 600; }
 .pres-list .btn-link { padding: 0; }
+
+/* Casillas apiladas (a la izquierda del tiempo de fabricación) */
+.flags-group { justify-content: center; gap: 0.6rem; }
+.flags-group .form-check { margin: 0; }
+.flags-group .form-check-label { margin: 0; font-weight: 500; }
+/* Presentaciones: campo y botón en dos columnas, lista a lo ancho */
+.pres-head { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end; }
+.pres-head .pres-field { display: flex; flex-direction: column; }
+.pres-head .pres-field label { font-weight: 400; color: #4b5563; }
+.pres-head .pres-add { width: 100%; padding: 0.75rem; }
+.pres-list { list-style: none; padding: 0; margin: 0.75rem 0 0; border: 1px solid #e5e7eb; border-radius: 8px; }
+@media (max-width: 900px) { .pres-head { grid-template-columns: 1fr; } }

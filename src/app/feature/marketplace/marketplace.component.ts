@@ -58,6 +58,8 @@ interface Product {
   /** Se fabrica bajo pedido: se puede pedir sin stock. */
   blnMadeToOrder?: boolean;
   intProductionLeadHours?: number | null;
+  /** Minutos de fabricación (mandan sobre las horas). */
+  intProductionLeadMinutes?: number | null;
   /** Producto "para armar": listas de la carta de las que el cliente escoge. */
   jsonChoiceGroups?: { block: string; min: number; max: number }[] | null;
   /** Presentaciones de venta (8 oz, 12 oz…): familia y nombre de la presentación. */
@@ -823,7 +825,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         ingReservedStock: 0,
         // Combo virtual sin tope, o kit cuyos componentes son todos bajo pedido
         blnMadeToOrder: c.itemType === 'kit' ? !!c.madeToOrder : (c.available === null || c.available === undefined),
-        intProductionLeadHours: c.itemType === 'kit' ? Number(c.productionLeadHours) || 0 : undefined,
+        intProductionLeadMinutes: c.itemType === 'kit' ? Math.round((Number(c.productionLeadHours) || 0) * 60) : undefined,
         comboIncludes: (c.components || []).map((x: any) => `${x.quantity} x ${x.name}`),
         ...(Number(c.listPrice) > Number(c.fltPrice) ? { listPrice: Number(c.listPrice), promoLabel: `Ahorras ${this.formatCurrency(Number(c.listPrice) - Number(c.fltPrice))}` } : {}),
         image: c.strImageUrl || undefined,
@@ -2039,8 +2041,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const available = this.getAvailableStock(product);
     if (available === null || available > 0) return null;
     if (this.isMadeToOrder(product)) {
-      const h = Number(product.intProductionLeadHours) || 0;
-      const lead = !h ? '' : h < 24 ? ` · listo en ~${h} h` : ` · listo en ~${Math.ceil(h / 24)} día(s)`;
+      const m = product.intProductionLeadMinutes ?? (Number(product.intProductionLeadHours) || 0) * 60;
+      const lead = !m ? '' : m < 60 ? ` · listo en ~${m} min` : m < 1440 ? ` · listo en ~${Math.round(m / 6) / 10} h` : ` · listo en ~${Math.ceil(m / 1440)} día(s)`;
       return { text: `🛠 Bajo pedido${lead}`, cls: 'tag-made' };
     }
     return { text: 'Agotado', cls: 'tag-out' };
