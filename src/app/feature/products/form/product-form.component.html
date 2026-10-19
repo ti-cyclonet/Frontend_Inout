@@ -138,6 +138,35 @@
               </div>
             </div>
 
+            <!-- Presentaciones de venta: 8 oz, 12 oz… (cada una con su receta y precio) -->
+            <div class="form-group full-width presentations">
+              <label>Presentaciones de venta
+                <app-info-tip>Vende este producto en varios tamaños (8 oz, 12 oz, 20 oz…). Cada presentación es un producto con su propia receta, precio y stock; en el MarketPlace se ven juntas y el cliente escoge la suya.</app-info-tip>
+              </label>
+              <ng-container *ngIf="isEditMode; else presentationsNew">
+                <div class="pres-own">
+                  <span>Esta presentación</span>
+                  <input type="text" class="form-control" maxlength="40" placeholder="Ej: 8 oz"
+                         [(ngModel)]="variantLabel" [ngModelOptions]="{standalone: true}">
+                </div>
+                <ul class="pres-list" *ngIf="presentations.length">
+                  <li *ngFor="let p of presentations" [class.current]="p.strId === productData?.strId">
+                    <strong>{{ p.strVariantLabel || '—' }}</strong>
+                    <span class="pres-name">{{ p.strName }}</span>
+                    <span class="pres-price">{{ formatCurrency(p.fltPrice) }}</span>
+                    <span class="pres-tag" *ngIf="p.strId === productData?.strId">Editando</span>
+                    <button type="button" class="btn btn-sm btn-link" *ngIf="p.strId !== productData?.strId" (click)="openPresentation.emit(p.strId)">Editar</button>
+                  </li>
+                </ul>
+                <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="addingPresentation" (click)="addPresentation()">
+                  {{ addingPresentation ? 'Creando…' : '+ Agregar presentación' }}
+                </button>
+              </ng-container>
+              <ng-template #presentationsNew>
+                <small class="text-muted d-block">Guarda el producto y luego agrega sus otras presentaciones desde Editar.</small>
+              </ng-template>
+            </div>
+
             <!-- Producto para armar: el cliente escoge de las listas de la carta -->
             <div class="form-group full-width choice-groups">
               <label>Opciones que escoge el cliente <small class="text-muted">(MarketPlace)</small>

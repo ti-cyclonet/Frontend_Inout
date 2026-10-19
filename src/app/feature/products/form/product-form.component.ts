@@ -15,6 +15,7 @@ import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import { actualMargin, effectiveMargin, inheritedMarginLabel, marginPayload, priceWithMargin } from '../../../shared/utils/pricing-margin';
 import Swal from 'sweetalert2';
 import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
+import { ProductPresentation } from '../../../shared/services/product.service';
 
 interface ExtendedMaterial extends Material {
   isComposite?: boolean;
@@ -53,6 +54,13 @@ export class ProductFormComponent implements OnInit {
   @Input() isModal = false;
   @Output() productCreated = new EventEmitter<void>();
   @Output() formCancelled = new EventEmitter<void>();
+  /** Abrir otra presentación de la familia (la lista cierra este formulario y abre esa). */
+  @Output() openPresentation = new EventEmitter<string>();
+
+  /** Presentación de este producto (ej. "8 oz") y las de su familia. */
+  variantLabel = '';
+  presentations: ProductPresentation[] = [];
+  addingPresentation = false;
 
   productForm!: FormGroup;
   currentStep: number = 1;
@@ -199,6 +207,8 @@ export class ProductFormComponent implements OnInit {
       productionLeadHours: this.productData.intProductionLeadHours ?? null
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
+    this.variantLabel = this.productData.strVariantLabel || '';
+    this.loadPresentations();
     const ownMargin = this.productData.fltMarginPercent;
     this.marginMode = ownMargin !== null && ownMargin !== undefined && ownMargin !== '' ? 'custom' : 'inherit';
     this.customMargin = this.marginMode === 'custom' ? Number(ownMargin) : null;
@@ -805,6 +815,10 @@ export class ProductFormComponent implements OnInit {
       blnMadeToOrder: !!formData.madeToOrder,
       jsonChoiceGroups: this.choiceGroups.map((g) => ({ block: g.block, min: Number(g.min), max: Number(g.max) })),
       fltMarginPercent: marginPayload(this.marginMode, this.customMargin),
+      // Presentación de venta: solo al editar (las nuevas se crean desde aquí)
+      ...(this.isEditMode && (this.variantLabel.trim() || this.productData?.strVariantLabel)
+        ? { strVariantLabel: this.variantLabel.trim() || null }
+        : {}),
       ...(formData.productionLeadHours !== null && formData.productionLeadHours !== ''
         ? { intProductionLeadHours: Math.max(0, Math.round(+formData.productionLeadHours)) }
         : {})
@@ -831,6 +845,78 @@ export class ProductFormComponent implements OnInit {
         Swal.fire('Error', errorMsg, 'error');
         this.saving = false;
       }
+    });
+  }
+
+  loadPresentations(): void {
+    if (!this.productData?.strId) return;
+    this.productService.getPresentations(this.productData.strId).subscribe({
+      next: (list) => (this.presentations = list || []),
+      error: () => (this.presentations = []),
+    });
+  }
+
+  /**
+   * Nueva presentación (12 oz, 20 oz…): copia este producto con su receta y
+   * fotos, con stock en cero. Después se ajustan su receta y su precio.
+   */
+  async addPresentation(): Promise<void> {
+    if (!this.productData?.strId || this.addingPresentation) return;
+    const needsOwn = !this.variantLabel.trim();
+    const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+    const { value } = await Swal.fire({
+      title: 'Nueva presentación',
+      html: `
+        <div style="text-align:left;font-size:0.9rem">
+          ${needsOwn ? `<label style="display:block;font-weight:600;margin-bottom:4px">Presentación de ${esc(this.productData.strName)}</label>
+          <input id="pres-own" class="swal2-input" style="margin:0 0 12px;width:100%" maxlength="40" placeholder="Ej: 8 oz">` : ''}
+          <label style="display:block;font-weight:600;margin-bottom:4px">Nueva presentación</label>
+          <input id="pres-label" class="swal2-input" style="margin:0 0 12px;width:100%" maxlength="40" placeholder="Ej: 12 oz">
+          <label style="display:block;font-weight:600;margin-bottom:4px">Precio de venta</label>
+          <input id="pres-price" type="number" min="0" class="swal2-input" style="margin:0 0 8px;width:100%" value="${Number(this.productForm.value.fltPrice) || 0}">
+          <small style="color:#6b7280">Se copia la receta, las fotos y la configuración de este producto. Luego ajusta su receta y su precio.</small>
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Crear presentación',
+      cancelButtonText: 'Cancelar',
+      focusConfirm: false,
+      preConfirm: () => {
+        const own = (document.getElementById('pres-own') as HTMLInputElement | null)?.value.trim() || '';
+        const label = (document.getElementById('pres-label') as HTMLInputElement).value.trim();
+        const price = Number((document.getElementById('pres-price') as HTMLInputElement).value);
+        if (needsOwn && !own) return Swal.showValidationMessage(`Escribe la presentación de ${this.productData.strName} (ej. 8 oz).`);
+        if (!label) return Swal.showValidationMessage('Escribe la nueva presentación (ej. 12 oz).');
+        if (!(price >= 0)) return Swal.showValidationMessage('Revisa el precio.');
+        return { own, label, price };
+      },
+    });
+    if (!value) return;
+    this.addingPresentation = true;
+    this.productService.createPresentation(this.productData.strId, {
+      label: value.label,
+      ...(needsOwn ? { sourceLabel: value.own } : {}),
+      price: value.price,
+    }).subscribe({
+      next: (created: any) => {
+        this.addingPresentation = false;
+        if (needsOwn) this.variantLabel = value.own;
+        this.loadPresentations();
+        Swal.fire({
+          icon: 'success',
+          title: `Presentación ${value.label} creada`,
+          text: 'Revisa su receta y su precio: se copiaron de este producto.',
+          showCancelButton: true,
+          confirmButtonText: 'Editarla ahora',
+          cancelButtonText: 'Seguir aquí',
+        }).then((r) => {
+          if (r.isConfirmed && created?.strId) this.openPresentation.emit(created.strId);
+        });
+      },
+      error: (err) => {
+        this.addingPresentation = false;
+        const msg = err?.error?.message;
+        Swal.fire('Error', Array.isArray(msg) ? msg.join(', ') : msg || 'No se pudo crear la presentación', 'error');
+      },
     });
   }
 

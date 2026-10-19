@@ -60,12 +60,37 @@ interface Product {
   intProductionLeadHours?: number | null;
   /** Producto "para armar": listas de la carta de las que el cliente escoge. */
   jsonChoiceGroups?: { block: string; min: number; max: number }[] | null;
+  /** Presentaciones de venta (8 oz, 12 oz…): familia y nombre de la presentación. */
+  strVariantGroupId?: string | null;
+  strVariantLabel?: string | null;
+  /** Tarjeta de una familia: sus presentaciones, de la más barata a la más cara. */
+  variants?: Product[];
   views?: number;
   sales?: number;
   rating?: number;
   image?: string;
   /** Todas las fotos del ítem (el detalle las muestra en carrusel). */
   images?: { strImageUrl: string }[];
+}
+
+/**
+ * Nombre común de una familia de presentaciones: las palabras con que empiezan
+ * todos sus nombres ("FRESAS CON CREMA 8 OZ" y "… 12 OZ" -> "FRESAS CON CREMA").
+ */
+function familyName(members: { strName: string; strVariantLabel?: string | null }[]): string {
+  const words = members.map((m) => m.strName.trim().split(/\s+/));
+  const common: string[] = [];
+  for (let i = 0; i < words[0].length; i++) {
+    const w = words[0][i];
+    if (!words.every((ws) => (ws[i] || '').toLowerCase() === w.toLowerCase())) break;
+    common.push(w);
+  }
+  if (common.length) return common.join(' ');
+  const first = members[0];
+  const label = (first.strVariantLabel || '').trim();
+  return label && first.strName.toLowerCase().endsWith(label.toLowerCase())
+    ? first.strName.slice(0, first.strName.length - label.length).trim()
+    : first.strName;
 }
 
 /** Lo escogido de una lista de la carta (producto "para armar"). */
@@ -253,7 +278,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   giftCardsLoading = false;
   formatExpiry = formatExpiry;
   /** Modal "Arma tu producto": lo que el cliente va marcando. */
-  choicePicker: { product: Product; groups: ActiveChoiceGroup[]; selected: Record<string, string[]> } | null = null;
+  /** Selector "Arma tu pedido": presentación (si la familia tiene varias) y opciones. */
+  choicePicker: { product: Product; groups: ActiveChoiceGroup[]; selected: Record<string, string[]>; variants?: Product[]; variant?: Product } | null = null;
+  /** Presentación -> id de la tarjeta de su familia (cantidades del menú). */
+  private variantCardOf: Record<string, string> = {};
   showCheckout = false;
   checkoutData = { customerName: '', customerPhone: '', customerAddress: '', customerEmail: '', notes: '' };
   /** Formas de entrega de la tienda (GET marketplace-config/:tenantId/delivery-options). */
@@ -619,7 +647,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         ...product,
         image: product.images && product.images.length > 0 ? product.images[0].strImageUrl : null,
       }));
-      this.products = this.interleaveByTenant(products);
+      this.products = this.interleaveByTenant(this.groupPresentations(products));
       await this.aplicarEstadisticas(this.products);
 
       this.calculateStats();
@@ -803,6 +831,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.products = [...comboItems, ...this.products];
       this.livePromotions = livePromotions || [];
       this.applyLivePromotions(this.livePromotions);
+      this.products = this.groupPresentations(this.products);
       this.promoTexts = this.livePromotions.map((p) => this.promoBannerText(p));
       this.todayHours = this.computeTodayHours();
 
@@ -1282,7 +1311,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     if (key !== this.menuQtyKey) {
       this.menuQtyKey = key;
       const totals: Record<string, number> = {};
-      for (const i of this.cart) totals[i.product.strId] = (totals[i.product.strId] || 0) + i.quantity;
+      for (const i of this.cart) {
+        // Las presentaciones suman en la tarjeta de su familia
+        const id = this.variantCardOf[i.product.strId] || i.product.strId;
+        totals[id] = (totals[id] || 0) + i.quantity;
+      }
       this.menuQuantities = totals;
     }
     return this.menuQuantities;
@@ -1290,7 +1323,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   decreaseFromMenu(product: Product): void {
     // Producto armado: se quita de la última combinación agregada
-    const item = [...this.cart].reverse().find((i) => i.product.strId === product.strId);
+    const item = [...this.cart].reverse().find((i) => i.product.strId === product.strId || this.variantCardOf[i.product.strId] === product.strId);
     if (!item) return;
     if (item.quantity > 1) this.updateCartQuantity(item, item.quantity - 1);
     else this.removeFromCart(item);
@@ -1774,6 +1807,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (tenant) window.location.href = `/marketplace/${this.homeStoreSlugs[tenant] || tenant}`;
       return;
     }
+    // Varias presentaciones (8 oz, 12 oz…): el cliente escoge la suya
+    if (product.variants && product.variants.length > 1) {
+      const variant = product.variants.find((v) => this.variantAvailable(v)) || product.variants[0];
+      const groups = this.activeChoiceGroups(variant);
+      this.choicePicker = { product, variants: product.variants, variant, groups, selected: Object.fromEntries(groups.map((g) => [g.title, []])) };
+      return;
+    }
     // Producto para armar: primero el cliente escoge sus opciones
     const groups = this.activeChoiceGroups(product);
     if (groups.length) {
@@ -1863,13 +1903,76 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return extraPriceLabel(g.prices[g.items.indexOf(option)]);
   }
 
-  /** Precio en vivo del producto armado (base + adiciones escogidas). */
+  /** Precio en vivo del producto armado (presentación + adiciones escogidas). */
   get choicePickerTotal(): number {
     const p = this.choicePicker;
     if (!p) return 0;
     const extra = p.groups.reduce((s, g) =>
       s + (p.selected[g.title] || []).reduce((a, o) => a + (g.prices[g.items.indexOf(o)] || 0), 0), 0);
-    return Number(p.product.fltPrice) + extra;
+    return Number((p.variant || p.product).fltPrice) + extra;
+  }
+
+  /** Precio base del selector: el de la presentación escogida. */
+  get choicePickerBase(): number {
+    const p = this.choicePicker;
+    return p ? Number((p.variant || p.product).fltPrice) : 0;
+  }
+
+  /** Cambia la presentación del selector; conserva las opciones de listas que sigan. */
+  selectVariant(variant: Product): void {
+    const p = this.choicePicker;
+    if (!p || !this.variantAvailable(variant)) return;
+    const groups = this.activeChoiceGroups(variant);
+    p.variant = variant;
+    p.groups = groups;
+    p.selected = Object.fromEntries(groups.map((g) => [g.title, (p.selected[g.title] || []).filter((o) => g.items.includes(o)).slice(0, g.max)]));
+  }
+
+  /** Se puede pedir: tiene stock o se fabrica bajo pedido. */
+  variantAvailable(variant: Product): boolean {
+    const available = this.getAvailableStock(variant);
+    return available === null || available > 0 || this.isMadeToOrder(variant);
+  }
+
+  /** "Desde " en la tarjeta de una familia con precios distintos. */
+  pricePrefix(product: Product): string {
+    const v = product.variants;
+    return v && v.length > 1 && Number(v[v.length - 1].fltPrice) > Number(v[0].fltPrice) ? 'Desde ' : '';
+  }
+
+  /**
+   * Presentaciones de venta: las de una misma familia se muestran como una
+   * sola tarjeta (con el nombre común y "Desde" el precio más bajo). Al
+   * agregarla, el cliente escoge la presentación y esa va al carrito.
+   */
+  private groupPresentations(products: Product[]): Product[] {
+    const families = new Map<string, Product[]>();
+    for (const p of products) {
+      if ((p.itemType || 'product') !== 'product' || !p.strVariantGroupId || !p.strVariantLabel) continue;
+      const key = `${(p as any).strTenantId || ''}:${p.strVariantGroupId}`;
+      families.set(key, [...(families.get(key) || []), p]);
+    }
+    const cardOf = new Map<Product, Product | null>();
+    this.variantCardOf = {};
+    families.forEach((members) => {
+      if (members.length < 2) return;
+      const variants = [...members].sort((a, b) => Number(a.fltPrice) - Number(b.fltPrice));
+      const first = variants[0];
+      const card: Product = {
+        ...first,
+        strName: familyName(members),
+        variants,
+        ingQuantity: members.reduce((s, m) => s + (Number(m.ingQuantity) || 0), 0),
+        ingReservedStock: members.reduce((s, m) => s + (Number(m.ingReservedStock) || 0), 0),
+        blnMadeToOrder: members.some((m) => !!m.blnMadeToOrder),
+        listPrice: undefined,
+        promoLabel: members.some((m) => m.promoLabel) ? 'Promo' : undefined,
+      };
+      members.forEach((m) => { cardOf.set(m, null); this.variantCardOf[m.strId] = card.strId; });
+      cardOf.set(members[0], card);
+    });
+    // La tarjeta va donde estaba la primera presentación de la familia
+    return products.flatMap((p) => (cardOf.has(p) ? (cardOf.get(p) ? [cardOf.get(p)!] : []) : [p]));
   }
 
   get choicePickerReady(): boolean {
@@ -1889,7 +1992,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       })
       .filter((c) => c.options.length);
     this.choicePicker = null;
-    this.addLine(p.product, choices);
+    this.addLine(p.variant || p.product, choices);
   }
 
   closeChoicePicker(): void {

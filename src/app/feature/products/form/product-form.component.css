@@ -849,3 +849,16 @@
 .margin-custom input { width: 70px; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 6px; }
 .floor-row { color: #64748b; font-size: 0.85rem; }
 .price-note { display: block; margin-top: 0.35rem; color: #b45309; font-size: 0.8rem; font-weight: 500; }
+
+/* Presentaciones de venta */
+.presentations .pres-own { display: flex; align-items: center; gap: 0.6rem; margin: 0.35rem 0 0.6rem; }
+.presentations .pres-own span { font-size: 0.85rem; color: #4b5563; white-space: nowrap; }
+.presentations .pres-own input { max-width: 180px; }
+.pres-list { list-style: none; padding: 0; margin: 0 0 0.6rem; border: 1px solid #e5e7eb; border-radius: 8px; }
+.pres-list li { display: grid; grid-template-columns: 80px minmax(0, 1fr) auto auto; gap: 0.6rem; align-items: center; padding: 0.45rem 0.7rem; font-size: 0.85rem; }
+.pres-list li + li { border-top: 1px solid #f1f5f9; }
+.pres-list li.current { background: #fff7ed; }
+.pres-list .pres-name { color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pres-list .pres-price { font-weight: 600; }
+.pres-list .pres-tag { font-size: 0.72rem; color: #c2410c; font-weight: 600; }
+.pres-list .btn-link { padding: 0; }
