@@ -4,6 +4,18 @@ import { Observable } from 'rxjs';
 import { Product } from '../models/product.model';
 import { ApiConfigService } from './api-config.service';
 
+/** Una presentación de venta de la familia de un producto. */
+export interface ProductPresentation {
+  strId: string;
+  strCode: string;
+  strName: string;
+  strVariantLabel: string | null;
+  fltPrice: number;
+  ingQuantity: number;
+  blnMarketplaceVisible: boolean;
+  isMain: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -23,6 +35,16 @@ export class ProductService {
       .set('limit', limit.toString());
 
     return this.http.get<any>(this.baseUrl, { params });
+  }
+
+  /** Presentaciones de venta de la familia del producto (8 oz, 12 oz…). */
+  getPresentations(id: string): Observable<ProductPresentation[]> {
+    return this.http.get<ProductPresentation[]>(`${this.baseUrl}/${id}/presentations`);
+  }
+
+  /** Nueva presentación: copia el producto y su receta con stock en cero. */
+  createPresentation(id: string, body: { label: string; sourceLabel?: string; price?: number }): Observable<Product> {
+    return this.http.post<Product>(`${this.baseUrl}/${id}/presentations`, body);
   }
 
   getProductById(id: string): Observable<Product> {

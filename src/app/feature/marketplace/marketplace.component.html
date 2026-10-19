@@ -177,7 +177,7 @@
                 </div>
                 <div class="slide-overlay">
                   <h3>{{ product.strName }}</h3>
-                  <p><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</p>
+                  <p><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ pricePrefix(product) }}{{ formatCurrency(product.fltPrice) }}</p>
                 </div>
               </div>
             </div>
@@ -245,7 +245,7 @@
               <p class="offer-includes" *ngIf="product.comboIncludes?.length">{{ product.comboIncludes!.join(' · ') }}</p>
               <div class="offer-price">
                 <s *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s>
-                <strong>{{ formatCurrency(product.fltPrice) }}</strong>
+                <strong>{{ pricePrefix(product) }}{{ formatCurrency(product.fltPrice) }}</strong>
               </div>
               <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
               <button type="button" class="offer-add" *ngIf="!isAdminMode" (click)="$event.stopPropagation(); addToCart(product)">Agregar</button>
@@ -286,7 +286,7 @@
                 <div class="featured-rating" *ngIf="product.sales">
                   <span class="rating-text">{{ formatNumber(product.sales) }} vendidos</span>
                 </div>
-                <div class="featured-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</div>
+                <div class="featured-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ pricePrefix(product) }}{{ formatCurrency(product.fltPrice) }}</div>
                 <span class="mk-promo" *ngIf="product.promoLabel">{{ product.promoLabel }}</span>
               </div>
             </article>
@@ -497,7 +497,7 @@
                 </div>
 
                 <div class="price-section">
-                  <div class="current-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ formatCurrency(product.fltPrice) }}</div>
+                  <div class="current-price"><s class="mk-was" *ngIf="hasPromo(product)">{{ formatCurrency(product.listPrice!) }}</s> {{ pricePrefix(product) }}{{ formatCurrency(product.fltPrice) }}</div>
                   <span class="mk-promo" *ngIf="product.promoLabel" [title]="product.promoName || ''">{{ product.promoLabel }}</span>
                   <div class="ml-shipping" *ngIf="product.fltPrice >= 50000">Envío disponible</div>
                   <span class="stock-tag" *ngIf="stockTag(product) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
@@ -578,7 +578,7 @@
       <div class="modal-info-section">
         <div class="modal-header-info">
           <h2>{{ selectedProduct.strName }}</h2>
-          <div class="modal-price"><s class="mk-was" *ngIf="hasPromo(selectedProduct)">{{ formatCurrency(selectedProduct.listPrice!) }}</s> {{ formatCurrency(selectedProduct.fltPrice) }}</div>
+          <div class="modal-price"><s class="mk-was" *ngIf="hasPromo(selectedProduct)">{{ formatCurrency(selectedProduct.listPrice!) }}</s> {{ pricePrefix(selectedProduct) }}{{ formatCurrency(selectedProduct.fltPrice) }}</div>
           <span class="mk-promo" *ngIf="selectedProduct.promoLabel">{{ selectedProduct.promoName || selectedProduct.promoLabel }}</span>
           <p class="mk-includes" *ngIf="selectedProduct.comboIncludes?.length">Incluye: {{ selectedProduct.comboIncludes!.join(', ') }}</p>
         </div>
@@ -655,7 +655,20 @@
     <button class="modal-close" type="button" (click)="closeChoicePicker()" aria-label="Cerrar">&times;</button>
     <p class="mk-eyebrow mk-eyebrow--dark">Arma tu pedido</p>
     <h3 class="choice-title">{{ p.product.strName }}</h3>
-    <p class="choice-price">{{ formatCurrency(choicePickerTotal) }}<small *ngIf="choicePickerTotal > p.product.fltPrice"> · base {{ formatCurrency(p.product.fltPrice) }}</small></p>
+    <p class="choice-price">{{ formatCurrency(choicePickerTotal) }}<small *ngIf="choicePickerTotal > choicePickerBase"> · base {{ formatCurrency(choicePickerBase) }}</small></p>
+
+    <!-- Presentación (8 oz, 12 oz…): cada una con su precio -->
+    <fieldset class="choice-group" *ngIf="p.variants?.length">
+      <legend>Presentación <span class="choice-rule ok">Escoge 1</span></legend>
+      <div class="choice-options">
+        <label class="choice-option" *ngFor="let v of p.variants"
+               [class.checked]="p.variant === v" [class.disabled]="!variantAvailable(v)">
+          <input type="radio" name="choice-variant" [checked]="p.variant === v" [disabled]="!variantAvailable(v)" (change)="selectVariant(v)">
+          <span>{{ v.strVariantLabel }}</span>
+          <small class="choice-option-price">{{ variantAvailable(v) ? formatCurrency(v.fltPrice) : 'Agotado' }}</small>
+        </label>
+      </div>
+    </fieldset>
 
     <fieldset class="choice-group" *ngFor="let g of p.groups">
       <legend>
