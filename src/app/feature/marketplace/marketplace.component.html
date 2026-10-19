@@ -78,7 +78,7 @@
           <small>Solo lo ves tú (cuenta de CycloNet). El cambio se ve aquí al instante; guárdalo para publicarlo.</small>
         </div>
         <div class="menu-variants">
-          <button type="button" class="menu-variant" *ngFor="let t of gridThemes"
+          <button type="button" class="menu-variant" *ngFor="let t of homeGridThemes"
                   [class.active]="displayMode === t.value" (click)="setDisplayMode(t.value)">
             <i [ngClass]="'sw-' + t.value"></i>
             <span><strong>{{ t.label }}{{ homeThemeSaved === t.value ? ' · publicado' : '' }}</strong><small>{{ t.hint }}</small></span>
@@ -407,7 +407,7 @@
               </p>
               <!-- Tema de las tarjetas: se ve de inmediato en esta página -->
               <div class="menu-variants" *ngIf="isGridMode()">
-                <button type="button" class="menu-variant" *ngFor="let t of gridThemes"
+                <button type="button" class="menu-variant" *ngFor="let t of storeGridThemes"
                         [class.active]="displayMode === t.value" (click)="setDisplayMode(t.value)">
                   <i [ngClass]="'sw-' + t.value"></i>
                   <span><strong>{{ t.label }}</strong><small>{{ t.hint }}</small></span>

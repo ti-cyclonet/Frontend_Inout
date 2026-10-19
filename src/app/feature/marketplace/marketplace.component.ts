@@ -22,7 +22,7 @@ import {
 import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraPriceLabel, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
-import { GRID_THEMES, gridThemeAttr, isGridMode } from './grid-themes';
+import { GRID_THEMES, gridPaletteAttr, gridThemeAttr, isGridMode } from './grid-themes';
 import { HomeSector, HomeStore, MarketHomeComponent } from './market-home/market-home.component';
 import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
 import { StoreSchedule, isOpenAt, nextOpeningLabel, showsHours, todayStatus, weeklyHours } from './store-hours';
@@ -95,6 +95,32 @@ function familyName(members: { strName: string; strVariantLabel?: string | null 
     : first.strName;
 }
 
+/**
+ * Sectores de la vitrina CycloNet Market. Cubren todos los sectores del
+ * contrato en Authoriza: los que no tienen grupo propio (general, personal…)
+ * van a "Otros comercios" en vez de quedar por fuera de la clasificación.
+ */
+const HOME_SECTORS: { value: string; label: string }[] = [
+  { value: '23', label: 'Alimentos y Restaurantes' },
+  { value: '24', label: 'Moda y Belleza' },
+  { value: '25', label: 'Ferretería y Electrónicos' },
+  { value: '26', label: 'Hogar y Salud' },
+  { value: '27', label: 'Deportes y Automotriz' },
+  { value: '28', label: 'Servicios' },
+  { value: '29', label: 'Comercio minorista' },
+  { value: '30', label: 'Manufactura' },
+  { value: '31', label: 'Otros comercios' },
+];
+const HOME_SECTOR_OF: Record<string, string> = {
+  restaurant: '23', fashion: '24', beauty: '24', hardware: '25', electronics: '25',
+  health: '26', home: '26', automotive: '27', sports: '27', services: '28',
+  retail: '29', manufacturing: '30',
+};
+/** Sector de la vitrina para el sector del contrato (sin grupo propio: Otros comercios). */
+export function homeSectorOf(sector: string | null | undefined): string {
+  return HOME_SECTOR_OF[(sector || '').trim().toLowerCase()] || '31';
+}
+
 /** Lo escogido de una lista de la carta (producto "para armar"). */
 interface LineChoice {
   group: string;
@@ -151,6 +177,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
    *  diseños de menú conservan su propio estilo. */
   @HostBinding('attr.data-theme') get themeAttr(): string | null {
     return this.tenantId && !this.showMenuBoard ? gridThemeAttr(this.displayMode) : null;
+  }
+
+  /** Paleta del tema Minorista (rosa, rojo o azul). */
+  @HostBinding('attr.data-palette') get paletteAttr(): string | null {
+    return this.tenantId && !this.showMenuBoard ? gridPaletteAttr(this.displayMode) : null;
   }
   tenantId: string = '';
   businessName: string = '';
@@ -234,6 +265,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   displayMode: string = 'grid';
   readonly menuVariants = MENU_VARIANTS;
   readonly gridThemes = GRID_THEMES;
+
+  /** Vitrina general: solo los temas generales (el servidor no acepta los de Minorista). */
+  readonly homeGridThemes = GRID_THEMES.filter((t) => !t.retail);
+
+  /** Temas de la tienda: los de Minorista se ofrecen al comercio minorista (o si ya lo usa). */
+  get storeGridThemes() {
+    const retail = this.businessSector === 'retail' || !!gridPaletteAttr(this.displayMode);
+    return GRID_THEMES.filter((t) => !t.retail || retail);
+  }
   /** Modo guardado de la tienda: para avisar si el elegido aún no se guarda. */
   savedDisplayMode = 'grid';
   /** Vitrina CycloNet Market: la cuenta de CycloNet puede cambiarle el tema. */
@@ -677,7 +717,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** Tiendas y sectores de la portada de CycloNet Market (con lo que hay en la vitrina). */
   private buildHomeShowcase(): void {
-    const labels = new Map(this.baseCategories().map((c) => [c.value, c.label]));
+    const labels = new Map(HOME_SECTORS.map((c) => [c.value, c.label]));
     const byTenant = new Map<string, Product[]>();
     for (const p of this.products) {
       const t = (p as any).strTenantId;
@@ -690,7 +730,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         slug: this.homeStoreSlugs[t],
         name: this.homeTenantNames[t] || this.homeStoreSlugs[t],
         logo: this.homeTenantLogos[t] || null,
-        sectorLabel: (() => { const cat = this.getSectorCategory(this.homeTenantSectors[t] || 'general'); return cat === 'all' ? 'Tienda local' : labels.get(cat) || 'Tienda local'; })(),
+        sectorLabel: (() => { const cat = homeSectorOf(this.homeTenantSectors[t]); return cat === '31' ? 'Tienda local' : labels.get(cat) || 'Tienda local'; })(),
         count: items.length,
         cover: items.find((p) => p.image)?.image || null,
       }))
@@ -751,7 +791,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Categoría para el filtro: en el home, la del sector de la tienda. */
   private categoryOf(product: Product): string {
     if (this.tenantId === 'home') {
-      return this.getSectorCategory(this.homeTenantSectors[(product as any).strTenantId] || 'general');
+      return homeSectorOf(this.homeTenantSectors[(product as any).strTenantId]);
     }
     return product.intCategoryId != null ? product.intCategoryId.toString() : '';
   }
@@ -1589,8 +1629,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       { value: '28', label: 'Servicios' }
     ];
 
-    // Si es sector general o home, mostrar todas las categorías
-    if (this.businessSector === 'general' || this.tenantId === 'home') {
+    // Vitrina general: todos los sectores (incluye minoristas, manufactura y otros)
+    if (this.tenantId === 'home') {
+      return [allCategories[0], ...HOME_SECTORS];
+    }
+    // Si es sector general, mostrar todas las categorías
+    if (this.businessSector === 'general') {
       return allCategories;
     }
 

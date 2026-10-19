@@ -36,11 +36,15 @@ const SECTOR_LOOK: Record<string, { emoji: string; hue: string }> = {
   '26': { emoji: '🏡', hue: 'home' },
   '27': { emoji: '⚽', hue: 'sport' },
   '28': { emoji: '🛠️', hue: 'services' },
+  '29': { emoji: '🛍️', hue: 'retail' },
+  '30': { emoji: '🏭', hue: 'industry' },
+  '31': { emoji: '🏪', hue: 'all' },
 };
 
 /** Palabras del titular por sector (las que haya en la vitrina; si no, todas). */
 const SECTOR_WORDS: Record<string, string> = {
   '23': 'comida casera', '24': 'moda local', '25': 'ferretería', '26': 'hogar y salud', '27': 'deporte', '28': 'servicios',
+  '29': 'tiendas de barrio', '30': 'hecho a mano',
 };
 
 /**
