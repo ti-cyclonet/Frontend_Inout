@@ -1,11 +1,11 @@
-import { Component, ElementRef, HostListener, Input, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, Input, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
  * Ícono ⓘ con una explicación en un cuadro flotante: aparece al pasar el
- * mouse, al enfocarlo con el teclado o al tocarlo (móvil). El cuadro usa
- * posición fija calculada al abrir, para no quedar recortado por modales con
- * scroll. El texto va como contenido: <app-info-tip>Explicación…</app-info-tip>
+ * mouse, al enfocarlo con el teclado o al tocarlo (móvil). El cuadro se mueve
+ * al <body> y usa posición fija calculada al abrir: así no lo recortan modales
+ * con scroll ni lo desplazan contenedores con transform. El texto va como contenido: <app-info-tip>Explicación…</app-info-tip>
  */
 @Component({
   selector: 'app-info-tip',
@@ -17,7 +17,7 @@ import { CommonModule } from '@angular/common';
       (click)="toggle($event)">
       <svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#info-circle" /></svg>
     </button>
-    <span class="info-tip-bubble" role="tooltip" [class.open]="open" [style.top.px]="top" [style.left.px]="left">
+    <span #bubble class="info-tip-bubble" role="tooltip" [class.open]="open">
       <ng-content></ng-content>
     </span>
   `,
@@ -37,25 +37,39 @@ import { CommonModule } from '@angular/common';
     .info-tip-bubble ::ng-deep strong { font-weight: 700; }
   `],
 })
-export class InfoTipComponent {
+export class InfoTipComponent implements AfterViewInit, OnDestroy {
   /** Texto para lectores de pantalla. */
   @Input() label = 'Más información';
   @ViewChild('trigger', { static: true }) trigger!: ElementRef<HTMLElement>;
+  @ViewChild('bubble', { static: true }) bubble!: ElementRef<HTMLElement>;
+  private readonly onAnyScroll = () => this.close();
 
   open = false;
-  top = 0;
-  left = 0;
 
-  constructor(private host: ElementRef<HTMLElement>) {}
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngAfterViewInit(): void {
+    document.body.appendChild(this.bubble.nativeElement);
+    // Cualquier scroll (también el de un modal) cierra el cuadro
+    window.addEventListener('scroll', this.onAnyScroll, true);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('scroll', this.onAnyScroll, true);
+    this.bubble.nativeElement.remove();
+  }
 
   show(): void {
     this.open = true;
+    // Funciona también dentro de componentes OnPush (cierre por scroll o clic afuera)
+    this.cdr.markForCheck();
     // Medir el cuadro ya con su contenido y ubicarlo debajo (o arriba si no cabe)
     requestAnimationFrame(() => this.place());
   }
 
   hide(): void {
     this.open = false;
+    this.cdr.markForCheck();
   }
 
   toggle(event: Event): void {
@@ -65,23 +79,22 @@ export class InfoTipComponent {
   }
 
   @HostListener('document:click')
-  @HostListener('window:scroll')
   close(): void {
     if (this.open) this.hide();
   }
 
   private place(): void {
     const btn = this.trigger.nativeElement.getBoundingClientRect();
-    const bubble = this.host.nativeElement.querySelector('.info-tip-bubble') as HTMLElement | null;
-    if (!bubble) return;
-    const b = bubble.getBoundingClientRect();
+    const b = this.bubble.nativeElement.getBoundingClientRect();
     const gap = 8;
     const margin = 16;
     let top = btn.bottom + gap;
     if (top + b.height > window.innerHeight - margin) top = Math.max(margin, btn.top - gap - b.height);
     let left = btn.left + btn.width / 2 - b.width / 2;
     left = Math.min(Math.max(margin, left), window.innerWidth - margin - b.width);
-    this.top = top;
-    this.left = left;
+    // Directo en el elemento: no depende de un ciclo de detección de cambios
+    const el = this.bubble.nativeElement;
+    el.style.top = `${top}px`;
+    el.style.left = `${left}px`;
   }
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { actualMargin, effectiveMargin, inheritedMarginLabel, marginPayload, priceWithMargin } from '../../utils/pricing-margin';
+import { InfoTipComponent } from '../info-tip/info-tip.component';
 
 /**
  * Configuración de reventa de un material o material compuesto (tiendas de
@@ -58,7 +59,7 @@ export function resaleConfigPayload(config: ResaleConfig) {
 @Component({
   selector: 'app-resale-pricing',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [InfoTipComponent, CommonModule, FormsModule],
   templateUrl: './resale-pricing.component.html',
   styleUrls: ['./resale-pricing.component.css'],
 })
