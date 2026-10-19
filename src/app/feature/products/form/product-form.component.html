@@ -112,7 +112,8 @@
               </button>
             </div>
 
-            <div class="form-group">
+            <!-- Casillas a la izquierda; el tiempo de fabricación a la derecha -->
+            <div class="form-group flags-group">
               <div class="form-check">
                 <input
                   type="checkbox"
@@ -123,18 +124,23 @@
                   Incluir en el catálogo del MarketPlace
                 </label>
               </div>
-            </div>
-
-            <div class="form-group">
               <div class="form-check">
                 <input type="checkbox" id="madeToOrder" class="form-check-input" formControlName="madeToOrder">
                 <label class="form-check-label" for="madeToOrder">
-                  Se fabrica bajo pedido (se puede pedir aunque no haya stock)
+                  Se fabrica bajo pedido
+                  <app-info-tip>Se puede pedir aunque no haya stock: lo que falte queda por fabricar.</app-info-tip>
                 </label>
               </div>
-              <div *ngIf="productForm.get('madeToOrder')?.value" style="margin-top: 0.5rem;">
-                <label for="productionLeadHours" style="font-size: 0.85rem;">Tiempo de fabricación (horas) <app-info-tip>Se usa para estimar cuándo estará listo el pedido y qué franjas de entrega ofrecer.</app-info-tip></label>
-                <input type="number" id="productionLeadHours" min="0" class="form-control" formControlName="productionLeadHours" placeholder="Ej: 48">
+            </div>
+
+            <div class="form-group">
+              <label for="productionLeadMinutes">Tiempo de fabricación (minutos)
+                <app-info-tip>Se usa para estimar cuándo estará listo el pedido y qué franjas de entrega ofrecer. Aplica a los productos que se fabrican bajo pedido.</app-info-tip>
+              </label>
+              <div class="input-group">
+                <input type="number" id="productionLeadMinutes" min="0" step="1" class="form-control" formControlName="productionLeadMinutes"
+                       [placeholder]="productForm.get('madeToOrder')?.value ? 'Ej: 30' : 'Solo si se fabrica bajo pedido'">
+                <span class="input-group-text">min</span>
               </div>
             </div>
 
@@ -144,10 +150,15 @@
                 <app-info-tip>Vende este producto en varios tamaños (8 oz, 12 oz, 20 oz…). Cada presentación es un producto con su propia receta, precio y stock; en el MarketPlace se ven juntas y el cliente escoge la suya.</app-info-tip>
               </label>
               <ng-container *ngIf="isEditMode; else presentationsNew">
-                <div class="pres-own">
-                  <span>Esta presentación</span>
-                  <input type="text" class="form-control" maxlength="40" placeholder="Ej: 8 oz"
-                         [(ngModel)]="variantLabel" [ngModelOptions]="{standalone: true}">
+                <div class="pres-head">
+                  <div class="pres-field">
+                    <label for="variantLabel">Esta presentación</label>
+                    <input id="variantLabel" type="text" class="form-control" maxlength="40" placeholder="Ej: 8 oz"
+                           [(ngModel)]="variantLabel" [ngModelOptions]="{standalone: true}">
+                  </div>
+                  <button type="button" class="btn btn-outline-primary pres-add" [disabled]="addingPresentation" (click)="addPresentation()">
+                    {{ addingPresentation ? 'Creando…' : '+ Agregar presentación' }}
+                  </button>
                 </div>
                 <ul class="pres-list" *ngIf="presentations.length">
                   <li *ngFor="let p of presentations" [class.current]="p.strId === productData?.strId">
@@ -158,9 +169,6 @@
                     <button type="button" class="btn btn-sm btn-link" *ngIf="p.strId !== productData?.strId" (click)="openPresentation.emit(p.strId)">Editar</button>
                   </li>
                 </ul>
-                <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="addingPresentation" (click)="addPresentation()">
-                  {{ addingPresentation ? 'Creando…' : '+ Agregar presentación' }}
-                </button>
               </ng-container>
               <ng-template #presentationsNew>
                 <small class="text-muted d-block">Guarda el producto y luego agrega sus otras presentaciones desde Editar.</small>

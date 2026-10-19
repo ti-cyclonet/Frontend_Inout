@@ -504,7 +504,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     if (typeof q?.needsProduction === 'boolean') return q.needsProduction;
     // Material compuesto de reventa: se prepara para el pedido (En producción)
     return ((order.items as any) || []).some((i: any) => Number(i?.toManufacture) > 0 || i?.itemType === 'material_t')
-      || Number((order as any).productionLeadHours) > 0;
+      || Number((order as any).productionLeadMinutes ?? (order as any).productionLeadHours) > 0;
   }
 
   /** Recoge en la tienda: de Listo pasa directo a Entregado (no hay reparto). */

@@ -177,8 +177,14 @@ export class ProductFormComponent implements OnInit {
       marketplaceVisible: [true],
       // Fabricación bajo pedido: se puede pedir sin stock
       madeToOrder: [false],
-      productionLeadHours: [null as number | null, [Validators.min(0)]]
+      // Minutos de fabricación (antes en horas)
+      productionLeadMinutes: [null as number | null, [Validators.min(0)]]
     });
+    // El tiempo de fabricación solo aplica a lo que se fabrica bajo pedido
+    const lead = this.productForm.get('productionLeadMinutes')!;
+    const syncLead = (on: boolean) => (on ? lead.enable({ emitEvent: false }) : lead.disable({ emitEvent: false }));
+    syncLead(false);
+    this.productForm.get('madeToOrder')!.valueChanges.subscribe((v) => syncLead(!!v));
   }
 
   loadCategories(): void {
@@ -204,7 +210,8 @@ export class ProductFormComponent implements OnInit {
       categoryId: this.productData.intCategoryId,
       marketplaceVisible: this.productData.blnMarketplaceVisible !== false,
       madeToOrder: !!this.productData.blnMadeToOrder,
-      productionLeadHours: this.productData.intProductionLeadHours ?? null
+      productionLeadMinutes: this.productData.intProductionLeadMinutes
+        ?? (this.productData.intProductionLeadHours != null ? Number(this.productData.intProductionLeadHours) * 60 : null)
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
     this.variantLabel = this.productData.strVariantLabel || '';
@@ -819,8 +826,8 @@ export class ProductFormComponent implements OnInit {
       ...(this.isEditMode && (this.variantLabel.trim() || this.productData?.strVariantLabel)
         ? { strVariantLabel: this.variantLabel.trim() || null }
         : {}),
-      ...(formData.productionLeadHours !== null && formData.productionLeadHours !== ''
-        ? { intProductionLeadHours: Math.max(0, Math.round(+formData.productionLeadHours)) }
+      ...(formData.productionLeadMinutes !== null && formData.productionLeadMinutes !== ''
+        ? { intProductionLeadMinutes: Math.max(0, Math.round(+formData.productionLeadMinutes)) }
         : {})
     };
 
