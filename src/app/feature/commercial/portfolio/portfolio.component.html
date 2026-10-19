@@ -223,8 +223,7 @@
   <ng-container *ngIf="view === 'settings'">
     <div class="pf-settings">
       <div class="pf-card">
-        <h4>Intereses de mora</h4>
-        <p class="pf-muted">Se causan sobre el saldo de capital vencido, por día (tasa mensual ÷ 30), después de los días de gracia. Los abonos se aplican primero a los intereses y luego al capital.</p>
+        <h4>Intereses de mora <app-info-tip>Se causan sobre el saldo de capital vencido, por día (tasa mensual ÷ 30), después de los días de gracia. Los abonos se aplican primero a los intereses y luego al capital.</app-info-tip></h4>
         <div class="pf-fields">
           <label>Tasa de mora mensual (%)
             <input type="number" min="0" max="10" step="0.01" class="form-control form-control-sm" [(ngModel)]="settingsForm.lateInterestMonthlyRate" [disabled]="!isAdmin">
@@ -237,12 +236,11 @@
       </div>
 
       <div class="pf-card">
-        <h4>Recordatorios automáticos</h4>
-        <p class="pf-muted">Todos los días a las 8:00 a. m. se envía un correo al cliente con el saldo, los intereses y la fecha de vencimiento. Se usa el correo registrado en su crédito.</p>
+        <h4>Recordatorios automáticos <app-info-tip>Todos los días a las 8:00 a. m. se envía un correo al cliente con el saldo, los intereses y la fecha de vencimiento. Se usa el correo registrado en su crédito.</app-info-tip></h4>
         <label class="pf-switch">
           <input type="checkbox" [(ngModel)]="settingsForm.remindersEnabled" [disabled]="!isAdmin">
           Enviar recordatorios automáticos por correo
-        </label>
+         <app-info-tip>También se avisa el día del vencimiento. Desde Cuentas por cobrar puedes enviar un recordatorio manual por correo o por WhatsApp.</app-info-tip></label>
         <div class="pf-fields" [class.disabled]="!settingsForm.remindersEnabled">
           <label>Avisar antes del vencimiento (días)
             <input type="number" min="1" max="30" step="1" class="form-control form-control-sm" [(ngModel)]="settingsForm.reminderDaysBefore" [disabled]="!isAdmin || !settingsForm.remindersEnabled">
@@ -251,7 +249,6 @@
             <input type="number" min="1" max="60" step="1" class="form-control form-control-sm" [(ngModel)]="settingsForm.overdueReminderEveryDays" [disabled]="!isAdmin || !settingsForm.remindersEnabled">
           </label>
         </div>
-        <p class="pf-muted">También se avisa el día del vencimiento. Desde Cuentas por cobrar puedes enviar un recordatorio manual por correo o por WhatsApp.</p>
       </div>
 
       <div class="pf-settings-actions">

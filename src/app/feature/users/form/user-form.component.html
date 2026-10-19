@@ -205,14 +205,13 @@
           <hr style="border: 2px solid #6f42c1; margin: 0 0 1rem 0;">
           <div class="form-grid">
             <div class="form-group full-width">
-              <label>Rol a Asignar *</label>
+              <label>Rol a Asignar * <app-info-tip>El rol define qué puede hacer el usuario en la aplicación</app-info-tip></label>
               <select class="form-select" [(ngModel)]="selectedRoleId">
                 <option value="">Seleccione un rol</option>
                 <option *ngFor="let item of availableRoles" [value]="item.role.id">
                   {{ item.role.strDescription1 || item.role.strName }} ({{ item.available }} disponibles)
                 </option>
               </select>
-              <small class="text-muted" style="margin-top: 0.25rem; display: block;">El rol define qué puede hacer el usuario en la aplicación</small>
             </div>
           </div>
         </div>

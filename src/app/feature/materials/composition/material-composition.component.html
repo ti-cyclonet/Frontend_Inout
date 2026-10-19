@@ -428,7 +428,9 @@
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Unidad de Medida *</label>
+                    <label>Unidad de Medida *
+                      <app-info-tip>Es la unidad en la que produces y guardas este material, independiente de la de sus materiales. Ej.: rodajas de piña en <strong>Unidades</strong>, aunque la piña se compre en kg y la receta la use en g.</app-info-tip>
+                    </label>
                     <select
                       class="form-select"
                       [ngModel]="newMaterial.measurementUnit"
@@ -437,6 +439,9 @@
                       <option value="">Seleccionar unidad</option>
                       <option *ngFor="let u of unitOptions" [value]="u.value">{{ u.label }}</option>
                     </select>
+                    <small class="d-block mt-1 text-danger" *ngIf="measureUnitChangedWithStock">
+                      Hay {{ formatNumber(newMaterial.quantityToGenerate) }} {{ unitShort(originalMeasureUnit) }} en stock: al cambiar la unidad quedarán como {{ formatNumber(newMaterial.quantityToGenerate) }} {{ unitShort(newMaterial.measurementUnit) }}. Ajústalo luego con un conteo físico, y revisa la receta y los productos que lo usan.
+                    </small>
                   </div>
                   <div class="form-group">
                     <label>Ubicación *</label>
@@ -459,7 +464,9 @@
                 </div>
                 <div class="form-row" *ngIf="useDifferentDischargeUnit">
                   <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Unidad de Descarga</label>
+                    <label>Unidad de Descarga
+                      <app-info-tip>La que usan los productos que llevan este material en su receta.</app-info-tip>
+                    </label>
                     <select
                       class="form-select"
                       [(ngModel)]="newMaterial.dischargeUnit"
@@ -557,41 +564,55 @@
             <!-- Step 3: Materials -->
             <div class="step-content" *ngIf="currentStep === 3">
               <div class="form-step">
-                <h4>Receta</h4>
+                <h4>Receta
+                  <app-info-tip>
+                    Agrega los materiales con la cantidad que usa la receta (en la unidad de descarga de cada uno) e indica cuánto obtienes con ella. No tiene que ser la suma de los materiales: puede rendir más o menos (ej.: 1.200 g de piña rinden 24 rodajas).
+                    <ng-container *ngIf="editingMaterialId"><br><br>Editar la receta no mueve el inventario. Para producir más ve a <strong>Kardex › Entrada</strong>: solo escribes la cantidad y se descuentan los materiales.</ng-container>
+                  </app-info-tip>
+                </h4>
 
                 <!-- Rendimiento: cuánto producen las cantidades de la receta -->
                 <div class="recipe-box">
-                  <p class="recipe-help">
-                    Agrega los materiales con la cantidad que usa la receta e indica cuánto obtienes con ella. No tiene que ser la suma de los materiales: puede rendir más o menos.
-                  </p>
                   <div class="recipe-fields">
                     <div class="recipe-field">
-                      <label for="recipeYield">Esta receta rinde *</label>
+                      <label for="recipeYield">Esta receta rinde *
+                        <app-info-tip>Lo que obtienes con las cantidades de la receta, en {{ unitLabelOf(newMaterial.measurementUnit) }}.</app-info-tip>
+                      </label>
                       <div class="input-group">
                         <input id="recipeYield" type="number" class="form-control" min="0.01" step="any"
                           [ngModel]="recipeYield" (ngModelChange)="onRecipeYieldChange($event)" placeholder="Ej: 1000" />
-                        <span class="input-group-text">{{ newMaterial.measurementUnit || '—' }}</span>
+                        <span class="input-group-text">{{ (unitShort(newMaterial.measurementUnit) || '—') }}</span>
+                      </div>
+                    </div>
+                    <div class="recipe-field">
+                      <label for="laborCost">Mano de obra de la receta
+                        <app-info-tip>Lo que cuesta preparar una tanda (la que rinde {{ yieldValue ? formatNumber(yieldValue) + ' ' + unitShort(newMaterial.measurementUnit) : 'la receta' }}). Se suma al costo de los materiales.</app-info-tip>
+                      </label>
+                      <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input id="laborCost" type="number" class="form-control" min="0" step="any"
+                          [(ngModel)]="laborCost" placeholder="0" />
                       </div>
                     </div>
                     <div class="recipe-field" *ngIf="!editingMaterialId">
-                      <label for="produceNow">Producir ahora</label>
+                      <label for="produceNow">Producir ahora
+                        <app-info-tip>Se descuentan los materiales en proporción a lo que produzcas. Con 0 solo se guarda la receta.</app-info-tip>
+                      </label>
                       <div class="input-group">
                         <input id="produceNow" type="number" class="form-control" min="0" step="any"
                           [ngModel]="produceNow" (ngModelChange)="onProduceNowChange($event)" placeholder="0" />
-                        <span class="input-group-text">{{ newMaterial.measurementUnit || '—' }}</span>
+                        <span class="input-group-text">{{ (unitShort(newMaterial.measurementUnit) || '—') }}</span>
                       </div>
-                      <small class="text-muted">Se descuentan los materiales en proporción. Con 0 solo se guarda la receta.</small>
                     </div>
                     <div class="recipe-field recipe-cost">
-                      <span class="recipe-cost-label">Costo por {{ newMaterial.measurementUnit || 'unidad' }}</span>
+                      <span class="recipe-cost-label">Costo por {{ (unitShort(newMaterial.measurementUnit) || 'unidad') }}
+                        <app-info-tip>(Materiales + mano de obra) ÷ lo que rinde la receta.</app-info-tip>
+                      </span>
                       <span class="recipe-cost-value">{{ formatCurrency(getUnitPrice()) }}</span>
                     </div>
                   </div>
                   <div class="recipe-note warn" *ngIf="isLegacyRecipe">
                     Este material se creó antes de las recetas: las cantidades de abajo son lo que se consumió la primera vez. Ajústalas si hace falta y escribe cuánto rinden.
-                  </div>
-                  <div class="recipe-note" *ngIf="editingMaterialId">
-                    Editar la receta no mueve el inventario. Para producir más ve a <strong>Kardex › Entrada</strong>: solo escribes la cantidad y se descuentan los materiales.
                   </div>
                 </div>
 
@@ -784,7 +805,7 @@
                       <tr>
                         <th>Material</th>
                         <th>En la receta</th>
-                        <th *ngIf="!editingMaterialId">Se descuenta</th>
+                        <th *ngIf="!editingMaterialId">Se descuenta <app-info-tip>Lo que sale del stock de cada material para producir la cantidad de «Producir ahora».</app-info-tip></th>
                         <th>Costo</th>
                         <th>Acciones</th>
                       </tr>
@@ -968,7 +989,7 @@
                       </div>
                       <div class="review-field">
                         <span class="review-label">Unidad</span>
-                        <span class="review-value">{{ newMaterial.measurementUnit || '—' }}</span>
+                        <span class="review-value">{{ (unitShort(newMaterial.measurementUnit) || '—') }}</span>
                       </div>
                       <div class="review-field full">
                         <span class="review-label">Descripción</span>
@@ -991,19 +1012,27 @@
                     <div class="review-fields">
                       <div class="review-field">
                         <span class="review-label">Rinde la receta</span>
-                        <span class="review-value">{{ formatNumber(yieldValue) }} {{ newMaterial.measurementUnit }}</span>
+                        <span class="review-value">{{ formatNumber(yieldValue) }} {{ unitShort(newMaterial.measurementUnit) }}</span>
+                      </div>
+                      <div class="review-field">
+                        <span class="review-label">Materiales de la receta</span>
+                        <span class="review-value">{{ formatCurrency(getTotalCost()) }}</span>
+                      </div>
+                      <div class="review-field">
+                        <span class="review-label">Mano de obra</span>
+                        <span class="review-value">{{ formatCurrency(laborValue) }}</span>
                       </div>
                       <div class="review-field">
                         <span class="review-label">Costo de la receta</span>
-                        <span class="review-value review-highlight">{{ formatCurrency(getTotalCost()) }}</span>
+                        <span class="review-value review-highlight">{{ formatCurrency(getBatchCost()) }}</span>
                       </div>
                       <div class="review-field">
-                        <span class="review-label">Costo por {{ newMaterial.measurementUnit || 'unidad' }}</span>
+                        <span class="review-label">Costo por {{ (unitShort(newMaterial.measurementUnit) || 'unidad') }}</span>
                         <span class="review-value review-highlight">{{ formatCurrency(getUnitPrice()) }}</span>
                       </div>
                       <div class="review-field" *ngIf="!editingMaterialId">
                         <span class="review-label">Producir ahora</span>
-                        <span class="review-value">{{ formatNumber(getProduceQuantity()) }} {{ newMaterial.measurementUnit }}</span>
+                        <span class="review-value">{{ formatNumber(getProduceQuantity()) }} {{ unitShort(newMaterial.measurementUnit) }}</span>
                       </div>
                       <div class="review-field">
                         <span class="review-label">Stock Mín.</span>

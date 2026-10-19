@@ -7,6 +7,7 @@ import { DocumentsService } from '../../../shared/services/documents.service';
 import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import { PANEL_KIT, PkAttention, PkRow } from '../../../shared/components/panel-kit/panel-kit.components';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 type View = 'summary' | 'receivables' | 'credits' | 'settings';
 
@@ -42,7 +43,7 @@ const esc = (v: any) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 @Component({
   selector: 'app-portfolio',
   standalone: true,
-  imports: [CommonModule, FormsModule, ...PANEL_KIT],
+  imports: [InfoTipComponent, CommonModule, FormsModule, ...PANEL_KIT],
   templateUrl: './portfolio.component.html',
   styleUrls: ['./portfolio.component.css'],
 })

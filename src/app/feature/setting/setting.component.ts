@@ -8,11 +8,12 @@ import { UiPrefsService } from '../../shared/services/ui-prefs/ui-prefs.service'
 import { ProductionPlanPanelComponent } from './production-plan/production-plan-panel.component';
 import { TenantBranding, TenantBrandingService } from '../../shared/services/tenant-branding.service';
 import { PermissionsService } from '../../shared/services/permissions.service';
+import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
 
 @Component({
   selector: 'app-setting',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, ProductionPlanPanelComponent],
+  imports: [InfoTipComponent, CommonModule, FormsModule, ReactiveFormsModule, ProductionPlanPanelComponent],
   templateUrl: './setting.component.html',
   styleUrls: ['./setting.component.css']
 })

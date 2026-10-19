@@ -28,6 +28,7 @@ import { DeliveryLauncherService, DeliveryPrefill } from '../../../shared/servic
 import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 /**
  * Pestaña "Domicilios" del módulo Comercial de InOut.
@@ -58,7 +59,7 @@ const emptyRatingForm = (): RatingForm => ({ score: 5, comment: '', criteria: {}
 @Component({
   selector: 'app-delivery-request',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [InfoTipComponent, CommonModule, FormsModule],
   templateUrl: './delivery-request.component.html',
   styleUrls: ['./delivery-request.component.css'],
 })

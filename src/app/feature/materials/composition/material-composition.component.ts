@@ -8,13 +8,14 @@ import { CategoryService, Category } from '../../../shared/services/category/cat
 import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialComposition, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
-import { convertUnits, UNIT_OPTIONS, getDischargeUnitOptions } from '../../../shared/utils/unit-conversion.util';
+import { convertUnits, UNIT_OPTIONS, getDischargeUnitOptions, unitLabel } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 @Component({
   selector: 'app-material-composition',
   standalone: true,
-  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent],
+  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent, InfoTipComponent],
   templateUrl: './material-composition.component.html',
   styleUrl: './material-composition.component.css'
 })
@@ -50,6 +51,23 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   /** Unidades de descarga válidas: misma familia que la de medida, sin incluirla. */
   get dischargeUnitOptions(): { value: string; label: string }[] {
     return getDischargeUnitOptions(this.newMaterial.measurementUnit);
+  }
+
+  /** Al editar con stock, cambiar la unidad de medida reinterpreta ese stock. */
+  get measureUnitChangedWithStock(): boolean {
+    return !!this.editingMaterialId && !!this.originalMeasureUnit
+      && this.newMaterial.measurementUnit !== this.originalMeasureUnit
+      && Number(this.newMaterial.quantityToGenerate) > 0;
+  }
+
+  /** Unidad abreviada para mostrar junto a cantidades (units -> und). */
+  unitShort(unit?: string): string {
+    const short: Record<string, string> = { units: 'und', pcs: 'pzs', doz: 'doc', pack: 'paq', box: 'cajas' };
+    return short[unit || ''] || unit || '';
+  }
+
+  unitLabelOf(unit: string): string {
+    return unitLabel(unit) || 'la unidad del material';
   }
 
   onMeasurementUnitChange(unit: string): void {
@@ -92,12 +110,16 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   // Receta: las cantidades de los materiales rinden `recipeYield` del compuesto
   // (en su unidad de medida). Producir más va por Kardex › Entrada.
   recipeYield: number | null = null;
+  /** Mano de obra de una tanda de la receta ($). */
+  laborCost: number | null = null;
   /** Al crear: cantidad a producir ahora (0 = solo guardar la receta). */
   produceNow: number | null = null;
   /** El usuario cambió "Producir ahora" (deja de seguir al rendimiento). */
   private produceTouched = false;
   /** Compuesto creado antes de las recetas: falta indicar cuánto rinde. */
   isLegacyRecipe = false;
+  /** Unidad de medida guardada del compuesto en edición (para avisar si cambia). */
+  originalMeasureUnit = '';
   
   // UI State
   showFilters = false;
@@ -333,6 +355,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     // guarda la receta (no mueve inventario ni el costo promedio); al crear se
     // produce `produceNow` y el servidor descuenta la receta en proporción.
     materialData.fltRecipeYield = Number(this.recipeYield);
+    materialData.fltRecipeLaborCost = this.laborValue;
     materialData.composition = this.compositions.map(comp => ({
       componentMaterialId: comp.componentMaterialId,
       quantity: Number(comp.quantity)
@@ -342,9 +365,10 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       materialData.fltPrice = this.getUnitPrice();
     }
 
-    // Solo incluir estos campos en creación
+    // La unidad de descarga también se guarda al editar: si cambia la unidad de
+    // medida (ej. kg -> Unidades), la descarga anterior ya no sería compatible.
+    materialData.strDischargeUnit = this.useDifferentDischargeUnit && this.newMaterial.dischargeUnit ? this.newMaterial.dischargeUnit : this.newMaterial.measurementUnit;
     if (!this.editingMaterialId) {
-      materialData.strDischargeUnit = this.useDifferentDischargeUnit && this.newMaterial.dischargeUnit ? this.newMaterial.dischargeUnit : this.newMaterial.measurementUnit;
       materialData.categoryId = this.newMaterial.categoryId;
     }
 
@@ -464,9 +488,19 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     return this.editingMaterialId ? (this.storedUnitCost || this.getUnitPrice()) : this.getUnitPrice();
   }
 
+  /** Mano de obra de la tanda (0 si no se indicó). */
+  get laborValue(): number {
+    return Math.max(0, Number(this.laborCost) || 0);
+  }
+
+  /** Costo de una tanda: materiales + mano de obra. */
+  getBatchCost(): number {
+    return this.getTotalCost() + this.laborValue;
+  }
+
   /** Costo de producir una unidad del compuesto con la receta. */
   getUnitPrice(): number {
-    return this.yieldValue > 0 ? this.getTotalCost() / this.yieldValue : 0;
+    return this.yieldValue > 0 ? this.getBatchCost() / this.yieldValue : 0;
   }
 
   loadAvailableMaterials(): void {
@@ -509,9 +543,11 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     this.compositions = [];
     this.selectedMaterials.clear();
     this.recipeYield = null;
+    this.laborCost = null;
     this.produceNow = null;
     this.produceTouched = false;
     this.isLegacyRecipe = false;
+    this.originalMeasureUnit = '';
     this.currentPage = 1;
     this.resetIngredientForm();
     this.materialImages = [];
@@ -846,6 +882,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
         this.storedUnitCost = Number(data.fltPrice) || 0;
         this.recipeYield = Number(data.fltRecipeYield) > 0 ? Number(data.fltRecipeYield) : null;
         this.isLegacyRecipe = !this.recipeYield;
+        this.originalMeasureUnit = data.strUnitMeasure || '';
+        this.laborCost = Number(data.fltRecipeLaborCost) || null;
         this.produceNow = null;
         this.useDifferentDischargeUnit = data.strDischargeUnit !== data.strUnitMeasure;
         

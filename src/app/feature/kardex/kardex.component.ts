@@ -11,6 +11,7 @@ import { PermissionsService } from '../../shared/services/permissions.service';
 import { Material } from '../../shared/models/material.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
+import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../environments/environment';
 import { convertUnits, isPackUnit } from '../../shared/utils/unit-conversion.util';
@@ -18,7 +19,7 @@ import { convertUnits, isPackUnit } from '../../shared/utils/unit-conversion.uti
 @Component({
   selector: 'app-kardex',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, InfoTipComponent],
   templateUrl: './kardex.component.html',
   styleUrls: ['./kardex.component.css']
 })
@@ -72,7 +73,7 @@ export class KardexComponent implements OnInit {
   
   productIngredients: any[] = [];
   /** Receta del material compuesto en producción (rendimiento y unidad). */
-  compositeRecipe: { fltRecipeYield: number; strUnitMeasure: string } | null = null;
+  compositeRecipe: { fltRecipeYield: number; strUnitMeasure: string; laborCost: number } | null = null;
   savingProduction = false;
   
   newSupplier = {
@@ -961,7 +962,9 @@ export class KardexComponent implements OnInit {
 
   /** Unidad de lo que se produce: la del compuesto o "unidades" en productos. */
   get productionUnit(): string {
-    return this.isCompositeEntry ? (this.compositeRecipe?.strUnitMeasure || '') : 'unidades';
+    if (!this.isCompositeEntry) return 'unidades';
+    const u = this.compositeRecipe?.strUnitMeasure || '';
+    return ({ units: 'und', pcs: 'pzs', doz: 'doc', pack: 'paq', box: 'cajas' } as Record<string, string>)[u] || u;
   }
 
   /**
@@ -986,7 +989,7 @@ export class KardexComponent implements OnInit {
           });
           return;
         }
-        this.compositeRecipe = { fltRecipeYield: Number(r.fltRecipeYield), strUnitMeasure: r.strUnitMeasure };
+        this.compositeRecipe = { fltRecipeYield: Number(r.fltRecipeYield), strUnitMeasure: r.strUnitMeasure, laborCost: Number(r.fltRecipeLaborCost) || 0 };
         this.productIngredients = (r.components || []).map((c: any) => ({
           name: c.name,
           quantity: c.quantity,
@@ -1032,6 +1035,10 @@ export class KardexComponent implements OnInit {
       console.log(`${ing.name}: ${ing.quantityInStockUnit} ${ing.stockUnit} × ${ing.unitPrice} = ${cost}`);
       totalCost += cost;
     });
+    // Compuesto: la mano de obra de una tanda se reparte entre lo que rinde
+    if (this.isCompositeEntry && this.compositeRecipe?.fltRecipeYield) {
+      totalCost += this.compositeRecipe.laborCost / this.compositeRecipe.fltRecipeYield;
+    }
     this.productEntryData.unitCost = totalCost;
     console.log('Costo unitario total:', totalCost);
   }

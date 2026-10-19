@@ -14,6 +14,7 @@ import { convertUnits } from '../../../shared/utils/unit-conversion.util';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import { actualMargin, effectiveMargin, inheritedMarginLabel, marginPayload, priceWithMargin } from '../../../shared/utils/pricing-margin';
 import Swal from 'sweetalert2';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 interface ExtendedMaterial extends Material {
   isComposite?: boolean;
@@ -42,7 +43,7 @@ interface ProductComposition {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent],
+  imports: [InfoTipComponent, CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent],
   templateUrl: './product-form.component.html',
   styleUrls: ['./product-form.component.css']
 })
@@ -102,8 +103,6 @@ export class ProductFormComponent implements OnInit {
   plannedMonthlyUnits: number = 0;
   loadingProductionPlan = false;
   /** Mostrar/ocultar el texto explicativo de cada campo (toggle de ojito). */
-  showUnidadesDesc = true;
-  showLaborDesc = true;
   /** true cuando el producto es nuevo (aún sin guardar): no existe un plan
    * de producción posible todavía porque no hay productId. */
   productionPlanUnavailable = false;
