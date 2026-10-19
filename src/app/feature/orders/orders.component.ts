@@ -494,14 +494,17 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * El pedido pasa por producción solo si algo se fabrica (bajo pedido, sin
-   * stock). Reventa, productos en stock y combos/kits armados solo se alistan.
+   * El pedido pasa por producción si algo se fabrica (bajo pedido, sin stock)
+   * o es un material compuesto de reventa (se prepara). Reventa simple,
+   * productos en stock y combos/kits armados solo se alistan.
    * Lo decide el servidor (needsProduction en la cola); sin ese dato, por las líneas.
    */
   needsProduction(order: Order): boolean {
     const q = this.queueInfo.get(order.id);
     if (typeof q?.needsProduction === 'boolean') return q.needsProduction;
-    return ((order.items as any) || []).some((i: any) => Number(i?.toManufacture) > 0) || Number((order as any).productionLeadHours) > 0;
+    // Material compuesto de reventa: se prepara para el pedido (En producción)
+    return ((order.items as any) || []).some((i: any) => Number(i?.toManufacture) > 0 || i?.itemType === 'material_t')
+      || Number((order as any).productionLeadHours) > 0;
   }
 
   /** Recoge en la tienda: de Listo pasa directo a Entregado (no hay reparto). */
