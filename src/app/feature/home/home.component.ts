@@ -216,14 +216,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private buildAttention(o: InoutOverview): AttentionItem[] {
     const items: AttentionItem[] = [];
-    if (this.newOrders) items.push({ icon: 'bell-fill', tone: 'info', count: this.newOrders, label: this.newOrders === 1 ? 'Pedido nuevo' : 'Pedidos nuevos', detail: 'Recibidos y aún sin empezar a preparar', link: '/orders' });
+    if (this.newOrders) items.push({ icon: 'bell-fill', tone: 'info', count: this.newOrders, label: this.newOrders === 1 ? 'Pedido nuevo' : 'Pedidos nuevos', detail: 'Recibidos y aún sin empezar a preparar', link: '/orders', query: { tab: 'pedidos' } });
     if (o.credit?.pendingRequests) items.push({ icon: 'person-lines-fill', tone: 'info', count: o.credit.pendingRequests, label: o.credit.pendingRequests === 1 ? 'Solicitud de crédito' : 'Solicitudes de crédito', detail: 'Clientes esperando aprobación de cupo', link: '/sales', query: { tab: 'cartera', vista: 'creditos' } });
-    if (o.orders.pendingPayments) items.push({ icon: 'cash-stack', tone: 'warning', count: o.orders.pendingPayments, label: 'Pagos por verificar', detail: 'Comprobantes enviados por tus clientes', link: '/orders' });
-    if (o.orders.delayed) items.push({ icon: 'alarm-fill', tone: 'danger', count: o.orders.delayed, label: 'Pedidos atrasados', detail: 'Superaron el tiempo de su etapa', link: '/orders' });
-    if (o.orders.scheduledToday) items.push({ icon: 'calendar-check', tone: 'info', count: o.orders.scheduledToday, label: 'Entregas programadas hoy', detail: 'Pedidos con fecha de entrega para hoy', link: '/orders' });
-    if (o.receivables.overdueCount) items.push({ icon: 'exclamation-octagon-fill', tone: 'danger', count: o.receivables.overdueCount, label: 'Cartera vencida', detail: `${this.money(o.receivables.overdueBalance)} por cobrar`, link: '/sales', query: { tab: 'cartera' } });
-    if (o.inventory.lowStockCount) items.push({ icon: 'box-seam', tone: 'warning', count: o.inventory.lowStockCount, label: 'Stock bajo el mínimo', detail: 'Productos y materiales por reponer', link: '/inventory' });
-    if (o.alerts.expiringLots.length) items.push({ icon: 'hourglass-split', tone: 'warning', count: o.alerts.expiringLots.length, label: 'Lotes por vencer (15 días)', detail: `El más próximo en ${o.alerts.expiringLots[0].daysLeft} día(s)`, link: '/kardex' });
+    if (o.orders.pendingPayments) items.push({ icon: 'cash-stack', tone: 'warning', count: o.orders.pendingPayments, label: 'Pagos por verificar', detail: 'Comprobantes enviados por tus clientes', link: '/orders', query: { tab: 'pedidos' } });
+    if (o.orders.delayed) items.push({ icon: 'alarm-fill', tone: 'danger', count: o.orders.delayed, label: 'Pedidos atrasados', detail: 'Superaron el tiempo de su etapa', link: '/orders', query: { tab: 'pedidos' } });
+    if (o.orders.scheduledToday) items.push({ icon: 'calendar-check', tone: 'info', count: o.orders.scheduledToday, label: 'Entregas programadas hoy', detail: 'Pedidos con fecha de entrega para hoy', link: '/orders', query: { tab: 'pedidos' } });
+    if (o.receivables.overdueCount) items.push({ icon: 'exclamation-octagon-fill', tone: 'danger', count: o.receivables.overdueCount, label: 'Cartera vencida', detail: `${this.money(o.receivables.overdueBalance)} por cobrar`, link: '/sales', query: { tab: 'cartera', vista: 'vencidas' } });
+    if (o.inventory.lowStockCount) items.push({ icon: 'box-seam', tone: 'warning', count: o.inventory.lowStockCount, label: 'Stock bajo el mínimo', detail: 'Productos y materiales por reponer', link: '/materials', query: { tab: 'materiales', stock: 'low' } });
+    if (o.alerts.expiringLots.length) items.push({ icon: 'hourglass-split', tone: 'warning', count: o.alerts.expiringLots.length, label: 'Lotes por vencer (15 días)', detail: `El más próximo en ${o.alerts.expiringLots[0].daysLeft} día(s)`, link: '/materials', query: { tab: 'materiales' } });
     return items;
   }
 

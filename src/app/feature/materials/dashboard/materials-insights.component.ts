@@ -119,10 +119,10 @@ export class MaterialsInsightsComponent extends LivePanel<MaterialsPanel> implem
 
   protected override onData(d: MaterialsPanel): void {
     const a: PkAttention[] = [];
-    if (d.kpis.outOfStock) a.push({ icon: 'x-octagon-fill', tone: 'danger', count: d.kpis.outOfStock, label: 'Materiales agotados', detail: 'Sin stock disponible para producir', link: '/kardex' });
-    if (d.kpis.lowStock) a.push({ icon: 'exclamation-triangle-fill', tone: 'warning', count: d.kpis.lowStock, label: 'Bajo el mínimo', detail: 'Programa la compra antes de quedarte sin stock', link: '/kardex' });
-    if (d.alerts.expiringLots.length) a.push({ icon: 'hourglass-split', tone: 'warning', count: d.alerts.expiringLots.length, label: 'Lotes por vencer (15 días)', detail: `El más próximo en ${d.alerts.expiringLots[0].daysLeft} día(s)`, link: '/kardex' });
-    if (d.kpis.idle30) a.push({ icon: 'hourglass-bottom', tone: 'info', count: d.kpis.idle30, label: 'Sin movimiento (30 días)', detail: 'Capital quieto: revisa si vale la pena seguir comprándolos', link: '/inventory' });
+    if (d.kpis.outOfStock) a.push({ icon: 'x-octagon-fill', tone: 'danger', count: d.kpis.outOfStock, label: 'Materiales agotados', detail: 'Sin stock disponible para producir', link: '/materials', query: { tab: 'materiales', stock: 'low' } });
+    if (d.kpis.lowStock) a.push({ icon: 'exclamation-triangle-fill', tone: 'warning', count: d.kpis.lowStock, label: 'Bajo el mínimo', detail: 'Programa la compra antes de quedarte sin stock', link: '/materials', query: { tab: 'materiales', stock: 'low' } });
+    if (d.alerts.expiringLots.length) a.push({ icon: 'hourglass-split', tone: 'warning', count: d.alerts.expiringLots.length, label: 'Lotes por vencer (15 días)', detail: `El más próximo en ${d.alerts.expiringLots[0].daysLeft} día(s)`, link: '/materials', query: { tab: 'materiales' } });
+    if (d.kpis.idle30) a.push({ icon: 'hourglass-bottom', tone: 'info', count: d.kpis.idle30, label: 'Sin movimiento (30 días)', detail: 'Capital quieto: revisa si vale la pena seguir comprándolos', link: '/materials', query: { tab: 'materiales' } });
     this.attention = a;
     this.rows = [
       ...d.alerts.outOfStock.map((m) => ({ tone: 'danger' as const, main: m.name, meta: 'agotado' })),

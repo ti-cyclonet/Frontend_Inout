@@ -85,7 +85,7 @@ export class CustomersInsightsComponent extends LivePanel<CustomersPanel> implem
 
   protected override onData(d: CustomersPanel): void {
     const a: PkAttention[] = [];
-    if (d.kpis.withOverdue) a.push({ icon: 'exclamation-octagon-fill', tone: 'danger', count: d.kpis.withOverdue, label: 'Con cartera vencida', detail: 'Clientes con cuentas por cobrar vencidas', link: '/sales', query: { tab: 'cartera' } });
+    if (d.kpis.withOverdue) a.push({ icon: 'exclamation-octagon-fill', tone: 'danger', count: d.kpis.withOverdue, label: 'Con cartera vencida', detail: 'Clientes con cuentas por cobrar vencidas', link: '/sales', query: { tab: 'cartera', vista: 'vencidas' } });
     if (d.kpis.atRisk) a.push({ icon: 'person-dash-fill', tone: 'warning', count: d.kpis.atRisk, label: 'En riesgo de no volver', detail: 'Compraban seguido y llevan más de 30 días sin comprar' });
     this.attention = a;
     this.rows = [

@@ -157,9 +157,9 @@ export class UsersDashboardComponent extends LivePanel<UsersSummary> implements 
 
   protected override onData(d: UsersSummary): void {
     const a: PkAttention[] = [];
-    if (d.inactive) a.push({ icon: 'person-x-fill', tone: 'warning', count: d.inactive, label: 'Usuarios inactivos', detail: 'No pueden entrar: reactívalos o retíralos del equipo', link: '/users' });
-    if (d.noRole) a.push({ icon: 'person-exclamation', tone: 'info', count: d.noRole, label: 'Sin rol asignado', detail: 'Asígnales un rol para que puedan trabajar', link: '/users' });
-    if (!d.signers && d.staff) a.push({ icon: 'pen-fill', tone: 'info', count: 0, label: 'Sin firmante autorizado', detail: 'Define quién firma contratos del negocio', link: '/users' });
+    if (d.inactive) a.push({ icon: 'person-x-fill', tone: 'warning', count: d.inactive, label: 'Usuarios inactivos', detail: 'No pueden entrar: reactívalos o retíralos del equipo', link: '/users', query: { tab: 'usuarios' } });
+    if (d.noRole) a.push({ icon: 'person-exclamation', tone: 'info', count: d.noRole, label: 'Sin rol asignado', detail: 'Asígnales un rol para que puedan trabajar', link: '/users', query: { tab: 'usuarios' } });
+    if (!d.signers && d.staff) a.push({ icon: 'pen-fill', tone: 'info', count: 0, label: 'Sin firmante autorizado', detail: 'Define quién firma contratos del negocio', link: '/users', query: { tab: 'usuarios' } });
     this.attention = a;
   }
 

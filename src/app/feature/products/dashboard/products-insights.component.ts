@@ -103,10 +103,10 @@ export class ProductsInsightsComponent extends LivePanel<ProductsPanel> implemen
 
   protected override onData(d: ProductsPanel): void {
     const a: PkAttention[] = [];
-    if (d.kpis.outOfStock) a.push({ icon: 'x-octagon-fill', tone: 'danger', count: d.kpis.outOfStock, label: 'Productos agotados', detail: 'No se pueden vender hasta producir', link: '/products' });
-    if (d.kpis.lowStock) a.push({ icon: 'exclamation-triangle-fill', tone: 'warning', count: d.kpis.lowStock, label: 'Bajo el mínimo', detail: 'Programa su producción', link: '/products' });
-    if (d.alerts.lowMargin.length) a.push({ icon: 'percent', tone: 'warning', count: d.alerts.lowMargin.length, label: 'Por debajo de su margen objetivo', detail: 'Su precio no alcanza el margen del producto, su categoría o el período', link: '/products' });
-    if (d.kpis.noSales30) a.push({ icon: 'hourglass-bottom', tone: 'info', count: d.kpis.noSales30, label: 'Sin ventas en 30 días', detail: 'Promociónalos o revisa si siguen en tu catálogo', link: '/products' });
+    if (d.kpis.outOfStock) a.push({ icon: 'x-octagon-fill', tone: 'danger', count: d.kpis.outOfStock, label: 'Productos agotados', detail: 'No se pueden vender hasta producir', link: '/products', query: { tab: 'productos' } });
+    if (d.kpis.lowStock) a.push({ icon: 'exclamation-triangle-fill', tone: 'warning', count: d.kpis.lowStock, label: 'Bajo el mínimo', detail: 'Programa su producción', link: '/products', query: { tab: 'productos' } });
+    if (d.alerts.lowMargin.length) a.push({ icon: 'percent', tone: 'warning', count: d.alerts.lowMargin.length, label: 'Por debajo de su margen objetivo', detail: 'Su precio no alcanza el margen del producto, su categoría o el período', link: '/products', query: { tab: 'productos' } });
+    if (d.kpis.noSales30) a.push({ icon: 'hourglass-bottom', tone: 'info', count: d.kpis.noSales30, label: 'Sin ventas en 30 días', detail: 'Promociónalos o revisa si siguen en tu catálogo', link: '/products', query: { tab: 'productos' } });
     this.attention = a;
     this.rows = [
       ...d.alerts.outOfStock.map((p) => ({ tone: 'danger' as const, main: p.name, meta: 'agotado' })),

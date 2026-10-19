@@ -1,13 +1,18 @@
 import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SalesDashboardComponent } from '../sales/dashboard/sales-dashboard.component';
 import { SalesListComponent } from '../sales/list/sales-list.component';
 import { SaleFormComponent } from '../sales/form/sale-form.component';
 import { OrdersComponent } from '../orders/orders.component';
 import { PortfolioComponent } from './portfolio/portfolio.component';
 import { GiftCardsAdminComponent } from './gift-cards/gift-cards-admin.component';
+
+/** Pestaña de ?tab= (enlaces de los paneles y del Inicio). */
+const COMMERCIAL_TAB_OF: Record<string, 'dashboard' | 'sales' | 'orders' | 'portfolio' | 'giftcards'> = {
+  panel: 'dashboard', ventas: 'sales', pedidos: 'orders', cartera: 'portfolio', portfolio: 'portfolio', bonos: 'giftcards',
+};
 
 @Component({
   selector: 'app-commercial',
@@ -152,15 +157,17 @@ export class CommercialComponent {
   showSaleModal = false;
   refreshTrigger = 0;
 
-  constructor(private router: Router) {
+  constructor(private router: Router, route: ActivatedRoute) {
     // /orders y /sales abren su pestaña (los accesos del Dashboard llevan
-    // directo a lo que hay que atender); ?tab=cartera abre la cartera.
-    const [path, query = ''] = this.router.url.split('?');
-    const tab = new URLSearchParams(query).get('tab');
-    if (tab === 'cartera' || tab === 'portfolio') this.activeTab = 'portfolio';
-    else if (tab === 'bonos') this.activeTab = 'giftcards';
-    else if (path === '/orders') this.activeTab = 'orders';
+    // directo a lo que hay que atender); ?tab= elige la pestaña exacta, y
+    // también cambia si ya estás en la página (mismo componente).
+    const path = this.router.url.split('?')[0];
+    if (path === '/orders') this.activeTab = 'orders';
     else if (path === '/sales') this.activeTab = 'sales';
+    route.queryParamMap.subscribe((q) => {
+      const tab = COMMERCIAL_TAB_OF[q.get('tab') || ''];
+      if (tab) this.activeTab = tab;
+    });
   }
 
   openSaleModal(): void {

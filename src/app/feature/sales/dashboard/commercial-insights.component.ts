@@ -136,8 +136,8 @@ export class CommercialInsightsComponent extends LivePanel<CommercialPanel> impl
 
   protected override onData(d: CommercialPanel): void {
     const a: PkAttention[] = [];
-    if (d.kpis.delayedOrders) a.push({ icon: 'alarm-fill', tone: 'danger', count: d.kpis.delayedOrders, label: 'Pedidos atrasados', detail: 'Superaron el tiempo de su etapa', link: '/orders' });
-    if (d.kpis.cancelledMonth) a.push({ icon: 'x-circle', tone: 'info', count: d.kpis.cancelledMonth, label: 'Pedidos cancelados este mes', detail: 'Revisa los motivos para evitarlos', link: '/orders' });
+    if (d.kpis.delayedOrders) a.push({ icon: 'alarm-fill', tone: 'danger', count: d.kpis.delayedOrders, label: 'Pedidos atrasados', detail: 'Superaron el tiempo de su etapa', link: '/orders', query: { tab: 'pedidos' } });
+    if (d.kpis.cancelledMonth) a.push({ icon: 'x-circle', tone: 'info', count: d.kpis.cancelledMonth, label: 'Pedidos cancelados este mes', detail: 'Revisa los motivos para evitarlos', link: '/orders', query: { tab: 'pedidos' } });
     this.attention = a;
     this.customers = this.withShare(d.topCustomers).map((c) => ({ ...c, label: this.compactMoney(c.value), sub: `${c.count} compra(s)` }));
     this.chartDirty = true;

@@ -1,7 +1,7 @@
 import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { NumberFormatPipe } from '../../../shared/pipes/number-format.pipe';
 import { convertUnits } from '../../../shared/utils/unit-conversion.util';
 import { MaterialService } from '../../../shared/services/material.service';
@@ -60,10 +60,17 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     private materialService: MaterialService,
     private categoryService: CategoryService,
     private warehousesService: WarehousesService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    // Desde "Requiere atención" (?stock=low): la lista llega filtrada
+    const stock = this.route.snapshot.queryParamMap.get('stock');
+    if (stock === 'low' || stock === 'high' || stock === 'normal') {
+      this.filters.stockStatus = stock;
+      this.showFilters = true;
+    }
     this.loadViewMode();
     this.loadCategories();
     this.loadLocations();
