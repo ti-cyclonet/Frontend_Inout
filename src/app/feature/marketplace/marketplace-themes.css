@@ -230,3 +230,130 @@
 
 /* Botones de los modales y del checkout con la forma del tema */
 :host([data-theme="boutique"]) :is(.btn-modal-cart, .btn-checkout-primary, .btn-account) { border-radius: 4px; background: var(--mk-text); }
+
+/* ═══════════════════════════ MINORISTA ═══════════════════════════
+ * Para el comercio minorista: vitrina clara de tienda, tarjetas con borde,
+ * precios en etiqueta y botones redondos. Tres paletas (data-palette):
+ * rosa, rojo y azul; el diseño es el mismo y solo cambian --rt-*.
+ */
+:host([data-theme="retail"][data-palette="rosa"]) {
+  --rt-1: #db2777; --rt-2: #9d174d; --rt-3: #f472b6; --rt-soft: #fdf2f8; --rt-tint: #fce7f3;
+  --rt-bg: #fff7fb; --rt-border: #f5d0e3; --rt-text: #3b0a24; --rt-muted: #8a5a72;
+}
+:host([data-theme="retail"][data-palette="rojo"]) {
+  --rt-1: #dc2626; --rt-2: #991b1b; --rt-3: #f87171; --rt-soft: #fef2f2; --rt-tint: #fee2e2;
+  --rt-bg: #fffafa; --rt-border: #f6d4d4; --rt-text: #3a0d0d; --rt-muted: #8a5d5d;
+}
+:host([data-theme="retail"][data-palette="azul"]) {
+  --rt-1: #2563eb; --rt-2: #1e40af; --rt-3: #60a5fa; --rt-soft: #eff6ff; --rt-tint: #dbeafe;
+  --rt-bg: #f7faff; --rt-border: #d3e1f7; --rt-text: #0f1f3d; --rt-muted: #5b6b86;
+}
+:host([data-theme="retail"]) {
+  --mk-blue: var(--rt-1);
+  --mk-blue-l: var(--rt-3);
+  --mk-blue-d: var(--rt-2);
+  --mk-orange: var(--rt-1);
+  --mk-orange-d: var(--rt-2);
+  --mk-night: var(--rt-2);
+  --mk-night-2: var(--rt-soft);
+  --mk-sector: var(--rt-1);
+  --mk-sector-soft: var(--rt-soft);
+  --mk-sector-ink: var(--rt-2);
+  --mk-bg: var(--rt-bg);
+  --mk-border: var(--rt-border);
+  --mk-text: var(--rt-text);
+  --mk-muted: var(--rt-muted);
+  --mk-ink-d: var(--rt-text);
+  --mk-muted-d: var(--rt-muted);
+  --mk-radius: 16px;
+  --mk-radius-lg: 24px;
+  --mk-shadow-lg: 0 22px 50px -26px color-mix(in srgb, var(--rt-2) 55%, transparent);
+}
+
+/* Barra blanca con una franja del color de la tienda */
+:host([data-theme="retail"]) .modern-header {
+  background: #fff; color: var(--mk-text);
+  box-shadow: inset 0 -3px 0 var(--rt-1), 0 10px 26px -22px color-mix(in srgb, var(--rt-2) 60%, transparent);
+}
+:host([data-theme="retail"]) .brand h1 { color: var(--mk-text); }
+:host([data-theme="retail"]) .brand .market { background: linear-gradient(90deg, var(--rt-1), var(--rt-3)); -webkit-background-clip: text; background-clip: text; }
+:host([data-theme="retail"]) .business-name { color: var(--mk-muted); }
+:host([data-theme="retail"]) .mk-back { color: var(--rt-2); background: var(--rt-soft); box-shadow: none; }
+:host([data-theme="retail"]) .mk-back:hover { color: var(--rt-2); background: var(--rt-tint); }
+:host([data-theme="retail"]) .search-box { background: var(--rt-soft); box-shadow: inset 0 0 0 1.5px var(--rt-border); }
+:host([data-theme="retail"]) .search-box:focus-within { background: #fff; box-shadow: inset 0 0 0 2px var(--rt-1); }
+:host([data-theme="retail"]) .search-box input { color: var(--mk-text); }
+:host([data-theme="retail"]) .search-box input::placeholder,
+:host([data-theme="retail"]) .search-ico { color: var(--mk-muted); }
+:host([data-theme="retail"]) .session-chip,
+:host([data-theme="retail"]) .session-login { color: var(--rt-2); background: var(--rt-soft); box-shadow: inset 0 0 0 1px var(--rt-border); }
+:host([data-theme="retail"]) .session-chip:hover,
+:host([data-theme="retail"]) .session-login:hover:not(:disabled) { background: var(--rt-tint); }
+:host([data-theme="retail"]) .cart-count { color: #fff; background: var(--rt-2); box-shadow: 0 0 0 2px #fff; }
+:host([data-theme="retail"]) .category-btn { color: var(--rt-2); background: #fff; box-shadow: inset 0 0 0 1.5px var(--rt-border); font-weight: 600; }
+:host([data-theme="retail"]) .category-btn:hover { color: var(--rt-2); background: var(--rt-soft); }
+:host([data-theme="retail"]) .category-btn.active { color: #fff; font-weight: 700; background: var(--rt-1); box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--rt-1) 90%, transparent); }
+
+/* Portada: franjas diagonales suaves y títulos fuertes */
+:host([data-theme="retail"]) .mk-hero {
+  color: var(--mk-text);
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--rt-1) 7%, transparent) 0 14px, transparent 14px 28px),
+    linear-gradient(160deg, var(--rt-soft), #fff 70%);
+}
+:host([data-theme="retail"]) .mk-hero-grid { display: none; }
+:host([data-theme="retail"]) .mk-glow { display: none; }
+:host([data-theme="retail"]) .mk-hero-title { color: var(--mk-text); font-weight: 900; letter-spacing: -0.03em; }
+:host([data-theme="retail"]) .mk-hero-title em,
+:host([data-theme="retail"]) .mk-h2 em { background: linear-gradient(90deg, var(--rt-1), var(--rt-3)); -webkit-background-clip: text; background-clip: text; }
+:host([data-theme="retail"]) .mk-eyebrow { color: var(--rt-1); }
+:host([data-theme="retail"]) .mk-hero-lead { color: var(--mk-muted); }
+:host([data-theme="retail"]) .mk-hero-logo { box-shadow: 0 0 0 4px #fff, 0 14px 30px -14px color-mix(in srgb, var(--rt-2) 60%, transparent); }
+:host([data-theme="retail"]) .mk-btn--orange { background: var(--rt-1); box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--rt-1) 90%, transparent); }
+:host([data-theme="retail"]) .mk-btn--glass { color: var(--rt-2); background: #fff; box-shadow: inset 0 0 0 1.5px var(--rt-border); }
+:host([data-theme="retail"]) .mk-btn--glass:hover { color: var(--rt-2); background: var(--rt-soft); }
+:host([data-theme="retail"]) .mk-pills li { color: var(--mk-text); background: #fff; box-shadow: inset 0 0 0 1.5px var(--rt-border); }
+:host([data-theme="retail"]) .mk-pills li .mk-ico { color: var(--rt-1); }
+:host([data-theme="retail"]) .mk-pills li.is-closed { color: var(--mk-muted); }
+:host([data-theme="retail"]) .mk-count { color: #fff; background: var(--rt-1); }
+:host([data-theme="retail"]) .carousel-container { background: var(--rt-soft); box-shadow: 0 26px 50px -30px color-mix(in srgb, var(--rt-2) 60%, transparent); }
+:host([data-theme="retail"]) .carousel-dot.active { background: var(--rt-1); }
+:host([data-theme="retail"]) .slide-overlay { background: linear-gradient(to top, color-mix(in srgb, var(--rt-2) 85%, transparent), transparent); }
+
+/* Catálogo: tarjetas blancas con borde de color y precio en etiqueta */
+:host([data-theme="retail"]) .mk-sheet { background: var(--mk-bg); }
+:host([data-theme="retail"]) .product-card-modern {
+  border-radius: 18px; border: 1.5px solid var(--rt-border);
+  box-shadow: 0 14px 30px -26px color-mix(in srgb, var(--rt-2) 60%, transparent);
+}
+:host([data-theme="retail"]) .product-card-modern:hover { border-color: var(--rt-1); box-shadow: 0 20px 36px -24px color-mix(in srgb, var(--rt-1) 60%, transparent); }
+:host([data-theme="retail"]) .product-image-modern { background: var(--rt-soft); }
+:host([data-theme="retail"]) .product-info-modern h3 { font-weight: 800; color: var(--mk-text); }
+:host([data-theme="retail"]) .current-price {
+  display: inline-block; color: #fff; background: var(--rt-1);
+  padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 800;
+}
+:host([data-theme="retail"]) .product-badge,
+:host([data-theme="retail"]) .offer-kind { background: var(--rt-1); color: #fff; box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--rt-1) 90%, transparent); }
+:host([data-theme="retail"]) .btn-add-cart { background: var(--rt-1); border-radius: 999px; box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--rt-1) 90%, transparent); }
+:host([data-theme="retail"]) .btn-add-cart:hover { background: var(--rt-2); }
+:host([data-theme="retail"]) .btn-details { color: var(--rt-2); }
+:host([data-theme="retail"]) .btn-details:hover { color: var(--rt-2); background: var(--rt-soft); }
+:host([data-theme="retail"]) .offers-section::before { background: linear-gradient(120deg, var(--rt-soft), #fff 60%); }
+:host([data-theme="retail"]) .offers-banner { background: var(--rt-1); color: #fff; }
+:host([data-theme="retail"]) .offer-card,
+:host([data-theme="retail"]) .featured-card { border-radius: 18px; border: 1.5px solid var(--rt-border); }
+:host([data-theme="retail"]) .offer-card:hover,
+:host([data-theme="retail"]) .featured-card:hover { border-color: var(--rt-1); }
+:host([data-theme="retail"]) .offer-badge { background: var(--rt-2); color: #fff; }
+:host([data-theme="retail"]) .offer-add { background: var(--rt-1); color: #fff; }
+:host([data-theme="retail"]) .offer-add:hover { background: var(--rt-2); }
+:host([data-theme="retail"]) .gift-btn { background: linear-gradient(90deg, var(--rt-1), var(--rt-3)); }
+:host([data-theme="retail"]) .floating-cart { background: var(--rt-1); box-shadow: 0 16px 34px -12px color-mix(in srgb, var(--rt-1) 80%, transparent); }
+
+/* Pie claro con la franja de color */
+:host([data-theme="retail"]) .mk-footer {
+  color: var(--mk-muted); background: var(--rt-soft);
+  border-image: linear-gradient(90deg, transparent, var(--rt-1), var(--rt-3), transparent) 1;
+}
+:host([data-theme="retail"]) .mk-footer a { color: var(--rt-2); background: #fff; box-shadow: inset 0 0 0 1px var(--rt-border); }

@@ -265,6 +265,9 @@
 .sw-grid { background: radial-gradient(circle at 80% 20%, #ff7a1a 0 18%, transparent 20%), #050b1a; }
 .sw-grid-fresh { background: radial-gradient(circle at 75% 25%, #16a34a 0 22%, transparent 24%), #eaf7ee; border: 1px solid #cfe6d5; }
 .sw-grid-chic { background: linear-gradient(135deg, #faf6ef 0 55%, #1c1917 55% 78%, #b4532a 78%); border: 1px solid #e7dccb; }
+.sw-grid-rosa { background: linear-gradient(135deg, #fff 0 45%, #db2777 45% 75%, #f472b6 75%); border: 1px solid #f5d0e3; }
+.sw-grid-rojo { background: linear-gradient(135deg, #fff 0 45%, #dc2626 45% 75%, #f87171 75%); border: 1px solid #f6d4d4; }
+.sw-grid-azul { background: linear-gradient(135deg, #fff 0 45%, #2563eb 45% 75%, #60a5fa 75%); border: 1px solid #d3e1f7; }
 
 /* ─── Información de la carta en la vista en tarjetas (burbujas) ─── */
 .mk-extras { max-width: 1200px; margin: 0 auto 2.2rem; padding: 0 var(--mk-gutter); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1rem; }
