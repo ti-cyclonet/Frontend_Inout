@@ -106,6 +106,16 @@ export class ProductsListComponent implements OnInit {
     this.showModal = true;
   }
 
+  /** Desde el formulario: abrir otra presentación de la misma familia. */
+  openPresentation(id: string): void {
+    this.closeModal();
+    this.loadProducts();
+    this.productService.getProductById(id).subscribe({
+      next: (product) => setTimeout(() => this.openEditModal(product)),
+      error: () => Swal.fire('Error', 'No se pudo abrir la presentación', 'error'),
+    });
+  }
+
   viewProduct(product: any): void {
     this.selectedViewProduct = product;
   }
