@@ -11,6 +11,7 @@ import { PermissionsService } from '../../shared/services/permissions.service';
 import { Material } from '../../shared/models/material.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
+import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../environments/environment';
 import { convertUnits, isPackUnit } from '../../shared/utils/unit-conversion.util';
@@ -18,7 +19,7 @@ import { convertUnits, isPackUnit } from '../../shared/utils/unit-conversion.uti
 @Component({
   selector: 'app-kardex',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, InfoTipComponent],
   templateUrl: './kardex.component.html',
   styleUrls: ['./kardex.component.css']
 })
