@@ -842,10 +842,10 @@
                   <input type="date" class="form-control" [(ngModel)]="productEntryData.date" />
                 </div>
                 <div class="col-md-4 mb-3">
-                  <label>Cantidad a Producir *</label>
-                  <input type="number" class="form-control" [(ngModel)]="productEntryData.quantity" min="1" step="1" (input)="calculateProductCost()" />
+                  <label>Cantidad a Producir<span *ngIf="isCompositeEntry"> ({{ productionUnit }})</span> *</label>
+                  <input type="number" class="form-control" [(ngModel)]="productEntryData.quantity" [min]="isCompositeEntry ? 0.01 : 1" [step]="isCompositeEntry ? 'any' : 1" (input)="calculateProductCost()" />
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-4 mb-3" *ngIf="!isCompositeEntry">
                   <label>Lote/Referencia</label>
                   <input type="text" class="form-control" [(ngModel)]="productEntryData.batchReference" placeholder="Ej: Lote-001" />
                 </div>
@@ -853,26 +853,29 @@
               
               <div *ngIf="productIngredients.length > 0" class="mt-3">
                 <h6>&#10003; Verificar stock de ingredientes</h6>
+                <p class="small text-muted mb-2" *ngIf="isCompositeEntry && compositeRecipe">
+                  La receta rinde <strong>{{ formatNumber(compositeRecipe.fltRecipeYield) }} {{ productionUnit }}</strong>; los materiales se descuentan en proporción a lo que vas a producir.
+                </p>
                 <!-- En móvil cada ingrediente se ve como tarjeta (ver .ing-table en el CSS) -->
                 <table class="table table-sm ing-table">
                   <thead>
                     <tr>
                       <th>Ingrediente</th>
-                      <th class="text-center">Cantidad/Unidad</th>
+                      <th class="text-center">{{ isCompositeEntry ? 'En la receta' : 'Cantidad/Unidad' }}</th>
                       <th class="text-center">Stock Disponible</th>
                       <th class="text-center">Total Necesario</th>
                       <th class="text-center">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let ing of productIngredients" [class.ing-short]="ing.stock < (ing.quantityInStockUnit * productEntryData.quantity)">
+                    <tr *ngFor="let ing of productIngredients" [class.ing-short]="ing.stock < ingredientNeed(ing)">
                       <td class="ing-name">{{ ing.name }}</td>
-                      <td class="text-center" data-label="Cantidad/Unidad">{{ formatNumber(ing.quantity) }} {{ ing.unit }}</td>
+                      <td class="text-center" [attr.data-label]="isCompositeEntry ? 'En la receta' : 'Cantidad/Unidad'">{{ formatNumber(ing.quantity) }} {{ ing.unit }}</td>
                       <td class="text-center" data-label="Stock disponible">{{ formatNumber(ing.stock) }} {{ ing.stockUnit }}</td>
-                      <td class="text-center" data-label="Total necesario">{{ formatNumber(ing.quantityInStockUnit * productEntryData.quantity) }} {{ ing.stockUnit }}</td>
+                      <td class="text-center" data-label="Total necesario">{{ formatNumber(ingredientNeed(ing)) }} {{ ing.stockUnit }}</td>
                       <td class="text-center ing-status">
-                        <span *ngIf="ing.stock >= (ing.quantityInStockUnit * productEntryData.quantity)" class="badge bg-success">&#10003; Disponible</span>
-                        <span *ngIf="ing.stock < (ing.quantityInStockUnit * productEntryData.quantity)" class="badge bg-danger">&#9888; Insuficiente</span>
+                        <span *ngIf="ing.stock >= ingredientNeed(ing)" class="badge bg-success">&#10003; Disponible</span>
+                        <span *ngIf="ing.stock < ingredientNeed(ing)" class="badge bg-danger">&#9888; Insuficiente</span>
                       </td>
                     </tr>
                   </tbody>
@@ -883,8 +886,11 @@
                 <div>
                   <strong>Costo unitario calculado:</strong> ${{ formatNumber(productEntryData.unitCost) }}
                 </div>
-                <div>
+                <div *ngIf="!isCompositeEntry">
                   <strong>Precio de lista:</strong> ${{ formatNumber(selectedMaterial?.price || 0) }}
+                </div>
+                <div *ngIf="isCompositeEntry">
+                  <strong>Costo total:</strong> ${{ formatNumber(productEntryData.quantity * productEntryData.unitCost) }}
                 </div>
               </div>
             </div>
@@ -896,7 +902,7 @@
               <h6>Resumen de Producción</h6>
               <table class="table">
                 <tr>
-                  <th>Producto:</th>
+                  <th>{{ isCompositeEntry ? 'Material compuesto:' : 'Producto:' }}</th>
                   <td>{{ selectedMaterial?.name }}</td>
                 </tr>
                 <tr>
@@ -905,7 +911,7 @@
                 </tr>
                 <tr>
                   <th>Cantidad a Producir:</th>
-                  <td>{{ formatNumber(productEntryData.quantity) }} unidades</td>
+                  <td>{{ formatNumber(productEntryData.quantity) }} {{ productionUnit }}</td>
                 </tr>
                 <tr *ngIf="productEntryData.batchReference">
                   <th>Lote/Referencia:</th>
@@ -927,7 +933,7 @@
           <button class="btn btn-outline-secondary" (click)="closeProductEntryModal()">Cancelar</button>
           <button class="btn btn-secondary" (click)="productPreviousStep()" *ngIf="productStep === 2">Anterior</button>
           <button class="btn btn-primary" (click)="productNextStep()" *ngIf="productStep === 1" [disabled]="!canProceedProductStep()">Siguiente</button>
-          <button class="btn btn-success" (click)="saveProductEntry()" *ngIf="productStep === 2">Producir</button>
+          <button class="btn btn-success" (click)="saveProductEntry()" *ngIf="productStep === 2" [disabled]="savingProduction">Producir</button>
         </div>
       </div>
     </div>

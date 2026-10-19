@@ -1963,3 +1963,15 @@
 .mobile-list-item.mobile-low-stock {
   background-color: #fff5f5 !important;
 }
+
+/* Receta: rendimiento y producción inicial */
+.recipe-box { background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1rem; }
+.recipe-help { font-size: 0.85rem; color: #4b5563; margin: 0 0 0.75rem; }
+.recipe-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; align-items: end; }
+.recipe-field label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; }
+.recipe-field small { display: block; font-size: 0.72rem; margin-top: 0.25rem; }
+.recipe-cost { display: flex; flex-direction: column; }
+.recipe-cost-label { font-size: 0.75rem; color: #6b7280; }
+.recipe-cost-value { font-size: 1.1rem; font-weight: 700; color: #c2410c; }
+.recipe-note { font-size: 0.8rem; color: #374151; background: #eff6ff; border-radius: 6px; padding: 0.5rem 0.75rem; margin-top: 0.75rem; }
+.recipe-note.warn { background: #fef3c7; color: #92400e; }
