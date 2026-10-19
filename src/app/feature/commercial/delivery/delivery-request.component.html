@@ -340,10 +340,9 @@
       </div>
 
       <div class="form-group">
-        <label>Monto pagado (COP)</label>
+        <label>Monto pagado (COP) <app-info-tip>Por defecto, el precio acordado.</app-info-tip></label>
         <input type="number" [(ngModel)]="payment.amount" name="payAmount" class="form-control" min="0"
                [placeholder]="formatCurrency(contract?.agreedPrice)" />
-        <small class="hint">Por defecto, el precio acordado.</small>
       </div>
 
       <div class="form-group">

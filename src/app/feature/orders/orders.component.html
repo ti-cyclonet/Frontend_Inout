@@ -91,11 +91,7 @@
   <!-- Configuración de tiempos por etapa -->
   <div class="timing-overlay" *ngIf="showTimingModal">
     <div class="timing-modal" (click)="$event.stopPropagation()">
-      <h6 class="timing-title">⏱ Tiempos por etapa</h6>
-      <p class="timing-help">
-        Opcional. Deja vacía una etapa para no controlarla. Las tarjetas muestran cuánto les queda o cuánto van atrasadas.
-        En <strong>En producción</strong> se usa el tiempo de fabricación del producto si es mayor.
-      </p>
+      <h6 class="timing-title">⏱ Tiempos por etapa <app-info-tip>Opcional. Deja vacía una etapa para no controlarla. Las tarjetas muestran cuánto les queda o cuánto van atrasadas. En <strong>En producción</strong> se usa el tiempo de fabricación del producto si es mayor.</app-info-tip></h6>
       <div class="timing-row" *ngFor="let stage of timingStages">
         <label class="timing-label">{{ getStatusLabel(stage) }}</label>
         <div class="timing-inputs">
@@ -104,10 +100,9 @@
         </div>
       </div>
       <div class="timing-row timing-capacity">
-        <label class="timing-label">Pedidos que se preparan a la vez</label>
+        <label class="timing-label">Pedidos que se preparan a la vez <app-info-tip>Con la capacidad y el tiempo de producción se estima la espera de cada pedido en la cola.</app-info-tip></label>
         <input type="number" min="1" max="100" class="timing-input" [(ngModel)]="timingForm.capacity" />
       </div>
-      <p class="timing-help">Con la capacidad y el tiempo de producción se estima la espera de cada pedido en la cola.</p>
       <div class="timing-actions">
         <button type="button" class="btn-timing-cancel" (click)="showTimingModal = false">Cancelar</button>
         <button type="button" class="btn-timing-save" [disabled]="timingSaving" (click)="saveTiming()">{{ timingSaving ? 'Guardando…' : 'Guardar' }}</button>

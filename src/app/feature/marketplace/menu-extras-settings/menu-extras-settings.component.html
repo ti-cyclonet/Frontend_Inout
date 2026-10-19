@@ -8,15 +8,14 @@
     <p class="mx-help">Datos que el cliente lee en la carta y en la tienda, pero que no se piden como productos: las proteínas a elegir, las salsas, dónde llegan los domicilios…</p>
 
     <!-- Subtítulo y domicilios -->
-    <label class="mx-label" for="mx-subtitle">Subtítulo de la carta <small>({{ extras.subtitle.length }}/{{ limits.subtitle }})</small></label>
+    <label class="mx-label" for="mx-subtitle">Subtítulo de la carta <small>({{ extras.subtitle.length }}/{{ limits.subtitle }})</small> <app-info-tip>Va en la cinta bajo el nombre de la carta. Vacío = «Nuestro menú».</app-info-tip></label>
     <input id="mx-subtitle" class="mx-input" type="text" [maxlength]="limits.subtitle" [(ngModel)]="extras.subtitle" placeholder="Arepas & Patacones">
-    <small class="mx-hint">Va en la cinta bajo el nombre de la carta. Vacío = «Nuestro menú».</small>
 
     <p class="mx-hint mx-hint--box">🛵 Las <strong>zonas de domicilio</strong> ahora se configuran con su valor en <strong>Configuración de ventas › Entrega</strong>. La carta las muestra desde ahí.</p>
 
     <label class="mx-check">
       <input type="checkbox" [(ngModel)]="extras.deliveryOnly">
-      <span><strong>Solo domicilios (cocina oculta)</strong><small>Se avisa en la carta y en la tienda que no hay atención en el local.</small></span>
+      <span><strong>Solo domicilios (cocina oculta)</strong> <app-info-tip>Se avisa en la carta y en la tienda que no hay atención en el local.</app-info-tip></span>
     </label>
 
     <!-- Bloques -->

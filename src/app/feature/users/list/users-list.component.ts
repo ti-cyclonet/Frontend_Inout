@@ -6,11 +6,12 @@ import { CustomersService } from '../../../shared/services/customers.service';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import Swal from 'sweetalert2';
 import { RoleQuotaSummaryComponent } from '../../../shared/components/role-quota-summary/role-quota-summary.component';
+import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RoleQuotaSummaryComponent],
+  imports: [InfoTipComponent, CommonModule, FormsModule, RoleQuotaSummaryComponent],
   templateUrl: './users-list.component.html',
   styleUrls: ['./users-list.component.css']
 })

@@ -7,7 +7,7 @@
 
   <div class="ss-body" *ngIf="open === 'store' && storeInfo">
     <div class="ss-sub ss-store">
-      <label for="ss-whatsapp">WhatsApp de pedidos <small>(celular de 10 dígitos)</small></label>
+      <label for="ss-whatsapp">WhatsApp de pedidos <small>(celular de 10 dígitos)</small> <app-info-tip>Aparece en la tienda y en la carta como «Haz tu pedido» y en el botón «Escríbenos». Déjalo vacío para no mostrarlo.</app-info-tip></label>
       <div class="ss-phone">
         <span class="ss-prefix">+57</span>
         <input id="ss-whatsapp" type="tel" inputmode="numeric" autocomplete="off" placeholder="300 120 5337"
@@ -15,12 +15,10 @@
         <a *ngIf="whatsappTestLink" class="ss-test" [href]="whatsappTestLink" target="_blank" rel="noopener">Probar</a>
       </div>
       <small class="ss-error" *ngIf="!whatsappValid">Debe ser un celular colombiano de 10 dígitos que empiece por 3.</small>
-      <small class="ss-help">Aparece en la tienda y en la carta como «Haz tu pedido» y en el botón «Escríbenos». Déjalo vacío para no mostrarlo.</small>
 
-      <label for="ss-welcome">Mensaje de bienvenida <small>({{ storeInfo.welcomeMessage.length }}/{{ welcomeMax }})</small></label>
+      <label for="ss-welcome">Mensaje de bienvenida <small>({{ storeInfo.welcomeMessage.length }}/{{ welcomeMax }})</small> <app-info-tip>Va en el encabezado de la tienda y bajo el título de la carta. Vacío = texto por defecto.</app-info-tip></label>
       <textarea id="ss-welcome" rows="2" [maxlength]="welcomeMax" [(ngModel)]="storeInfo.welcomeMessage"
                 placeholder="Hecho con un sabor único · pide en línea"></textarea>
-      <small class="ss-help">Va en el encabezado de la tienda y bajo el título de la carta. Vacío = texto por defecto.</small>
     </div>
 
     <button type="button" class="ss-save" [disabled]="savingStoreInfo || !whatsappValid" (click)="saveStoreInfo()">{{ savingStoreInfo ? 'Guardando…' : 'Guardar datos' }}</button>
@@ -37,12 +35,11 @@
   <div class="ss-body" *ngIf="open === 'delivery' && delivery">
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="delivery.deliveryEnabled">
-      <span><strong>🛵 A domicilio</strong><small>El cliente escribe su dirección (obligatoria) y se le suma el valor del domicilio. Ese valor es tuyo, para tu domiciliario; si lo envías por Shotra, es el valor mínimo del domicilio.</small></span>
+      <span><strong>🛵 A domicilio</strong> <app-info-tip>El cliente escribe su dirección (obligatoria) y se le suma el valor del domicilio. Ese valor es tuyo, para tu domiciliario; si lo envías por Shotra, es el valor mínimo del domicilio.</app-info-tip></span>
     </label>
     <div class="ss-sub" *ngIf="delivery.deliveryEnabled">
       <!-- Zonas con su valor -->
-      <label class="ss-zones-title">Valor por zona <small>(opcional · {{ delivery.zones.length }}/{{ zoneLimits.zones }})</small></label>
-      <small class="ss-help">Si cobras distinto según el sitio, agrega cada zona con su valor y el cliente elige la suya. Si un sitio tiene dos valores, crea dos zonas: «Bonanza (cerca)» y «Bonanza (lejos)».</small>
+      <label class="ss-zones-title">Valor por zona <small>(opcional · {{ delivery.zones.length }}/{{ zoneLimits.zones }})</small> <app-info-tip>Si cobras distinto según el sitio, agrega cada zona con su valor y el cliente elige la suya. Si un sitio tiene dos valores, crea dos zonas: «Bonanza (cerca)» y «Bonanza (lejos)».</app-info-tip></label>
       <div class="ss-zones" *ngIf="delivery.zones.length">
         <div class="ss-zone" *ngFor="let z of delivery.zones; let i = index">
           <input type="text" [maxlength]="zoneLimits.name" [(ngModel)]="z.name" placeholder="Zona o barrio (p. ej. Turbaco)" [attr.aria-label]="'Nombre de la zona ' + (i + 1)">
@@ -58,7 +55,7 @@
       <ng-container *ngIf="delivery.zones.length; else oneFee">
         <label class="ss-check ss-check--inner">
           <input type="checkbox" [(ngModel)]="delivery.otherZones">
-          <span><strong>Aceptar otras zonas</strong><small>El cliente puede elegir «Otra zona» si la suya no está en la lista.</small></span>
+          <span><strong>Aceptar otras zonas</strong> <app-info-tip>El cliente puede elegir «Otra zona» si la suya no está en la lista.</app-info-tip></span>
         </label>
         <ng-container *ngIf="delivery.otherZones">
           <label for="ss-fee">Valor para otras zonas (COP)</label>
@@ -67,15 +64,14 @@
         <small class="ss-help" *ngIf="!delivery.otherZones">Si la zona del cliente no está en la lista, no puede pedir a domicilio (puede recoger en la tienda, si lo ofreces).</small>
       </ng-container>
       <ng-template #oneFee>
-        <label for="ss-fee">Valor del domicilio (COP)</label>
+        <label for="ss-fee">Valor del domicilio (COP) <app-info-tip>El mismo valor para cualquier dirección. Se suma al total del pedido. 0 = domicilio gratis.</app-info-tip></label>
         <input id="ss-fee" type="number" min="0" step="500" [(ngModel)]="delivery.deliveryFee" style="max-width: 180px">
-        <small class="ss-help">El mismo valor para cualquier dirección. Se suma al total del pedido. 0 = domicilio gratis.</small>
       </ng-template>
     </div>
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="delivery.pickupEnabled">
-      <span><strong>🏪 Recoger en la tienda</strong><small>El cliente pasa por su pedido; sin costo de domicilio.</small></span>
+      <span><strong>🏪 Recoger en la tienda</strong> <app-info-tip>El cliente pasa por su pedido; sin costo de domicilio.</app-info-tip></span>
     </label>
     <div class="ss-sub" *ngIf="delivery.pickupEnabled">
       <label for="ss-pickup">Dirección del local</label>
@@ -98,7 +94,7 @@
   <div class="ss-body" *ngIf="open === 'gifts' && giftCards">
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="giftCards.enabled">
-      <span><strong>🎁 Vender bonos de regalo en la tienda</strong><small>Tus clientes compran un bono para otra persona con tus formas de pago. Se activa cuando el pago queda completo (o al facturar a crédito) y quien lo recibe lo usa como pago, con su cuenta en la tienda.</small></span>
+      <span><strong>🎁 Vender bonos de regalo en la tienda</strong> <app-info-tip>Tus clientes compran un bono para otra persona con tus formas de pago. Se activa cuando el pago queda completo (o al facturar a crédito) y quien lo recibe lo usa como pago, con su cuenta en la tienda.</app-info-tip></span>
     </label>
     <div class="ss-sub" *ngIf="giftCards.enabled">
       <div class="ss-grid2">
@@ -111,12 +107,10 @@
           <input id="ss-gift-max" type="number" min="1000" step="1000" [(ngModel)]="giftCards.maxAmount">
         </div>
       </div>
-      <label for="ss-gift-presets">Valores sugeridos</label>
+      <label for="ss-gift-presets">Valores sugeridos <app-info-tip>Separados por comas. El cliente también puede escribir otro valor dentro del rango.</app-info-tip></label>
       <input id="ss-gift-presets" type="text" [(ngModel)]="giftPresetsText" placeholder="20000, 50000, 100000">
-      <small class="ss-help">Separados por comas. El cliente también puede escribir otro valor dentro del rango.</small>
-      <label for="ss-gift-months">Vigencia (meses desde que se activa)</label>
+      <label for="ss-gift-months">Vigencia (meses desde que se activa) <app-info-tip>Revisa la vigencia mínima que exige la normativa de protección al consumidor para tu caso.</app-info-tip></label>
       <input id="ss-gift-months" type="number" min="1" max="60" [(ngModel)]="giftCards.validityMonths" style="max-width: 120px">
-      <small class="ss-help">Revisa la vigencia mínima que exige la normativa de protección al consumidor para tu caso.</small>
     </div>
     <button type="button" class="ss-save" [disabled]="savingGiftCards" (click)="saveGiftCards()">{{ savingGiftCards ? 'Guardando…' : 'Guardar bonos' }}</button>
   </div>
@@ -132,7 +126,7 @@
   <div class="ss-body" *ngIf="open === 'payments' && payments">
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.contraEntrega.enabled">
-      <span><strong>💵 Contra entrega</strong><small>El cliente paga al recibir.</small></span>
+      <span><strong>💵 Contra entrega</strong> <app-info-tip>El cliente paga al recibir.</app-info-tip></span>
     </label>
     <div class="ss-sub" *ngIf="payments.contraEntrega.enabled">
       <label>Solo para pedidos de hasta <small>(opcional)</small></label>
@@ -141,12 +135,12 @@
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.contado.enabled">
-      <span><strong>💳 Pago anticipado</strong><small>Paga el 100 % antes de preparar el pedido y sube el comprobante.</small></span>
+      <span><strong>💳 Pago anticipado</strong> <app-info-tip>Paga el 100 % antes de preparar el pedido y sube el comprobante.</app-info-tip></span>
     </label>
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.mitadMitad.enabled">
-      <span><strong>{{ splitPlanLabel(payments.mitadMitad.depositPercent) }}</strong><small>Anticipo al pedir y el saldo al recibir (el nombre cambia con el % de anticipo).</small></span>
+      <span><strong>{{ splitPlanLabel(payments.mitadMitad.depositPercent) }}</strong> <app-info-tip>Anticipo al pedir y el saldo al recibir (el nombre cambia con el % de anticipo).</app-info-tip></span>
     </label>
     <div class="ss-sub" *ngIf="payments.mitadMitad.enabled">
       <label>Anticipo (%)</label>
@@ -155,7 +149,7 @@
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.planSepare.enabled">
-      <span><strong>🗓️ Plan separe</strong><small>Aparta con una cuota inicial y abona hasta completar; se entrega pagado. Solo clientes con cuenta.</small></span>
+      <span><strong>🗓️ Plan separe</strong> <app-info-tip>Aparta con una cuota inicial y abona hasta completar; se entrega pagado. Solo clientes con cuenta.</app-info-tip></span>
     </label>
     <div class="ss-sub ss-grid" *ngIf="payments.planSepare.enabled">
       <div><label>Cuota inicial mínima (%)</label><input type="number" min="1" max="99" [(ngModel)]="payments.planSepare.minInitialPercent"></div>
@@ -165,19 +159,18 @@
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.credito.enabled">
-      <span><strong>🧾 A crédito</strong><small>Para clientes con cupo aprobado en Cartera.</small></span>
+      <span><strong>🧾 A crédito</strong> <app-info-tip>Para clientes con cupo aprobado en Cartera.</app-info-tip></span>
     </label>
 
     <div class="ss-sub ss-grid">
       <div>
-        <label>Horas para recibir el anticipo</label>
+        <label>Horas para recibir el anticipo <app-info-tip>Si no llega a tiempo, el pedido se cancela y se libera el stock.</app-info-tip></label>
         <input type="number" min="1" [(ngModel)]="payments.depositTimeoutHours">
-        <small class="ss-help">Si no llega a tiempo, el pedido se cancela y se libera el stock.</small>
       </div>
     </div>
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.madeToOrderRequiresDeposit">
-      <span><strong>Exigir anticipo para productos por fabricar</strong><small>Con productos "bajo pedido" sin stock no se ofrece contra entrega.</small></span>
+      <span><strong>Exigir anticipo para productos por fabricar</strong> <app-info-tip>Con productos "bajo pedido" sin stock no se ofrece contra entrega.</app-info-tip></span>
     </label>
 
     <div class="ss-sub">
@@ -197,7 +190,7 @@
   </button>
 
   <div class="ss-body" *ngIf="open === 'scheduling' && scheduling">
-    <p class="ss-label">Horario de atención</p>
+    <p class="ss-label">Horario de atención <app-info-tip>Hora de Colombia. Un día que cierra antes de abrir queda como cerrado.</app-info-tip></p>
     <div class="ss-day" *ngFor="let h of scheduling.hours">
       <label class="ss-day-name"><input type="checkbox" [(ngModel)]="h.active"> {{ days[h.day] }}</label>
       <ng-container *ngIf="h.active">
@@ -205,22 +198,21 @@
       </ng-container>
       <small *ngIf="!h.active" class="ss-help">Cerrado</small>
     </div>
-    <small class="ss-help">Hora de Colombia. Un día que cierra antes de abrir queda como cerrado.</small>
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="scheduling.onlyDuringHours">
-      <span><strong>Recibir pedidos solo dentro del horario</strong><small>La tienda muestra su horario y, si está cerrada, no recibe pedidos "lo antes posible". Con pedidos programados activos, el cliente puede programarlo para cuando abras.</small></span>
+      <span><strong>Recibir pedidos solo dentro del horario</strong> <app-info-tip>La tienda muestra su horario y, si está cerrada, no recibe pedidos "lo antes posible". Con pedidos programados activos, el cliente puede programarlo para cuando abras.</app-info-tip></span>
     </label>
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="scheduling.enabled">
-      <span><strong>Permitir programar la entrega</strong><small>El cliente elige día y franja horaria.</small></span>
+      <span><strong>Permitir programar la entrega</strong> <app-info-tip>El cliente elige día y franja horaria.</app-info-tip></span>
     </label>
 
     <ng-container *ngIf="scheduling.enabled">
       <div class="ss-sub ss-grid">
         <div>
-          <label>Duración de la franja</label>
+          <label>Duración de la franja <app-info-tip>Las franjas se arman dentro del horario de atención y respetan la cola de producción y el tiempo de fabricación de cada pedido.</app-info-tip></label>
           <select [(ngModel)]="scheduling.slotMinutes">
             <option [ngValue]="30">30 min</option><option [ngValue]="60">1 hora</option>
             <option [ngValue]="90">1 h 30 min</option><option [ngValue]="120">2 horas</option><option [ngValue]="180">3 horas</option>
@@ -231,7 +223,6 @@
         <div><label>Pedidos por franja <small>(opcional)</small></label><input type="number" min="1" [(ngModel)]="scheduling.maxOrdersPerSlot" placeholder="Sin límite"></div>
       </div>
 
-      <small class="ss-help">Las franjas se arman dentro del horario de atención y respetan la cola de producción y el tiempo de fabricación de cada pedido.</small>
     </ng-container>
 
     <button type="button" class="ss-save" [disabled]="savingScheduling" (click)="saveScheduling()">{{ savingScheduling ? 'Guardando…' : 'Guardar horario' }}</button>
@@ -248,7 +239,7 @@
   <div class="ss-body" *ngIf="open === 'thanks' && thanks">
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="thanks.enabled">
-      <span><strong>Agradecer al cliente cuando su pedido se entrega</strong><small>Se le muestra una sola vez en la página de seguimiento del pedido, con las fotos de lo que compró y el logo de la tienda.</small></span>
+      <span><strong>Agradecer al cliente cuando su pedido se entrega</strong> <app-info-tip>Se le muestra una sola vez en la página de seguimiento del pedido, con las fotos de lo que compró y el logo de la tienda.</app-info-tip></span>
     </label>
 
     <ng-container *ngIf="thanks.enabled">
