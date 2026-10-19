@@ -7,6 +7,11 @@ import { MaterialFormComponent } from './form/material-form.component';
 import { MaterialCompositionComponent } from './composition/material-composition.component';
 import { BulkEntryComponent } from '../kardex/bulk-entry/bulk-entry.component';
 
+/** Pestaña de ?tab= (enlaces de los paneles). */
+const TAB_OF: Record<string, 'dashboard' | 'list' | 'composition' | 'bulk-entry'> = {
+  panel: 'dashboard', materiales: 'list', compuestos: 'composition', compras: 'bulk-entry',
+};
+
 @Component({
   selector: 'app-materials-demo',
   standalone: true,
@@ -150,6 +155,9 @@ export class MaterialsDemoComponent implements OnInit {
   
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
+      // Accesos de "Requiere atención": abren la pestaña exacta
+      const tab = TAB_OF[params['tab']];
+      if (tab) this.activeTab = tab;
       if (params['edit'] && params['step']) {
         this.editMaterialId = params['edit'];
         this.initialStep = parseInt(params['step']);

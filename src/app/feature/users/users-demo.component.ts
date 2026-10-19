@@ -112,7 +112,13 @@ export class UsersDemoComponent {
   refreshTrigger = 0;
   showCreateModal = false;
   
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute) {
+    // Accesos de "Requiere atención": abren la pestaña exacta
+    this.route.queryParamMap.subscribe((q) => {
+      const tab = ({ panel: 'dashboard', usuarios: 'list', potenciales: 'leads' } as const)[q.get('tab') as 'panel' | 'usuarios' | 'potenciales'];
+      if (tab) this.activeTab = tab;
+    });
+  }
   
   onUserCreated() {
     this.showCreateModal = false;

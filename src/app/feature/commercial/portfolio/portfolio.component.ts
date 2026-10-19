@@ -93,9 +93,13 @@ export class PortfolioComponent implements OnInit, OnDestroy {
     this.canOperate = this.isAdmin || ['operatorInout', 'operator'].includes(role);
     this.loadSummary();
     this.loadSettings();
-    // Desde el aviso del tablero (?vista=creditos): directo a las solicitudes
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('vista') === 'creditos') {
+    // Desde el tablero (?vista=creditos | vencidas): directo a la vista exacta
+    const vista = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('vista') : null;
+    if (vista === 'creditos') {
       this.setView('credits');
+    } else if (vista === 'vencidas') {
+      this.receivableStatus = 'OVERDUE';
+      this.setView('receivables');
     }
     this.liveTimer = setInterval(() => {
       if (this.view === 'summary' && !document.hidden) this.loadSummary(true);
