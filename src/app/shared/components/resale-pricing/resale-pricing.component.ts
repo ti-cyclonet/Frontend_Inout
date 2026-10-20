@@ -22,6 +22,10 @@ export interface ResaleConfig {
   blnMarketplaceVisible: boolean;
   /** Margen propio del material (sobre el costo); null = el de la categoría o el del período. */
   fltMarginPercent: number | null;
+  /** Compuestos: se prepara bajo pedido (se puede pedir sin stock). */
+  blnMadeToOrder: boolean;
+  /** Compuestos: minutos que toma prepararlo. */
+  intProductionLeadMinutes: number | null;
 }
 
 export function resaleConfigFrom(material?: any): ResaleConfig {
@@ -33,12 +37,24 @@ export function resaleConfigFrom(material?: any): ResaleConfig {
     ingPlannedMonthlyUnits: Number(material?.ingPlannedMonthlyUnits) || 0,
     blnMarketplaceVisible: material ? material.blnMarketplaceVisible !== false : true,
     fltMarginPercent: material?.fltMarginPercent !== null && material?.fltMarginPercent !== undefined && material?.fltMarginPercent !== '' ? Number(material.fltMarginPercent) : null,
+    blnMadeToOrder: !!material?.blnMadeToOrder,
+    intProductionLeadMinutes: material?.intProductionLeadMinutes ?? null,
   };
 }
 
-/** Campos que se envían al backend (materials / materials-t). */
-export function resaleConfigPayload(config: ResaleConfig) {
+/**
+ * Campos que se envían al backend (materials / materials-t). La fabricación
+ * bajo pedido solo existe en los compuestos (madeToOrder: true).
+ */
+export function resaleConfigPayload(config: ResaleConfig, opts: { madeToOrder?: boolean } = {}) {
+  const minutes = config.intProductionLeadMinutes;
   return {
+    ...(opts.madeToOrder
+      ? {
+          blnMadeToOrder: !!config.blnForResale && !!config.blnMadeToOrder,
+          intProductionLeadMinutes: minutes === null || minutes === undefined || (minutes as any) === '' ? null : Math.max(0, Math.round(Number(minutes) || 0)),
+        }
+      : {}),
     blnForResale: !!config.blnForResale,
     strSalePresentation: (config.strSalePresentation || '').trim() || undefined,
     fltPresentationQuantity: Number(config.fltPresentationQuantity) || 0,
@@ -72,6 +88,8 @@ export class ResalePricingComponent implements OnInit {
   @Input() currentStock: number | null = null;
   /** Categoría del material (su margen se hereda si el material no tiene uno propio). */
   @Input() categoryId: number | string | null = null;
+  /** Material compuesto: ofrece "Se fabrica bajo pedido" y su tiempo. */
+  @Input() allowMadeToOrder = false;
   categories: any[] = [];
   minMarginPercent = 0;
 

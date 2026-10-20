@@ -29,6 +29,31 @@
       </div>
     </div>
 
+    <!-- Compuestos: se preparan bajo pedido, como los productos -->
+    <div class="resale-grid mto-grid" *ngIf="allowMadeToOrder">
+      <div class="form-group mto-check">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="resaleMadeToOrder"
+                 [(ngModel)]="config.blnMadeToOrder" [ngModelOptions]="{standalone: true}">
+          <label class="form-check-label" for="resaleMadeToOrder">
+            Se fabrica bajo pedido
+            <app-info-tip>Se puede pedir aunque no haya stock: lo que falte queda por fabricar y se produce con su receta antes de pasar el pedido a Listo.</app-info-tip>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="resaleLeadMinutes">Tiempo de fabricación (minutos)
+          <app-info-tip>Se usa para estimar cuándo estará listo el pedido y qué franjas de entrega ofrecer.</app-info-tip>
+        </label>
+        <div class="input-group">
+          <input id="resaleLeadMinutes" type="number" min="0" step="1" class="form-control"
+                 [placeholder]="config.blnMadeToOrder ? 'Ej: 30' : 'Solo si se fabrica bajo pedido'"
+                 [(ngModel)]="config.intProductionLeadMinutes" [ngModelOptions]="{standalone: true}">
+          <span class="input-group-text">min</span>
+        </div>
+      </div>
+    </div>
+
     <div class="pricing-breakdown">
       <h5>Cálculo de precio sugerido</h5>
       <div class="pricing-loading" *ngIf="loadingPricing">Cargando parámetros del período activo…</div>

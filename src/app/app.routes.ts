@@ -10,6 +10,7 @@ import LayoutComponent from './shared/components/layout/layout.component';
 import { HomeComponent } from './feature/home/home.component';
 import { SetupComponent } from './feature/setup/setup.component';
 import { LoginComponent } from './shared/components/login/login.component';
+import { ResetPasswordComponent } from './shared/components/reset-password/reset-password.component';
 import { RegisterComponent } from './shared/components/register/register.component';
 import { MaterialsComponent } from './feature/materials/materials.component';
 import { SettingComponent } from './feature/setting/setting.component';
@@ -30,6 +31,8 @@ import { InventoryComponent } from './feature/inventory/inventory.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
+    // Enlace del correo de "¿Olvidaste tu contraseña?" (Authoriza)
+    { path: 'reset-password', component: ResetPasswordComponent },
     { path: ROOT_REGISTER, component: RegisterComponent },
     { path: 'module-selector', component: ModuleSelectorComponent, canActivate: [AuthGuard] },
     { path: 'marketplace/:tenantId', component: MarketplaceComponent },
