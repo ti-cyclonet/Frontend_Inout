@@ -124,10 +124,33 @@
             Iniciar sesión
           </button>
         </div>
-        <div class="text-center mt-3">
-          <a href="#" class="forgot-password-link">¿Olvidaste tu contraseña?</a>
-        </div>      
+        <div class="text-center mt-3" *ngIf="!forgotOpen">
+          <a href="#" class="forgot-password-link" (click)="openForgot($event)">¿Olvidaste tu contraseña?</a>
+        </div>
       </form>
+
+      <!-- ¿Olvidaste tu contraseña?: Authoriza envía un enlace al correo -->
+      <div class="forgot-box" *ngIf="forgotOpen">
+        <h6>Restablecer contraseña</h6>
+        <ng-container *ngIf="!forgotMessage; else forgotSent">
+          <p>Escribe el correo con el que inicias sesión y te enviaremos un enlace para crear una nueva contraseña.</p>
+          <input type="email" class="form-control" placeholder="correo@empresa.com" autocomplete="email"
+                 [(ngModel)]="forgotEmail" [ngModelOptions]="{standalone: true}" (keyup.enter)="sendForgot()">
+          <small class="forgot-error" *ngIf="forgotError">{{ forgotError }}</small>
+          <div class="forgot-actions">
+            <button type="button" class="forgot-cancel" (click)="forgotOpen = false">Cancelar</button>
+            <button type="button" class="custom-btn" [disabled]="forgotLoading" (click)="sendForgot()">
+              {{ forgotLoading ? 'Enviando…' : 'Enviar enlace' }}
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #forgotSent>
+          <p class="forgot-ok">{{ forgotMessage }}</p>
+          <div class="forgot-actions">
+            <button type="button" class="custom-btn" (click)="forgotOpen = false">Volver a iniciar sesión</button>
+          </div>
+        </ng-template>
+      </div>
       </div><!-- /card-bottom -->
     </div>
   </div>

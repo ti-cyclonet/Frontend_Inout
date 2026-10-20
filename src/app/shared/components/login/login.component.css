@@ -303,3 +303,13 @@
     padding: 0 8px;
   }
 }
+
+/* ¿Olvidaste tu contraseña? */
+.forgot-box { margin-top: 1rem; padding: 1rem 1.1rem; border-radius: 12px; background: rgba(255, 255, 255, .92); box-shadow: 0 6px 20px -12px rgba(0, 10, 102, .45); color: #1f2937; text-align: left; }
+.forgot-box h6 { margin: 0 0 .4rem; font-weight: 700; color: rgb(0, 10, 102); }
+.forgot-box p { margin: 0 0 .7rem; font-size: .88rem; color: #4b5563; }
+.forgot-box .forgot-ok { color: #166534; }
+.forgot-error { display: block; margin-top: .35rem; color: #b91c1c; }
+.forgot-actions { display: flex; justify-content: flex-end; align-items: center; gap: .6rem; margin-top: .8rem; flex-wrap: wrap; }
+.forgot-cancel { background: none; border: 0; color: rgb(0, 10, 102); font-weight: 500; padding: .4rem .6rem; }
+.forgot-cancel:hover { text-decoration: underline; }

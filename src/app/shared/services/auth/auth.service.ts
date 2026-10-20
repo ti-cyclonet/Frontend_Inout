@@ -22,6 +22,16 @@ export class AuthService {
     return this.http.post<any>(this.apiUrl, credentials);
   }
 
+  /** "¿Olvidaste tu contraseña?": Authoriza envía el enlace al correo (a la pantalla de InOut). */
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.auth.authorizaUrl}/auth/forgot-password`, { email, app: 'inout' });
+  }
+
+  /** Fija la nueva contraseña con el token del enlace del correo. */
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.auth.authorizaUrl}/auth/reset-password`, { token, newPassword });
+  }
+
   completeLogin(data: { email: string; applicationName: string; contractId: string; selectionToken?: string }): Observable<any> {
     return this.http.post<any>(this.completeLoginUrl, data);
   }

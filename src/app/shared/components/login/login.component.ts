@@ -50,6 +50,45 @@ export class LoginComponent {
     SWNTF: number = 0;
   // ----------------------------------------------
 
+  // ¿Olvidaste tu contraseña?
+  forgotOpen = false;
+  forgotEmail = '';
+  forgotLoading = false;
+  forgotError = '';
+  forgotMessage = '';
+
+  openForgot(event: Event): void {
+    event.preventDefault();
+    this.forgotEmail = (this.loginForm.get('username')?.value || '').trim();
+    this.forgotError = '';
+    this.forgotMessage = '';
+    this.forgotOpen = true;
+  }
+
+  sendForgot(): void {
+    const email = (this.forgotEmail || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.forgotError = 'Escribe un correo válido.';
+      return;
+    }
+    this.forgotLoading = true;
+    this.forgotError = '';
+    this.authService.forgotPassword(email).subscribe({
+      next: (r) => {
+        this.forgotLoading = false;
+        this.forgotMessage = r?.message || 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.forgotLoading = false;
+        this.forgotError = err?.status === 429
+          ? 'Demasiados intentos. Espera unos minutos e intenta de nuevo.'
+          : (err?.error?.message || 'No pudimos enviar el enlace. Intenta de nuevo.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
