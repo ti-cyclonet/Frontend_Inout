@@ -343,7 +343,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       strLocation: this.newMaterial.ubicacion,
       strStatus: 'Active',
       // Reventa: incluye blnMarketplaceVisible (solo aplica si es de reventa)
-      ...resaleConfigPayload(this.resaleConfig),
+      ...resaleConfigPayload(this.resaleConfig, { madeToOrder: true }),
     };
 
     // Solo incluir categoryId si tiene valor
