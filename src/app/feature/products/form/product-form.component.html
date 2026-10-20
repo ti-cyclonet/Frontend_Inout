@@ -133,15 +133,30 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="productionLeadMinutes">Tiempo de fabricación (minutos)
-                <app-info-tip>Se usa para estimar cuándo estará listo el pedido y qué franjas de entrega ofrecer. Aplica a los productos que se fabrican bajo pedido.</app-info-tip>
-              </label>
-              <div class="input-group">
-                <input type="number" id="productionLeadMinutes" min="0" step="1" class="form-control" formControlName="productionLeadMinutes"
-                       [placeholder]="productForm.get('madeToOrder')?.value ? 'Ej: 30' : 'Solo si se fabrica bajo pedido'">
-                <span class="input-group-text">min</span>
+            <!-- Fabricación por tandas: una tanda toma X minutos y rinde N unidades -->
+            <div class="form-group lead-pair">
+              <div class="lead-field">
+                <label for="productionLeadMinutes">Tiempo por tanda
+                  <app-info-tip>Lo que toma fabricar una tanda. El tiempo de un pedido es: tandas necesarias (lo que falta ÷ unidades por tanda) × este tiempo, sumando todo lo que haya que fabricar. Aplica a los productos que se fabrican bajo pedido.</app-info-tip>
+                </label>
+                <div class="input-group">
+                  <input type="number" id="productionLeadMinutes" min="0" step="1" class="form-control" formControlName="productionLeadMinutes"
+                         [placeholder]="productForm.get('madeToOrder')?.value ? 'Ej: 30' : 'Solo bajo pedido'">
+                  <span class="input-group-text">min</span>
+                </div>
               </div>
+              <div class="lead-field">
+                <label for="unitsPerBatch">Unidades por tanda
+                  <app-info-tip>Cuántas unidades salen en una tanda. Ej.: una bandeja de 12 pandebonos en 25 min. Si se hacen de a una, deja 1.</app-info-tip>
+                </label>
+                <div class="input-group">
+                  <input type="number" id="unitsPerBatch" min="1" step="1" class="form-control" formControlName="unitsPerBatch">
+                  <span class="input-group-text">und.</span>
+                </div>
+              </div>
+              <small class="lead-hint" *ngIf="productForm.get('madeToOrder')?.value && +productForm.get('productionLeadMinutes')?.value > 0">
+                1 tanda = {{ +productForm.get('unitsPerBatch')?.value || 1 }} und. en {{ productForm.get('productionLeadMinutes')?.value }} min
+              </small>
             </div>
 
             <!-- Presentaciones de venta: 8 oz, 12 oz… (cada una con su receta y precio) -->

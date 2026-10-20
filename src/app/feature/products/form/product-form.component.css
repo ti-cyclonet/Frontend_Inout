@@ -870,3 +870,9 @@
 .pres-head .pres-add { width: 100%; padding: 0.75rem; }
 .pres-list { list-style: none; padding: 0; margin: 0.75rem 0 0; border: 1px solid #e5e7eb; border-radius: 8px; }
 @media (max-width: 900px) { .pres-head { grid-template-columns: 1fr; } }
+
+/* Tiempo por tanda y unidades por tanda, lado a lado */
+.lead-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; align-content: start; }
+.lead-pair .lead-field { display: flex; flex-direction: column; }
+.lead-pair .lead-hint { grid-column: 1 / -1; color: #6b7280; }
+@media (max-width: 520px) { .lead-pair { grid-template-columns: 1fr; } }

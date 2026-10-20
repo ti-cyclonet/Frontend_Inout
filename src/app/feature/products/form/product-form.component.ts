@@ -178,11 +178,13 @@ export class ProductFormComponent implements OnInit {
       // Fabricación bajo pedido: se puede pedir sin stock
       madeToOrder: [false],
       // Minutos de fabricación (antes en horas)
-      productionLeadMinutes: [null as number | null, [Validators.min(0)]]
+      productionLeadMinutes: [null as number | null, [Validators.min(0)]],
+      // Unidades que salen en una tanda de ese tiempo (1 = de a una)
+      unitsPerBatch: [1, [Validators.min(1)]]
     });
     // El tiempo de fabricación solo aplica a lo que se fabrica bajo pedido
-    const lead = this.productForm.get('productionLeadMinutes')!;
-    const syncLead = (on: boolean) => (on ? lead.enable({ emitEvent: false }) : lead.disable({ emitEvent: false }));
+    const leadCtrls = [this.productForm.get('productionLeadMinutes')!, this.productForm.get('unitsPerBatch')!];
+    const syncLead = (on: boolean) => leadCtrls.forEach((c) => (on ? c.enable({ emitEvent: false }) : c.disable({ emitEvent: false })));
     syncLead(false);
     this.productForm.get('madeToOrder')!.valueChanges.subscribe((v) => syncLead(!!v));
   }
@@ -211,7 +213,8 @@ export class ProductFormComponent implements OnInit {
       marketplaceVisible: this.productData.blnMarketplaceVisible !== false,
       madeToOrder: !!this.productData.blnMadeToOrder,
       productionLeadMinutes: this.productData.intProductionLeadMinutes
-        ?? (this.productData.intProductionLeadHours != null ? Number(this.productData.intProductionLeadHours) * 60 : null)
+        ?? (this.productData.intProductionLeadHours != null ? Number(this.productData.intProductionLeadHours) * 60 : null),
+      unitsPerBatch: Math.max(1, Number(this.productData.intUnitsPerBatch) || 1)
     });
     this.directLaborCost = +(this.productData.fltDirectLaborCost || 0);
     this.variantLabel = this.productData.strVariantLabel || '';
@@ -828,6 +831,9 @@ export class ProductFormComponent implements OnInit {
         : {}),
       ...(formData.productionLeadMinutes !== null && formData.productionLeadMinutes !== ''
         ? { intProductionLeadMinutes: Math.max(0, Math.round(+formData.productionLeadMinutes)) }
+        : {}),
+      ...(formData.unitsPerBatch !== undefined && formData.unitsPerBatch !== null && formData.unitsPerBatch !== ''
+        ? { intUnitsPerBatch: Math.max(1, Math.round(+formData.unitsPerBatch) || 1) }
         : {})
     };
 

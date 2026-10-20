@@ -90,6 +90,15 @@ export class ResalePricingComponent implements OnInit {
   @Input() categoryId: number | string | null = null;
   /** Material compuesto: ofrece "Se fabrica bajo pedido" y su tiempo. */
   @Input() allowMadeToOrder = false;
+  /** Lo que rinde una tanda (la receta del compuesto), en unidad de medida. */
+  @Input() batchYield: number | null = null;
+
+  /** Presentaciones que salen de una tanda (para la ayuda del tiempo). */
+  get batchPresentations(): number | null {
+    const per = Number(this.config.fltPresentationQuantity) || 0;
+    const y = Number(this.batchYield) || 0;
+    return per > 0 && y > 0 ? Math.floor((y / per) * 100) / 100 : null;
+  }
   categories: any[] = [];
   minMarginPercent = 0;
 
