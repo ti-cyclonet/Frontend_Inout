@@ -99,9 +99,38 @@
           <input type="number" min="0" max="59" class="timing-input" [(ngModel)]="timingForm.durations[stage].minutes" placeholder="0" /> <span>min</span>
         </div>
       </div>
-      <div class="timing-row timing-capacity">
-        <label class="timing-label">Pedidos que se preparan a la vez <app-info-tip>Con la capacidad y el tiempo de producción se estima la espera de cada pedido en la cola.</app-info-tip></label>
+      <div class="timing-row timing-capacity" *ngIf="!timingForm.shifts.length">
+        <label class="timing-label">Pedidos que se preparan a la vez <app-info-tip>Con la capacidad y el tiempo de producción se estima la espera de cada pedido en la cola. Si configuras turnos, la capacidad la dan las personas de cada turno.</app-info-tip></label>
         <input type="number" min="1" max="100" class="timing-input" [(ngModel)]="timingForm.capacity" />
+      </div>
+
+      <!-- Turnos de producción: solo para estimar los tiempos de entrega -->
+      <div class="shifts">
+        <div class="shifts-head">
+          <span class="timing-label"><strong>Turnos de producción</strong>
+            <app-info-tip>Opcional. Indica qué días y en qué horario se prepara, y cuántas personas hay. Las tandas de los pedidos se reparten entre las personas del turno y lo que llega fuera de turno empieza en el siguiente. Si dos turnos se cruzan, sus personas se suman. Solo afecta la hora estimada de entrega.</app-info-tip>
+          </span>
+          <button type="button" class="btn-shift-add" (click)="addShift()">+ Turno</button>
+        </div>
+        <p class="timing-help" *ngIf="!timingForm.shifts.length">Sin turnos, se usa «Pedidos que se preparan a la vez» y se prepara a cualquier hora.</p>
+        <div class="shift" *ngFor="let s of timingForm.shifts; let i = index">
+          <div class="shift-top">
+            <input type="text" class="shift-name" maxlength="40" placeholder="Nombre (ej. Mañana)" [(ngModel)]="s.name" />
+            <button type="button" class="shift-remove" (click)="removeShift(i)" aria-label="Quitar turno">✕</button>
+          </div>
+          <div class="shift-days">
+            <button type="button" *ngFor="let d of shiftDays" class="shift-day" [class.on]="s.days.includes(d.value)"
+                    (click)="toggleShiftDay(s, d.value)" [attr.aria-pressed]="s.days.includes(d.value)">{{ d.label }}</button>
+          </div>
+          <div class="shift-hours">
+            <input type="time" class="timing-input shift-time" [(ngModel)]="s.start" aria-label="Inicio" />
+            <span>a</span>
+            <input type="time" class="timing-input shift-time" [(ngModel)]="s.end" aria-label="Fin" />
+            <input type="number" min="1" max="50" class="timing-input" [(ngModel)]="s.people" aria-label="Personas" />
+            <span>persona(s)</span>
+          </div>
+          <small class="shift-error" *ngIf="shiftError(s) as err">{{ err }}</small>
+        </div>
       </div>
       <div class="timing-actions">
         <button type="button" class="btn-timing-cancel" (click)="showTimingModal = false">Cancelar</button>

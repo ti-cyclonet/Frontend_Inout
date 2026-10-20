@@ -99,10 +99,26 @@ interface QueueInfo {
   needsProduction?: boolean;
 }
 
+/** Turno de producción: días (0 = domingo), horario y personas que preparan. */
+interface ProductionShift {
+  name?: string;
+  days: number[];
+  start: string;
+  end: string;
+  people: number;
+}
+
 interface TimingSettings {
   stageDurations: Record<string, number>;
   productionCapacity: number;
+  shifts?: ProductionShift[];
 }
+
+/** Días para los turnos, de lunes a domingo. */
+const SHIFT_DAYS = [
+  { value: 1, label: 'L' }, { value: 2, label: 'M' }, { value: 3, label: 'M' }, { value: 4, label: 'J' },
+  { value: 5, label: 'V' }, { value: 6, label: 'S' }, { value: 0, label: 'D' },
+];
 
 /** Etapas del kanban que admiten duración (mismas que el backend). */
 const TIMED_STAGES = ['DRAFT', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
@@ -137,7 +153,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   // ─── Tiempos por etapa y cola ───
   queueInfo = new Map<string, QueueInfo>();
-  timingSettings: TimingSettings = { stageDurations: {}, productionCapacity: 1 };
+  timingSettings: TimingSettings = { stageDurations: {}, productionCapacity: 1, shifts: [] };
+  readonly shiftDays = SHIFT_DAYS;
   /** Reloj para los contadores de las tarjetas (se actualiza cada 30 s). */
   now = Date.now();
   private clockTimer: ReturnType<typeof setInterval> | null = null;
@@ -148,9 +165,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
   showTimingModal = false;
   timingSaving = false;
   timingStages = TIMED_STAGES;
-  timingForm: { durations: Record<string, { hours: number | null; minutes: number | null }>; capacity: number } = {
+  timingForm: { durations: Record<string, { hours: number | null; minutes: number | null }>; capacity: number; shifts: ProductionShift[] } = {
     durations: {},
     capacity: 1,
+    shifts: [],
   };
 
   constructor(
@@ -409,11 +427,44 @@ export class OrdersComponent implements OnInit, OnDestroy {
       const total = this.timingSettings.stageDurations[stage] || 0;
       durations[stage] = total ? { hours: Math.floor(total / 60), minutes: total % 60 } : { hours: null, minutes: null };
     }
-    this.timingForm = { durations, capacity: this.timingSettings.productionCapacity || 1 };
+    this.timingForm = {
+      durations,
+      capacity: this.timingSettings.productionCapacity || 1,
+      shifts: (this.timingSettings.shifts || []).map((s) => ({ ...s, days: [...s.days] })),
+    };
     this.showTimingModal = true;
   }
 
+  // ─── Turnos de producción (solo para estimar las entregas) ───
+
+  addShift(): void {
+    const last = this.timingForm.shifts[this.timingForm.shifts.length - 1];
+    this.timingForm.shifts.push(last
+      ? { name: '', days: [...last.days], start: last.end, end: last.end < '18:00' ? '18:00' : '22:00', people: 1 }
+      : { name: 'Mañana', days: [1, 2, 3, 4, 5, 6], start: '08:00', end: '14:00', people: 1 });
+  }
+
+  removeShift(i: number): void {
+    this.timingForm.shifts.splice(i, 1);
+  }
+
+  toggleShiftDay(shift: ProductionShift, day: number): void {
+    shift.days = shift.days.includes(day) ? shift.days.filter((d) => d !== day) : [...shift.days, day].sort();
+  }
+
+  /** Error del turno para mostrarlo en la fila (null si está bien). */
+  shiftError(s: ProductionShift): string | null {
+    if (!s.days.length) return 'Elige al menos un día.';
+    if (!s.start || !s.end || s.end <= s.start) return 'La hora de fin debe ser después del inicio.';
+    if (!(Number(s.people) >= 1)) return 'Indica cuántas personas preparan.';
+    return null;
+  }
+
   saveTiming(): void {
+    if (this.timingForm.shifts.some((s) => this.shiftError(s))) {
+      Swal.fire({ icon: 'warning', title: 'Revisa los turnos', text: 'Hay un turno incompleto: corrígelo o quítalo.' });
+      return;
+    }
     const stageDurations: Record<string, number> = {};
     for (const stage of TIMED_STAGES) {
       const { hours, minutes } = this.timingForm.durations[stage] || { hours: null, minutes: null };
@@ -424,6 +475,13 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.http.patch<TimingSettings>(`${this.baseUrl}/settings/timing`, {
       stageDurations,
       productionCapacity: Number(this.timingForm.capacity) || 1,
+      shifts: this.timingForm.shifts.map((s) => ({
+        name: (s.name || '').trim() || undefined,
+        days: s.days,
+        start: s.start,
+        end: s.end,
+        people: Math.max(1, Math.round(Number(s.people) || 1)),
+      })),
     }).subscribe({
       next: (settings) => {
         this.timingSaving = false;
