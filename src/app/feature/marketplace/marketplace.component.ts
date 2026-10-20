@@ -2099,7 +2099,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   isMadeToOrder(product: Product): boolean {
     const type = product.itemType || 'product';
-    return (type === 'product' || type === 'combo' || type === 'kit') && !!product.blnMadeToOrder;
+    // Productos, combos, kits y materiales compuestos de reventa
+    return (type === 'product' || type === 'combo' || type === 'kit' || type === 'material_t') && !!product.blnMadeToOrder;
   }
 
   /** Unidades del carrito que habría que fabricar (superan el stock disponible). */
