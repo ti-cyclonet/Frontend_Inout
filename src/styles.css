@@ -185,3 +185,7 @@ footer {
 body.inout-bottom-nav .shotra-fab {
   bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
+
+/* Panel comercial: botón "Destacar mi tienda" (destacado pagado en CycloNet Market) */
+.pk-featured-btn { margin-left: auto; padding: 6px 12px; border: 0; border-radius: 999px; font-size: 0.8rem; font-weight: 700; color: #451a03; background: linear-gradient(135deg, #fde68a, #f59e0b); box-shadow: 0 6px 14px -8px rgba(180, 83, 9, 0.8); cursor: pointer; white-space: nowrap; }
+.pk-featured-btn:hover { filter: brightness(1.05); }

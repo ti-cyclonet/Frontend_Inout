@@ -87,6 +87,21 @@
             {{ savingHomeTheme ? 'Guardando…' : 'Guardar tema' }}
           </button>
         </div>
+        <!-- Destacados pagos: precios y cupos (sin precios quedan apagados) -->
+        <div class="home-featured-admin">
+          <div class="home-theme-head">
+            <strong><i class="bi bi-star"></i> Destacados en CycloNet Market</strong>
+            <small>Precio por 7 y por 30 días (0 = no se ofrece) y cuántas tiendas pueden estar destacadas a la vez. Se cobran con una factura en FactoNet.</small>
+          </div>
+          <div class="home-featured-fields">
+            <label>7 días <input type="number" min="0" step="1000" [(ngModel)]="featuredSettings.priceWeek" [ngModelOptions]="{standalone: true}"></label>
+            <label>30 días <input type="number" min="0" step="1000" [(ngModel)]="featuredSettings.priceMonth" [ngModelOptions]="{standalone: true}"></label>
+            <label>Cupos <input type="number" min="1" max="50" [(ngModel)]="featuredSettings.slots" [ngModelOptions]="{standalone: true}"></label>
+            <button type="button" class="home-theme-save" [disabled]="savingFeaturedSettings" (click)="saveFeaturedSettings()">
+              {{ savingFeaturedSettings ? 'Guardando…' : 'Guardar destacados' }}
+            </button>
+          </div>
+        </div>
       </section>
     </div>
 

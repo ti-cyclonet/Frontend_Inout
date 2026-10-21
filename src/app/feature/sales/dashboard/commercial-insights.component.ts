@@ -5,6 +5,7 @@ import { Chart, registerables } from 'chart.js';
 import { environment } from '../../../../environments/environment';
 import { LivePanel } from '../../../shared/components/panel-kit/live-panel';
 import { PANEL_KIT, PkAttention, PkBar } from '../../../shared/components/panel-kit/panel-kit.components';
+import { MarketFeaturedComponent } from '../../../shared/components/market-featured/market-featured.component';
 
 Chart.register(...registerables);
 
@@ -36,7 +37,7 @@ const MIX_COLORS = ['#0057b8', '#11998e', '#f5a623', '#667eea', '#f5576c', '#94a
 @Component({
   selector: 'app-commercial-insights',
   standalone: true,
-  imports: [CommonModule, ...PANEL_KIT],
+  imports: [CommonModule, ...PANEL_KIT, MarketFeaturedComponent],
   template: `
     <section class="pk">
       <div class="pk-head">
@@ -65,7 +66,9 @@ const MIX_COLORS = ['#0057b8', '#11998e', '#f5a623', '#667eea', '#f5576c', '#94a
 
         <!-- Lo que te trajo CycloNet Market (pedidos que llegaron desde la vitrina general) -->
         <article class="pk-panel" *ngIf="d.market as m" style="margin-bottom: 1rem">
-          <header class="pk-panel-head"><h3>Lo que te trajo CycloNet Market</h3><small>Este mes · pedidos que llegaron desde la vitrina general</small></header>
+          <header class="pk-panel-head"><h3>Lo que te trajo CycloNet Market</h3><small>Este mes · pedidos que llegaron desde la vitrina general</small>
+            <button type="button" class="pk-featured-btn" (click)="showFeatured = true">★ Destacar mi tienda</button>
+          </header>
           <div class="pk-grid" *ngIf="m.orders || m.ordersPrevMonth; else noMarket">
             <app-pk-kpi icon="shop" tone="blue" label="Pedidos desde el Market" [value]="m.orders">
               <app-pk-delta [value]="delta(m.orders, m.ordersPrevMonth)"></app-pk-delta><span>vs. mes anterior</span>
@@ -122,6 +125,7 @@ const MIX_COLORS = ['#0057b8', '#11998e', '#f5a623', '#667eea', '#f5576c', '#94a
         </div>
       </ng-container>
     </section>
+    <app-market-featured *ngIf="showFeatured" (close)="showFeatured = false"></app-market-featured>
 
     <ng-template #mix let-groups>
       <ng-container *ngIf="groups.length; else noMix">
@@ -200,6 +204,9 @@ export class CommercialInsightsComponent extends LivePanel<CommercialPanel> impl
   }
 
   color(i: number): string { return MIX_COLORS[i % MIX_COLORS.length]; }
+
+  /** Modal "Destacar mi tienda" (destacado pagado en CycloNet Market). */
+  showFeatured = false;
 
   /** Porcentaje entero de `part` sobre `total`. */
   pct(part: number, total: number): number { return total > 0 ? Math.round((part / total) * 100) : 0; }

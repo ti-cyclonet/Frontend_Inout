@@ -12,6 +12,8 @@ export interface HomeStore {
   sectorLabel: string;
   count: number;
   cover: string | null;
+  /** Compró "Destacado en CycloNet Market": sale primero y con insignia. */
+  promoted?: boolean;
 }
 
 export interface HomeSector {
