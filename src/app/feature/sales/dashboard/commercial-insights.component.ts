@@ -20,6 +20,8 @@ interface CommercialPanel {
   topCustomers: { name: string; value: number; count: number }[];
   ordersByStage: Record<string, number>;
   days: { date: string; revenue: number }[];
+  /** Lo que llegó desde la vitrina general CycloNet Market este mes. */
+  market?: { orders: number; revenue: number; customers: number; newCustomers: number; ordersPrevMonth: number; revenuePrevMonth: number };
 }
 
 const STAGES = [
@@ -60,6 +62,28 @@ const MIX_COLORS = ['#0057b8', '#11998e', '#f5a623', '#667eea', '#f5576c', '#94a
             <span class="pk-chip" [class.danger]="d.kpis.delayedOrders" [class.ok]="!d.kpis.delayedOrders">{{ d.kpis.delayedOrders ? d.kpis.delayedOrders + ' atrasado(s)' : 'Al día' }}</span>
           </app-pk-kpi>
         </div>
+
+        <!-- Lo que te trajo CycloNet Market (pedidos que llegaron desde la vitrina general) -->
+        <article class="pk-panel" *ngIf="d.market as m" style="margin-bottom: 1rem">
+          <header class="pk-panel-head"><h3>Lo que te trajo CycloNet Market</h3><small>Este mes · pedidos que llegaron desde la vitrina general</small></header>
+          <div class="pk-grid" *ngIf="m.orders || m.ordersPrevMonth; else noMarket">
+            <app-pk-kpi icon="shop" tone="blue" label="Pedidos desde el Market" [value]="m.orders">
+              <app-pk-delta [value]="delta(m.orders, m.ordersPrevMonth)"></app-pk-delta><span>vs. mes anterior</span>
+            </app-pk-kpi>
+            <app-pk-kpi icon="graph-up-arrow" tone="green" label="Ventas que trajo" [value]="compactMoney(m.revenue)" [title]="money(m.revenue)">
+              <span>{{ d.kpis.revenueMonth ? pct(m.revenue, d.kpis.revenueMonth) + '% de tus ventas' : 'Pedidos no cancelados' }}</span>
+            </app-pk-kpi>
+            <app-pk-kpi icon="people" tone="violet" label="Clientes" [value]="m.customers">
+              <span>compraron desde el Market</span>
+            </app-pk-kpi>
+            <app-pk-kpi icon="person-plus" tone="orange" label="Clientes nuevos" [value]="m.newCustomers">
+              <span>nunca te habían comprado</span>
+            </app-pk-kpi>
+          </div>
+          <ng-template #noMarket>
+            <p class="pk-empty" style="margin: 0.4rem 0">Aún no llegan pedidos desde la vitrina general. Mantén tus productos visibles en el MarketPlace, con buenas fotos y precios claros, para aparecer en CycloNet Market.</p>
+          </ng-template>
+        </article>
 
         <div class="pk-row">
           <article class="pk-panel">
@@ -176,4 +200,7 @@ export class CommercialInsightsComponent extends LivePanel<CommercialPanel> impl
   }
 
   color(i: number): string { return MIX_COLORS[i % MIX_COLORS.length]; }
+
+  /** Porcentaje entero de `part` sobre `total`. */
+  pct(part: number, total: number): number { return total > 0 ? Math.round((part / total) * 100) : 0; }
 }

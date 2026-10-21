@@ -514,6 +514,41 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     private hostEl: ElementRef<HTMLElement>,
   ) {}
 
+  // ─── Origen del pedido: ¿el comprador llegó desde CycloNet Market? ───
+  /** Tienda (slug o id de la ruta) → cuándo llegó desde la vitrina general. */
+  private static readonly MARKET_REF_KEY = 'cn_market_refs';
+  private static readonly MARKET_REF_DAYS = 7;
+  /** Valor de la ruta (slug o id) con que se abrió la tienda. */
+  private routeStoreKey = '';
+
+  private readMarketRefs(): Record<string, number> {
+    try {
+      return JSON.parse(localStorage.getItem(MarketplaceComponent.MARKET_REF_KEY) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** Recuerda que a esta tienda se llegó desde la vitrina general. */
+  private rememberMarketRef(store: string): void {
+    if (!store || store === 'home') return;
+    try {
+      const refs = this.readMarketRefs();
+      const limit = Date.now() - MarketplaceComponent.MARKET_REF_DAYS * 86400000;
+      for (const k of Object.keys(refs)) if (refs[k] < limit) delete refs[k];
+      refs[store] = Date.now();
+      localStorage.setItem(MarketplaceComponent.MARKET_REF_KEY, JSON.stringify(refs));
+    } catch { /* sin almacenamiento: el pedido queda como de la tienda */ }
+  }
+
+  /** MARKET si el comprador llegó desde la vitrina en los últimos 7 días; si no, STORE. */
+  private orderSource(): 'MARKET' | 'STORE' {
+    const refs = this.readMarketRefs();
+    const limit = Date.now() - MarketplaceComponent.MARKET_REF_DAYS * 86400000;
+    const hit = [this.routeStoreKey, this.tenantId].some((k) => k && (refs[k] || 0) >= limit);
+    return hit ? 'MARKET' : 'STORE';
+  }
+
   ngOnInit(): void {
     // Cambiar título del tab solo para marketplace
     this.titleService.setTitle('CM CycloNet Market');
@@ -522,6 +557,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     
     this.route.params.subscribe(params => {
       this.tenantId = params['tenantId'] || 'current-tenant';
+      this.routeStoreKey = this.tenantId;
+      // Llegó desde la vitrina general (?ref=market): el pedido cuenta para el Market
+      if (this.route.snapshot.queryParamMap.get('ref') === 'market') this.rememberMarketRef(this.tenantId);
       this.loadMarketplaceData();
     });
     
@@ -758,7 +796,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
 
   onHomeStore(store: HomeStore): void {
-    window.location.href = `/marketplace/${store.slug}`;
+    this.rememberMarketRef(store.slug);
+    window.location.href = `/marketplace/${store.slug}?ref=market`;
   }
 
   /**
@@ -1850,7 +1889,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     // se hace en la tienda del producto (su carrito, pagos y agenda).
     if (this.tenantId === 'home') {
       const tenant = (product as any).strTenantId;
-      if (tenant) window.location.href = `/marketplace/${this.homeStoreSlugs[tenant] || tenant}`;
+      if (tenant) {
+        const store = this.homeStoreSlugs[tenant] || tenant;
+        this.rememberMarketRef(store);
+        window.location.href = `/marketplace/${store}?ref=market`;
+      }
       return;
     }
     // Varias presentaciones (8 oz, 12 oz…): el cliente escoge la suya
@@ -3024,6 +3067,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
     const payload = {
       tenantId: this.tenantId,
+      // De dónde llegó el comprador (vitrina general o tienda directa)
+      source: this.orderSource(),
       customerName: this.checkoutData.customerName.trim(),
       customerPhone: this.checkoutData.customerPhone.trim(),
       customerAddress: this.fulfillment === 'PICKUP' || this.cartIsGiftOnly ? undefined : this.checkoutData.customerAddress.trim() || undefined,
