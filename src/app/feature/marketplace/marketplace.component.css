@@ -332,3 +332,9 @@
 
 /* Adición con precio en las burbujas de la carta */
 .mk-extra li .mk-extra-price { font-size: 0.72rem; font-weight: 700; color: var(--mk-sector-ink); font-variant-numeric: tabular-nums; }
+
+/* Destacados pagos (administración de CycloNet Market) */
+.home-featured-admin { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid rgba(148, 163, 184, 0.3); }
+.home-featured-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem; margin-top: 0.5rem; }
+.home-featured-fields label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; font-weight: 600; }
+.home-featured-fields input { width: 130px; padding: 0.4rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
