@@ -68,9 +68,18 @@
         <label>Estado del Stock</label>
         <select class="form-select" [(ngModel)]="filters.stockStatus" (change)="onFilterChange()">
           <option value="all">Todos</option>
-          <option value="low">Stock Bajo</option>
+          <option value="out">Agotado</option>
+          <option value="low">Bajo el mínimo</option>
           <option value="normal">Normal</option>
           <option value="high">Stock Alto</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Vencimiento</label>
+        <select class="form-select" [(ngModel)]="filters.expiring" (change)="onFilterChange()">
+          <option [ngValue]="0">Todos</option>
+          <option [ngValue]="EXPIRING_DAYS">Lotes por vencer ({{ EXPIRING_DAYS }} días)</option>
         </select>
       </div>
       
@@ -181,7 +190,8 @@
         <tbody>
           <tr *ngFor="let material of materials; trackBy: trackById" 
               [class.selected]="selectedMaterials.has(material.id)"
-              [class.row-low-stock]="getStockStatusClass(material) === 'stock-low'">
+              [class.row-low-stock]="getStockStatusClass(material) === 'stock-low'"
+              [class.row-expiring]="!!expiringOf(material)">
             <td class="hide-mobile">
               <input 
                 type="checkbox" 
@@ -229,7 +239,11 @@
               </span>
             </td>
             <td class="text-center col-expiration">
-              <ng-container *ngIf="getExpirationStatus(material.expirationDate) !== 'none'">
+              <ng-container *ngIf="expiringOf(material) as e">
+                <span class="expiration-badge lot-expiring">{{ expiringLabel(material) }}</span>
+                <small class="text-muted d-block">{{ e.expiresAt | date:'dd/MM/yyyy':'UTC' }}</small>
+              </ng-container>
+              <ng-container *ngIf="!expiringOf(material) && getExpirationStatus(material.expirationDate) !== 'none'">
                 <span class="expiration-badge" [ngClass]="getExpirationStatus(material.expirationDate)">
                   {{ getExpirationLabel(getExpirationStatus(material.expirationDate)) }}
                 </span>
@@ -270,7 +284,8 @@
   <div class="mobile-list" *ngIf="viewMode === 'table' && materials.length > 0">
     <div class="mobile-list-item" *ngFor="let material of materials; trackBy: trackById" 
          (click)="viewMaterial(material)"
-         [class.mobile-low-stock]="getStockStatusClass(material) === 'stock-low'">
+         [class.mobile-low-stock]="getStockStatusClass(material) === 'stock-low'"
+         [class.mobile-expiring]="!!expiringOf(material)">
       <div class="mobile-list-info">
         <div class="mobile-list-image">
           <img *ngIf="material.images && material.images.length > 0" 
@@ -296,7 +311,8 @@
   <div class="cards-container" *ngIf="viewMode === 'cards'">
     <div class="material-card" *ngFor="let material of materials; trackBy: trackById"
          [class.selected]="selectedMaterials.has(material.id)"
-         [class.card-low-stock]="getStockStatusClass(material) === 'stock-low'">
+         [class.card-low-stock]="getStockStatusClass(material) === 'stock-low'"
+         [class.card-expiring]="!!expiringOf(material)">
       
       <div class="card-image" *ngIf="material.images && material.images.length > 0">
         <div class="card-slider">
