@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { taxLabelFor } from './tax.service';
 import { TenantBrandingService, drawPdfLogo } from './tenant-branding.service';
 
 /**
@@ -198,7 +199,7 @@ export class DocumentsService {
 
     this.drawTotals(doc, [
       { label: 'Subtotal:', value: this.formatCurrency(data.subtotal) },
-      { label: 'IVA (19%):', value: this.formatCurrency(data.tax) },
+      { label: taxLabelFor(data.subtotal, data.tax) + ':', value: this.formatCurrency(data.tax) },
       { label: 'TOTAL:', value: this.formatCurrency(data.total), bold: true },
     ]);
 
@@ -264,7 +265,7 @@ export class DocumentsService {
 
     const totals = [
       { label: 'Subtotal:', value: this.formatCurrency(data.subtotal) },
-      { label: 'IVA (19%):', value: this.formatCurrency(data.tax) },
+      { label: taxLabelFor(data.subtotal, data.tax) + ':', value: this.formatCurrency(data.tax) },
     ];
     if (data.discount > 0) {
       totals.push({ label: 'Descuento:', value: `-${this.formatCurrency(data.discount)}` });

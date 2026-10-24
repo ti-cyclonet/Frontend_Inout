@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
+import { TaxService, taxOn } from '../../../shared/services/tax.service';
 import { ProductsService, SellableItem } from '../../../shared/services/products.service';
 import { SalesService, CreateSaleDto } from '../../../shared/services/sales.service';
 import { KardexService } from '../../../shared/services/kardex.service';
@@ -90,11 +91,17 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService) {}
+
+  /** IVA o INC del período activo del negocio; 0 si no está configurado. */
+  taxLabel: 'IVA' | 'INC' = 'IVA';
+  taxPercent = 0;
 
   ngOnInit(): void {
     this.loadCustomers();
     this.loadProducts();
+    // Impuesto del período activo (sin parámetro, ninguno)
+    this.taxService.info().subscribe((t) => { this.taxLabel = t.label; this.taxPercent = t.percent; this.updateTotals(); });
   }
 
   loadCustomers(): void {
@@ -361,7 +368,7 @@ export class SaleFormComponent implements OnInit {
 
   updateTotals(): void {
     this.orderData.subtotal = this.orderData.items.reduce((sum, item) => sum + item.total, 0);
-    this.orderData.tax = this.orderData.subtotal * 0.19;
+    this.orderData.tax = taxOn(this.orderData.subtotal, this.taxPercent);
     this.orderData.total = this.orderData.subtotal + this.orderData.tax;
   }
 

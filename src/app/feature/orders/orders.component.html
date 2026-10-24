@@ -243,7 +243,7 @@
         <!-- Totals -->
         <div class="detail-totals">
           <div class="total-row"><span>Subtotal</span><span>{{ formatCurrency(selectedOrder.subtotal) }}</span></div>
-          <div class="total-row"><span>IVA (19%)</span><span>{{ formatCurrency(selectedOrder.tax) }}</span></div>
+          <div class="total-row" *ngIf="selectedOrder.tax > 0"><span>{{ taxLabelFor(selectedOrder.subtotal, selectedOrder.tax) }}</span><span>{{ formatCurrency(selectedOrder.tax) }}</span></div>
           <div class="total-row" *ngIf="selectedOrder.discount > 0"><span>Descuento</span><span>-{{ formatCurrency(selectedOrder.discount) }}</span></div>
           <div class="total-row total-final"><span>TOTAL</span><span>{{ formatCurrency(selectedOrder.total) }}</span></div>
         </div>

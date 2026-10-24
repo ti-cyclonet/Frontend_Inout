@@ -190,8 +190,8 @@
             <span>Subtotal:</span>
             <span>{{ formatCurrency(orderData.subtotal) }}</span>
           </div>
-          <div class="summary-row">
-            <span>IVA (19%):</span>
+          <div class="summary-row" *ngIf="taxPercent > 0">
+            <span>{{ taxLabel }} ({{ taxPercent }}%):</span>
             <span>{{ formatCurrency(orderData.tax) }}</span>
           </div>
           <div class="summary-row" *ngIf="orderData.discount > 0">
