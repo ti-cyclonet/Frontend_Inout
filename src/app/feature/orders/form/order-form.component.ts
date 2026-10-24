@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
+import { TaxService, taxOn } from '../../../shared/services/tax.service';
 import { ProductsService, SellableItem } from '../../../shared/services/products.service';
 import { Customer } from '../../../shared/model/customer.model';
 import { HttpClient } from '@angular/common/http';
@@ -105,12 +106,19 @@ export class OrderFormComponent implements OnInit {
     private customersService: CustomersService,
     private productsService: ProductsService,
     private http: HttpClient,
-    private promotionsService: PromotionsService
+    private promotionsService: PromotionsService,
+    private taxService: TaxService
   ) {}
+
+  /** IVA o INC del período activo del negocio; 0 si no está configurado. */
+  taxLabel: 'IVA' | 'INC' = 'IVA';
+  taxPercent = 0;
 
   ngOnInit(): void {
     this.loadCustomers();
     this.loadProducts();
+    // Impuesto del período activo (sin parámetro, ninguno)
+    this.taxService.info().subscribe((t) => { this.taxLabel = t.label; this.taxPercent = t.percent; this.updateTotals(); });
   }
 
   loadCustomers(): void {
@@ -364,7 +372,7 @@ export class OrderFormComponent implements OnInit {
       this.loadSlots(this.scheduleDate, true);
     }
     this.orderData.subtotal = this.orderData.items.reduce((sum, item) => sum + item.subtotal, 0);
-    this.orderData.tax = this.orderData.subtotal * 0.19;
+    this.orderData.tax = taxOn(this.orderData.subtotal, this.taxPercent);
     this.orderData.discount = 0;
     this.orderData.total = this.orderData.subtotal + this.orderData.tax - this.orderData.discount;
   }

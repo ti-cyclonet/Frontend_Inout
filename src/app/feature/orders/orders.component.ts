@@ -17,6 +17,7 @@ import { formatCop } from '../../shared/utils/currency.util';
 import { ProfitBubbleService } from '../../shared/services/profit-bubble.service';
 import { DisplayLine, documentLines, groupComboLines } from '../../shared/utils/combo-lines.util';
 import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
+import { taxLabelFor } from '../../shared/services/tax.service';
 
 interface OrderItem {
   productId: string;
@@ -899,6 +900,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
   displayLines(order: Order): DisplayLine[] {
     return groupComboLines(order?.items);
   }
+
+  /** «IVA (19%)» con el porcentaje que quedó guardado en el pedido. */
+  readonly taxLabelFor = taxLabelFor;
 
   formatCurrency(value: number): string {
     return formatCop(value);
