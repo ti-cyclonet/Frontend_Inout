@@ -104,6 +104,16 @@ export class CreditService {
     return this.http.post<{ sent: boolean; email?: string; reason?: string }>(`${this.apiUrl}/receivables/${id}/remind`, {});
   }
 
+  /** Comprobantes que subieron los clientes desde el enlace de pago. */
+  listVouchers(status = 'PENDIENTE_VERIFICACION'): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/vouchers`, { params: { status } });
+  }
+
+  /** Verificar (registra el abono) o rechazar un comprobante. */
+  reviewVoucher(id: string, action: 'VERIFY' | 'REJECT', reason?: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/vouchers/${id}/review`, { action, reason });
+  }
+
   // Configuración: intereses de mora y recordatorios
   getSettings(): Observable<CreditSettings> {
     return this.http.get<CreditSettings>(`${this.apiUrl}/settings`);

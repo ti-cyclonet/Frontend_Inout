@@ -3,7 +3,9 @@
   <div class="pf-header">
     <div class="pf-views" role="tablist" aria-label="Cartera">
       <button type="button" [class.active]="view === 'summary'" (click)="setView('summary')">Resumen</button>
-      <button type="button" [class.active]="view === 'receivables'" (click)="setView('receivables')">Cuentas por cobrar</button>
+      <button type="button" [class.active]="view === 'receivables'" (click)="setView('receivables')">
+        Cuentas por cobrar <span class="pf-badge" *ngIf="vouchers.length" title="Comprobantes por verificar">{{ vouchers.length }}</span>
+      </button>
       <button type="button" [class.active]="view === 'credits'" (click)="setView('credits')">
         Créditos <span class="pf-badge" *ngIf="summary?.credit?.pendingRequests">{{ summary.credit.pendingRequests }}</span>
       </button>
@@ -80,6 +82,35 @@
 
   <!-- ═══════ CUENTAS POR COBRAR ═══════ -->
   <ng-container *ngIf="view === 'receivables'">
+    <!-- Comprobantes que subieron los clientes desde el enlace del recordatorio -->
+    <div class="pf-card pf-vouchers" *ngIf="vouchers.length">
+      <h4>Comprobantes por verificar <span class="pf-badge">{{ vouchers.length }}</span></h4>
+      <p class="pf-vouchers-hint">Tus clientes los subieron desde el enlace del recordatorio de pago. Revisa que el dinero haya llegado: al verificar, se registra el abono.</p>
+      <div class="pf-table-wrap">
+        <table class="pf-table">
+          <thead>
+            <tr><th>Documento</th><th>Cliente</th><th class="num">Valor</th><th class="hide-sm">Medio</th><th class="hide-sm">Recibido</th><th class="actions-col">Acciones</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of vouchers">
+              <td><strong>{{ v.documentCode }}</strong></td>
+              <td>{{ v.customerName }}</td>
+              <td class="num strong">{{ formatCurrency(v.amount) }}</td>
+              <td class="hide-sm">{{ methodLabel(v.method) }}<small class="d-block" *ngIf="v.reference">Ref. {{ v.reference }}</small></td>
+              <td class="hide-sm">{{ v.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="actions-col">
+                <a class="pf-btn sm" [href]="v.voucherUrl" target="_blank" rel="noopener">Ver comprobante</a>
+                <ng-container *ngIf="canOperate">
+                  <button type="button" class="pf-btn primary sm" (click)="reviewVoucher(v, 'VERIFY')">Verificar</button>
+                  <button type="button" class="pf-btn danger sm" (click)="reviewVoucher(v, 'REJECT')">Rechazar</button>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="pf-toolbar">
       <div class="pf-chips">
         <button type="button" [class.active]="receivableStatus === 'OPEN'" (click)="receivableStatus = 'OPEN'; loadReceivables()">Abiertas</button>

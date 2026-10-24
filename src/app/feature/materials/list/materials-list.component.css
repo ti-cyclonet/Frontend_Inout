@@ -1167,6 +1167,32 @@
   background-color: #fff7e6 !important;
   box-shadow: inset 4px 0 0 #f59e0b;
 }
+/* Lotes vencidos: rojo intenso con borde (más fuerte que el rosado de stock bajo) */
+.materials-table tr.row-expired,
+.materials-table tr.row-expired td {
+  background-color: #fde2e2 !important;
+}
+.materials-table tr.row-expired td:first-child {
+  box-shadow: inset 4px 0 0 #dc2626;
+}
+.materials-table tr.row-expired:hover,
+.materials-table tr.row-expired:hover td {
+  background-color: #fbcaca !important;
+}
+.card-expired {
+  background: #fde2e2 !important;
+  border-color: #f87171 !important;
+  box-shadow: inset 4px 0 0 #dc2626;
+}
+.mobile-list-item.mobile-expired {
+  background-color: #fde2e2 !important;
+  box-shadow: inset 4px 0 0 #dc2626;
+}
+.expiration-badge.lot-expired {
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+}
 .expiration-badge.lot-expiring {
   background: #f59e0b;
   color: #fff;

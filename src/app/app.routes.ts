@@ -19,6 +19,7 @@ import { ProductsComponent } from './feature/products/products.component';
 import { SalesComponent } from './feature/sales/sales.component';
 import { MarketplaceComponent } from './feature/marketplace/marketplace.component';
 import { OrderTrackingComponent } from './feature/marketplace/order-tracking/order-tracking.component';
+import { CreditPayComponent } from './feature/marketplace/credit-pay/credit-pay.component';
 import { UsersComponent } from './feature/users/users.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 import { UsagePanelComponent } from './feature/usage-panel/usage-panel.component';
@@ -38,6 +39,8 @@ export const routes: Routes = [
     { path: 'marketplace/:tenantId', component: MarketplaceComponent },
     // Seguimiento público de un pedido (enlace que recibe el comprador)
     { path: 'marketplace/:tenantId/pedido/:token', component: OrderTrackingComponent },
+    // Pago de cartera: enlace del recordatorio de pago (sin cuenta)
+    { path: 'pago/:token', component: CreditPayComponent },
     {
         path: '',
         component: LayoutComponent,
