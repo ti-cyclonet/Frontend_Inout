@@ -53,7 +53,9 @@ export interface MaterialFilters {
   search: string;
   ubicacion: string[];
   priceRange: [number, number];
-  stockStatus: 'low' | 'normal' | 'high' | 'all';
+  stockStatus: 'out' | 'low' | 'normal' | 'high' | 'all';
+  /** Solo materiales con lotes que vencen en estos días (0 = sin filtro). */
+  expiring?: number;
   status: 'active' | 'inactive' | 'all';
   categoryId?: string;
   location?: string;

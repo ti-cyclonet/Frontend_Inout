@@ -1,4 +1,6 @@
-import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input, OnChanges, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -42,8 +44,14 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     stockStatus: 'all',
     status: 'all',
     categoryId: '',
-    location: ''
+    location: '',
+    expiring: 0
   };
+
+  /** Lote más próximo a vencer de cada material (próximos 15 días), por id. */
+  expiringById = new Map<string, { daysLeft: number; expiresAt: string; lots: number }>();
+  readonly EXPIRING_DAYS = 15;
+  private http = inject(HttpClient);
 
   // Sorting
   sortField = 'name';
@@ -67,14 +75,42 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     // Desde "Requiere atención" (?stock=low): la lista llega filtrada
     const stock = this.route.snapshot.queryParamMap.get('stock');
-    if (stock === 'low' || stock === 'high' || stock === 'normal') {
+    if (stock === 'out' || stock === 'low' || stock === 'high' || stock === 'normal') {
       this.filters.stockStatus = stock;
       this.showFilters = true;
     }
+    // ?expiring=15: solo los materiales con lotes por vencer
+    const expiring = Number(this.route.snapshot.queryParamMap.get('expiring')) || 0;
+    if (expiring > 0) {
+      this.filters.expiring = expiring;
+      this.showFilters = true;
+    }
+    this.loadExpiring();
     this.loadViewMode();
     this.loadCategories();
     this.loadLocations();
     this.loadMaterials();
+  }
+
+  /** Lotes por vencer: resaltan la fila y muestran en cuántos días vence. */
+  loadExpiring(): void {
+    this.http.get<{ materials: { materialId: string; daysLeft: number; expiresAt: string; lots: number }[] }>(
+      `${environment.apiUrl}/dashboard/materials/expiring`, { params: { days: String(this.EXPIRING_DAYS) } },
+    ).subscribe({
+      next: (r) => { this.expiringById = new Map((r?.materials || []).map((m) => [m.materialId, m])); },
+      error: () => { this.expiringById = new Map(); },
+    });
+  }
+
+  expiringOf(material: any): { daysLeft: number; expiresAt: string; lots: number } | null {
+    return this.expiringById.get(material?.id || material?.strId) || null;
+  }
+
+  expiringLabel(material: any): string {
+    const e = this.expiringOf(material);
+    if (!e) return '';
+    const when = e.daysLeft === 0 ? 'vence hoy' : e.daysLeft === 1 ? 'vence mañana' : `vence en ${e.daysLeft} días`;
+    return e.lots > 1 ? `Lote ${when} (+${e.lots - 1})` : `Lote ${when}`;
   }
 
   loadViewMode(): void {
@@ -190,7 +226,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     const currentStock = material.ingQuantity || material.currentStock || 0;
     const minStock = material.ingMinStock || material.stockMin || 0;
     
-    if (currentStock < minStock) return 'low';
+    // Agotado o bajo el mínimo: se resalta igual (en rojo)
+    if (currentStock <= 0 || currentStock < minStock) return 'low';
     return 'normal';
   }
 
@@ -218,7 +255,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   getStockStatusClass(material: any): string {
     const currentStock = parseFloat(material.ingQuantity || material.currentStock || 0);
     const minStock = parseFloat(material.ingMinStock || material.stockMin || 0);
-    const status = currentStock < minStock ? 'low' : 'normal';
+    const status = currentStock <= 0 || currentStock < minStock ? 'low' : 'normal';
     return status === 'low' ? 'stock-low' : 'stock-normal';
   }
 
@@ -230,7 +267,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
       stockStatus: 'all',
       status: 'all',
       categoryId: '',
-      location: ''
+      location: '',
+      expiring: 0
     };
     this.onFilterChange();
   }
