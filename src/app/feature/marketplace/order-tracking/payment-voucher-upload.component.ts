@@ -67,6 +67,8 @@ const CUSTOMER_METHODS = [
 })
 export class PaymentVoucherUploadComponent implements OnChanges {
   @Input() token!: string;
+  /** Dónde se envía (por defecto, el pago de un pedido; cartera usa el suyo). */
+  @Input() endpoint?: string;
   /** Monto sugerido (anticipo o saldo). */
   @Input() suggestedAmount = 0;
   @Output() uploaded = new EventEmitter<void>();
@@ -117,7 +119,7 @@ export class PaymentVoucherUploadComponent implements OnChanges {
     form.append('file', this.file);
 
     this.sending = true;
-    this.http.post(`${environment.apiUrl}/orders/marketplace/track/${this.token}/payments`, form).subscribe({
+    this.http.post(this.endpoint || `${environment.apiUrl}/orders/marketplace/track/${this.token}/payments`, form).subscribe({
       next: () => { this.sending = false; this.sent = true; this.uploaded.emit(); },
       error: (err) => {
         this.sending = false;

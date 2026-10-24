@@ -62,6 +62,8 @@ export class PortfolioComponent implements OnInit, OnDestroy {
   private liveTimer: any;
 
   receivables: any[] = [];
+  /** Comprobantes de clientes por verificar (enlace de pago del recordatorio). */
+  vouchers: any[] = [];
   loadingReceivables = false;
   receivableStatus: 'OPEN' | 'OVERDUE' | 'PAGADA' | 'ANULADA' | '' = 'OPEN';
   receivableSearch = '';
@@ -93,6 +95,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
     this.canOperate = this.isAdmin || ['operatorInout', 'operator'].includes(role);
     this.loadSummary();
     this.loadSettings();
+    this.loadVouchers();
     // Desde el tablero (?vista=creditos | vencidas): directo a la vista exacta
     const vista = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('vista') : null;
     if (vista === 'creditos') {
@@ -124,7 +127,50 @@ export class PortfolioComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.setView(this.view);
+    this.loadVouchers();
   }
+
+  // ═══════════════ Comprobantes de clientes ═══════════════
+  loadVouchers(): void {
+    this.creditService.listVouchers().subscribe({
+      next: (v) => { this.vouchers = v || []; },
+      error: () => { this.vouchers = []; },
+    });
+  }
+
+  /** Verificar registra el abono por el valor del comprobante; rechazar pide el motivo. */
+  async reviewVoucher(v: any, action: 'VERIFY' | 'REJECT'): Promise<void> {
+    let reason: string | undefined;
+    if (action === 'VERIFY') {
+      const ok = await Swal.fire({
+        icon: 'question',
+        title: 'Verificar comprobante',
+        html: `Se registrará un abono de <b>${this.formatCurrency(v.amount)}</b> a ${v.documentCode || 'la cuenta'} de ${v.customerName || 'el cliente'}.`,
+        showCancelButton: true, confirmButtonText: 'Verificar y abonar', cancelButtonText: 'Cancelar',
+      });
+      if (!ok.isConfirmed) return;
+    } else {
+      const res = await Swal.fire({
+        icon: 'warning', title: 'Rechazar comprobante', input: 'text', inputLabel: 'Motivo (lo verá el cliente)',
+        inputPlaceholder: 'Ej.: el valor no coincide con la consignación',
+        showCancelButton: true, confirmButtonText: 'Rechazar', cancelButtonText: 'Cancelar',
+        inputValidator: (val) => (!val || val.trim().length < 5 ? 'Escribe el motivo (mínimo 5 caracteres).' : null),
+      });
+      if (!res.isConfirmed) return;
+      reason = String(res.value).trim();
+    }
+    this.creditService.reviewVoucher(v.id, action, reason).subscribe({
+      next: () => {
+        Swal.fire({ icon: 'success', title: action === 'VERIFY' ? 'Abono registrado' : 'Comprobante rechazado', timer: 1600, showConfirmButton: false });
+        this.loadVouchers();
+        this.loadSummary(true);
+        if (this.view === 'receivables') this.loadReceivables();
+      },
+      error: (err) => Swal.fire('Error', err?.error?.message || 'No se pudo revisar el comprobante', 'error'),
+    });
+  }
+
+  methodLabel(m: string): string { return paymentMethodLabel(m); }
 
   // ═══════════════ Resumen ═══════════════
   loadSummary(silent = false): void {
