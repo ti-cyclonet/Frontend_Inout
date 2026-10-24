@@ -579,6 +579,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     // Para ruta pública general, cargar todos los productos
     if (this.tenantId === 'home') {
       this.loadHomeTheme();
+      this.loadPromotedStores();
       this.loadAllProducts();
       return;
     }
@@ -649,6 +650,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       next: (r) => {
         this.canEditHomeTheme = !!r?.canEdit;
         this.homeAdminState = this.canEditHomeTheme ? 'allowed' : 'denied';
+        if (this.canEditHomeTheme) this.loadFeaturedSettings(token);
       },
       error: (err) => {
         this.canEditHomeTheme = false;
@@ -753,6 +755,52 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   private homeTenantLogos: Record<string, string | null> = {};
   private homeStoreSlugs: Record<string, string> = {};
 
+  /** Tiendas destacadas (compraron "Destacado en CycloNet Market"): salen primero y con insignia. */
+  private promotedTenants = new Set<string>();
+
+  /** Carga las tiendas destacadas y reordena la vitrina si ya estaba cargada. */
+  private loadPromotedStores(): void {
+    this.http.get<{ tenantIds: string[] }>(`${this.baseUrl}/market-featured/active`).subscribe({
+      next: (r) => {
+        this.promotedTenants = new Set(r?.tenantIds || []);
+        if (!this.promotedTenants.size || !this.products.length) return;
+        this.products = this.interleaveByTenant(this.products);
+        this.filteredProducts = [...this.products];
+        this.buildHomeShowcase();
+      },
+      error: () => { /* sin destacados: la vitrina sigue igual */ },
+    });
+  }
+
+  // ─── Destacados: precios y cupos (solo la cuenta de CycloNet) ───
+  featuredSettings = { priceWeek: 0, priceMonth: 0, slots: 6 };
+  savingFeaturedSettings = false;
+
+  private loadFeaturedSettings(token: string): void {
+    this.http.get<typeof this.featuredSettings>(`${this.baseUrl}/market-featured/settings`, { headers: { Authorization: `Bearer ${token}` } })
+      .subscribe({ next: (s) => { if (s) this.featuredSettings = s; }, error: () => undefined });
+  }
+
+  saveFeaturedSettings(): void {
+    const token = sessionStorage.getItem('authToken') || sessionStorage.getItem('token') || '';
+    this.savingFeaturedSettings = true;
+    this.http.patch<typeof this.featuredSettings>(`${this.baseUrl}/market-featured/settings`, {
+      priceWeek: Number(this.featuredSettings.priceWeek) || 0,
+      priceMonth: Number(this.featuredSettings.priceMonth) || 0,
+      slots: Number(this.featuredSettings.slots) || 6,
+    }, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
+      next: (s) => {
+        this.savingFeaturedSettings = false;
+        this.featuredSettings = s;
+        Swal.fire({ icon: 'success', title: 'Destacados guardados', text: s.priceWeek || s.priceMonth ? 'Los negocios ya pueden comprar su destacado.' : 'Sin precios, los destacados quedan apagados.', timer: 2200, showConfirmButton: false });
+      },
+      error: () => {
+        this.savingFeaturedSettings = false;
+        Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: 'Revisa tu sesión e intenta de nuevo.' });
+      },
+    });
+  }
+
   /** Tiendas y sectores de la portada de CycloNet Market (con lo que hay en la vitrina). */
   private buildHomeShowcase(): void {
     const labels = new Map(HOME_SECTORS.map((c) => [c.value, c.label]));
@@ -771,8 +819,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         sectorLabel: (() => { const cat = homeSectorOf(this.homeTenantSectors[t]); return cat === '31' ? 'Tienda local' : labels.get(cat) || 'Tienda local'; })(),
         count: items.length,
         cover: items.find((p) => p.image)?.image || null,
+        promoted: this.promotedTenants.has(t),
       }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => Number(b.promoted) - Number(a.promoted) || b.count - a.count);
     const counts = new Map<string, number>();
     for (const p of this.products) {
       const cat = this.categoryOf(p);
@@ -819,7 +868,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       const key = (p as any).strTenantId || '';
       byTenant.set(key, [...(byTenant.get(key) || []), p]);
     }
-    const queues = shuffle([...byTenant.values()]).map(shuffle);
+    // Las tiendas destacadas van primero en cada vuelta
+    const queues = shuffle([...byTenant.entries()])
+      .sort(([a], [b]) => Number(this.promotedTenants.has(b)) - Number(this.promotedTenants.has(a)))
+      .map(([, list]) => shuffle(list));
     const out: Product[] = [];
     while (queues.some((q) => q.length)) {
       for (const q of queues) if (q.length) out.push(q.shift()!);

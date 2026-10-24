@@ -91,6 +91,7 @@
           <img *ngIf="s.logo" [src]="s.logo" [alt]="'Logo de ' + s.name">
           <b *ngIf="!s.logo">{{ s.name.charAt(0) }}</b>
         </span>
+        <span class="mh-store-badge" *ngIf="s.promoted">★ Destacada</span>
         <strong>{{ s.name }}</strong>
         <small>{{ s.sectorLabel }} · {{ s.count }} producto{{ s.count === 1 ? '' : 's' }}</small>
         <span class="mh-store-go">Visitar tienda <span aria-hidden="true">→</span></span>
