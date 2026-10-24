@@ -79,7 +79,7 @@
         <label>Vencimiento</label>
         <select class="form-select" [(ngModel)]="filters.expiring" (change)="onFilterChange()">
           <option [ngValue]="0">Todos</option>
-          <option [ngValue]="EXPIRING_DAYS">Lotes por vencer ({{ EXPIRING_DAYS }} días)</option>
+          <option [ngValue]="EXPIRING_DAYS">Lotes vencidos o por vencer ({{ EXPIRING_DAYS }} días)</option>
         </select>
       </div>
       
@@ -191,7 +191,8 @@
           <tr *ngFor="let material of materials; trackBy: trackById" 
               [class.selected]="selectedMaterials.has(material.id)"
               [class.row-low-stock]="getStockStatusClass(material) === 'stock-low'"
-              [class.row-expiring]="!!expiringOf(material)">
+              [class.row-expiring]="!!expiringOf(material) && !isExpired(material)"
+              [class.row-expired]="isExpired(material)">
             <td class="hide-mobile">
               <input 
                 type="checkbox" 
@@ -240,7 +241,7 @@
             </td>
             <td class="text-center col-expiration">
               <ng-container *ngIf="expiringOf(material) as e">
-                <span class="expiration-badge lot-expiring">{{ expiringLabel(material) }}</span>
+                <span class="expiration-badge" [class.lot-expiring]="!e.expired" [class.lot-expired]="e.expired">{{ expiringLabel(material) }}</span>
                 <small class="text-muted d-block">{{ e.expiresAt | date:'dd/MM/yyyy':'UTC' }}</small>
               </ng-container>
               <ng-container *ngIf="!expiringOf(material) && getExpirationStatus(material.expirationDate) !== 'none'">
@@ -285,7 +286,8 @@
     <div class="mobile-list-item" *ngFor="let material of materials; trackBy: trackById" 
          (click)="viewMaterial(material)"
          [class.mobile-low-stock]="getStockStatusClass(material) === 'stock-low'"
-         [class.mobile-expiring]="!!expiringOf(material)">
+         [class.mobile-expiring]="!!expiringOf(material) && !isExpired(material)"
+         [class.mobile-expired]="isExpired(material)">
       <div class="mobile-list-info">
         <div class="mobile-list-image">
           <img *ngIf="material.images && material.images.length > 0" 
@@ -312,7 +314,8 @@
     <div class="material-card" *ngFor="let material of materials; trackBy: trackById"
          [class.selected]="selectedMaterials.has(material.id)"
          [class.card-low-stock]="getStockStatusClass(material) === 'stock-low'"
-         [class.card-expiring]="!!expiringOf(material)">
+         [class.card-expiring]="!!expiringOf(material) && !isExpired(material)"
+         [class.card-expired]="isExpired(material)">
       
       <div class="card-image" *ngIf="material.images && material.images.length > 0">
         <div class="card-slider">
