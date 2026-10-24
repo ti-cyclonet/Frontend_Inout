@@ -2178,12 +2178,18 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Etiqueta de disponibilidad: "Bajo pedido" (se fabrica) o "Agotado". */
   stockTag(product: Product): { text: string; cls: string } | null {
     const available = this.getAvailableStock(product);
-    if (available === null || available > 0) return null;
+    // Bajo pedido: siempre se anuncia. Si hay unidades ya hechas se dice cuántas;
+    // lo que pase de ahí toma el tiempo de preparación.
     if (this.isMadeToOrder(product)) {
       const m = product.intProductionLeadMinutes ?? (Number(product.intProductionLeadHours) || 0) * 60;
-      const lead = !m ? '' : m < 60 ? ` · listo en ~${m} min` : m < 1440 ? ` · listo en ~${Math.round(m / 6) / 10} h` : ` · listo en ~${Math.ceil(m / 1440)} día(s)`;
-      return { text: `🛠 Bajo pedido${lead}`, cls: 'tag-made' };
+      const time = !m ? '' : m < 60 ? `~${m} min` : m < 1440 ? `~${String(Math.round(m / 6) / 10).replace('.', ',')} h` : `~${Math.ceil(m / 1440)} día(s)`;
+      const ready = Math.floor(available ?? 0);
+      if (ready > 0) {
+        return { text: `🛠 Bajo pedido · ${ready} disponible${ready > 1 ? 's' : ''} ya${time ? `, más en ${time}` : ''}`, cls: 'tag-made' };
+      }
+      return { text: `🛠 Bajo pedido${time ? ` · listo en ${time}` : ''}`, cls: 'tag-made' };
     }
+    if (available === null || available > 0) return null;
     return { text: 'Agotado', cls: 'tag-out' };
   }
 
