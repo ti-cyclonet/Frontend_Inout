@@ -70,6 +70,9 @@ export class MaterialService {
       if (filters.stockStatus && filters.stockStatus !== 'all') {
         params = params.set('stockStatus', filters.stockStatus);
       }
+      if (filters.expiring && filters.expiring > 0) {
+        params = params.set('expiring', String(filters.expiring));
+      }
       if (filters.ubicacion && filters.ubicacion.length > 0) {
         params = params.set('ubicacion', filters.ubicacion.join(','));
       }

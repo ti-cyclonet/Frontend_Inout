@@ -1146,6 +1146,33 @@
 }
 
 
+/* Lotes por vencer: ámbar, distinto del rojo de stock bajo */
+.materials-table tr.row-expiring,
+.materials-table tr.row-expiring td {
+  background-color: #fff7e6 !important;
+}
+.materials-table tr.row-expiring td:first-child {
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+.materials-table tr.row-expiring:hover,
+.materials-table tr.row-expiring:hover td {
+  background-color: #ffedc2 !important;
+}
+.card-expiring {
+  background: #fffaf0 !important;
+  border-color: #fcd34d !important;
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+.mobile-list-item.mobile-expiring {
+  background-color: #fff7e6 !important;
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+.expiration-badge.lot-expiring {
+  background: #f59e0b;
+  color: #fff;
+  font-weight: 600;
+}
+
 /* Mobile Low Stock */
 .mobile-list-item.mobile-low-stock {
   background-color: #fff5f5 !important;
