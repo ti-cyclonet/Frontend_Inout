@@ -9,12 +9,13 @@ interface MaterialsPanel {
   kpis: {
     materials: number; composites: number; resale: number; value: number; compositesValue: number;
     lowStock: number; outOfStock: number; healthPercent: number | null;
-    consumption30: number; purchasesMonth: number; purchasesPrevMonth: number; idle30: number;
+    consumption30: number; purchasesMonth: number; purchasesPrevMonth: number; idle30: number; expiredLots?: number;
   };
   alerts: {
     lowStock: { id: string; name: string; stock: number; min: number; unit: string }[];
     outOfStock: { id: string; name: string; unit: string }[];
     expiringLots: { id: string; name: string; daysLeft: number }[];
+    expiredLots?: { id: string; name: string; daysAgo: number }[];
     idle: { id: string; name: string; value: number }[];
   };
   topConsumed: { name: string; quantity: number; value: number; unit: string }[];
@@ -121,12 +122,14 @@ export class MaterialsInsightsComponent extends LivePanel<MaterialsPanel> implem
     const a: PkAttention[] = [];
     if (d.kpis.outOfStock) a.push({ icon: 'x-octagon-fill', tone: 'danger', count: d.kpis.outOfStock, label: 'Materiales agotados', detail: 'Sin stock disponible para producir', link: '/materials', query: { tab: 'materiales', stock: 'out' } });
     if (d.kpis.lowStock) a.push({ icon: 'exclamation-triangle-fill', tone: 'warning', count: d.kpis.lowStock, label: 'Bajo el mínimo', detail: 'Programa la compra antes de quedarte sin stock', link: '/materials', query: { tab: 'materiales', stock: 'low' } });
+    if (d.kpis.expiredLots) a.push({ icon: 'calendar-x-fill', tone: 'danger', count: d.kpis.expiredLots, label: 'Lotes vencidos', detail: 'Vencieron en los últimos 30 días y el material aún tiene stock', link: '/materials', query: { tab: 'materiales', expiring: '15' } });
     if (d.alerts.expiringLots.length) a.push({ icon: 'hourglass-split', tone: 'warning', count: d.alerts.expiringLots.length, label: 'Lotes por vencer (15 días)', detail: `El más próximo en ${d.alerts.expiringLots[0].daysLeft} día(s)`, link: '/materials', query: { tab: 'materiales', expiring: '15' } });
     if (d.kpis.idle30) a.push({ icon: 'hourglass-bottom', tone: 'info', count: d.kpis.idle30, label: 'Sin movimiento (30 días)', detail: 'Capital quieto: revisa si vale la pena seguir comprándolos', link: '/materials', query: { tab: 'materiales' } });
     this.attention = a;
     this.rows = [
       ...d.alerts.outOfStock.map((m) => ({ tone: 'danger' as const, main: m.name, meta: 'agotado' })),
       ...d.alerts.lowStock.map((m) => ({ tone: 'warning' as const, main: m.name, meta: `${m.stock} ${m.unit} de mín. ${m.min}` })),
+      ...(d.alerts.expiredLots || []).map((l) => ({ tone: 'danger' as const, main: l.name, meta: `lote vencido hace ${l.daysAgo} d` })),
       ...d.alerts.expiringLots.map((l) => ({ tone: 'warning' as const, main: l.name, meta: `vence en ${l.daysLeft} d` })),
       ...d.alerts.idle.map((m) => ({ tone: 'info' as const, main: m.name, meta: `${this.compactMoney(m.value)} quietos` })),
     ].slice(0, 8);

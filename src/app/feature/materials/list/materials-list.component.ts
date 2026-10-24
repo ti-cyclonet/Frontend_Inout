@@ -49,7 +49,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   };
 
   /** Lote más próximo a vencer de cada material (próximos 15 días), por id. */
-  expiringById = new Map<string, { daysLeft: number; expiresAt: string; lots: number }>();
+  expiringById = new Map<string, { daysLeft: number; expiresAt: string; lots: number; expired?: boolean }>();
   readonly EXPIRING_DAYS = 15;
   private http = inject(HttpClient);
 
@@ -94,7 +94,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
 
   /** Lotes por vencer: resaltan la fila y muestran en cuántos días vence. */
   loadExpiring(): void {
-    this.http.get<{ materials: { materialId: string; daysLeft: number; expiresAt: string; lots: number }[] }>(
+    this.http.get<{ materials: { materialId: string; daysLeft: number; expiresAt: string; lots: number; expired?: boolean }[] }>(
       `${environment.apiUrl}/dashboard/materials/expiring`, { params: { days: String(this.EXPIRING_DAYS) } },
     ).subscribe({
       next: (r) => { this.expiringById = new Map((r?.materials || []).map((m) => [m.materialId, m])); },
@@ -102,14 +102,21 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     });
   }
 
-  expiringOf(material: any): { daysLeft: number; expiresAt: string; lots: number } | null {
+  expiringOf(material: any): { daysLeft: number; expiresAt: string; lots: number; expired?: boolean } | null {
     return this.expiringById.get(material?.id || material?.strId) || null;
+  }
+
+  /** Tiene un lote vencido (últimos 30 días, con stock): se resalta en rojo. */
+  isExpired(material: any): boolean {
+    return !!this.expiringOf(material)?.expired;
   }
 
   expiringLabel(material: any): string {
     const e = this.expiringOf(material);
     if (!e) return '';
-    const when = e.daysLeft === 0 ? 'vence hoy' : e.daysLeft === 1 ? 'vence mañana' : `vence en ${e.daysLeft} días`;
+    const ago = -e.daysLeft;
+    const when = e.expired ? (ago === 1 ? 'vencido ayer' : `vencido hace ${ago} días`)
+      : e.daysLeft === 0 ? 'vence hoy' : e.daysLeft === 1 ? 'vence mañana' : `vence en ${e.daysLeft} días`;
     return e.lots > 1 ? `Lote ${when} (+${e.lots - 1})` : `Lote ${when}`;
   }
 
