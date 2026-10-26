@@ -27,6 +27,8 @@ import { UsageStatusService } from '../../services/usage-status.service';
 import { environment } from '../../../../environments/environment';
 import { decodeJwtPayload } from '../../utils/jwt.util';
 
+import { FeedbackComponent } from '../feedback/feedback.component';
+
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -35,6 +37,7 @@ import { decodeJwtPayload } from '../../utils/jwt.util';
     ChangePasswordComponent,
     ReactiveFormsModule,
     NotificationsComponent,
+    FeedbackComponent,
   ],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css'],
