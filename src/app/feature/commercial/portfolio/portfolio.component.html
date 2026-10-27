@@ -14,6 +14,8 @@
     <button type="button" class="pf-btn" (click)="refresh()">Actualizar</button>
   </div>
 
+  <app-partner-tip placement="cartera"></app-partner-tip>
+
   <!-- ═══════ RESUMEN ═══════ -->
   <ng-container *ngIf="view === 'summary'">
     <div class="pf-state" *ngIf="loadingSummary">Cargando cartera…</div>
