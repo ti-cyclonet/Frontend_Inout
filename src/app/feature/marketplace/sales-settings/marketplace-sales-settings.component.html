@@ -132,6 +132,9 @@
       <label>Solo para pedidos de hasta <small>(opcional)</small></label>
       <input type="number" min="0" [(ngModel)]="payments.contraEntrega.maxOrderTotal" placeholder="Sin tope">
     </div>
+    <p class="ss-soon-note" *ngIf="payments.contraEntrega.enabled">
+      <span class="ss-soon">Próximamente</span> Código QR para que el cliente pague en línea al recibir.
+    </p>
 
     <label class="ss-check">
       <input type="checkbox" [(ngModel)]="payments.contado.enabled">
@@ -161,6 +164,27 @@
       <input type="checkbox" [(ngModel)]="payments.credito.enabled">
       <span><strong>🧾 A crédito</strong> <app-info-tip>Para clientes con cupo aprobado en Cartera.</app-info-tip></span>
     </label>
+
+    <!-- Pagos en línea con Mercado Pago: visible, aún no se puede activar -->
+    <div class="ss-online">
+      <label class="ss-check ss-check--off">
+        <input type="checkbox" disabled>
+        <span><strong>🌐 Pagos en línea</strong> <span class="ss-soon">Próximamente</span>
+          <small class="ss-help d-block">Tarjeta, PSE y efectivo con Mercado Pago. El pago se confirma solo, sin revisar comprobantes.</small></span>
+      </label>
+      <details class="ss-online-info">
+        <summary>¿Cómo funcionará y qué implica?</summary>
+        <ul>
+          <li><strong>Es opcional.</strong> Solo aplica si lo activas; tus demás formas de pago siguen igual.</li>
+          <li><strong>Necesitas tu propia cuenta de Mercado Pago</strong> verificada (cédula o NIT y cuenta bancaria). La conectas a InOut con un clic, sin compartir tu contraseña.</li>
+          <li><strong>El dinero llega directo a tu cuenta</strong> de Mercado Pago. CycloNet no recibe ni retiene tus ventas.</li>
+          <li><strong>Costos por cada pago aprobado:</strong> la tarifa de Mercado Pago (según tu plan con ellos) y una <strong>comisión de CycloNet del 1 %</strong> del valor pagado. Ambas se descuentan automáticamente del pago.</li>
+          <li><strong>Factura de la comisión:</strong> CycloNet te enviará cada mes una factura electrónica con el total de comisiones del mes, para tu contabilidad.</li>
+          <li><strong>Devoluciones:</strong> si devuelves un pago, Mercado Pago lo descuenta de tu cuenta y CycloNet devuelve su parte de la comisión.</li>
+          <li><strong>Puedes desconectarla cuando quieras</strong>; los pagos ya recibidos no se ven afectados.</li>
+        </ul>
+      </details>
+    </div>
 
     <div class="ss-sub ss-grid">
       <div>
