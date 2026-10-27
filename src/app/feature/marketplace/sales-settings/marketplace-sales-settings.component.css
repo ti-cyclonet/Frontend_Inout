@@ -110,3 +110,11 @@
 .ss-zone-add:disabled { opacity: 0.5; cursor: default; }
 .ss-check--inner { margin-top: 0.75rem; }
 @media (max-width: 480px) { .ss-zone { grid-template-columns: minmax(0, 1fr) 100px 32px; } }
+/* Pagos en línea: próximamente */
+.ss-soon { display: inline-block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #1d4ed8; background: #dbeafe; border-radius: 999px; padding: 0.1rem 0.5rem; vertical-align: middle; }
+.ss-soon-note { margin: -0.2rem 0 0.6rem 1.6rem; font-size: 0.78rem; color: #6b7280; }
+.ss-online { border: 1px dashed #93c5fd; border-radius: 10px; background: #f8fbff; padding: 0.5rem 0.75rem; margin: 0.25rem 0 0.75rem; }
+.ss-check--off { opacity: 0.85; cursor: default; }
+.ss-online-info { margin: 0.25rem 0 0 1.6rem; font-size: 0.8rem; color: #374151; }
+.ss-online-info summary { cursor: pointer; color: #1d4ed8; font-weight: 600; }
+.ss-online-info ul { margin: 0.4rem 0 0.2rem; padding-left: 1.1rem; display: grid; gap: 0.25rem; }
