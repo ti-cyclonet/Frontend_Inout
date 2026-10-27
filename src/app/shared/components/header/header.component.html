@@ -188,6 +188,14 @@
             </div>
           </li>
 
+          <li *ngIf="userRol !== 'clienteInout'">
+            <a class="dropdown-item" href="#" (click)="$event.preventDefault(); feedback.open()">
+              <svg width="20" height="20" fill="currentColor">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#chat-heart" />
+              </svg>
+              Danos tu opinión
+            </a>
+          </li>
           <li><hr class="dropdown-divider" /></li>
           <li>
             <a class="dropdown-item logout-btn" href="#" (click)="logout()">
@@ -377,3 +385,5 @@
     </div>
   </div>
 </div>
+<!-- «Danos tu opinión»: ventana e invitación en los buenos momentos -->
+<app-feedback #feedback [userName]="userName"></app-feedback>
