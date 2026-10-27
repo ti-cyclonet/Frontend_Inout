@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 import { AuthService } from '../../shared/services/auth/auth.service';
 import { formatCop } from '../../shared/utils/currency.util';
+import { PartnerTipComponent } from '../../shared/components/partner-tip/partner-tip.component';
 
 Chart.register(...registerables);
 
@@ -58,7 +59,7 @@ const STAGES: { key: string; label: string; color: string }[] = [
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PartnerTipComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
 })

@@ -188,6 +188,22 @@ export default class LayoutComponent implements OnInit, OnDestroy {
           if (!this.optionsMenu.some(m => m.id === usersEntry.id)) {
             this.optionsMenu.push(usersEntry);
           }
+
+          // Servicios recomendados (aliados de CycloNet)
+          const partnersEntry: OptionMenu = {
+            id: 'partners',
+            name: 'Servicios',
+            description: 'Servicios recomendados',
+            url: '/servicios',
+            icon: 'stars',
+            type: 'main_menu',
+            idMPather: null,
+            order: '95',
+            idApplication: this.application?.id ?? '',
+          };
+          if (!this.optionsMenu.some(m => m.id === partnersEntry.id)) {
+            this.optionsMenu.push(partnersEntry);
+          }
         }
 
         // Ordenar por ingOrder numérico
