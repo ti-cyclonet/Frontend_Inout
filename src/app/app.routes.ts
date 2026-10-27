@@ -29,6 +29,7 @@ import { OrdersComponent } from './feature/orders/orders.component';
 import { CommercialComponent } from './feature/commercial/commercial.component';
 import { CombosPromotionsComponent } from './feature/combos-promotions/combos-promotions.component';
 import { InventoryComponent } from './feature/inventory/inventory.component';
+import { PartnersComponent } from './feature/partners/partners.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -59,6 +60,7 @@ export const routes: Routes = [
             { path: 'orders', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'consumos', component: UsagePanelComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'combos', component: CombosPromotionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            { path: 'servicios', component: PartnersComponent, canActivate: [AuthGuard] },
             { path: 'training-sessions', component: TrainingSessionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'setting', component: SettingComponent, canActivate: [AuthGuard] },
             { path: ROOT_CONFIGURATION, component: SetupComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },

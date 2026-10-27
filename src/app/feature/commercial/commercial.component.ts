@@ -8,6 +8,7 @@ import { SaleFormComponent } from '../sales/form/sale-form.component';
 import { OrdersComponent } from '../orders/orders.component';
 import { PortfolioComponent } from './portfolio/portfolio.component';
 import { GiftCardsAdminComponent } from './gift-cards/gift-cards-admin.component';
+import { PartnerTipComponent } from '../../shared/components/partner-tip/partner-tip.component';
 
 /** Pestaña de ?tab= (enlaces de los paneles y del Inicio). */
 const COMMERCIAL_TAB_OF: Record<string, 'dashboard' | 'sales' | 'orders' | 'portfolio' | 'giftcards'> = {
@@ -18,6 +19,7 @@ const COMMERCIAL_TAB_OF: Record<string, 'dashboard' | 'sales' | 'orders' | 'port
   selector: 'app-commercial',
   standalone: true,
   imports: [
+    PartnerTipComponent,
     CommonModule,
     FormsModule,
     SalesDashboardComponent,
@@ -53,6 +55,7 @@ const COMMERCIAL_TAB_OF: Record<string, 'dashboard' | 'sales' | 'orders' | 'port
       <div class="commercial-content">
         <!-- Panel: Resumen de ventas -->
         <div *ngIf="activeTab === 'dashboard'">
+          <app-partner-tip placement="ventas"></app-partner-tip>
           <app-sales-dashboard [refreshTrigger]="refreshTrigger" (openCreateModal)="openSaleModal()" (openOrderModal)="goToOrders()" (openCustomerTab)="goToCustomers()"></app-sales-dashboard>
         </div>
 
