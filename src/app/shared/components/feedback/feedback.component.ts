@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, HostListener, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -10,6 +10,8 @@ const HIGHLIGHTS: [string, string][] = [
 ];
 /** «Ahora no» oculta la invitación por 30 días en este equipo. */
 const DISMISS_DAYS = 30;
+/** Otras pantallas abren la ventana con `window.dispatchEvent(new Event(OPEN_FEEDBACK_EVENT))`. */
+export const OPEN_FEEDBACK_EVENT = 'inout:open-feedback';
 
 /**
  * «Danos tu opinión»: ventana para calificar InOut (también se abre desde el
@@ -155,6 +157,7 @@ export class FeedbackComponent implements OnInit {
     return ['Toca las estrellas para calificar', 'Muy mala', 'Mala', 'Regular', 'Buena', '¡Excelente!'][this.hover || this.rating];
   }
 
+  @HostListener('window:' + OPEN_FEEDBACK_EVENT)
   open(): void {
     this.authorName = this.authorName || this.userName || sessionStorage.getItem('user_displayName') || sessionStorage.getItem('user_name') || '';
     this.result = null;

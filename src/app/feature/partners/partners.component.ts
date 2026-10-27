@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PARTNER_CATEGORIES, PartnerOffer, PartnersService } from '../../shared/services/partners.service';
+import { OPEN_FEEDBACK_EVENT } from '../../shared/components/feedback/feedback.component';
 
 /** «Servicios recomendados»: aliados de CycloNet agrupados por necesidad. */
 @Component({
@@ -17,7 +18,7 @@ import { PARTNER_CATEGORIES, PartnerOffer, PartnersService } from '../../shared/
       <p class="ps-muted" *ngIf="loading">Cargando…</p>
       <div class="ps-empty" *ngIf="!loading && !groups.length">
         <b>Muy pronto</b>
-        <p>Estamos seleccionando aliados para facturación electrónica, datáfonos, impresoras y más. ¿Necesitas algo en particular? Cuéntanos en «Danos tu opinión».</p>
+        <p>Estamos seleccionando aliados para facturación electrónica, datáfonos, impresoras y más. ¿Necesitas algo en particular? <button type="button" class="ps-inline" (click)="openFeedback()">Cuéntanos aquí</button>.</p>
       </div>
 
       <section class="ps-group" *ngFor="let g of groups">
@@ -46,6 +47,7 @@ import { PARTNER_CATEGORIES, PartnerOffer, PartnersService } from '../../shared/
     .ps-muted { color: #64748b; }
     .ps-empty { border: 1px dashed #cbd5e1; border-radius: 14px; padding: 18px 20px; background: #f8fafc; }
     .ps-empty p { margin: 4px 0 0; color: #475569; }
+    .ps-inline { border: 0; background: none; padding: 0; font: inherit; color: #e65c00; font-weight: 600; text-decoration: underline; cursor: pointer; }
     .ps-group h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; color: #475569; margin: 18px 0 10px; }
     .ps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
     .ps-card { display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; }
@@ -80,4 +82,6 @@ export class PartnersComponent implements OnInit {
   }
 
   goUrl(o: PartnerOffer): string { return this.partners.goUrl(o); }
+  /** Abre «Danos tu opinión» (vive en el header). */
+  openFeedback(): void { window.dispatchEvent(new Event(OPEN_FEEDBACK_EVENT)); }
 }
