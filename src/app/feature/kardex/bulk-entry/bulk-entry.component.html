@@ -17,6 +17,21 @@
         </p>
       </div>
 
+      <!-- Compra sin registrar de una visita anterior -->
+      <div class="draft-banner" *ngIf="pendingDraft" role="status">
+        <div>
+          <strong>Tienes una compra sin registrar</strong>
+          <small>
+            {{ pendingDraft.items.length }} material(es)<ng-container *ngIf="pendingDraft.supplier"> · {{ pendingDraft.supplier.name }}</ng-container><ng-container *ngIf="pendingDraft.documentNumber"> · {{ pendingDraft.documentNumber }}</ng-container>
+            · guardada {{ pendingDraft.savedAt | date:'dd/MM h:mm a' }}
+          </small>
+        </div>
+        <div class="draft-actions">
+          <button class="btn btn-primary btn-sm" (click)="continueDraft()" type="button">Continuar</button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="discardDraft()" type="button">Descartar</button>
+        </div>
+      </div>
+
       <!-- Sección Proveedor y Documento (estilo Kardex search-section) -->
       <div class="search-section">
         <div class="search-row">
@@ -48,13 +63,13 @@
           <!-- Documento -->
           <div class="search-field document-field">
             <label class="search-label">N° Documento / Factura</label>
-            <input type="text" class="form-control search-input" [(ngModel)]="documentNumber" placeholder="FAC-001234">
+            <input type="text" class="form-control search-input" [(ngModel)]="documentNumber" (ngModelChange)="saveDraft()" placeholder="FAC-001234">
           </div>
 
           <!-- Fecha -->
           <div class="search-field date-field">
             <label class="search-label">Fecha Compra</label>
-            <input type="date" class="form-control search-input" [(ngModel)]="purchaseDate" title="Fecha de compra">
+            <input type="date" class="form-control search-input" [(ngModel)]="purchaseDate" (ngModelChange)="saveDraft()" title="Fecha de compra">
           </div>
 
           <!-- Nuevo proveedor -->
@@ -89,17 +104,13 @@
 
       <!-- Sección Agregar Material -->
       <div class="add-material-section" style="border-top: 1px solid orange;">
-        <div class="section-subtitle">
-          <svg viewBox="0 0 16 16" width="14" height="14" fill="#0066cc">
-            <use xlink:href="./assets/icons/bootstrap-icons.svg#plus-circle" />
-          </svg>
-          Agregar Material
-        </div>
+        <div class="section-subtitle section-subtitle--plain">Agregar material</div>
         <div class="add-material-row">
           <div class="add-field material-search-field">
             <label class="search-label">Material (código o nombre)</label>
             <div class="select-container">
               <input
+                #materialInput
                 type="text"
                 class="form-control search-input"
                 [(ngModel)]="materialSearch"
@@ -108,17 +119,21 @@
                 (blur)="showMaterialDropdown = false"
                 placeholder="Buscar material..."
                 autocomplete="off">
-              <div class="select-dropdown material-dropdown" *ngIf="showMaterialDropdown && filteredMaterials.length > 0">
+              <div class="select-dropdown material-dropdown" *ngIf="showMaterialDropdown && (filteredMaterials.length > 0 || canOfferCreate)">
                 <div class="select-option" *ngFor="let m of filteredMaterials" (mousedown)="selectMaterial(m)">
                   <strong>{{ m.code }} — {{ m.name }}</strong>
                   <small>Stock: {{ formatNumber(m.currentStock) }} {{ m.unit }} | Precio: {{ formatCurrency(m.price) }}</small>
+                </div>
+                <div class="select-option create-option" *ngIf="canOfferCreate" (mousedown)="openCreateMaterial()">
+                  <strong>➕ Crear «{{ materialSearch.trim() }}» como material nuevo</strong>
+                  <small>Sin salir de esta compra</small>
                 </div>
               </div>
             </div>
           </div>
           <div class="add-field qty-field">
             <label class="search-label">Cantidad</label>
-            <input type="number" class="form-control search-input" [(ngModel)]="currentItem.quantity" (ngModelChange)="recalcUnitPrice()" min="0.01" step="0.01" placeholder="0">
+            <input #qtyInput type="number" class="form-control search-input" [(ngModel)]="currentItem.quantity" (ngModelChange)="recalcUnitPrice()" min="0.01" step="0.01" placeholder="0">
           </div>
           <div class="add-field price-field">
             <label class="search-label">Costo Total</label>
@@ -144,7 +159,12 @@
       </div>
 
       <!-- Tabla de Items (estilo Kardex) -->
-      <div class="movements-section" *ngIf="items.length > 0">
+      <!-- Móvil: resumen fijo para no bajar a revisar -->
+      <button class="bulk-summary d-md-none" *ngIf="items.length > 0" (click)="scrollToItems()" type="button">
+        {{ items.length }} material(es) · {{ formatCurrency(grandTotal) }} <span>Ver lista →</span>
+      </button>
+
+      <div class="movements-section" id="bulk-items" *ngIf="items.length > 0">
         <div class="kardex-actions-row" style="border-top: 1px solid orange">
           <div class="section-subtitle text-primary">
             Materiales en este documento ({{ items.length }})
@@ -209,5 +229,47 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+<!-- Crear material sin salir de la compra -->
+<div class="nm-backdrop" *ngIf="showCreateMaterial" (click)="closeCreateMaterial()"></div>
+<div class="nm-modal" *ngIf="showCreateMaterial" role="dialog" aria-modal="true" aria-labelledby="nm-title">
+  <h6 id="nm-title">Nuevo material</h6>
+  <p class="nm-help">Se crea y queda seleccionado en esta compra. El costo y el stock salen de la compra; los demás datos los completas luego en Materiales.</p>
+  <div class="nm-grid">
+    <label class="nm-full">Nombre *
+      <input class="form-control form-control-sm" [(ngModel)]="newMaterial.name" maxlength="120">
+    </label>
+    <label>Unidad de medida *
+      <select class="form-select form-select-sm" [(ngModel)]="newMaterial.unit">
+        <option value="">Seleccionar</option>
+        <option *ngFor="let u of unitOptions" [value]="u.value">{{ u.label }}</option>
+      </select>
+    </label>
+    <label>Categoría
+      <select class="form-select form-select-sm" [(ngModel)]="newMaterial.categoryId">
+        <option value="">Sin categoría</option>
+        <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+      </select>
+    </label>
+    <label class="nm-full">Ubicación *
+      <select class="form-select form-select-sm" [(ngModel)]="newMaterial.location">
+        <option *ngFor="let l of locationOptions" [value]="l.value">{{ l.label }}</option>
+      </select>
+    </label>
+    <label>Stock mínimo
+      <input type="number" class="form-control form-control-sm" [(ngModel)]="newMaterial.stockMin" min="0" placeholder="0">
+    </label>
+    <label>Stock máximo
+      <input type="number" class="form-control form-control-sm" [(ngModel)]="newMaterial.stockMax" min="0" placeholder="0">
+    </label>
+  </div>
+  <p class="nm-error" *ngIf="newMaterialError && newMaterial.name">{{ newMaterialError }}</p>
+  <div class="d-flex gap-2 justify-content-end mt-2">
+    <button class="btn btn-outline-secondary btn-sm" (click)="closeCreateMaterial()" [disabled]="creatingMaterial" type="button">Cancelar</button>
+    <button class="btn btn-primary btn-sm" (click)="createMaterial()" [disabled]="!!newMaterialError || creatingMaterial" type="button">
+      <span class="spinner-border spinner-border-sm me-1" *ngIf="creatingMaterial"></span>
+      Crear y seleccionar
+    </button>
   </div>
 </div>

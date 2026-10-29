@@ -321,3 +321,31 @@
   .movements-table { font-size: 0.72rem; min-width: 520px; }
   .movements-table thead th, .movements-table tbody td { padding: 0.3rem 0.4rem; }
 }
+
+/* Título de sección que no parece enlace */
+.section-subtitle--plain { color: #374151; }
+
+/* Borrador de compra */
+.draft-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border: 1px solid #fcd34d; background: #fffbeb; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.draft-banner strong { display: block; font-size: 0.9rem; color: #78350f; }
+.draft-banner small { color: #92400e; }
+.draft-actions { display: flex; gap: 6px; }
+
+/* Opción «Crear material» en el buscador */
+.create-option { border-top: 1px dashed #cbd5e1; background: #f8fbff; }
+.create-option strong { color: #0066cc; }
+
+/* Resumen fijo en móvil */
+.bulk-summary { position: sticky; top: 0; z-index: 5; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0; padding: 9px 12px; border: 0; border-radius: 10px; background: #0066cc; color: #fff; font-weight: 600; font-size: 0.85rem; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.45); }
+.bulk-summary span { font-weight: 500; opacity: 0.9; }
+
+/* Ventana «Nuevo material» */
+.nm-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 1050; }
+.nm-modal { position: fixed; z-index: 1051; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow-y: auto; background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3); }
+.nm-modal h6 { margin: 0 0 4px; font-weight: 700; }
+.nm-help { margin: 0 0 10px; font-size: 0.78rem; color: #6b7280; }
+.nm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+.nm-grid label { display: grid; gap: 3px; font-size: 0.78rem; font-weight: 600; color: #374151; }
+.nm-full { grid-column: 1 / -1; }
+.nm-error { margin: 8px 0 0; font-size: 0.8rem; color: #b91c1c; }
+@media (max-width: 420px) { .nm-grid { grid-template-columns: 1fr; } }
