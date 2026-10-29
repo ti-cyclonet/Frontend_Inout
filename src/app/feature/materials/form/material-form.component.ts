@@ -10,11 +10,12 @@ import { Material, MaterialImage } from '../../../shared/models/material.model';
 import { ImageManagerComponent } from '../../../shared/components/image-manager/image-manager.component';
 import { UNIT_OPTIONS, getDischargeUnitOptions, isPackUnit, normalizePackSize } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
+import { MaterialLotsComponent } from './material-lots.component';
 
 @Component({
   selector: 'app-material-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent, ResalePricingComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent, ResalePricingComponent, MaterialLotsComponent],
   templateUrl: './material-form.component.html',
   styleUrls: ['./material-form.component.css']
 })
