@@ -84,8 +84,8 @@ export const OPEN_FEEDBACK_EVENT = 'inout:open-feedback';
   styles: [`
     .fb-invite { position: fixed; left: 18px; bottom: 18px; z-index: 1040; width: min(340px, calc(100vw - 36px)); background: #fff; border-radius: 14px;
       box-shadow: 0 10px 30px rgba(15,23,42,.18); padding: 16px 18px; border-left: 4px solid #f59e0b; font-size: .9rem; }
-    /* Con el menú inferior en móvil, la invitación va por encima de la barra y del botón central */
-    :host-context(body.inout-bottom-nav) .fb-invite { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); max-height: calc(100vh - 160px); overflow-y: auto; }
+    /* Con el menú inferior en móvil, la invitación va por encima de la barra y del botón de Domicilios */
+    :host-context(body.inout-bottom-nav) .fb-invite { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); max-height: calc(100vh - 220px); overflow-y: auto; }
     .fb-invite b { display: block; margin-bottom: 4px; color: #0f172a; }
     .fb-invite p { margin: 0 0 10px; color: #475569; }
     .fb-row { display: flex; gap: 10px; align-items: center; }
