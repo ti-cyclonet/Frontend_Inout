@@ -39,7 +39,7 @@ const MAX_LOTS = 8;
       <p class="ml-muted" *ngIf="!loading && !lots.length">Este material aún no tiene compras registradas. La fecha de vencimiento se indica al registrar la compra.</p>
       <div class="ml-row" *ngFor="let l of lots">
         <div class="ml-info">
-          <span>{{ l.date | date:'dd/MM/yyyy' }} · {{ l.quantity | number:'1.0-2' }} {{ unit }}</span>
+          <span>{{ l.date | date:'dd/MM/yyyy' }} · {{ qty(l.quantity) }} {{ unit }}</span>
           <small>{{ l.supplier || 'Sin proveedor' }}<ng-container *ngIf="l.document"> · {{ l.document }}</ng-container></small>
         </div>
         <input type="date" class="form-control ml-date" [(ngModel)]="l.value" [ngModelOptions]="{ standalone: true }"
@@ -97,6 +97,10 @@ export class MaterialLotsComponent implements OnChanges {
       },
       error: () => { this.loading = false; },
     });
+  }
+
+  qty(n: number): string {
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(n || 0);
   }
 
   save(l: Lot): void {
