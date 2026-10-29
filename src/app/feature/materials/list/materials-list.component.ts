@@ -165,6 +165,7 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   ngOnChanges(): void {
     if (this.refreshTrigger > 0) {
       this.loadMaterials();
+      this.loadExpiring();
     }
   }
 

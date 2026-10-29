@@ -181,6 +181,8 @@ export class MaterialsDemoComponent implements OnInit {
   }
   
   closeModal() {
+    // Al editar se pudo cambiar el vencimiento de un lote sin guardar el material
+    if (this.editingMaterialId) this.refreshTrigger++;
     this.showCreateModal = false;
     this.editingMaterialId = undefined;
   }
