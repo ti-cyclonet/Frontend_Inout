@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MaterialService } from '../../../shared/services/material.service';
 import { SupplierService } from '../../../shared/services/supplier.service';
 import { DocumentsService } from '../../../shared/services/documents.service';
+import { CategoryService, Category } from '../../../shared/services/category/category.service';
+import { WarehousesService } from '../../../shared/services/warehouses.service';
+import { UNIT_OPTIONS } from '../../../shared/utils/unit-conversion.util';
+import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import { Supplier } from '../../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
@@ -18,6 +22,18 @@ interface BulkItem {
   total: number;
   expirationDate: string;
 }
+
+/** Compra a medio diligenciar guardada en este navegador. */
+interface PurchaseDraft {
+  savedAt: number;
+  supplier: Supplier | null;
+  documentNumber: string;
+  purchaseDate: string;
+  items: BulkItem[];
+}
+
+/** Un borrador más viejo que esto ya no se ofrece. */
+const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface MaterialOption {
   id: string;
@@ -75,16 +91,33 @@ export class BulkEntryComponent implements OnInit {
 
   private baseUrl = `${environment.apiUrl}/purchases`;
 
+  // Borrador: se guarda en cada cambio y se ofrece al volver
+  pendingDraft: PurchaseDraft | null = null;
+
+  // Crear material sin salir de la compra
+  showCreateMaterial = false;
+  creatingMaterial = false;
+  newMaterial = { name: '', unit: '', categoryId: '', location: '', stockMin: null as number | null, stockMax: null as number | null };
+  unitOptions = UNIT_OPTIONS;
+  categories: Category[] = [];
+  locationOptions: { value: string; label: string }[] = [];
+
+  @ViewChild('materialInput') materialInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('qtyInput') qtyInput?: ElementRef<HTMLInputElement>;
+
   constructor(
     private http: HttpClient,
     private materialService: MaterialService,
     private supplierService: SupplierService,
-    private documentsService: DocumentsService
+    private documentsService: DocumentsService,
+    private categoryService: CategoryService,
+    private warehousesService: WarehousesService
   ) {}
 
   ngOnInit(): void {
     this.loadSuppliers();
     this.loadMaterials();
+    this.pendingDraft = this.readDraft();
   }
 
   // --- Suppliers ---
@@ -106,11 +139,13 @@ export class BulkEntryComponent implements OnInit {
     this.selectedSupplier = supplier;
     this.supplierSearch = supplier.name;
     this.showSupplierDropdown = false;
+    this.saveDraft();
   }
 
   clearSupplier(): void {
     this.selectedSupplier = null;
     this.supplierSearch = '';
+    this.saveDraft();
   }
 
   toggleCreateSupplier(): void {
@@ -161,6 +196,12 @@ export class BulkEntryComponent implements OnInit {
       : this.materials;
   }
 
+  /** Lo buscado no coincide exactamente con ningún material: se ofrece crearlo. */
+  get canOfferCreate(): boolean {
+    const q = this.materialSearch.trim().toLowerCase();
+    return q.length >= 2 && !this.currentItem.materialId && !this.materials.some(m => m.name.toLowerCase() === q);
+  }
+
   selectMaterial(material: MaterialOption): void {
     this.currentItem.materialId = material.id;
     this.currentItem.materialName = material.name;
@@ -199,10 +240,158 @@ export class BulkEntryComponent implements OnInit {
       expirationDate: this.currentItem.expirationDate
     });
     this.resetCurrentItem();
+    this.saveDraft();
+    // Listo para el siguiente material
+    setTimeout(() => this.materialInput?.nativeElement.focus(), 0);
   }
 
   removeItem(index: number): void {
     this.items.splice(index, 1);
+    this.saveDraft();
+  }
+
+  scrollToItems(): void {
+    document.getElementById('bulk-items')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // --- Crear material sin salir de la compra ---
+  openCreateMaterial(): void {
+    this.newMaterial = { name: this.materialSearch.trim(), unit: '', categoryId: '', location: this.locationOptions[0]?.value || '', stockMin: null, stockMax: null };
+    this.showMaterialDropdown = false;
+    this.showCreateMaterial = true;
+    if (!this.categories.length) {
+      this.categoryService.getAll().subscribe({ next: (c: any) => { this.categories = Array.isArray(c) ? c : (c?.data || []); }, error: () => {} });
+    }
+    if (!this.locationOptions.length) {
+      this.warehousesService.getWarehouses().subscribe({
+        next: (warehouses) => {
+          const locations: { value: string; label: string }[] = [];
+          for (const wh of warehouses) {
+            for (const loc of wh.locations || []) locations.push({ value: loc.locationCode || loc.name, label: loc.name });
+          }
+          this.locationOptions = locations.length ? locations : [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
+          if (!this.newMaterial.location) this.newMaterial.location = this.locationOptions[0].value;
+        },
+        error: () => {
+          this.locationOptions = [{ value: 'Bodega Principal', label: 'Bodega Principal' }];
+          if (!this.newMaterial.location) this.newMaterial.location = this.locationOptions[0].value;
+        }
+      });
+    }
+  }
+
+  closeCreateMaterial(): void {
+    if (!this.creatingMaterial) this.showCreateMaterial = false;
+  }
+
+  get newMaterialError(): string {
+    const m = this.newMaterial;
+    if (m.name.trim().length < 2) return 'Escribe el nombre del material.';
+    if (!m.unit) return 'Elige la unidad de medida.';
+    if (!m.location) return 'Elige la ubicación.';
+    if ((m.stockMin ?? 0) < 0 || (m.stockMax ?? 0) < 0) return 'El stock no puede ser negativo.';
+    if (m.stockMax && (m.stockMin ?? 0) > m.stockMax) return 'El stock máximo debe ser mayor o igual al mínimo.';
+    return '';
+  }
+
+  createMaterial(): void {
+    if (this.newMaterialError || this.creatingMaterial) return;
+    const m = this.newMaterial;
+    const payload: any = {
+      strName: m.name.trim(),
+      strUnitMeasure: m.unit,
+      strDischargeUnit: m.unit,
+      // El costo sale de esta compra; el stock lo suma la entrada
+      fltPrice: 0,
+      ingQuantity: 0,
+      ingMinStock: Math.round(m.stockMin || 0),
+      ingMaxStock: Math.round(m.stockMax || 0),
+      strLocation: m.location,
+      strStatus: 'active'
+    };
+    if (m.categoryId) payload.categoryId = +m.categoryId;
+    this.creatingMaterial = true;
+    this.materialService.createMaterial(payload).subscribe({
+      next: (created: any) => {
+        this.creatingMaterial = false;
+        this.showCreateMaterial = false;
+        const option: MaterialOption = {
+          id: created?.strId || created?.id,
+          code: created?.strCode || '-',
+          name: created?.strName || payload.strName,
+          unit: created?.strUnitMeasure || payload.strUnitMeasure,
+          currentStock: 0,
+          price: 0
+        };
+        this.materials = [...this.materials, option];
+        this.filteredMaterials = this.materials;
+        this.selectMaterial(option);
+        setTimeout(() => this.qtyInput?.nativeElement.focus(), 0);
+      },
+      error: (err) => {
+        this.creatingMaterial = false;
+        // El límite del plan ya lo muestra el LimitErrorInterceptor
+        if (err?.status === 403) return;
+        Swal.fire({ icon: 'error', title: 'No se pudo crear el material', text: err?.error?.message || 'Intenta de nuevo.' });
+      }
+    });
+  }
+
+  // --- Borrador ---
+  private draftKey(): string {
+    const token = sessionStorage.getItem('token') || sessionStorage.getItem('authToken') || localStorage.getItem('token') || '';
+    const tenant = (token && decodeJwtPayload(token)?.tenantId) || 'local';
+    return `inout_purchase_draft_${tenant}`;
+  }
+
+  private readDraft(): PurchaseDraft | null {
+    try {
+      const raw = localStorage.getItem(this.draftKey());
+      const d: PurchaseDraft | null = raw ? JSON.parse(raw) : null;
+      if (!d || Date.now() - (d.savedAt || 0) > DRAFT_MAX_AGE_MS) { this.clearDraft(); return null; }
+      return (d.items?.length || d.supplier || d.documentNumber) ? d : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Guarda la compra en curso; si queda vacía, borra el borrador. */
+  saveDraft(): void {
+    // Mientras se decide qué hacer con el borrador anterior, no se pisa
+    if (this.pendingDraft) return;
+    try {
+      if (!this.items.length && !this.selectedSupplier && !this.documentNumber) { this.clearDraft(); return; }
+      const draft: PurchaseDraft = {
+        savedAt: Date.now(),
+        supplier: this.selectedSupplier,
+        documentNumber: this.documentNumber,
+        purchaseDate: this.purchaseDate,
+        items: this.items
+      };
+      localStorage.setItem(this.draftKey(), JSON.stringify(draft));
+    } catch { /* sin almacenamiento: la compra sigue en pantalla */ }
+  }
+
+  private clearDraft(): void {
+    try { localStorage.removeItem(this.draftKey()); } catch { /* nada */ }
+  }
+
+  continueDraft(): void {
+    const d = this.pendingDraft;
+    this.pendingDraft = null;
+    if (!d) return;
+    this.selectedSupplier = d.supplier;
+    this.supplierSearch = d.supplier?.name || '';
+    this.documentNumber = d.documentNumber || '';
+    this.purchaseDate = d.purchaseDate || this.purchaseDate;
+    this.items = Array.isArray(d.items) ? d.items : [];
+    this.saveDraft();
+  }
+
+  discardDraft(): void {
+    this.pendingDraft = null;
+    this.clearDraft();
+    this.saveDraft();
   }
 
   resetCurrentItem(): void {
@@ -286,6 +475,7 @@ export class BulkEntryComponent implements OnInit {
   }
 
   resetForm(): void {
+    this.clearDraft();
     this.items = [];
     this.selectedSupplier = null;
     this.supplierSearch = '';
