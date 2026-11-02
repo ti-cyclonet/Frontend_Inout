@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { SalesService, Sale } from '../../../shared/services/sales.service';
 import { compararPorFechaVenta, fechaVenta } from '../../../shared/utils/fecha-venta';
 import { ProductsService, Product } from '../../../shared/services/products.service';
-import { KardexService } from '../../../shared/services/kardex.service';
+import { PermissionsService } from '../../../shared/services/permissions.service';
 import { groupComboLines } from '../../../shared/utils/combo-lines.util';
 import { environment } from '../../../../environments/environment';
 import { dailyDocs, downloadDailySalesXlsx, localDay } from '../../../shared/utils/daily-sales-xlsx';
@@ -91,14 +91,13 @@ import Swal from 'sweetalert2';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sale of filteredSales">
+            <tr *ngFor="let sale of filteredSales" [class.voided]="sale.dtmVoidedAt">
               <td>{{ sale.strInvoiceCode || 'N/A' }}</td>
               <td>{{ sale.customerName || 'N/A' }}</td>
               <td>{{ formatCurrency(sale.total || (sale.fltQuantity || 0) * (sale.fltUnitPrice || 0)) }}</td>
               <td>
-                <span class="status-badge completed">
-                  Completado
-                </span>
+                <span class="status-badge cancelled" *ngIf="sale.dtmVoidedAt" [title]="sale.strVoidReason || ''">Anulada</span>
+                <span class="status-badge completed" *ngIf="!sale.dtmVoidedAt">Completado</span>
               </td>
               <td>{{ fechaVenta(sale) | date:'short' }}</td>
               <td>
@@ -144,6 +143,12 @@ import Swal from 'sweetalert2';
             <button type="button" class="btn-close" (click)="closeViewModal()"></button>
           </div>
           <div class="modal-body" style="background-color: #f8f9fa;">
+            <!-- Venta anulada -->
+            <div *ngIf="selectedSale?.dtmVoidedAt" class="void-banner">
+              <strong>Venta anulada</strong> el {{ selectedSale?.dtmVoidedAt | date:'dd/MM/yyyy h:mm a' }}<span *ngIf="selectedSale?.strVoidedBy"> por {{ selectedSale?.strVoidedBy }}</span>.
+              <div *ngIf="selectedSale?.strVoidReason">Motivo: {{ selectedSale?.strVoidReason }}</div>
+            </div>
+
             <!-- Detalles de la venta -->
             <div *ngIf="selectedSale" class="mb-3">
               <h6 class="search-details-title">Detalles de la venta</h6>
@@ -217,6 +222,13 @@ import Swal from 'sweetalert2';
             </div>
           </div>
           <div class="modal-footer" style="border-top: 1px solid orange">
+            <button type="button" class="btn btn-outline-danger me-auto" *ngIf="permissions.isAdmin && selectedSale && !selectedSale.dtmVoidedAt"
+              (click)="voidSale()" [disabled]="voiding" title="Para una venta registrada por error: el stock vuelve al inventario">
+              <svg fill="currentcolor" viewBox="0 0 16 16" style="width: 16px; height: 16px;">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#x-octagon"></use>
+              </svg>
+              {{ voiding ? 'Anulando…' : 'Anular venta' }}
+            </button>
             <button type="button" class="btn btn-outline-primary" (click)="generatePDF()">
               <svg fill="currentcolor" viewBox="0 0 16 16" style="width: 16px; height: 16px; margin-right: 0.5rem;">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-pdf"></use>
@@ -417,6 +429,30 @@ import Swal from 'sweetalert2';
     .status-badge.cancelled {
       background: #f8d7da;
       color: #721c24;
+    }
+
+    .sales-table tr.voided td { color: #9ca3af; }
+    .sales-table tr.voided td:nth-child(3) { text-decoration: line-through; }
+
+    .void-banner {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .btn-outline-danger {
+      color: #dc3545;
+      border-color: #dc3545;
+      background-color: transparent;
+    }
+
+    .btn-outline-danger:hover:not(:disabled) {
+      background-color: #dc3545;
+      color: white;
     }
     
     .action-buttons {
@@ -696,8 +732,9 @@ export class SalesListComponent implements OnInit {
   viewMode: 'table' | 'cards' = 'table';
   showViewModal = false;
   exporting = false;
+  voiding = false;
 
-  constructor(private salesService: SalesService, private productsService: ProductsService, private kardexService: KardexService, private http: HttpClient) {}
+  constructor(private salesService: SalesService, private productsService: ProductsService, private http: HttpClient, public permissions: PermissionsService) {}
 
   ngOnInit(): void {
     this.loadSales();
@@ -713,7 +750,8 @@ export class SalesListComponent implements OnInit {
   loadSales(): void {
     this.loading = true;
     
-    this.salesService.getSales().subscribe({
+    // Con las anuladas, para verlas marcadas en la lista
+    this.salesService.getSales(true).subscribe({
       next: (response: any) => {
         // Por fecha de venta, la más reciente primero (el API ordena por fecha de registro).
         this.sales = [...(response.data || response)].sort(compararPorFechaVenta);
@@ -780,18 +818,53 @@ export class SalesListComponent implements OnInit {
     const term = this.searchTerm.toLowerCase();
     this.filteredSales = this.sales.filter(sale => 
       (sale.customerName || '').toLowerCase().includes(term) ||
-      (sale.strProductId || '').toLowerCase().includes(term)
+      (sale.strInvoiceCode || '').toLowerCase().includes(term)
     );
   }
 
   viewSale(id: string): void {
     this.selectedSale = this.sales.find(sale => sale.strId === id) || null;
     this.showViewModal = true;
-    
-    // Registrar movimientos en kardex si no se han registrado antes
-    if (this.selectedSale) {
-      this.registerKardexMovements(this.selectedSale);
-    }
+  }
+
+  /**
+   * Anula la venta abierta (registrada por error): el backend devuelve el
+   * stock y, si fue a crédito, anula su cuenta por cobrar (solo sin abonos).
+   */
+  async voidSale(): Promise<void> {
+    const sale = this.selectedSale;
+    if (!sale?.strId || this.voiding) return;
+    const credit = sale.paymentType === 'CREDITO';
+    const res = await Swal.fire({
+      icon: 'warning',
+      title: `¿Anular la venta ${sale.strInvoiceCode || ''}?`.replace(' ?', '?'),
+      html: 'Los productos vuelven al inventario y la venta deja de contar en tus ventas y paneles.' +
+        (credit ? '<br>Como fue a crédito, también se anula su cuenta por cobrar (solo si no tiene abonos).' : '') +
+        '<br><small>La factura queda en la lista marcada como anulada. Esto no se puede deshacer.</small>',
+      input: 'textarea',
+      inputLabel: 'Motivo',
+      inputPlaceholder: 'Ej.: la registré dos veces, cliente equivocado…',
+      inputAttributes: { maxlength: '300' },
+      showCancelButton: true,
+      confirmButtonText: 'Anular venta',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+      inputValidator: (v) => (!String(v || '').trim() ? 'Escribe el motivo' : null),
+    });
+    if (!res.isConfirmed) return;
+    this.voiding = true;
+    this.salesService.voidSale(sale.strId, String(res.value).trim()).subscribe({
+      next: () => {
+        this.voiding = false;
+        this.closeViewModal();
+        this.loadSales();
+        Swal.fire({ icon: 'success', title: 'Venta anulada', text: 'Los productos volvieron al inventario.', timer: 1800, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.voiding = false;
+        Swal.fire('No se pudo anular la venta', err?.error?.message || 'Intenta de nuevo.', 'error');
+      },
+    });
   }
 
   formatCurrency(amount: number): string {
@@ -986,32 +1059,5 @@ export class SalesListComponent implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);
-  }
-
-  registerKardexMovements(sale: Sale): void {
-    const items = this.getItems(sale);
-    
-    items.forEach(item => {
-      const movement = {
-        entityId: sale.strProductId || '',
-        entityType: 'product' as const,
-        movementType: 'output' as const,
-        quantity: item.quantity,
-        unitValue: item.unitPrice,
-        totalPrice: item.total,
-        date: sale.dtmDate || new Date().toISOString().split('T')[0],
-        concept: `Venta - Factura ${sale.strInvoiceCode}`,
-        document: sale.strInvoiceCode || ''
-      };
-      
-      this.kardexService.createMovement(movement).subscribe({
-        next: (response) => {
-          console.log('Movimiento registrado en kardex:', response);
-        },
-        error: (error) => {
-          console.error('Error registrando movimiento en kardex:', error);
-        }
-      });
-    });
   }
 }
