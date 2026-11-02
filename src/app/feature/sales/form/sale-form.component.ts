@@ -5,7 +5,6 @@ import { CustomersService } from '../../../shared/services/customers.service';
 import { TaxService, taxOn } from '../../../shared/services/tax.service';
 import { ProductsService, SellableItem } from '../../../shared/services/products.service';
 import { SalesService, CreateSaleDto } from '../../../shared/services/sales.service';
-import { KardexService } from '../../../shared/services/kardex.service';
 import { StockService } from '../../../shared/services/stock.service';
 import { StockAlertsService } from '../../../shared/services/stock-alerts.service';
 import { CompositionService } from '../../../shared/services/composition.service';
@@ -16,6 +15,7 @@ import { ProfitBubbleService } from '../../../shared/services/profit-bubble.serv
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { customerHint, leadToCustomer, mergeCustomers, promptQuickCustomer } from '../../../shared/utils/quick-customer';
+import { localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
 
 interface OrderItem {
@@ -57,6 +57,20 @@ export class SaleFormComponent implements OnInit {
   
   loading = false;
   showCustomerDropdown = false;
+
+  /** Días hacia atrás que se puede fechar una venta (el backend valida lo mismo). */
+  static readonly MAX_BACKDATE_DAYS = 60;
+  /** Fecha de la venta (AAAA-MM-DD, día local): hoy, o un día anterior si se registra tarde. */
+  saleDate = localDay(new Date());
+  get maxSaleDate(): string { return localDay(new Date()); }
+  get minSaleDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() - SaleFormComponent.MAX_BACKDATE_DAYS);
+    return localDay(d);
+  }
+  /** La venta no es de hoy (se muestra un aviso). */
+  get isBackdated(): boolean { return !!this.saleDate && this.saleDate < this.maxSaleDate; }
+  get saleDateValid(): boolean { return !!this.saleDate && this.saleDate >= this.minSaleDate && this.saleDate <= this.maxSaleDate; }
   showProductDropdown = false;
   customerSearchTerm = '';
   productSearchTerm = '';
@@ -91,7 +105,7 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private kardexService: KardexService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService) {}
 
   /** IVA o INC del período activo del negocio; 0 si no está configurado. */
   taxLabel: 'IVA' | 'INC' = 'IVA';
@@ -253,7 +267,9 @@ export class SaleFormComponent implements OnInit {
   /** Fecha de vencimiento según la condición de pago del cliente. */
   get creditDueDate(): Date | null {
     if (!this.creditInfo?.termDays) return null;
-    const d = new Date();
+    // Desde la fecha de la venta (el backend calcula igual)
+    const [y, m, day] = (this.saleDate || this.maxSaleDate).split('-').map(Number);
+    const d = new Date(y, m - 1, day);
     d.setDate(d.getDate() + this.creditInfo.termDays);
     return d;
   }
@@ -385,6 +401,7 @@ export class SaleFormComponent implements OnInit {
 
   canSubmit(): boolean {
     if (!(this.orderData.customerName && this.orderData.items.length > 0)) return false;
+    if (!this.saleDateValid) return false;
     if (this.paymentType === 'CREDITO') return this.canUseCredit && !this.exceedsCredit;
     return !!this.paymentMethod;
   }
@@ -397,7 +414,8 @@ export class SaleFormComponent implements OnInit {
     const saleData: CreateSaleDto = {
       strTenantId: 'default-tenant',
       strProductId: this.orderData.items[0]?.productId,
-      dtmDate: new Date().toISOString().split('T')[0],
+      // Día local: toISOString() daba el día UTC (en la noche de Colombia, mañana)
+      dtmDate: this.saleDate,
       fltQuantity: Number(this.orderData.items[0]?.quantity) || 0,
       fltUnitPrice: Number(this.orderData.items[0]?.unitPrice) || 0,
       customerName: this.orderData.customerName,
@@ -417,9 +435,6 @@ export class SaleFormComponent implements OnInit {
         // Burbuja con la ganancia de esta venta (con sonido)
         this.profitBubble.show((response as any)?.profit, `la venta ${(response as any)?.sale?.strInvoiceCode || ''}`.trim());
         
-        // Registrar movimientos en kardex
-        this.registerKardexMovements(response, this.orderData.items);
-
         // La venta descuenta stock del producto: refrescar el badge de
         // alertas (sidebar) y el stock mostrado en el buscador.
         this.stockAlertsService.refreshAlerts();
@@ -480,6 +495,7 @@ export class SaleFormComponent implements OnInit {
     this.paymentType = 'CONTADO';
     this.paymentMethod = 'EFECTIVO';
     this.creditInfo = null;
+    this.saleDate = localDay(new Date());
     this.orderData = {
       customerId: '',
       customerName: '',
@@ -493,38 +509,5 @@ export class SaleFormComponent implements OnInit {
 
   getTotalQuantity(): number {
     return this.orderData.items.reduce((sum, item) => sum + item.quantity, 0);
-  }
-
-  registerKardexMovements(sale: any, items: OrderItem[]): void {
-    items.forEach(item => {
-      const productId = item.productId;
-      
-      const movement = {
-        entityId: productId,
-        entityType: 'product' as const,
-        movementType: 'output' as const,
-        quantity: item.quantity,
-        unitValue: item.unitPrice,
-        totalPrice: item.total,
-        date: new Date().toISOString().split('T')[0],
-        concept: `Venta - Factura ${sale.strInvoiceCode || sale.strId}`,
-        document: sale.strInvoiceCode || sale.strId || ''
-      };
-      
-      this.kardexService.createMovement(movement).subscribe({
-        next: (response) => {
-          console.log('Movimiento registrado en kardex:', response);
-        },
-        error: (error) => {
-          console.error('Error registrando movimiento en kardex:', error);
-        }
-      });
-      
-      // Actualizar stock local del producto
-      const product = this.products.find(p => p.id === productId);
-      if (product) {
-        product.stock = Math.max(0, product.stock - item.quantity);
-      }
-    });
   }
 }

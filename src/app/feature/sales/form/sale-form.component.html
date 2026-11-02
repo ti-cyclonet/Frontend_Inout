@@ -40,6 +40,15 @@
         </div>
       </div>
 
+      <!-- Fecha de la venta: hoy por defecto; se puede registrar una venta de días anteriores -->
+      <div class="form-group sale-date-field">
+        <label for="saleDate">Fecha de la venta *</label>
+        <input type="date" id="saleDate" class="form-control" [(ngModel)]="saleDate" name="saleDate"
+          [min]="minSaleDate" [max]="maxSaleDate" [ngModelOptions]="{standalone: true}">
+        <small class="date-hint" *ngIf="isBackdated && saleDateValid">Se registrará con fecha {{ saleDate | date:'dd/MM/yyyy' }}, no con la de hoy.</small>
+        <small class="date-hint date-error" *ngIf="!saleDateValid">Escoge una fecha entre hoy y los últimos 60 días.</small>
+      </div>
+
       <!-- Agregar Producto -->
       <div class="add-product-section">
         <div class="add-product-title">
