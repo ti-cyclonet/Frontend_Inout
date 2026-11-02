@@ -471,3 +471,8 @@
 /* Cliente rápido: crear con solo el nombre */
 .quick-customer-option { border-top: 1px dashed #d1d5db; color: #1d4ed8; background: #f8fafc; }
 .quick-customer-option:hover { background: #eff6ff; }
+
+/* Fecha de la venta */
+.sale-date-field input { max-width: 220px; }
+.date-hint { display: block; margin-top: 0.3rem; font-size: 0.8rem; color: #b45309; }
+.date-hint.date-error { color: #dc2626; }

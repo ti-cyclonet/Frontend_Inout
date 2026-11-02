@@ -17,6 +17,11 @@ export interface Sale {
   subtotal?: number;
   tax?: number;
   total?: number;
+  paymentType?: string;
+  /** Anulada: el stock volvió al inventario y no cuenta como venta. */
+  dtmVoidedAt?: string | null;
+  strVoidReason?: string | null;
+  strVoidedBy?: string | null;
 }
 
 export interface SaleItem {
@@ -58,8 +63,14 @@ export class SalesService {
     return this.http.post<Sale>(this.apiUrl, sale);
   }
 
-  getSales(): Observable<Sale[]> {
-    return this.http.get<Sale[]>(this.apiUrl);
+  /** Ventas vigentes; con includeVoided también las anuladas (lista de ventas). */
+  getSales(includeVoided = false): Observable<Sale[]> {
+    return this.http.get<Sale[]>(this.apiUrl, includeVoided ? { params: { anuladas: '1' } } : {});
+  }
+
+  /** Anula una venta registrada por error (solo administrador): devuelve el stock. */
+  voidSale(id: string, reason: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/void`, { reason });
   }
 
   getStats(): Observable<any> {
