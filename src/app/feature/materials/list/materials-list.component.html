@@ -140,7 +140,7 @@
         </svg>
         Exportar
       </button>
-      <button class="btn btn-outline-danger btn-sm" (click)="deleteSelected()">
+      <button class="btn btn-outline-danger btn-sm" *ngIf="permissions.isAdmin" (click)="deleteSelected()" [disabled]="deleting">
         <svg viewBox="0 0 16 16">
           <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
         </svg>
@@ -268,7 +268,7 @@
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
                   </svg>
                 </button>
-                <button class="btn btn-sm btn-outline-danger d-none d-md-inline-flex" (click)="deleteMaterial(material)" title="Eliminar">
+                <button class="btn btn-sm btn-outline-danger d-none d-md-inline-flex" *ngIf="permissions.isAdmin" (click)="deleteMaterial(material)" [disabled]="deleting" title="Eliminar">
                   <svg viewBox="0 0 16 16">
                     <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
                   </svg>
@@ -410,7 +410,7 @@
             <use xlink:href="./assets/icons/bootstrap-icons.svg#eye" />
           </svg>
         </button>
-        <button class="btn btn-sm btn-outline-danger" (click)="deleteMaterial(material)">
+        <button class="btn btn-sm btn-outline-danger" *ngIf="permissions.isAdmin" (click)="deleteMaterial(material)" [disabled]="deleting" title="Eliminar">
           <svg viewBox="0 0 16 16">
             <use xlink:href="./assets/icons/bootstrap-icons.svg#trash" />
           </svg>

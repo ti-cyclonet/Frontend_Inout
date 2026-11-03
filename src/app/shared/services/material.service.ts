@@ -184,6 +184,15 @@ export class MaterialService {
     );
   }
 
+  /**
+   * Elimina un material (solo administrador). El servidor lo marca como
+   * eliminado y conserva su historial; responde 400 con el motivo si tiene
+   * stock o lo usa una receta o un combo.
+   */
+  removeMaterial(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiConfig.ENDPOINTS.MATERIALS}/${id}`);
+  }
+
   // Material Composition methods
   getMaterialComposition(materialId: number): Observable<any[]> {
     const url = this.apiConfig.getEndpoint('MATERIAL_COMPOSITION', { id: materialId });
