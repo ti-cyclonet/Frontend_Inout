@@ -10,6 +10,16 @@ import { MaterialService } from '../../../shared/services/material.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
 import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialFilters, PaginatedResponse } from '../../../shared/models/material.model';
+import { PermissionsService } from '../../../shared/services/permissions.service';
+import { firstValueFrom } from 'rxjs';
+import Swal from 'sweetalert2';
+
+const DELETE_NOTE =
+  'Deja de aparecer en materiales, compras, recetas y la tienda. Su historial (Kardex, compras, ventas y pedidos) se conserva.' +
+  '<br><small>Solo se pueden eliminar materiales sin stock que no usen recetas ni combos.</small>';
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
 @Component({
   selector: 'app-materials-list',
@@ -69,7 +79,8 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     private categoryService: CategoryService,
     private warehousesService: WarehousesService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {
@@ -285,8 +296,46 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     console.log('Export selected materials:', Array.from(this.selectedMaterials));
   }
 
-  deleteSelected(): void {
-    console.log('Delete selected materials:', Array.from(this.selectedMaterials));
+  deleting = false;
+
+  /** Elimina los seleccionados uno a uno; los que no se pueden (stock, recetas) se informan al final. */
+  async deleteSelected(): Promise<void> {
+    const ids = Array.from(this.selectedMaterials).map(String);
+    if (!ids.length || this.deleting) return;
+    const names = new Map(this.materials.map((m) => [String(m.id), m.name]));
+    const res = await Swal.fire({
+      icon: 'warning',
+      title: `¿Eliminar ${ids.length} material(es)?`,
+      html: DELETE_NOTE,
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+    });
+    if (!res.isConfirmed) return;
+    this.deleting = true;
+    const failed: string[] = [];
+    let done = 0;
+    for (const id of ids) {
+      try {
+        await firstValueFrom(this.materialService.removeMaterial(id));
+        done++;
+      } catch (err: any) {
+        failed.push(err?.error?.message || `${names.get(id) || 'Un material'}: no se pudo eliminar.`);
+      }
+    }
+    this.deleting = false;
+    this.selectedMaterials.clear();
+    this.loadMaterials();
+    if (failed.length) {
+      Swal.fire({
+        icon: done ? 'warning' : 'error',
+        title: done ? `Se eliminaron ${done} de ${ids.length}` : 'No se pudo eliminar',
+        html: failed.map((f) => `<p style="text-align:left;margin:0 0 .5rem">${escapeHtml(f)}</p>`).join(''),
+      });
+    } else {
+      Swal.fire({ icon: 'success', title: done === 1 ? 'Material eliminado' : `${done} materiales eliminados`, timer: 1800, showConfirmButton: false });
+    }
   }
 
   editMaterial(material: Material): void {
@@ -294,8 +343,32 @@ export class MaterialsListComponent implements OnInit, OnChanges {
     this.openEditModal.emit(material);
   }
 
-  deleteMaterial(material: Material): void {
-    console.log('Delete material:', material);
+  async deleteMaterial(material: Material): Promise<void> {
+    if (this.deleting) return;
+    const res = await Swal.fire({
+      icon: 'warning',
+      title: `¿Eliminar ${material.name}?`,
+      html: DELETE_NOTE,
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+    });
+    if (!res.isConfirmed) return;
+    this.deleting = true;
+    this.materialService.removeMaterial(String(material.id)).subscribe({
+      next: () => {
+        this.deleting = false;
+        this.selectedViewMaterial = null;
+        this.selectedMaterials.delete(material.id);
+        this.loadMaterials();
+        Swal.fire({ icon: 'success', title: 'Material eliminado', text: 'Su historial se conserva.', timer: 1800, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.deleting = false;
+        Swal.fire('No se pudo eliminar', err?.error?.message || 'Intenta de nuevo.', 'error');
+      },
+    });
   }
 
   selectedViewMaterial: Material | null = null;
