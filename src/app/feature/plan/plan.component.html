@@ -14,12 +14,12 @@
       Gracias por crecer con InOut. Tu cambio
       ({{ welcome.cycle === 'annual' ? 'pago anual' : 'pago mensual' }}) ya está en marcha y
       <strong>mientras se activa sigues trabajando con tu plan actual</strong>, sin perder nada.
-      Para completar la activación solo faltan estos pasos:
+      Tu aceptación ya es tu firma del contrato; así va la activación:
     </p>
     <ng-container *ngTemplateOutlet="stepsTpl"></ng-container>
     <div class="pl-welcome__note">
       <svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#envelope-check"/></svg>
-      <span>Revisa tu correo (y la carpeta de spam): ahí te avisamos cuando tu contrato esté listo para firmar<ng-container *ngIf="welcome.contractCode">. Código del contrato: <strong>{{ welcome.contractCode }}</strong></ng-container>.</span>
+      <span>Revisa tu correo (y la carpeta de spam): ahí te avisamos cuando tu nuevo plan quede activo<ng-container *ngIf="welcome.contractCode">. Código del contrato: <strong>{{ welcome.contractCode }}</strong></ng-container>.</span>
     </div>
     <div class="pl-actions">
       <a class="pl-btn pl-btn--orange" [href]="factonetUrl" target="_blank" rel="noopener">
@@ -107,7 +107,7 @@
           </ul>
 
           <button type="button" class="pl-btn pl-btn--block" [class.pl-btn--orange]="plan.isHighlighted" [class.pl-btn--line]="!plan.isHighlighted"
-                  [disabled]="isCurrent(plan) || !!pending?.adminSigned || !!pending?.clientSigned" (click)="choose(plan)">
+                  [disabled]="isCurrent(plan) || !!pending?.adminSigned" (click)="choose(plan)">
             {{ isCurrent(plan) ? 'Plan actual' : plan.ctaType === 'contact' ? 'Contactar ventas' : 'Elegir este plan' }}
           </button>
         </article>
@@ -124,8 +124,8 @@
         <b>${{ money(price(selected)) }} <small>/ {{ cycle === 'annual' ? 'año' : 'mes' }}</small></b>
       </div>
       <p class="pl-modal__text">
-        Se generará tu nuevo contrato. Lo firmamos nosotros, luego tú en FactoNet, y ahí se activa.
-        Hasta entonces sigues con tu plan actual.
+        Al confirmar, tu aceptación de los Términos y de la autorización de datos <strong>queda como tu firma</strong>
+        del nuevo contrato. Cuando CycloNet lo firme, el plan se activa solo; hasta entonces sigues con tu plan actual.
         <ng-container *ngIf="pending"> Esto reemplaza tu solicitud anterior al plan {{ pending.packageName }}.</ng-container>
       </p>
       <label class="pl-check">

@@ -142,27 +142,28 @@ export class PlanComponent implements OnInit {
     });
   }
 
-  /** Pasos para completar la activación, con el avance real del contrato. */
+  /**
+   * Pasos para completar la activación, con el avance real del contrato. La
+   * firma del cliente es su aceptación al pedir el cambio: solo falta CycloNet.
+   */
   get steps(): Step[] {
-    const p = this.pending;
-    const adminSigned = !!p?.adminSigned;
-    const clientSigned = !!p?.clientSigned;
+    const adminSigned = !!this.pending?.adminSigned;
     return [
       { icon: 'check2', title: 'Solicitud recibida', text: 'Registramos tu nuevo plan y generamos el contrato.', state: 'done' },
+      {
+        icon: 'pencil-square', title: 'Tu firma',
+        text: 'Al aceptar los Términos y la autorización de datos firmaste el contrato. No tienes que hacer nada más.',
+        state: 'done',
+      },
       {
         icon: 'building-check', title: 'CycloNet revisa y firma',
         text: 'Nuestro equipo revisa tu contrato y lo firma. Te avisamos por correo.',
         state: adminSigned ? 'done' : 'current',
       },
       {
-        icon: 'pencil-square', title: 'Tú firmas en FactoNet',
-        text: 'Te llega un correo con el enlace. Entra a FactoNet con tu mismo usuario de InOut, revisa el contrato y fírmalo.',
-        state: clientSigned ? 'done' : adminSigned ? 'current' : 'next',
-      },
-      {
         icon: 'rocket-takeoff', title: 'Tu plan se activa solo',
-        text: 'Con las dos firmas el nuevo plan queda activo al instante. Tus facturas quedan en FactoNet para pagarlas en línea.',
-        state: adminSigned && clientSigned ? 'done' : 'next',
+        text: 'Con la firma de CycloNet el nuevo plan queda activo al instante. Tus facturas quedan en FactoNet para pagarlas en línea.',
+        state: adminSigned ? 'done' : 'next',
       },
     ];
   }
