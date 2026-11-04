@@ -361,3 +361,13 @@
 }
 #changePasswordModal .btn-primary:disabled { opacity: 0.5; }
 #changePasswordModal .modal-footer .btn:active:not(:disabled) { transform: scale(0.97); }
+
+/* Enlace a Mi plan bajo el nombre del paquete */
+.header-plan-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #2f7bff;
+  text-decoration: none;
+}
+.header-plan-link:hover { text-decoration: underline; }

@@ -23,6 +23,7 @@ import { CreditPayComponent } from './feature/marketplace/credit-pay/credit-pay.
 import { UsersComponent } from './feature/users/users.component';
 import { ModuleSelectorComponent } from './shared/components/module-selector/module-selector.component';
 import { UsagePanelComponent } from './feature/usage-panel/usage-panel.component';
+import { PlanComponent } from './feature/plan/plan.component';
 import { TrainingSessionsComponent } from './feature/training-sessions/training-sessions.component';
 import { CustomersComponent } from './feature/customers/customers.component';
 import { OrdersComponent } from './feature/orders/orders.component';
@@ -59,6 +60,8 @@ export const routes: Routes = [
             { path: 'customers', component: CustomersComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'orders', component: CommercialComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'consumos', component: UsagePanelComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
+            // Mi plan / actualizar plan: sin exigir periodo activo (una prueba vencida también debe poder cambiar de plan)
+            { path: 'plan', component: PlanComponent, canActivate: [AuthGuard] },
             { path: 'combos', component: CombosPromotionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'servicios', component: PartnersComponent, canActivate: [AuthGuard] },
             { path: 'training-sessions', component: TrainingSessionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },

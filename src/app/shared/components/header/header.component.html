@@ -83,6 +83,10 @@
                 </svg>
                 {{ packageName }}
               </p>
+              <a *ngIf="packageName && isPlanAdmin" routerLink="/plan" class="small fw-semibold header-plan-link">
+                Actualizar plan
+                <svg width="11" height="11" fill="currentColor"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-right" /></svg>
+              </a>
             </div>
           </li>
           <li><hr class="dropdown-divider" /></li>
