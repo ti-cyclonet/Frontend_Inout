@@ -362,12 +362,17 @@
 #changePasswordModal .btn-primary:disabled { opacity: 0.5; }
 #changePasswordModal .modal-footer .btn:active:not(:disabled) { transform: scale(0.97); }
 
-/* Enlace a Mi plan bajo el nombre del paquete */
-.header-plan-link {
-  display: inline-flex;
+/* Mi plan en el menú de usuario */
+.header-plan-item {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  color: #2f7bff;
-  text-decoration: none;
 }
-.header-plan-link:hover { text-decoration: underline; }
+.header-plan-pill {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff7a1a, #e85f00);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
