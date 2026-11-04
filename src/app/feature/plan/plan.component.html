@@ -1,0 +1,165 @@
+<div class="plan-page">
+
+  <!-- Bienvenida tras pedir el cambio -->
+  <section class="pl-welcome" *ngIf="welcome">
+    <div class="pl-welcome__art" aria-hidden="true">
+      <span class="pl-confetti" *ngFor="let c of [1,2,3,4,5,6,7,8]" [class]="'pl-confetti pl-confetti--' + c"></span>
+      <img src="assets/img/plan/logo-inout.webp" alt="" width="110" height="92">
+    </div>
+    <span class="pl-kicker pl-kicker--orange">
+      <svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#patch-check-fill"/></svg> Solicitud enviada
+    </span>
+    <h1>¡Bienvenido al plan {{ welcome.plan.displayName }}!</h1>
+    <p class="pl-lead">
+      Gracias por crecer con InOut. Tu cambio
+      ({{ welcome.cycle === 'annual' ? 'pago anual' : 'pago mensual' }}) ya está en marcha y
+      <strong>mientras se activa sigues trabajando con tu plan actual</strong>, sin perder nada.
+      Tu aceptación ya es tu firma del contrato; así va la activación:
+    </p>
+    <ng-container *ngTemplateOutlet="stepsTpl"></ng-container>
+    <div class="pl-welcome__note">
+      <svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#envelope-check"/></svg>
+      <span>Revisa tu correo (y la carpeta de spam): ahí te avisamos cuando tu nuevo plan quede activo<ng-container *ngIf="welcome.contractCode">. Código del contrato: <strong>{{ welcome.contractCode }}</strong></ng-container>.</span>
+    </div>
+    <div class="pl-actions">
+      <a class="pl-btn pl-btn--orange" [href]="factonetUrl" target="_blank" rel="noopener">
+        Ir a FactoNet <svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#arrow-right"/></svg>
+      </a>
+      <a class="pl-btn pl-btn--line" routerLink="/home">Volver a InOut</a>
+    </div>
+  </section>
+
+  <ng-container *ngIf="!welcome">
+    <!-- Encabezado con el plan vigente -->
+    <header class="pl-hero">
+      <div class="pl-hero__text">
+        <span class="pl-kicker"><svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#box-seam"/></svg> Mi plan</span>
+        <h1>Actualiza tu plan de InOut</h1>
+        <p class="pl-lead">
+          <ng-container *ngIf="status; else noStatus">
+            Hoy tienes el plan <strong>{{ status.packageName }}</strong>.
+            <ng-container *ngIf="isTrial && !expired"> Tu prueba termina en <strong>{{ daysRemaining }} {{ daysRemaining === 1 ? 'día' : 'días' }}</strong>.</ng-container>
+            <ng-container *ngIf="isTrial && expired"> Tu periodo de prueba ya terminó.</ng-container>
+          </ng-container>
+          <ng-template #noStatus>Elige el plan que se ajusta a tu negocio.</ng-template>
+          Cambiar de plan no borra nada: tus productos, ventas y tienda siguen igual.
+        </p>
+      </div>
+      <div class="pl-hero__art" aria-hidden="true">
+        <img class="pl-hero__screen" src="assets/img/plan/panel-inicio.webp" alt="" width="1600" height="1000">
+        <img class="pl-hero__photo" src="assets/img/plan/bodega.webp" alt="" width="800" height="361">
+      </div>
+    </header>
+
+    <!-- Cambio ya pedido: en qué va -->
+    <section class="pl-pending" *ngIf="pending">
+      <div class="pl-pending__head">
+        <svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#clock-history"/></svg>
+        <div>
+          <strong>Tu cambio al plan {{ pending.packageName }} está en proceso</strong>
+          <span>Pedido el {{ longDate(pending.requestedAt) }} · contrato {{ pending.contractCode }}. Sigues con tu plan actual hasta que se active.</span>
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="stepsTpl"></ng-container>
+    </section>
+
+    <div class="pl-state" *ngIf="loading">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando…</span></div>
+      <p>Cargando planes…</p>
+    </div>
+
+    <div class="pl-state pl-state--error" *ngIf="loadError && !loading">
+      <p>{{ loadError }}</p>
+      <button type="button" class="pl-btn pl-btn--line" (click)="load()">Reintentar</button>
+    </div>
+
+    <div class="pl-state" *ngIf="!loading && !loadError && !permissions.isAdmin">
+      <p>Solo el administrador de la cuenta puede cambiar el plan. Pídeselo a quien administra InOut en tu negocio.</p>
+    </div>
+
+    <ng-container *ngIf="!loading && !loadError && permissions.isAdmin">
+      <div class="pl-cycle" role="radiogroup" aria-label="Periodo de pago">
+        <button type="button" role="radio" [attr.aria-checked]="cycle === 'monthly'" [class.on]="cycle === 'monthly'" (click)="cycle = 'monthly'">Mensual</button>
+        <button type="button" role="radio" [attr.aria-checked]="cycle === 'annual'" [class.on]="cycle === 'annual'" (click)="cycle = 'annual'">Anual <small>ahorra 5%</small></button>
+      </div>
+
+      <p class="pl-state" *ngIf="!plans.length">Por ahora no hay planes disponibles. Escríbenos y te ayudamos.</p>
+
+      <div class="pl-grid">
+        <article class="pl-card" *ngFor="let plan of plans" [class.pl-card--featured]="plan.isHighlighted" [class.pl-card--current]="isCurrent(plan)">
+          <span class="pl-card__badge" *ngIf="isCurrent(plan); else badgeTpl">Tu plan actual</span>
+          <ng-template #badgeTpl><span class="pl-card__badge" *ngIf="plan.badge || plan.isHighlighted">{{ plan.badge || 'Recomendado' }}</span></ng-template>
+          <h3>{{ plan.displayName }}</h3>
+          <p class="pl-card__desc" *ngIf="plan.description">{{ plan.description }}</p>
+
+          <div class="pl-card__price" *ngIf="plan.price > 0; else askTpl">
+            <b><sup>$</sup>{{ money(price(plan)) }}</b><span>/ {{ cycle === 'annual' ? 'año' : 'mes' }}</span>
+          </div>
+          <ng-template #askTpl><div class="pl-card__price"><b class="pl-card__ask">Hablemos</b></div></ng-template>
+          <p class="pl-card__note" *ngIf="plan.price > 0">
+            <ng-container *ngIf="cycle === 'annual'">Equivale a ${{ money(monthlyEquivalent(plan)) }} / mes</ng-container>
+            <ng-container *ngIf="cycle === 'monthly'">Pagas mes a mes</ng-container>
+          </p>
+
+          <ul>
+            <li *ngFor="let f of plan.features"><svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#check2"/></svg> {{ f }}</li>
+            <li><svg class="pl-ico"><use href="./assets/icons/bootstrap-icons.svg#check2"/></svg> Soporte técnico incluido</li>
+          </ul>
+
+          <button type="button" class="pl-btn pl-btn--block" [class.pl-btn--orange]="plan.isHighlighted" [class.pl-btn--line]="!plan.isHighlighted"
+                  [disabled]="isCurrent(plan) || !!pending?.adminSigned" (click)="choose(plan)">
+            {{ isCurrent(plan) ? 'Plan actual' : plan.ctaType === 'contact' ? 'Contactar ventas' : 'Elegir este plan' }}
+          </button>
+        </article>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- Confirmación -->
+  <div class="pl-modal" *ngIf="selected" (click)="cancel()">
+    <section class="pl-modal__box" role="dialog" aria-modal="true" aria-labelledby="pl-confirm-title" (click)="$event.stopPropagation()">
+      <h2 id="pl-confirm-title">Cambiar al plan {{ selected.displayName }}</h2>
+      <div class="pl-summary">
+        <span>{{ cycle === 'annual' ? 'Pago anual' : 'Pago mensual' }}</span>
+        <b>${{ money(price(selected)) }} <small>/ {{ cycle === 'annual' ? 'año' : 'mes' }}</small></b>
+      </div>
+      <p class="pl-modal__text">
+        Al confirmar, tu aceptación de los Términos y de la autorización de datos <strong>queda como tu firma</strong>
+        del nuevo contrato. Cuando CycloNet lo firme, el plan se activa solo; hasta entonces sigues con tu plan actual.
+        <ng-container *ngIf="pending"> Esto reemplaza tu solicitud anterior al plan {{ pending.packageName }}.</ng-container>
+      </p>
+      <label class="pl-check">
+        <input type="checkbox" [(ngModel)]="acceptTerms" name="acceptTerms">
+        <span>Acepto los <a [href]="legal.termsUrl" target="_blank" rel="noopener">Términos y Condiciones del Servicio InOut</a>.</span>
+      </label>
+      <label class="pl-check">
+        <input type="checkbox" [(ngModel)]="acceptData" name="acceptData">
+        <span>Autorizo el <a [href]="legal.habeasDataUrl" target="_blank" rel="noopener">tratamiento de mis datos personales</a> por CycloNet S.A.S. (Ley 1581 de 2012).</span>
+      </label>
+      <p class="pl-error" *ngIf="submitError">{{ submitError }}</p>
+      <div class="pl-actions">
+        <button type="button" class="pl-btn pl-btn--orange" [disabled]="!acceptTerms || !acceptData || submitting" (click)="confirm()">
+          <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status"></span>
+          {{ submitting ? 'Enviando…' : 'Confirmar cambio de plan' }}
+        </button>
+        <button type="button" class="pl-btn pl-btn--line" [disabled]="submitting" (click)="cancel()">Cancelar</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Pasos para completar la activación -->
+<ng-template #stepsTpl>
+  <ol class="pl-steps">
+    <li *ngFor="let s of steps; let i = index" [class]="'pl-step pl-step--' + s.state">
+      <span class="pl-step__dot">
+        <svg class="pl-ico" *ngIf="s.state === 'done'"><use href="./assets/icons/bootstrap-icons.svg#check2"/></svg>
+        <ng-container *ngIf="s.state !== 'done'">{{ i + 1 }}</ng-container>
+      </span>
+      <div>
+        <strong>{{ s.title }}</strong>
+        <p>{{ s.text }}</p>
+      </div>
+    </li>
+  </ol>
+</ng-template>

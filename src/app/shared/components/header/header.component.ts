@@ -12,7 +12,7 @@ import {
 import { DESCRIPTION_APP } from '../../../config/config';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../services/auth/auth.service';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ChangePasswordComponent } from '../change-password/change-password.component';
 import {
   FormBuilder,
@@ -38,6 +38,7 @@ import { FeedbackComponent } from '../feedback/feedback.component';
     ReactiveFormsModule,
     NotificationsComponent,
     FeedbackComponent,
+    RouterModule,
   ],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css'],
@@ -52,6 +53,8 @@ export class HeaderComponent implements OnInit {
   uploadingAvatar = false;
   clientName: string | null = null;
   packageName: string | null = null;
+  /** Solo el administrador ve "Actualizar plan" (Authoriza también lo exige). */
+  isPlanAdmin = typeof window !== 'undefined' && /^admin(Inout)?$/.test(sessionStorage.getItem('user_rol') || '');
   appDescription: string = 'INVENTORY MANAGEMENT';
   currentModule: ModuleType | null = null;
   private _isSidebarVisible: boolean = false;
