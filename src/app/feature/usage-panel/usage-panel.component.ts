@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { UsageStatusService } from '../../shared/services/usage-status.service';
 import { UsageStatusResponse, UsageVariable, UsageWarning } from '../../shared/model/usage-status.model';
 import { RoleQuotaSummaryComponent } from '../../shared/components/role-quota-summary/role-quota-summary.component';
@@ -7,7 +8,7 @@ import { RoleQuotaSummaryComponent } from '../../shared/components/role-quota-su
 @Component({
   selector: 'app-usage-panel',
   standalone: true,
-  imports: [CommonModule, RoleQuotaSummaryComponent],
+  imports: [CommonModule, RouterModule, RoleQuotaSummaryComponent],
   templateUrl: './usage-panel.component.html',
   styleUrls: ['./usage-panel.component.css']
 })

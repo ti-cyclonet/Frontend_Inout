@@ -65,6 +65,9 @@
           {{ planExpired ? 'Vencido' : daysRemaining + ' días restantes' }}
         </div>
       </div>
+      <a *ngIf="!usageStatus.isBillable" routerLink="/plan" class="btn btn-sm btn-warning fw-semibold mb-3">
+        <svg width="14" height="14" fill="currentColor" class="me-1"><use xlink:href="./assets/icons/bootstrap-icons.svg#rocket-takeoff" /></svg>Actualizar plan
+      </a>
 
       <div class="timeline-bar-container">
         <div class="timeline-bar">

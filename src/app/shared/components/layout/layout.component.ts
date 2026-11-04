@@ -8,6 +8,7 @@ import { BottomNavComponent } from '../bottom-nav/bottom-nav.component';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { DeliveryRequestComponent } from '../../../feature/commercial/delivery/delivery-request.component';
+import { PlanExpiryModalComponent } from '../plan-expiry-modal/plan-expiry-modal.component';
 import { Application } from '../../model/application.model';
 import { ApplicationsService } from '../../services/applications/applications.service';
 import { ModuleService, ModuleType } from '../../services/module/module.service';
@@ -30,7 +31,8 @@ export type SidebarStyle = 'lateral' | 'list' | 'bottom';
     FooterComponent,
     RouterOutlet,
     RouterModule,
-    DeliveryRequestComponent
+    DeliveryRequestComponent,
+    PlanExpiryModalComponent
   ],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css'],
