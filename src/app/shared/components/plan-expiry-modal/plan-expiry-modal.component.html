@@ -1,6 +1,6 @@
 <div class="pem-backdrop" *ngIf="open" (click)="close()">
   <section class="pem" role="dialog" aria-modal="true" aria-labelledby="pem-title" (click)="$event.stopPropagation()">
-    <button type="button" class="pem-close" (click)="close()" aria-label="Cerrar">
+    <button type="button" class="pem-close" *ngIf="!locked" (click)="close()" aria-label="Cerrar">
       <svg class="pem-ico" aria-hidden="true"><use href="./assets/icons/bootstrap-icons.svg#x-lg"/></svg>
     </button>
 
@@ -26,15 +26,20 @@
     <div class="pem-body">
       <span class="pem-kicker"><svg class="pem-ico" aria-hidden="true"><use href="./assets/icons/bootstrap-icons.svg#stars"/></svg> Tu periodo de prueba</span>
       <h2 id="pem-title" *ngIf="!expired">Tu plan {{ packageName }} está por vencer</h2>
-      <h2 id="pem-title" *ngIf="expired">Tu periodo de prueba terminó</h2>
+      <h2 id="pem-title" *ngIf="expired">{{ canUpgrade ? 'Tu periodo de prueba terminó' : 'El periodo de prueba de tu negocio terminó' }}</h2>
       <p class="pem-lead" *ngIf="!expired">
         <ng-container *ngIf="daysRemaining > 0">Te quedan <strong>{{ daysRemaining }} {{ daysRemaining === 1 ? 'día' : 'días' }}</strong></ng-container>
         <ng-container *ngIf="daysRemaining === 0">Hoy es el último día</ng-container>
         de prueba<ng-container *ngIf="endDate"> (hasta el {{ endLabel }})</ng-container>.
         Elige el plan que se ajusta a tu negocio y sigue vendiendo, produciendo y controlando tu inventario sin interrupciones.
       </p>
-      <p class="pem-lead" *ngIf="expired">
-        Gracias por probar InOut. Elige un plan para seguir con tu inventario, tus ventas y tu tienda online tal como los dejaste.
+      <p class="pem-lead" *ngIf="expired && canUpgrade">
+        Gracias por probar InOut. Para seguir usándolo, elige un plan: en cuanto confirmes el cambio vuelves a trabajar
+        con tu inventario, tus ventas y tu tienda online tal como los dejaste, mientras se activa el nuevo plan.
+      </p>
+      <p class="pem-lead" *ngIf="expired && !canUpgrade">
+        Para seguir usando InOut, el administrador de la cuenta debe elegir un plan. Avísale: en cuanto lo haga,
+        vuelves a trabajar con todo tal como lo dejaste.
       </p>
 
       <ul class="pem-perks">
@@ -44,10 +49,11 @@
       </ul>
 
       <div class="pem-actions">
-        <button type="button" class="pem-btn pem-btn--orange" (click)="goToPlans()">
+        <button type="button" class="pem-btn pem-btn--orange" *ngIf="canUpgrade" (click)="goToPlans()">
           Ver planes y actualizar <svg class="pem-ico" aria-hidden="true"><use href="./assets/icons/bootstrap-icons.svg#arrow-right"/></svg>
         </button>
-        <button type="button" class="pem-btn pem-btn--ghost" (click)="close()">Recordármelo mañana</button>
+        <button type="button" class="pem-btn pem-btn--ghost" *ngIf="!locked" (click)="close()">Recordármelo mañana</button>
+        <button type="button" class="pem-btn pem-btn--ghost" *ngIf="locked" (click)="logout()">Cerrar sesión</button>
       </div>
     </div>
   </section>
