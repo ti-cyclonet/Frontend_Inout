@@ -10,6 +10,7 @@ import { groupComboLines } from '../../../shared/utils/combo-lines.util';
 import { environment } from '../../../../environments/environment';
 import { dailyDocs, downloadDailySalesXlsx, localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
+import { ReceiptService } from '../../../shared/services/receipt.service';
 
 @Component({
   selector: 'app-sales-list',
@@ -228,6 +229,12 @@ import Swal from 'sweetalert2';
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#x-octagon"></use>
               </svg>
               {{ voiding ? 'Anulando…' : 'Anular venta' }}
+            </button>
+            <button type="button" class="btn btn-outline-primary" (click)="printReceipt()" title="Tiquete para la impresora de rollo (tiquetera)">
+              <svg fill="currentcolor" viewBox="0 0 16 16" style="width: 16px; height: 16px; margin-right: 0.5rem;">
+                <use xlink:href="./assets/icons/bootstrap-icons.svg#printer"></use>
+              </svg>
+              Imprimir tiquete
             </button>
             <button type="button" class="btn btn-outline-primary" (click)="generatePDF()">
               <svg fill="currentcolor" viewBox="0 0 16 16" style="width: 16px; height: 16px; margin-right: 0.5rem;">
@@ -734,7 +741,7 @@ export class SalesListComponent implements OnInit {
   exporting = false;
   voiding = false;
 
-  constructor(private salesService: SalesService, private productsService: ProductsService, private http: HttpClient, public permissions: PermissionsService) {}
+  constructor(private salesService: SalesService, private productsService: ProductsService, private http: HttpClient, public permissions: PermissionsService, private receipts: ReceiptService) {}
 
   ngOnInit(): void {
     this.loadSales();
@@ -943,6 +950,11 @@ export class SalesListComponent implements OnInit {
   getItemsText(sale: Sale): string {
     const items = this.getItems(sale);
     return items.map(item => item.product).join(', ');
+  }
+
+  /** Tiquete de la venta para la tiquetera (reimpresión). */
+  printReceipt(): void {
+    if (this.selectedSale) this.receipts.print(this.selectedSale).catch(() => {});
   }
 
   generatePDF(): void {

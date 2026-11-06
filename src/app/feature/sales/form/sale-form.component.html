@@ -229,6 +229,18 @@
         <p class="credit-hint" *ngIf="loadingCredit">Consultando el crédito del cliente…</p>
       </div>
 
+      <div class="receipt-opts">
+        <label class="receipt-check">
+          <input type="checkbox" [checked]="receipts.settings.autoPrint" (change)="receipts.saveSettings({ autoPrint: $any($event.target).checked })">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#printer" /></svg>
+          Imprimir tiquete al confirmar
+        </label>
+        <select class="receipt-width" *ngIf="receipts.settings.autoPrint" [value]="receipts.settings.width" (change)="receipts.saveSettings({ width: +$any($event.target).value === 58 ? 58 : 80 })" aria-label="Ancho del rollo">
+          <option value="80">Rollo 80 mm</option>
+          <option value="58">Rollo 58 mm</option>
+        </select>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="btn btn-outline-secondary" (click)="onCancel()" [disabled]="loading">
           Cancelar

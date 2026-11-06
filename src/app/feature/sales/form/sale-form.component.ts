@@ -19,6 +19,7 @@ import { localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
 import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
+import { ReceiptService } from '../../../shared/services/receipt.service';
 
 interface OrderItem {
   id: string;
@@ -134,7 +135,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService, private barcodesService: BarcodesService, private host: ElementRef<HTMLElement>) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService, private barcodesService: BarcodesService, private host: ElementRef<HTMLElement>, public receipts: ReceiptService) {}
 
   /** IVA o INC del período activo del negocio; 0 si no está configurado. */
   taxLabel: 'IVA' | 'INC' = 'IVA';
@@ -626,6 +627,9 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     this.salesService.createSale(saleData).subscribe({
       next: (response) => {
         console.log('Sale created:', response);
+        // Tiquete para la tiquetera (si está activado en este equipo)
+        const sale = (response as any)?.sale;
+        if (sale && this.receipts.settings.autoPrint) this.receipts.print(sale).catch(() => {});
         // Burbuja con la ganancia de esta venta (con sonido)
         this.profitBubble.show((response as any)?.profit, `la venta ${(response as any)?.sale?.strInvoiceCode || ''}`.trim());
         
