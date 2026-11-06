@@ -10,6 +10,7 @@ import { groupComboLines } from '../../../shared/utils/combo-lines.util';
 import { environment } from '../../../../environments/environment';
 import { dailyDocs, downloadDailySalesXlsx, localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
+import { ReceiptService } from '../../../shared/services/receipt.service';
 
 @Component({
   selector: 'app-sales-list',
@@ -229,6 +230,20 @@ import Swal from 'sweetalert2';
               </svg>
               {{ voiding ? 'Anulando…' : 'Anular venta' }}
             </button>
+            <div class="receipt-actions" role="group" aria-label="Comprobante">
+              <button type="button" class="ra-btn" (click)="receiptAction('print')" title="Imprimir el tiquete (tiquetera)" aria-label="Imprimir el tiquete">
+                <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#printer"></use></svg>
+              </button>
+              <button type="button" class="ra-btn" (click)="receiptAction('pdf')" title="Guardar el tiquete en PDF" aria-label="Guardar el tiquete en PDF">
+                <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-pdf"></use></svg>
+              </button>
+              <button type="button" class="ra-btn ra-btn--wa" (click)="receiptAction('whatsapp')" title="Enviar por WhatsApp" aria-label="Enviar por WhatsApp">
+                <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#whatsapp"></use></svg>
+              </button>
+              <button type="button" class="ra-btn ra-btn--mail" (click)="receiptAction('email')" title="Enviar por correo" aria-label="Enviar por correo">
+                <svg viewBox="0 0 16 16"><use xlink:href="./assets/icons/bootstrap-icons.svg#envelope"></use></svg>
+              </button>
+            </div>
             <button type="button" class="btn btn-outline-primary" (click)="generatePDF()">
               <svg fill="currentcolor" viewBox="0 0 16 16" style="width: 16px; height: 16px; margin-right: 0.5rem;">
                 <use xlink:href="./assets/icons/bootstrap-icons.svg#file-earmark-pdf"></use>
@@ -243,6 +258,14 @@ import Swal from 'sweetalert2';
     <div class="modal-backdrop fade" [class.show]="showViewModal" *ngIf="showViewModal"></div>
   `,
   styles: [`
+    .receipt-actions { display: inline-flex; gap: 6px; padding: 3px; border-radius: 999px; background: #f1f5f9; }
+    .ra-btn { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #fff; color: #1d4ed8; cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, .12); }
+    .ra-btn svg { width: 17px; height: 17px; fill: currentColor; }
+    .ra-btn:hover { background: #1d4ed8; color: #fff; }
+    .ra-btn--wa { color: #16a34a; }
+    .ra-btn--wa:hover { background: #16a34a; }
+    .ra-btn--mail { color: #ea580c; }
+    .ra-btn--mail:hover { background: #ea580c; }
     .sales-list-container {
       height: calc(100vh - 200px);
       display: flex;
@@ -734,7 +757,7 @@ export class SalesListComponent implements OnInit {
   exporting = false;
   voiding = false;
 
-  constructor(private salesService: SalesService, private productsService: ProductsService, private http: HttpClient, public permissions: PermissionsService) {}
+  constructor(private salesService: SalesService, private productsService: ProductsService, private http: HttpClient, public permissions: PermissionsService, private receipts: ReceiptService) {}
 
   ngOnInit(): void {
     this.loadSales();
@@ -943,6 +966,17 @@ export class SalesListComponent implements OnInit {
   getItemsText(sale: Sale): string {
     const items = this.getItems(sale);
     return items.map(item => item.product).join(', ');
+  }
+
+  /** Comprobante de la venta: imprimir, guardar en PDF, WhatsApp o correo. */
+  receiptAction(kind: 'print' | 'pdf' | 'whatsapp' | 'email'): void {
+    const sale = this.selectedSale;
+    if (!sale) return;
+    const run = kind === 'print' ? this.receipts.print(sale)
+      : kind === 'pdf' ? this.receipts.downloadPdf(sale)
+      : kind === 'whatsapp' ? this.receipts.shareWhatsapp(sale)
+      : this.receipts.sendEmail(sale);
+    run.catch(() => Swal.fire('No se pudo', 'Intenta de nuevo.', 'error'));
   }
 
   generatePDF(): void {
