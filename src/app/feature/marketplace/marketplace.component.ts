@@ -293,6 +293,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   todayHours: { open: boolean; label: string } | null = null;
   /** Horario de atención (aunque la programación esté inactiva) y su semana. */
   storeSchedule: StoreSchedule | null = null;
+  /** La tienda no recibe pedidos (la prueba gratis del negocio venció sin cambio de plan). */
+  ordersPaused = false;
   weekHours: { day: string; text: string; today: boolean; closed: boolean }[] = [];
   showWeekHours = false;
   /** Información de la carta (proteínas, salsas…, zonas de domicilio, solo domicilios). */
@@ -893,6 +895,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     this.brandingService.getPublic(tenantId).subscribe({
       next: (b) => (this.storeLogoUrl = b?.logoWebUrl || null),
       error: () => (this.storeLogoUrl = null),
+    });
+    this.ordersPaused = false;
+    this.http.get<{ ordersPaused: boolean }>(`${this.baseUrl}/usage-status/store/${tenantId}`).subscribe({
+      next: (s) => (this.ordersPaused = !!s?.ordersPaused),
+      error: () => {},
     });
     Promise.all([
       this.http.get<any>(`${this.baseUrl}/products/tenant/${tenantId}`).toPromise(),
@@ -3065,6 +3072,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   async submitOrder(): Promise<void> {
     if (this.cart.length === 0 || this.checkoutSending) return;
+    if (this.ordersPaused) {
+      Swal.fire({ icon: 'info', title: 'Tienda en pausa', text: 'Esta tienda no está recibiendo pedidos por ahora. Escríbele directamente o vuelve más tarde.' });
+      return;
+    }
     // Con sesión, nombre/teléfono/correo vienen de la cuenta
     if (this.clientLoggedIn) {
       this.checkoutData.customerName = this.clientDisplayName;
