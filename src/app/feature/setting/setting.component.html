@@ -25,6 +25,18 @@
           <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="branding?.logoUrl && !uploadingLogo" (click)="removeLogo()">Quitar</button>
         </div>
       </div>
+      <div class="receipt-note py-2">
+        <label for="receiptNote" class="fw-semibold d-block mb-1">Nota del comprobante de venta
+          <app-info-tip>Sale al pie del tiquete, del PDF y de lo que envías por WhatsApp o correo. Por ejemplo: «El valor del domicilio se acuerda directamente con el domiciliario».</app-info-tip>
+        </label>
+        <textarea id="receiptNote" class="form-control" rows="2" maxlength="300" [(ngModel)]="receiptNote" [disabled]="!permissions.isAdmin || savingNote"
+          placeholder="Opcional. Ej.: El valor del domicilio se acuerda directamente con el domiciliario."></textarea>
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <small class="text-muted">{{ permissions.isAdmin ? (receiptNote.length + '/300') : 'Solo un administrador puede cambiarla.' }}</small>
+          <button type="button" class="btn btn-sm btn-primary" *ngIf="permissions.isAdmin" (click)="saveReceiptNote()"
+            [disabled]="savingNote || receiptNote.trim() === (branding?.receiptNote || '')">{{ savingNote ? 'Guardando…' : 'Guardar nota' }}</button>
+        </div>
+      </div>
     </div>
 
     <!-- Preferencias de interfaz -->
