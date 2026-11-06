@@ -417,6 +417,10 @@
                     />
                   </div>
                   <div class="form-group">
+                    <label>Marca (opcional)</label>
+                    <input type="text" class="form-control" [(ngModel)]="newMaterial.brand" maxlength="100" placeholder="Si tiene marca" />
+                  </div>
+                  <div class="form-group">
                     <label>Descripción *</label>
                     <input
                       type="text"
@@ -425,6 +429,12 @@
                       placeholder="Descripción del material"
                     />
                   </div>
+                </div>
+                <div class="form-group">
+                  <label for="compositeBarcodes">Códigos de barras</label>
+                  <app-barcode-field *ngIf="barcodeCodes !== null; else compositeBarcodesLoading" inputId="compositeBarcodes"
+                    [(codes)]="barcodeCodes" [itemId]="editingMaterialId ? $any(editingMaterialId) : null"></app-barcode-field>
+                  <ng-template #compositeBarcodesLoading><small class="text-muted d-block">{{ barcodesFailed ? 'No se pudieron cargar los códigos de barras; puedes guardar el material y agregarlos después.' : 'Cargando códigos…' }}</small></ng-template>
                 </div>
                 <div class="form-row">
                   <div class="form-group">

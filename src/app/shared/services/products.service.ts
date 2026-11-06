@@ -22,6 +22,8 @@ export interface SellableItem {
   /** Stock DISPONIBLE (físico - reservado); en presentaciones para materiales. */
   stock: number;
   itemType: 'product' | 'material' | 'material_t' | 'kit' | 'combo';
+  /** Marca (opcional). */
+  brand?: string | null;
   /** Combo cuyos componentes limitantes se fabrican bajo pedido: sin tope de stock. */
   unlimited?: boolean;
 }
@@ -72,6 +74,7 @@ export class ProductsService {
             price: Number(p.fltPrice) || 0,
             stock: Math.max(0, Number(p.ingQuantity || 0) - Number(p.ingReservedStock || 0)),
             itemType: 'product',
+            brand: p.strBrand || null,
           })),
           // El backend ya entrega precio y stock por presentación
           ...(resale || []).map((m: any): SellableItem => ({
@@ -80,6 +83,7 @@ export class ProductsService {
             price: Number(m.fltPrice) || 0,
             stock: Number(m.ingQuantity) || 0,
             itemType: m.itemType,
+            brand: m.strBrand || null,
           })),
           // Kit armado: su stock. Combo: lo que alcanzan sus componentes (null = bajo pedido)
           ...(combos || []).filter((c: any) => c.strStatus === 'active').map((c: any): SellableItem => ({

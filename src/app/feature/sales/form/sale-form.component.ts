@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
@@ -13,10 +13,12 @@ import { CreditService, CreditEligibility, PAYMENT_METHODS, PaymentType } from '
 import { PromotionsService } from '../../../shared/services/promotions.service';
 import { ProfitBubbleService } from '../../../shared/services/profit-bubble.service';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { customerHint, leadToCustomer, mergeCustomers, promptQuickCustomer } from '../../../shared/utils/quick-customer';
 import { localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
+import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
+import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 
 interface OrderItem {
   id: string;
@@ -105,15 +107,29 @@ export class SaleFormComponent implements OnInit {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService, private barcodesService: BarcodesService, private host: ElementRef<HTMLElement>) {}
 
   /** IVA o INC del período activo del negocio; 0 si no está configurado. */
   taxLabel: 'IVA' | 'INC' = 'IVA';
   taxPercent = 0;
 
+  /** Códigos de barras del negocio (código → ítem), para vender leyendo con el lector. */
+  private barcodes = new Map<string, BarcodeRow>();
+  private readonly scanner = new BarcodeScanner((code) => this.onScan(code));
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    // Solo con el formulario a la vista (en Comercial vive dentro de un modal
+    // oculto) y sin otra ventana encima (los avisos tipo toast no cuentan)
+    if (!this.host.nativeElement.getClientRects().length) return;
+    if (document.querySelector('.swal2-popup:not(.swal2-toast)')) return;
+    this.scanner.handle(event);
+  }
+
   ngOnInit(): void {
     this.loadCustomers();
     this.loadProducts();
+    this.loadBarcodes();
     // Impuesto del período activo (sin parámetro, ninguno)
     this.taxService.info().subscribe((t) => { this.taxLabel = t.label; this.taxPercent = t.percent; this.updateTotals(); });
   }
@@ -204,8 +220,9 @@ export class SaleFormComponent implements OnInit {
   filterProducts(): void {
     const query = this.productSearchTerm.toLowerCase();
     if (query) {
-      this.filteredProducts = this.products.filter(product => 
-        product.name.toLowerCase().includes(query)
+      const byCode = this.barcodes.get(this.productSearchTerm.trim())?.itemId;
+      this.filteredProducts = this.products.filter(product =>
+        product.name.toLowerCase().includes(query) || !!product.brand?.toLowerCase().includes(query) || product.id === byCode
       );
     } else {
       this.filteredProducts = this.products;
@@ -386,6 +403,156 @@ export class SaleFormComponent implements OnInit {
     this.orderData.subtotal = this.orderData.items.reduce((sum, item) => sum + item.total, 0);
     this.orderData.tax = taxOn(this.orderData.subtotal, this.taxPercent);
     this.orderData.total = this.orderData.subtotal + this.orderData.tax;
+  }
+
+  // ── Lector de códigos de barras ─────────────────────────────────────
+
+  loadBarcodes(): void {
+    this.barcodesService.getAll().subscribe({
+      next: (rows) => (this.barcodes = new Map(rows.map((r) => [r.code, r]))),
+      error: () => { /* sin códigos: se vende buscando por nombre */ },
+    });
+  }
+
+  /** Enter en el buscador: si lo escrito es un código de barras, se agrega. */
+  onProductSearchEnter(event: Event): void {
+    const code = normalizeBarcode(this.productSearchTerm);
+    if (!code || !/\d/.test(code)) return;
+    if (!this.barcodes.has(code) && this.filteredProducts.length) return;
+    event.preventDefault();
+    this.productSearchTerm = '';
+    this.filterProducts();
+    this.onScan(code);
+  }
+
+  /** Lectura del lector: agrega el ítem a la venta (o suma uno si ya está). */
+  onScan(raw: string): void {
+    const code = normalizeBarcode(raw);
+    if (!code || this.loading) return;
+    const known = this.barcodes.get(code);
+    if (known) {
+      this.addScannedItem(known.itemId, code);
+      return;
+    }
+    // Puede ser un código asignado después de abrir la venta
+    this.barcodesService.lookup(code).subscribe({
+      next: (row) => {
+        this.barcodes.set(row.code, row);
+        this.addScannedItem(row.itemId, code, row.itemName);
+      },
+      error: (err) => {
+        if (err?.status === 404) this.offerAssign(code);
+        else this.scanFeedback(false, 'No se pudo revisar el código', 'Revisa tu conexión e intenta de nuevo.');
+      },
+    });
+  }
+
+  private addScannedItem(itemId: string, code: string, itemName?: string): void {
+    const product = this.products.find((p) => p.id === itemId);
+    if (!product) {
+      this.scanFeedback(false, 'No disponible para la venta', `${itemName ? `«${itemName}»` : `El código ${code}`} no está activo o no tiene precio de venta.`);
+      return;
+    }
+    if (product.stock <= 0) {
+      this.scanFeedback(false, 'Sin stock', `«${product.name}» no tiene stock disponible.`);
+      return;
+    }
+    if (this.quantityInCart(product.id) + 1 > product.stock) {
+      this.scanFeedback(false, 'Stock insuficiente', `De «${product.name}» solo hay ${product.stock} disponible(s) y ya están en la venta.`);
+      return;
+    }
+    const line = this.orderData.items.find((i) => i.productId === product.id);
+    if (line) {
+      line.quantity = Number(line.quantity) + 1;
+      line.total = line.quantity * line.unitPrice;
+      this.updateTotals();
+      this.scanFeedback(true, `${product.name} × ${line.quantity}`);
+      return;
+    }
+    const push = (unitPrice: number, listPrice?: number, promotionName?: string) => {
+      // Si mientras tanto llegó otra lectura del mismo ítem, se suma a esa línea
+      const again = this.orderData.items.find((i) => i.productId === product.id);
+      if (again) {
+        if (this.quantityInCart(product.id) + 1 > product.stock) return;
+        again.quantity = Number(again.quantity) + 1;
+        again.total = again.quantity * again.unitPrice;
+      } else {
+        this.orderData.items.push({
+          id: `${Date.now()}-${product.id}`,
+          productId: product.id,
+          itemType: product.itemType,
+          product: product.name,
+          quantity: 1,
+          unitPrice,
+          total: unitPrice,
+          ...(promotionName && listPrice && unitPrice < listPrice ? { listPrice, promotionName } : {}),
+        });
+      }
+      this.updateTotals();
+      this.scanFeedback(true, product.name);
+    };
+    this.promotionsService.quote([{ productId: product.id, itemType: product.itemType, quantity: 1 }]).subscribe({
+      next: (q) => {
+        const p = q.items?.[0];
+        if (p?.promotion) push(p.unitPrice, p.listPrice, p.promotion.name);
+        else push(product.price || 0);
+      },
+      error: () => push(product.price || 0),
+    });
+  }
+
+  /** Código que no es de nadie: ofrece asignarlo a un ítem y lo agrega a la venta. */
+  private async offerAssign(code: string): Promise<void> {
+    this.beep(false);
+    const options: Record<string, string> = {};
+    [...this.products].sort((a, b) => a.name.localeCompare(b.name, 'es')).forEach((p) => (options[p.id] = p.name));
+    const { value: itemId } = await Swal.fire({
+      icon: 'question',
+      title: 'Código sin asignar',
+      html: `El código <b>${code}</b> no es de ningún producto. Si quieres, asígnalo ahora: la próxima vez se agrega solo.`,
+      input: 'select',
+      inputOptions: options,
+      inputPlaceholder: 'Escoge el producto',
+      showCancelButton: true,
+      confirmButtonText: 'Asignar y agregar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (v ? null : 'Escoge el producto.'),
+    });
+    if (!itemId) return;
+    const product = this.products.find((p) => p.id === itemId);
+    if (!product) return;
+    const itemType = product.itemType === 'kit' ? 'combo' : product.itemType;
+    this.barcodesService.forItem(itemType, product.id).pipe(
+      switchMap((codes) => this.barcodesService.set(itemType, product.id, [...codes, code])),
+    ).subscribe({
+      next: () => {
+        this.barcodes.set(code, { code, itemType, itemId: product.id });
+        this.addScannedItem(product.id, code);
+      },
+      error: (err) => Swal.fire('No se pudo asignar el código', typeof err?.error?.message === 'string' ? err.error.message : 'Intenta de nuevo.', 'error'),
+    });
+  }
+
+  /** Aviso corto (sin interrumpir la caja) y un pitido distinto si algo falló. */
+  private scanFeedback(ok: boolean, title: string, text?: string): void {
+    this.beep(ok);
+    Swal.fire({
+      toast: true, position: 'top-end', showConfirmButton: false, timer: ok ? 1300 : 3500, timerProgressBar: !ok,
+      icon: ok ? 'success' : 'warning', title, text,
+    });
+  }
+
+  private audio?: AudioContext;
+  private beep(ok: boolean): void {
+    try {
+      this.audio = this.audio || new AudioContext();
+      const osc = this.audio.createOscillator(), gain = this.audio.createGain();
+      osc.frequency.value = ok ? 1200 : 300;
+      gain.gain.value = 0.08;
+      osc.connect(gain).connect(this.audio.destination);
+      osc.start();
+      osc.stop(this.audio.currentTime + (ok ? 0.08 : 0.25));
+    } catch { /* sin sonido */ }
   }
 
   resetCurrentItem(): void {

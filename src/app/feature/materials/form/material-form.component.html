@@ -61,6 +61,11 @@
                 [class.is-invalid]="materialForm.get('name')?.invalid && materialForm.get('name')?.touched">
               <div class="invalid-feedback">{{ getFieldError('name') }}</div>
             </div>
+
+            <div class="form-group">
+              <label for="brand">Marca (opcional)</label>
+              <input type="text" id="brand" class="form-control" formControlName="brand" maxlength="100" placeholder="Ej. Alpina, Postobón">
+            </div>
             
             <div class="form-group">
               <label for="measurementUnit">Unidad de Medida *</label>
@@ -113,6 +118,13 @@
                 placeholder="Ingresa la descripción del material"
                 [class.is-invalid]="materialForm.get('description')?.invalid && materialForm.get('description')?.touched"></textarea>
               <div class="invalid-feedback">{{ getFieldError('description') }}</div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="materialBarcodes">Códigos de barras</label>
+              <app-barcode-field *ngIf="barcodeCodes !== null; else barcodesLoading" inputId="materialBarcodes"
+                [(codes)]="barcodeCodes" [itemId]="isEditMode ? $any(materialId) : null"></app-barcode-field>
+              <ng-template #barcodesLoading><small class="text-muted d-block">{{ barcodesFailed ? 'No se pudieron cargar los códigos de barras; puedes guardar el material y agregarlos después.' : 'Cargando códigos…' }}</small></ng-template>
             </div>
           </div>
         </div>
