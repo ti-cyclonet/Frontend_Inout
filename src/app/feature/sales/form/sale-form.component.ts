@@ -122,7 +122,7 @@ export class SaleFormComponent implements OnInit {
     // Solo con el formulario a la vista (en Comercial vive dentro de un modal
     // oculto) y sin otra ventana encima (los avisos tipo toast no cuentan)
     if (!this.host.nativeElement.getClientRects().length) return;
-    if (document.querySelector('.swal2-popup:not(.swal2-toast)')) return;
+    if (document.querySelector('.swal2-popup:not(.swal2-toast):not(.swal2-hide)')) return;
     this.scanner.handle(event);
   }
 
