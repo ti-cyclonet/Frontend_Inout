@@ -15,6 +15,13 @@
         </svg>
         Filtros
       </a>
+      <a class="action-link" (click)="labelPrinter.show()" style="cursor:pointer;" title="Etiquetas con código de barras para tus productos">
+        <svg viewBox="0 0 16 16" width="16" height="16">
+          <use xlink:href="./assets/icons/bootstrap-icons.svg#upc-scan" />
+        </svg>
+        Etiquetas
+      </a>
+      <app-label-printer #labelPrinter></app-label-printer>
 
       <div class="view-toggle">
         <button

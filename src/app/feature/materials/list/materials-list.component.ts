@@ -12,6 +12,7 @@ import { WarehousesService } from '../../../shared/services/warehouses.service';
 import { Material, MaterialFilters, PaginatedResponse } from '../../../shared/models/material.model';
 import { PermissionsService } from '../../../shared/services/permissions.service';
 import { firstValueFrom } from 'rxjs';
+import { LabelPrinterComponent } from '../../../shared/components/label-printer/label-printer.component';
 import Swal from 'sweetalert2';
 
 const DELETE_NOTE =
@@ -24,7 +25,7 @@ const escapeHtml = (s: string) =>
 @Component({
   selector: 'app-materials-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NumberFormatPipe],
+  imports: [CommonModule, FormsModule, NumberFormatPipe, LabelPrinterComponent],
   templateUrl: './materials-list.component.html',
   styleUrls: ['./materials-list.component.css']
 })
