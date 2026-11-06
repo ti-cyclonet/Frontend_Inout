@@ -9,8 +9,9 @@
 
   <div class="form-content">
     <form (ngSubmit)="onSubmit()" class="sale-form">
-      <!-- Cliente -->
-      <div class="form-group">
+      <!-- Cliente y, a su derecha, la fecha de la venta (hoy por defecto; se puede registrar una de días anteriores) -->
+      <div class="customer-row">
+      <div class="form-group customer-field">
         <label for="customerSelect">Cliente *</label>
         <div class="select-container">
           <input 
@@ -40,14 +41,21 @@
         </div>
       </div>
 
-      <!-- Fecha de la venta: hoy por defecto; se puede registrar una venta de días anteriores -->
-      <div class="form-group sale-date-field">
-        <label for="saleDate">Fecha de la venta *</label>
-        <input type="date" id="saleDate" class="form-control" [(ngModel)]="saleDate" name="saleDate"
-          [min]="minSaleDate" [max]="maxSaleDate" [ngModelOptions]="{standalone: true}">
-        <small class="date-hint" *ngIf="isBackdated && saleDateValid">Se registrará con fecha {{ saleDate | date:'dd/MM/yyyy' }}, no con la de hoy.</small>
-        <small class="date-hint date-error" *ngIf="!saleDateValid">Escoge una fecha entre hoy y los últimos 60 días.</small>
+      <div class="sale-when">
+        <span class="sale-when__label">Fecha</span>
+        <div class="sale-when__chip" [class.is-past]="isBackdated && saleDateValid" [class.is-error]="!saleDateValid">
+          <svg class="sale-when__ico" viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#calendar-event" /></svg>
+          <span>{{ saleWhenLabel }}</span>
+          <button type="button" class="sale-when__btn" (click)="openDatePicker(dateInput)" title="Cambiar la fecha de la venta" aria-label="Cambiar la fecha de la venta">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#pencil" /></svg>
+          </button>
+          <input #dateInput type="date" id="saleDate" class="sale-when__input" [(ngModel)]="saleDate" name="saleDate"
+            [min]="minSaleDate" [max]="maxSaleDate" [ngModelOptions]="{standalone: true}" tabindex="-1" aria-label="Fecha de la venta">
+        </div>
       </div>
+      </div>
+      <small class="date-hint" *ngIf="isBackdated && saleDateValid">Se registrará con fecha {{ saleDate | date:'dd/MM/yyyy' }}, no con la de hoy.</small>
+      <small class="date-hint date-error" *ngIf="!saleDateValid">Escoge una fecha entre hoy y los últimos 60 días.</small>
 
       <!-- Agregar Producto -->
       <div class="add-product-section">

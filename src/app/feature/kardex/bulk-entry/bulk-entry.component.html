@@ -117,7 +117,8 @@
                 (input)="filterMaterials()"
                 (focus)="showMaterialDropdown = true"
                 (blur)="showMaterialDropdown = false"
-                placeholder="Buscar material..."
+                (keydown.enter)="onMaterialEnter($event)"
+                placeholder="Busca o lee el código de barras…"
                 autocomplete="off">
               <div class="select-dropdown material-dropdown" *ngIf="showMaterialDropdown && (filteredMaterials.length > 0 || canOfferCreate)">
                 <div class="select-option" *ngFor="let m of filteredMaterials" (mousedown)="selectMaterial(m)">
@@ -239,6 +240,9 @@
   <div class="nm-grid">
     <label class="nm-full">Nombre *
       <input class="form-control form-control-sm" [(ngModel)]="newMaterial.name" maxlength="120">
+    </label>
+    <label class="nm-full" *ngIf="newMaterial.barcode">Código de barras
+      <input class="form-control form-control-sm" [(ngModel)]="newMaterial.barcode" maxlength="64">
     </label>
     <label>Unidad de medida *
       <select class="form-select form-select-sm" [(ngModel)]="newMaterial.unit">

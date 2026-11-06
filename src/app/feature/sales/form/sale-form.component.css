@@ -473,7 +473,23 @@
 .quick-customer-option:hover { background: #eff6ff; }
 
 /* Fecha de la venta */
-.sale-date-field input { max-width: 220px; }
+.customer-row { display: flex; align-items: flex-start; gap: 0.75rem; }
+.customer-row .customer-field { flex: 1; min-width: 0; margin-bottom: 0; }
+.sale-when { display: flex; flex-direction: column; flex: none; }
+.sale-when__label { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem; color: transparent; user-select: none; }
+.sale-when__chip { position: relative; display: inline-flex; align-items: center; gap: 0.45rem; height: 44px; padding: 0 0.35rem 0 0.8rem; border-radius: 999px; background: #eff6ff; color: #1e40af; box-shadow: inset 0 0 0 1px #bfdbfe; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+.sale-when__chip.is-past { background: #fff7ed; color: #9a3412; box-shadow: inset 0 0 0 1px #fed7aa; }
+.sale-when__chip.is-error { background: #fef2f2; color: #b91c1c; box-shadow: inset 0 0 0 1px #fecaca; }
+.sale-when__ico { width: 16px; height: 16px; fill: currentColor; flex: none; }
+.sale-when__btn { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.85); color: inherit; cursor: pointer; }
+.sale-when__btn:hover, .sale-when__btn:focus-visible { background: #fff; box-shadow: 0 0 0 2px currentColor; outline: none; }
+.sale-when__btn svg { width: 14px; height: 14px; fill: currentColor; }
+.sale-when__input { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
+@media (max-width: 576px) {
+  .customer-row { flex-direction: column; gap: 0.5rem; }
+  .customer-row .customer-field { width: 100%; }
+  .sale-when__label { display: none; }
+}
 .date-hint { display: block; margin-top: 0.3rem; font-size: 0.8rem; color: #b45309; }
 .date-hint.date-error { color: #dc2626; }
 

@@ -1,7 +1,8 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { map, switchMap } from 'rxjs/operators';
 import { MaterialService } from '../../../shared/services/material.service';
 import { SupplierService } from '../../../shared/services/supplier.service';
 import { DocumentsService } from '../../../shared/services/documents.service';
@@ -11,6 +12,8 @@ import { UNIT_OPTIONS } from '../../../shared/utils/unit-conversion.util';
 import { decodeJwtPayload } from '../../../shared/utils/jwt.util';
 import { Supplier } from '../../../shared/models/supplier.model';
 import Swal from 'sweetalert2';
+import { BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
+import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 import { environment } from '../../../../environments/environment';
 
 interface BulkItem {
@@ -97,7 +100,7 @@ export class BulkEntryComponent implements OnInit {
   // Crear material sin salir de la compra
   showCreateMaterial = false;
   creatingMaterial = false;
-  newMaterial = { name: '', unit: '', categoryId: '', location: '', stockMin: null as number | null, stockMax: null as number | null };
+  newMaterial = { name: '', barcode: '', unit: '', categoryId: '', location: '', stockMin: null as number | null, stockMax: null as number | null };
   unitOptions = UNIT_OPTIONS;
   categories: Category[] = [];
   locationOptions: { value: string; label: string }[] = [];
@@ -111,12 +114,27 @@ export class BulkEntryComponent implements OnInit {
     private supplierService: SupplierService,
     private documentsService: DocumentsService,
     private categoryService: CategoryService,
-    private warehousesService: WarehousesService
+    private warehousesService: WarehousesService,
+    private barcodesService: BarcodesService,
+    private host: ElementRef<HTMLElement>
   ) {}
+
+  /** Código de barras → id del material (solo materiales). */
+  private barcodes = new Map<string, string>();
+  private readonly scanner = new BarcodeScanner((code) => this.onBarcode(code));
+
+  /** Lector de códigos de barras: con la compra a la vista y sin otra ventana encima. */
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (!this.host.nativeElement.getClientRects().length || this.showCreateMaterial) return;
+    if (document.querySelector('.swal2-popup:not(.swal2-toast):not(.swal2-hide)')) return;
+    this.scanner.handle(event);
+  }
 
   ngOnInit(): void {
     this.loadSuppliers();
     this.loadMaterials();
+    this.loadBarcodes();
     this.pendingDraft = this.readDraft();
   }
 
@@ -191,9 +209,89 @@ export class BulkEntryComponent implements OnInit {
 
   filterMaterials(): void {
     const q = this.materialSearch.toLowerCase();
+    const byBarcode = this.barcodes.get(this.materialSearch.trim());
     this.filteredMaterials = q
-      ? this.materials.filter(m => m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q))
+      ? this.materials.filter(m => m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q) || m.id === byBarcode)
       : this.materials;
+  }
+
+  // --- Códigos de barras ---
+  loadBarcodes(): void {
+    this.barcodesService.getAll().subscribe({
+      next: (rows) => (this.barcodes = new Map(rows.filter((r) => r.itemType === 'material').map((r) => [r.code, r.itemId]))),
+      error: () => { /* sin códigos: se busca por nombre */ },
+    });
+  }
+
+  /** Enter en el buscador: si lo escrito es un código de barras, se toma el material. */
+  onMaterialEnter(event: Event): void {
+    const code = normalizeBarcode(this.materialSearch);
+    if (!code || this.currentItem.materialId) return;
+    const exact = this.materials.find((m) => m.code.toLowerCase() === code.toLowerCase());
+    if (exact) {
+      event.preventDefault();
+      this.selectMaterial(exact);
+      setTimeout(() => this.qtyInput?.nativeElement.focus(), 0);
+      return;
+    }
+    // Solo si parece un código de barras (tiene números) o ya está asignado
+    if (!this.barcodes.has(code) && !/\d{4,}/.test(code)) return;
+    event.preventDefault();
+    this.onBarcode(code);
+  }
+
+  /** Lectura del lector (o Enter con un código): selecciona el material y pasa a la cantidad. */
+  onBarcode(raw: string): void {
+    const code = normalizeBarcode(raw);
+    if (!code) return;
+    const material = this.materials.find((m) => m.id === this.barcodes.get(code));
+    if (material) {
+      this.selectMaterial(material);
+      setTimeout(() => this.qtyInput?.nativeElement.focus(), 0);
+      return;
+    }
+    this.materialSearch = '';
+    this.filterMaterials();
+    this.offerBarcode(code);
+  }
+
+  /** Código que no es de ningún material: asignarlo a uno existente o crear el material con él. */
+  private async offerBarcode(code: string): Promise<void> {
+    const options: Record<string, string> = {};
+    [...this.materials].sort((a, b) => a.name.localeCompare(b.name, 'es')).forEach((m) => (options[m.id] = `${m.code} — ${m.name}`));
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'Código sin asignar',
+      html: `El código <b>${code}</b> no es de ningún material. Asígnalo a uno que ya tienes o crea el material nuevo.`,
+      input: 'select',
+      inputOptions: options,
+      inputPlaceholder: 'Escoge el material',
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Asignar',
+      denyButtonText: 'Crear material nuevo',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (v ? null : 'Escoge el material o crea uno nuevo.'),
+      preDeny: () => true,
+    });
+    if (r.isDenied) {
+      this.openCreateMaterial();
+      this.newMaterial.name = '';
+      this.newMaterial.barcode = code;
+      return;
+    }
+    const material = r.isConfirmed ? this.materials.find((m) => m.id === r.value) : null;
+    if (!material) return;
+    this.barcodesService.forItem('material', material.id).pipe(
+      switchMap((codes) => this.barcodesService.set('material', material.id, [...codes, code])),
+    ).subscribe({
+      next: () => {
+        this.barcodes.set(code, material.id);
+        this.selectMaterial(material);
+        setTimeout(() => this.qtyInput?.nativeElement.focus(), 0);
+      },
+      error: (err) => Swal.fire('No se pudo asignar el código', typeof err?.error?.message === 'string' ? err.error.message : 'Intenta de nuevo.', 'error'),
+    });
   }
 
   /** Lo buscado no coincide exactamente con ningún material: se ofrece crearlo. */
@@ -256,7 +354,7 @@ export class BulkEntryComponent implements OnInit {
 
   // --- Crear material sin salir de la compra ---
   openCreateMaterial(): void {
-    this.newMaterial = { name: this.materialSearch.trim(), unit: '', categoryId: '', location: this.locationOptions[0]?.value || '', stockMin: null, stockMax: null };
+    this.newMaterial = { name: this.materialSearch.trim(), barcode: '', unit: '', categoryId: '', location: this.locationOptions[0]?.value || '', stockMin: null, stockMax: null };
     this.showMaterialDropdown = false;
     this.showCreateMaterial = true;
     if (!this.categories.length) {
@@ -311,10 +409,17 @@ export class BulkEntryComponent implements OnInit {
     };
     if (m.categoryId) payload.categoryId = +m.categoryId;
     this.creatingMaterial = true;
-    this.materialService.createMaterial(payload).subscribe({
-      next: (created: any) => {
+    const barcode = normalizeBarcode(m.barcode);
+    this.materialService.createMaterial(payload).pipe(
+      switchMap((created: any) => this.barcodesService
+        .saveAfter('material', created?.strId || created?.id, barcode ? [barcode] : null)
+        .pipe(map((barcodeWarning) => ({ created, barcodeWarning }))))
+    ).subscribe({
+      next: ({ created, barcodeWarning }) => {
         this.creatingMaterial = false;
         this.showCreateMaterial = false;
+        if (barcode && !barcodeWarning) this.barcodes.set(barcode, created?.strId || created?.id);
+        if (barcodeWarning) Swal.fire('Material creado', `Pero no se guardó su código de barras: ${barcodeWarning}`, 'warning');
         const option: MaterialOption = {
           id: created?.strId || created?.id,
           code: created?.strCode || '-',

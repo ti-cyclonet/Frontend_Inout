@@ -63,6 +63,11 @@
       </nav>
     </header>
 
+    <div class="mk-paused" *ngIf="ordersPaused && tenantId !== 'home'" role="status">
+      <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#pause-circle"/></svg>
+      Esta tienda no está recibiendo pedidos por ahora. Puedes ver sus productos; vuelve pronto.
+    </div>
+
     <!-- ═══════ Encabezado de la tienda (hero oscuro de la landing de InOut) ═══════ -->
     <!-- Sesión abierta sin permiso para administrar la vitrina: se dice por qué -->
     <div class="home-admin-notice" *ngIf="!loading && tenantId === 'home' && (homeAdminState === 'denied' || homeAdminState === 'expired')" role="status">
@@ -1050,6 +1055,7 @@
 
 <!-- ¿Cuándo? y ¿Cómo pagas? (con y sin sesión) -->
 <ng-template #whenAndPay>
+  <div class="closed-note" *ngIf="ordersPaused">⏸️ Esta tienda no está recibiendo pedidos por ahora.</div>
   <div class="closed-note" *ngIf="closedNow && !cartIsGiftOnly">
     🕒 {{ closedMessage }}
     {{ schedulingOptions ? 'Programa tu pedido para una franja de nuestro horario.' : 'Haz tu pedido dentro de nuestro horario de atención.' }}

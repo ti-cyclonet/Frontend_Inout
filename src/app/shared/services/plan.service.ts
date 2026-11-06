@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 /** Plan tal como lo publica Authoriza para la landing de InOut. */
@@ -56,6 +57,10 @@ export class PlanService {
     return this.http.get<{ pending: PendingUpgrade | null }>(`${this.authorizaUrl}/auth/plan/pending-upgrade`, { params: { application: 'Inout' } });
   }
 
+  private readonly upgradedSubject = new Subject<void>();
+  /** Se emite al pedir un cambio de plan (desbloquea una prueba vencida). */
+  readonly upgraded$ = this.upgradedSubject.asObservable();
+
   upgrade(packageId: string, billingCycle: BillingCycle): Observable<{ success: boolean; message: string; contractCode?: string; pendingActivation?: boolean }> {
     return this.http.post<any>(`${this.authorizaUrl}/auth/plan/upgrade`, {
       packageId,
@@ -64,7 +69,7 @@ export class PlanService {
       acceptHabeasData: true,
       termsVersion: PLAN_LEGAL.termsVersion,
       habeasDataVersion: PLAN_LEGAL.habeasDataVersion,
-    });
+    }).pipe(tap((res) => { if (res?.success) this.upgradedSubject.next(); }));
   }
 
   /** Precio anual: el del paquete o, si no tiene, 12 meses con 5% de descuento (como en la landing). */
