@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
@@ -52,7 +52,7 @@ type Product = SellableItem;
   templateUrl: './sale-form.component.html',
   styleUrls: ['./sale-form.component.css']
 })
-export class SaleFormComponent implements OnInit {
+export class SaleFormComponent implements OnInit, OnDestroy {
   @Input() isModal = false;
   @Output() saleCreated = new EventEmitter<void>();
   @Output() formCancelled = new EventEmitter<void>();
@@ -64,6 +64,33 @@ export class SaleFormComponent implements OnInit {
   static readonly MAX_BACKDATE_DAYS = 60;
   /** Fecha de la venta (AAAA-MM-DD, día local): hoy, o un día anterior si se registra tarde. */
   saleDate = localDay(new Date());
+  /** Hora que muestra la etiqueta de la fecha (la venta queda con la hora en que se registra). */
+  now = new Date();
+  private clock = setInterval(() => (this.now = new Date()), 30000);
+
+  /** Etiqueta junto al cliente: «Hoy, 6 nov · 3:45 p. m.» o el día escogido. */
+  get saleWhenLabel(): string {
+    if (!this.saleDate) return 'Sin fecha';
+    const [y, m, d] = this.saleDate.split('-').map(Number);
+    const day = new Date(y, m - 1, d);
+    const short = day.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '');
+    if (!this.isBackdated) return `Hoy, ${short} · ${this.now.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}`;
+    return day.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: y === new Date().getFullYear() ? undefined : 'numeric' }).replace(/\./g, '');
+  }
+
+  /** Abre el calendario del campo de fecha (oculto detrás de la etiqueta). */
+  openDatePicker(input: HTMLInputElement): void {
+    try {
+      (input as any).showPicker();
+    } catch {
+      input.focus();
+      input.click();
+    }
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.clock);
+  }
   get maxSaleDate(): string { return localDay(new Date()); }
   get minSaleDate(): string {
     const d = new Date();
