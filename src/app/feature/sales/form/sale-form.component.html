@@ -229,15 +229,27 @@
         <p class="credit-hint" *ngIf="loadingCredit">Consultando el crédito del cliente…</p>
       </div>
 
-      <div class="receipt-opts">
-        <label class="receipt-check">
-          <input type="checkbox" [checked]="receipts.settings.autoPrint" (change)="receipts.saveSettings({ autoPrint: $any($event.target).checked })">
+      <!-- Qué hacer con el comprobante al confirmar (se recuerda en este equipo) -->
+      <div class="receipt-bar" role="group" aria-label="Comprobante al confirmar la venta">
+        <span class="receipt-bar__label">Al confirmar, el comprobante:</span>
+        <button type="button" class="rb-btn" [class.on]="receipts.settings.autoPrint" [attr.aria-pressed]="receipts.settings.autoPrint"
+          (click)="receipts.saveSettings({ autoPrint: !receipts.settings.autoPrint })" title="Imprimir el tiquete en la tiquetera">
           <svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#printer" /></svg>
-          Imprimir tiquete al confirmar
-        </label>
-        <select class="receipt-width" *ngIf="receipts.settings.autoPrint" [value]="receipts.settings.width" (change)="receipts.saveSettings({ width: +$any($event.target).value === 58 ? 58 : 80 })" aria-label="Ancho del rollo">
-          <option value="80">Rollo 80 mm</option>
-          <option value="58">Rollo 58 mm</option>
+          <span>Imprimir</span>
+        </button>
+        <button type="button" class="rb-btn rb-btn--wa" [class.on]="receipts.settings.autoWhatsapp" [attr.aria-pressed]="receipts.settings.autoWhatsapp"
+          (click)="receipts.saveSettings({ autoWhatsapp: !receipts.settings.autoWhatsapp })" title="Enviar el comprobante por WhatsApp">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#whatsapp" /></svg>
+          <span>WhatsApp</span>
+        </button>
+        <button type="button" class="rb-btn rb-btn--mail" [class.on]="receipts.settings.autoEmail" [attr.aria-pressed]="receipts.settings.autoEmail"
+          (click)="receipts.saveSettings({ autoEmail: !receipts.settings.autoEmail })" title="Enviar el comprobante por correo, con el PDF">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#envelope" /></svg>
+          <span>Correo</span>
+        </button>
+        <select class="receipt-width" *ngIf="receipts.settings.autoPrint" [value]="receipts.settings.width" (change)="receipts.saveSettings({ width: +$any($event.target).value === 58 ? 58 : 80 })" aria-label="Ancho del rollo" title="Ancho del rollo de la tiquetera">
+          <option value="80">80 mm</option>
+          <option value="58">58 mm</option>
         </select>
       </div>
 
