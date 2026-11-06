@@ -10,6 +10,8 @@ export interface TenantBranding {
   logoPdfUrl: string | null;
   /** Formato automático, para mostrar en pantalla. */
   logoWebUrl: string | null;
+  /** Nota del negocio al pie del comprobante de venta. */
+  receiptNote?: string | null;
   updatedAt: string | null;
 }
 
@@ -66,6 +68,11 @@ export class TenantBrandingService {
     const form = new FormData();
     form.append('logo', file);
     return this.http.post<TenantBranding>(`${this.baseUrl}/logo`, form).pipe(tap((b) => this.brandingSubject.next(b)));
+  }
+
+  /** Nota al pie del comprobante de venta (vacía = sin nota). */
+  setReceiptNote(note: string): Observable<TenantBranding> {
+    return this.http.patch<TenantBranding>(`${this.baseUrl}/receipt-note`, { note }).pipe(tap((b) => this.brandingSubject.next(b)));
   }
 
   removeLogo(): Observable<TenantBranding> {

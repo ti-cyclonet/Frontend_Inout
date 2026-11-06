@@ -36,6 +36,8 @@ export interface TicketData {
   total: number;
   payment: string;
   units: number;
+  /** Nota del negocio al pie. */
+  note: string;
 }
 
 const SETTINGS_KEY = 'inout_receipt_settings';
@@ -88,7 +90,7 @@ export class ReceiptService {
   /** Imprime el tiquete de una venta (la que devuelve el backend o la de la lista). */
   async print(sale: any): Promise<void> {
     const [business, branding] = await Promise.all([this.loadBusiness(), this.branding.load().catch(() => null)]);
-    const html = this.ticketHtml(sale, business, branding?.logoPdfUrl || branding?.logoUrl || null, this.settings.width);
+    const html = this.ticketHtml(sale, business, branding?.logoPdfUrl || branding?.logoUrl || null, this.settings.width, branding?.receiptNote || null);
     await this.printHtml(html, this.settings.width);
   }
 
@@ -103,7 +105,7 @@ export class ReceiptService {
   }
 
   /** Lo que muestra el comprobante (tiquete, PDF y texto de WhatsApp). */
-  ticketData(sale: any, business: Record<string, any>): TicketData {
+  ticketData(sale: any, business: Record<string, any>, note: string | null = null): TicketData {
     let items: any[] = [];
     try { items = typeof sale?.items === 'string' ? JSON.parse(sale.items) : sale?.items || []; } catch { items = []; }
     const lines = groupComboLines(items);
@@ -134,13 +136,14 @@ export class ReceiptService {
       total: Number(sale?.total) || 0,
       payment: String(sale?.paymentType || '').toUpperCase() === 'CREDITO' ? 'Crédito' : `Contado · ${paymentMethodLabel(sale?.paymentMethod || 'EFECTIVO')}`,
       units: lines.reduce((t, l) => t + (Number(l.quantity) || 0), 0),
+      note: String(note || '').trim(),
     };
   }
 
-  ticketHtml(sale: any, business: Record<string, any>, logoUrl: string | null, width: ReceiptSettings['width']): string {
+  ticketHtml(sale: any, business: Record<string, any>, logoUrl: string | null, width: ReceiptSettings['width'], note: string | null = null): string {
     const mm = PRINTABLE_MM[width];
     const small = width === 58;
-    const { name, info, dateText, lines, taxLabel, payment, units } = this.ticketData(sale, business);
+    const { name, info, dateText, lines, taxLabel, payment, units, note: noteText } = this.ticketData(sale, business, note);
 
     const rows = lines.map((l) => {
       const detail = [...(l.components || []), ...(l.options || [])];
@@ -168,6 +171,7 @@ export class ReceiptService {
       .nm { font-weight: 700; }
       .sub { font-size: ${small ? 9 : 10}px; }
       .tot { font-size: ${small ? 14 : 17}px; font-weight: 800; }
+      .note { font-size: ${small ? 9.5 : 10.5}px; text-align: center; font-weight: 600; }
       .void { border: 2px solid #000; text-align: center; font-weight: 800; font-size: ${small ? 14 : 17}px; padding: 1mm; margin: 2mm 0; letter-spacing: .15em; }
     </style></head><body><div class="t">
       ${logoUrl ? `<img class="logo" src="${esc(logoUrl)}" alt="">` : ''}
@@ -188,6 +192,7 @@ export class ReceiptService {
       <div class="row tot"><span>TOTAL</span><span>${money(sale?.total)}</span></div>
       <div class="row muted"><span>${units} unidad(es)</span><span>${esc(payment)}</span></div>
       <div class="hr"></div>
+      ${noteText ? `<div class="note">${esc(noteText).replace(/\n/g, '<br>')}</div><div class="hr"></div>` : ''}
       <div class="c">¡Gracias por tu compra!</div>
       <div class="c muted">Generado con InOut · cyclonet.com.co/inout</div>
     </div></body></html>`;
@@ -197,8 +202,8 @@ export class ReceiptService {
 
   /** El tiquete en PDF (mismo ancho del rollo, alto a la medida, texto vectorial). */
   async pdf(sale: any): Promise<{ blob: Blob; filename: string }> {
-    const [business, logo] = await Promise.all([this.loadBusiness(), this.branding.getPdfLogo().catch(() => null)]);
-    const data = this.ticketData(sale, business);
+    const [business, logo, branding] = await Promise.all([this.loadBusiness(), this.branding.getPdfLogo().catch(() => null), this.branding.load().catch(() => null)]);
+    const data = this.ticketData(sale, business, branding?.receiptNote || null);
     const { default: jsPDF } = await import('jspdf');
     const width = this.settings.width;
     // Primero se mide (alto) y luego se dibuja en una página de ese alto
@@ -268,6 +273,7 @@ export class ReceiptService {
     pair('TOTAL', money(d.total), 13, true);
     pair(`${d.units} unidad(es)`, d.payment, 8);
     dash();
+    if (d.note) { d.note.split('\n').forEach((line) => center(line, 8.5, true)); dash(); }
     center('¡Gracias por tu compra!', 9);
     center('Generado con InOut · cyclonet.com.co/inout', 7.5);
     return y;
@@ -283,7 +289,9 @@ export class ReceiptService {
     out.push('');
     if (d.discount > 0) out.push(`Descuento: -${money(d.discount)}`);
     if (d.tax > 0) out.push(`${d.taxLabel}: ${money(d.tax)}`);
-    out.push(`*Total: ${money(d.total)}*`, d.payment, '', '¡Gracias por tu compra!');
+    out.push(`*Total: ${money(d.total)}*`, d.payment, '');
+    if (d.note) out.push(`_${d.note}_`, '');
+    out.push('¡Gracias por tu compra!');
     return out.join('\n');
   }
 
@@ -293,8 +301,8 @@ export class ReceiptService {
    * escrito y el número del cliente.
    */
   async shareWhatsapp(sale: any, phone?: string | null): Promise<void> {
-    const business = await this.loadBusiness();
-    const d = this.ticketData(sale, business);
+    const [business, branding] = await Promise.all([this.loadBusiness(), this.branding.load().catch(() => null)]);
+    const d = this.ticketData(sale, business, branding?.receiptNote || null);
     const text = this.whatsappText(d);
     const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
     if (mobile && 'canShare' in navigator) {

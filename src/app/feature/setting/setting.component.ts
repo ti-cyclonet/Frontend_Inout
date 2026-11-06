@@ -68,6 +68,9 @@ export class SettingComponent implements OnInit {
 
   // Identidad del negocio: logo usado en documentos PDF y MarketPlace
   branding: TenantBranding | null = null;
+  /** Nota al pie del comprobante de venta. */
+  receiptNote = '';
+  savingNote = false;
   uploadingLogo = false;
   readonly logoAccept = 'image/png,image/jpeg,image/webp';
 
@@ -106,7 +109,7 @@ export class SettingComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.brandingService.load(true).then((b) => (this.branding = b));
+    this.brandingService.load(true).then((b) => { this.branding = b; this.receiptNote = b?.receiptNote || ''; });
     this.loadPeriodos();
     this.loadPeriodoActivo();
     this.loadParametrosDisponibles();
@@ -139,6 +142,23 @@ export class SettingComponent implements OnInit {
           ? 'El archivo es demasiado grande para el servidor. Prueba con una imagen más liviana.'
           : err?.error?.message || 'Intenta de nuevo.';
         Swal.fire('No se pudo subir el logo', msg, 'error');
+      },
+    });
+  }
+
+  saveReceiptNote(): void {
+    if (this.savingNote) return;
+    this.savingNote = true;
+    this.brandingService.setReceiptNote(this.receiptNote.trim()).subscribe({
+      next: (b) => {
+        this.branding = b;
+        this.receiptNote = b?.receiptNote || '';
+        this.savingNote = false;
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: this.receiptNote ? 'Nota guardada' : 'Nota quitada', timer: 1800, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingNote = false;
+        Swal.fire('No se pudo guardar la nota', err?.error?.message || 'Intenta de nuevo.', 'error');
       },
     });
   }
