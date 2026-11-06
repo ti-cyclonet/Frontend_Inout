@@ -19,6 +19,7 @@ import { localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
 import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
+import { ReceiptService } from '../../../shared/services/receipt.service';
 
 interface OrderItem {
   id: string;
@@ -134,7 +135,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   filteredCustomers: Customer[] = [];
   filteredProducts: Product[] = [];
 
-  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService, private barcodesService: BarcodesService, private host: ElementRef<HTMLElement>) {}
+  constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService, private barcodesService: BarcodesService, private host: ElementRef<HTMLElement>, public receipts: ReceiptService) {}
 
   /** IVA o INC del período activo del negocio; 0 si no está configurado. */
   taxLabel: 'IVA' | 'INC' = 'IVA';
@@ -432,6 +433,16 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     this.orderData.total = this.orderData.subtotal + this.orderData.tax;
   }
 
+  /** Lo que la barra tenga activo, en orden: imprimir, WhatsApp, correo. */
+  private async sendReceipt(sale: any, contact: { phone: string | null; email: string | null }): Promise<void> {
+    const s = this.receipts.settings;
+    try {
+      if (s.autoPrint) await this.receipts.print(sale);
+      if (s.autoWhatsapp) await this.receipts.shareWhatsapp(sale, contact.phone);
+      if (s.autoEmail) await this.receipts.sendEmail(sale, contact.email);
+    } catch { /* la venta ya quedó; el comprobante se puede reenviar desde Ver */ }
+  }
+
   // ── Lector de códigos de barras ─────────────────────────────────────
 
   loadBarcodes(): void {
@@ -623,9 +634,15 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       total: Number(this.orderData.total)
     };
     
+    // Contacto del cliente (para WhatsApp y correo), antes de limpiar el formulario
+    const buyer: any = this.customers.find((c) => c.id && c.id === this.orderData.customerId);
+    const contact = { phone: buyer?.phone || null, email: buyer?.email || null };
     this.salesService.createSale(saleData).subscribe({
       next: (response) => {
         console.log('Sale created:', response);
+        // Comprobante: imprimir / WhatsApp / correo, según la barra (por equipo)
+        const sale = (response as any)?.sale;
+        if (sale) this.sendReceipt(sale, contact);
         // Burbuja con la ganancia de esta venta (con sonido)
         this.profitBubble.show((response as any)?.profit, `la venta ${(response as any)?.sale?.strInvoiceCode || ''}`.trim());
         

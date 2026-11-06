@@ -493,6 +493,22 @@
 .date-hint { display: block; margin-top: 0.3rem; font-size: 0.8rem; color: #b45309; }
 .date-hint.date-error { color: #dc2626; }
 
+.receipt-bar { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.85rem; padding: 0.5rem 0.6rem; border-radius: 12px; background: #f8fafc; box-shadow: inset 0 0 0 1px #e2e8f0; }
+.receipt-bar__label { margin-right: auto; font-size: 0.82rem; font-weight: 600; color: #475569; }
+.rb-btn { display: inline-flex; align-items: center; gap: 0.35rem; height: 36px; padding: 0 0.75rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; color: #64748b; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.rb-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.rb-btn:hover { border-color: #94a3b8; color: #334155; }
+.rb-btn.on { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.rb-btn--wa.on { background: #16a34a; border-color: #16a34a; }
+.rb-btn--mail.on { background: #ea580c; border-color: #ea580c; }
+.rb-btn:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+.receipt-width { font-size: 0.8rem; height: 36px; padding: 0 0.4rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
+@media (max-width: 576px) {
+  .receipt-bar__label { flex-basis: 100%; }
+  .rb-btn span { display: none; }
+  .rb-btn { width: 44px; justify-content: center; padding: 0; }
+}
+
 .item-brand {
   font-size: 0.75rem;
   color: #64748b;
