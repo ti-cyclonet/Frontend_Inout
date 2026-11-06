@@ -20,6 +20,10 @@ export interface Sale {
   paymentType?: string;
   /** Anulada: el stock volvió al inventario y no cuenta como venta. */
   dtmVoidedAt?: string | null;
+  /** Volante del datáfono / comprobante del pago (foto) y su referencia. */
+  strPaymentProofUrl?: string | null;
+  strPaymentReference?: string | null;
+  paymentMethod?: string | null;
   strVoidReason?: string | null;
   strVoidedBy?: string | null;
 }
@@ -61,6 +65,14 @@ export class SalesService {
 
   createSale(sale: CreateSaleDto): Observable<Sale> {
     return this.http.post<Sale>(this.apiUrl, sale);
+  }
+
+  /** Adjunta el volante (foto) y/o el N° de aprobación de una venta de contado no en efectivo. */
+  attachPaymentProof(id: string, file: File | null, reference: string): Observable<Sale> {
+    const form = new FormData();
+    if (file) form.append('file', file);
+    if (reference.trim()) form.append('reference', reference.trim());
+    return this.http.post<Sale>(`${this.apiUrl}/${id}/payment-proof`, form);
   }
 
   /** Ventas vigentes; con includeVoided también las anuladas (lista de ventas). */

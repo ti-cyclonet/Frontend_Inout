@@ -212,6 +212,24 @@
           </button>
         </div>
 
+        <!-- Contado no en efectivo: volante del datáfono o comprobante (opcional) -->
+        <div class="proof-box" *ngIf="needsProof">
+          <div class="proof-title">
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#receipt" /></svg>
+            {{ paymentMethod === 'TARJETA' ? 'Volante del datáfono' : 'Comprobante del pago' }} <small>(opcional)</small>
+          </div>
+          <div class="proof-row">
+            <label class="proof-file" [class.has-file]="!!proofFile">
+              <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" (change)="onProofFile($event)" hidden>
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (proofFile ? 'check-circle' : 'camera')" /></svg>
+              <span>{{ proofFile ? proofFile.name : 'Adjuntar foto' }}</span>
+            </label>
+            <button type="button" class="proof-clear" *ngIf="proofFile" (click)="proofFile = null" aria-label="Quitar la foto">×</button>
+            <input type="text" class="form-control proof-ref" [(ngModel)]="proofReference" [ngModelOptions]="{standalone: true}" maxlength="100"
+              [placeholder]="paymentMethod === 'TARJETA' ? 'N° de aprobación' : 'N° de referencia'">
+          </div>
+        </div>
+
         <!-- Crédito: cupo y vencimiento -->
         <div class="credit-box" *ngIf="paymentType === 'CREDITO' && creditInfo">
           <div><span>Cupo aprobado</span><strong>{{ formatCurrency(creditInfo.approvedLimit) }}</strong></div>
