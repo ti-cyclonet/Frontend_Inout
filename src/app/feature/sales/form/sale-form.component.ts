@@ -602,6 +602,10 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       listPrice: 0,
       promotionName: ''
     };
+    // El buscador muestra el nombre del producto elegido: se limpia para el siguiente
+    this.productSearchTerm = '';
+    this.filteredProducts = this.products;
+    this.showProductDropdown = false;
   }
 
   canSubmit(): boolean {
@@ -715,6 +719,10 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       tax: 0,
       total: 0
     };
+    // Lo que se ve en el buscador de clientes (los datos de arriba no lo borran)
+    this.customerSearchTerm = '';
+    this.filteredCustomers = this.customers;
+    this.showCustomerDropdown = false;
     this.resetCurrentItem();
   }
 
