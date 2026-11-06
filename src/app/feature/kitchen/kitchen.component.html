@@ -1,0 +1,110 @@
+<div class="kds">
+  <div class="kds-bar" role="banner">
+    <a class="kds-back" routerLink="/commercial" [queryParams]="{ tab: 'pedidos' }" title="Volver a Pedidos" aria-label="Volver a Pedidos">
+      <svg width="20" height="20" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" /></svg>
+    </a>
+    <div class="kds-title">
+      <svg width="22" height="22" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#fire" /></svg>
+      <h1>{{ title }}</h1>
+    </div>
+    <div class="kds-stats" *ngIf="enabled">
+      <span><b>{{ toPrepare.length }}</b> por preparar</span>
+      <span><b>{{ preparing.length }}</b> en preparación</span>
+      <span class="kds-stat-late" *ngIf="lateCount"><b>{{ lateCount }}</b> {{ lateCount === 1 ? 'atrasado' : 'atrasados' }}</span>
+    </div>
+    <div class="kds-clock">{{ clock() }}</div>
+    <button type="button" class="kds-icon-btn" (click)="toggleSound()" [class.on]="soundOn"
+            [attr.aria-pressed]="soundOn" [title]="soundOn ? 'Silenciar avisos' : 'Activar avisos con sonido'">
+      <svg width="20" height="20" aria-hidden="true"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (soundOn ? 'volume-up' : 'volume-mute')" /></svg>
+    </button>
+    <button type="button" class="kds-icon-btn" (click)="toggleFullscreen()" [title]="fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'">
+      <svg width="20" height="20" aria-hidden="true"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (fullscreen ? 'fullscreen-exit' : 'fullscreen')" /></svg>
+    </button>
+  </div>
+
+  <!-- Módulo apagado -->
+  <div class="kds-empty-state" *ngIf="!enabled">
+    <h2>La pantalla de {{ title.toLowerCase() }} no está activa</h2>
+    <p>Actívala en <a routerLink="/setting">Configuración › Funciones de mi negocio</a>.</p>
+  </div>
+
+  <ng-container *ngIf="enabled">
+    <p class="kds-error" *ngIf="error">{{ error }}</p>
+
+    <!-- Programados: esperan su hora para empezar -->
+    <section class="kds-scheduled" *ngIf="scheduled.length" aria-label="Pedidos programados">
+      <span class="kds-scheduled-title">
+        <svg width="16" height="16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#calendar-event" /></svg>
+        Programados
+      </span>
+      <span class="kds-chip" *ngFor="let o of scheduled; trackBy: trackById">
+        <b>{{ o.orderCode }}</b> · empieza {{ startsAt(o) }} · {{ o.items.length }} {{ o.items.length === 1 ? 'producto' : 'productos' }}
+      </span>
+    </section>
+
+    <div class="kds-board" *ngIf="!loading; else loadingTpl">
+      <section class="kds-col">
+        <h2>Por preparar <span>{{ toPrepare.length }}</span></h2>
+        <ng-container *ngFor="let o of toPrepare; trackBy: trackById">
+          <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: o }"></ng-container>
+        </ng-container>
+        <p class="kds-none" *ngIf="!toPrepare.length">Nada pendiente.</p>
+      </section>
+      <section class="kds-col">
+        <h2>En preparación <span>{{ preparing.length }}</span></h2>
+        <ng-container *ngFor="let o of preparing; trackBy: trackById">
+          <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: o }"></ng-container>
+        </ng-container>
+        <p class="kds-none" *ngIf="!preparing.length">Nada en preparación.</p>
+      </section>
+      <section class="kds-col kds-col--ready">
+        <h2>Listos <span>{{ ready.length }}</span></h2>
+        <ng-container *ngFor="let o of ready; trackBy: trackById">
+          <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: o }"></ng-container>
+        </ng-container>
+        <p class="kds-none" *ngIf="!ready.length">Sin pedidos listos.</p>
+      </section>
+    </div>
+  </ng-container>
+</div>
+
+<ng-template #loadingTpl>
+  <p class="kds-none">Cargando pedidos…</p>
+</ng-template>
+
+<ng-template #cardTpl let-o>
+  <article class="kds-card" [ngClass]="'kds-card--' + (o.status === 'READY' ? 'ready' : timer(o).level)" [class.kds-card--fresh]="isFresh(o)">
+    <div class="kds-card-head">
+      <strong class="kds-code">{{ o.orderCode }}</strong>
+      <span class="kds-timer" *ngIf="o.status !== 'READY'">
+        <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#stopwatch" /></svg>
+        {{ timer(o).elapsed }}
+      </span>
+    </div>
+    <div class="kds-meta">
+      <span class="kds-channel">
+        <svg width="14" height="14" aria-hidden="true"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + channelLabel(o).icon" /></svg>
+        {{ channelLabel(o).text }}
+      </span>
+      <span class="kds-customer">{{ o.customerName }}</span>
+    </div>
+    <ul class="kds-items">
+      <li *ngFor="let i of o.items">
+        <b>{{ i.quantity }}</b> {{ i.productName }}
+        <span class="kds-sub" *ngFor="let c of i.components">{{ c }}</span>
+        <span class="kds-sub kds-sub--opt" *ngFor="let op of i.options">{{ op }}</span>
+      </li>
+    </ul>
+    <p class="kds-notes" *ngIf="o.notes">
+      <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#chat-left-text" /></svg>
+      {{ o.notes }}
+    </p>
+    <div class="kds-card-foot">
+      <span class="kds-due" *ngIf="o.status !== 'READY' && timer(o).due">{{ timer(o).due }}</span>
+      <span class="kds-due" *ngIf="o.status === 'READY'">{{ o.fulfillment === 'DELIVERY' ? 'Espera el domicilio' : 'Espera al cliente' }}</span>
+      <button type="button" class="kds-action" *ngIf="action(o) && permissions.canEdit" (click)="advance(o)" [disabled]="busy.has(o.id)">
+        {{ busy.has(o.id) ? '…' : action(o)!.label }}
+      </button>
+    </div>
+  </article>
+</ng-template>

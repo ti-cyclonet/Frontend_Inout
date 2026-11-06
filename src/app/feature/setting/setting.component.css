@@ -259,3 +259,13 @@
 }
 .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; padding: 6px; }
 .logo-preview-empty { border-style: dashed; color: #9ca3af; background: #f9fafb; }
+
+/* Funciones de mi negocio */
+.bm-intro { margin: 0.5rem 0 0.25rem; font-size: 0.9rem; color: #4b5563; }
+.bm-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.65rem 0; border-top: 1px solid #eef0f3; }
+.bm-row:first-of-type { border-top: 0; }
+.bm-row--off .bm-text { opacity: 0.7; }
+.bm-chip { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; background: #eef2f7; color: #4b5563; vertical-align: middle; }
+.bm-chip--rec { background: #e8f5ee; color: #15803d; }
+.bm-applies { color: #6b7280; font-size: 0.75rem; }
+.bm-blocked { color: #b45309; font-size: 0.78rem; margin-top: 0.15rem; }

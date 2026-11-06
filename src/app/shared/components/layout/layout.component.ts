@@ -15,6 +15,7 @@ import { ModuleService, ModuleType } from '../../services/module/module.service'
 import { UsageStatusService } from '../../services/usage-status.service';
 import { UsageWarning } from '../../model/usage-status.model';
 import { NAME_APP_SHORT } from '../../../config/config';
+import { BusinessModules, BusinessModulesService } from '../../services/business-modules.service';
 
 
 export type SidebarStyle = 'lateral' | 'list' | 'bottom';
@@ -39,6 +40,12 @@ export type SidebarStyle = 'lateral' | 'list' | 'bottom';
 })
 export default class LayoutComponent implements OnInit, OnDestroy {
   optionsMenu: OptionMenu[] = [];
+  /** Menú completo; optionsMenu es lo que dejan ver las funciones del negocio. */
+  private fullMenu: OptionMenu[] = [];
+  private modules: BusinessModules | null = null;
+  private modulesSub?: { unsubscribe(): void };
+  /** Botón de Domicilios (Shotra), si el negocio lo usa. */
+  deliveryOn = true;
   isSidebarVisible = true;
   isLargeScreen = false;
   /** lateral (predeterminado), list (lista a pantalla completa) o bottom (barra inferior tipo Kiri). list y bottom son solo para móvil. */
@@ -53,7 +60,8 @@ export default class LayoutComponent implements OnInit, OnDestroy {
   constructor(
     private applicationsService: ApplicationsService,
     private moduleService: ModuleService,
-    private usageStatusService: UsageStatusService
+    private usageStatusService: UsageStatusService,
+    private businessModules: BusinessModulesService
   ) {
     if (typeof window !== 'undefined') {
       this.isLargeScreen = window.innerWidth >= 992;
@@ -63,6 +71,10 @@ export default class LayoutComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadSidebarPreference();
     this.loadUsageWarnings();
+    this.modulesSub = this.businessModules.modules$.subscribe((m) => {
+      this.modules = m;
+      this.applyModules();
+    });
     
     // Suscribirse a cambios de módulo
     this.moduleService.currentModule$.subscribe(module => {
@@ -208,12 +220,39 @@ export default class LayoutComponent implements OnInit, OnDestroy {
           }
         }
 
+        // Pantalla de preparación (Cocina / Producción / Alistamiento), si está activa
+        this.optionsMenu.push({
+          id: 'kitchen',
+          name: 'Cocina',
+          description: 'Cocina',
+          url: '/cocina',
+          icon: 'fire',
+          type: 'main_menu',
+          idMPather: null,
+          order: '47',
+          idApplication: this.application?.id ?? '',
+        });
+
         // Ordenar por ingOrder numérico
         this.optionsMenu.sort((a, b) => parseInt(a.order) - parseInt(b.order));
+        this.fullMenu = this.optionsMenu;
+        this.applyModules();
       },
       (error) => {
       }
     );
+  }
+
+  /** Oculta del menú lo que el negocio no usa (Configuración › Funciones de mi negocio). */
+  private applyModules(): void {
+    const hidden = new Set<string>();
+    if (!this.businessModules.isOn('kitchen', this.modules)) hidden.add('kitchen');
+    if (!this.businessModules.isOn('combos', this.modules)) hidden.add('combos-promotions');
+    this.deliveryOn = this.businessModules.isOn('delivery', this.modules);
+    const label = this.modules?.kitchenLabel || 'Cocina';
+    this.optionsMenu = this.fullMenu
+      .filter((m) => !hidden.has(m.id))
+      .map((m) => (m.id === 'kitchen' ? { ...m, name: label, description: label } : m));
   }
 
   // Traducir nombres de menú que vienen en inglés desde Authoriza
@@ -285,6 +324,7 @@ export default class LayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.modulesSub?.unsubscribe();
     if (typeof document !== 'undefined') document.body.classList.remove('inout-bottom-nav');
   }
 

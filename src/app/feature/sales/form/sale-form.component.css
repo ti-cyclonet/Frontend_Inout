@@ -430,7 +430,7 @@
 /* ===== Forma de pago ===== */
 .payment-section { margin: 1rem 0; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #ffffff; }
 .payment-title { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.6rem; }
-.payment-types { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.payment-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.6rem; }
 .payment-type {
   display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.85rem;
   border: 1.5px solid #d1d5db; border-radius: 10px; background: #ffffff; cursor: pointer; text-align: left;

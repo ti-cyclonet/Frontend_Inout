@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -18,6 +18,7 @@ import { ProfitBubbleService } from '../../shared/services/profit-bubble.service
 import { DisplayLine, documentLines, groupComboLines } from '../../shared/utils/combo-lines.util';
 import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
 import { taxLabelFor } from '../../shared/services/tax.service';
+import { BusinessModulesService } from '../../shared/services/business-modules.service';
 
 interface OrderItem {
   productId: string;
@@ -144,6 +145,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   filterStatus = 'all';
 
   private baseUrl = `${environment.apiUrl}/orders`;
+  private readonly modules = inject(BusinessModulesService);
 
   // ─── Pagos, agenda y pendientes por fabricar ───
   planLabels = PAYMENT_PLAN_LABELS;
@@ -596,7 +598,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     // Al salir a reparto, sugerir contratar el domicilio con la extensión de
     // Shotra (configurable en Configuración).
-    if (next === 'OUT_FOR_DELIVERY' && this.uiPrefs.getSuggestDeliveryOnDeliver()) {
+    if (next === 'OUT_FOR_DELIVERY' && this.uiPrefs.getSuggestDeliveryOnDeliver() && this.modules.isOn('delivery')) {
       this.suggestShotraDelivery(order, next);
       return;
     }
