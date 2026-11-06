@@ -9,6 +9,8 @@ import { PermissionsService } from '../../../shared/services/permissions.service
 import { formatCop } from '../../../shared/utils/currency.util';
 import { shrinkImage } from '../../../shared/utils/image-resize.util';
 import { firstValueFrom } from 'rxjs';
+import { BarcodeFieldComponent } from '../../../shared/components/barcode-field/barcode-field.component';
+import { BarcodesService } from '../../../shared/services/barcodes.service';
 
 interface EditorComponent extends ComboComponentInput {
   option: CatalogOption;
@@ -22,7 +24,7 @@ interface EditorComponent extends ComboComponentInput {
 @Component({
   selector: 'app-combos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BarcodeFieldComponent],
   templateUrl: './combos-admin.component.html',
   styleUrls: ['../catalog-admin.css'],
 })
@@ -66,7 +68,11 @@ export class CombosAdminComponent implements OnInit {
 
   readonly formatCop = formatCop;
 
-  constructor(private combosService: CombosService, public permissions: PermissionsService) {}
+  /** Códigos de barras; null mientras se cargan los del combo que se edita. */
+  barcodeCodes: string[] | null = [];
+  barcodesFailed = false;
+
+  constructor(private combosService: CombosService, public permissions: PermissionsService, private barcodesService: BarcodesService) {}
 
   ngOnInit(): void {
     this.load();
@@ -126,6 +132,8 @@ export class CombosAdminComponent implements OnInit {
     this.loadOptions(() => {
       this.editing = null;
       this.form = this.emptyForm();
+      this.barcodeCodes = [];
+      this.barcodesFailed = false;
       this.components = [];
       this.pickerQuery = '';
       this.resetImage(null);
@@ -138,6 +146,12 @@ export class CombosAdminComponent implements OnInit {
     this.optionsLoaded = false;
     this.loadOptions(() => {
       this.editing = combo;
+      this.barcodeCodes = null;
+      this.barcodesFailed = false;
+      this.barcodesService.forItem('combo', combo.strId).subscribe({
+        next: (codes) => (this.barcodeCodes = codes),
+        error: () => (this.barcodesFailed = true),
+      });
       this.form = {
         name: combo.strName,
         description: combo.strDescription || '',
@@ -313,12 +327,14 @@ export class CombosAdminComponent implements OnInit {
           } catch (err: any) {
             imageError = err?.error?.message || 'No se pudo subir la imagen.';
           }
+          const barcodeWarning = await firstValueFrom(this.barcodesService.saveAfter('combo', saved.strId, this.barcodeCodes));
           this.saving = false;
           this.editorOpen = false;
           this.resetImage(null);
           this.load();
-          if (imageError) {
-            Swal.fire('Combo guardado, pero sin imagen', `${imageError} Puedes intentarlo de nuevo desde Editar.`, 'warning');
+          if (imageError || barcodeWarning) {
+            const problems = [imageError && `Imagen: ${imageError}`, barcodeWarning && `Códigos de barras: ${barcodeWarning}`].filter(Boolean).join(' ');
+            Swal.fire('Combo guardado con un pendiente', `${problems} Puedes intentarlo de nuevo desde Editar.`, 'warning');
           } else {
             Swal.fire({ icon: 'success', title: wasEditing ? 'Combo actualizado' : 'Combo creado', timer: 1600, showConfirmButton: false });
           }

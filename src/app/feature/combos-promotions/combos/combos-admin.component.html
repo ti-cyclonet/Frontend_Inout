@@ -141,6 +141,12 @@
           <label for="cmbDesc">Descripción (opcional)</label>
           <textarea id="cmbDesc" rows="2" maxlength="2000" [(ngModel)]="form.description" placeholder="Lo que verá el cliente en el MarketPlace"></textarea>
         </div>
+        <div class="ca-field">
+          <label for="cmbBarcodes">Códigos de barras</label>
+          <app-barcode-field *ngIf="barcodeCodes !== null; else comboBarcodesLoading" inputId="cmbBarcodes"
+            [(codes)]="barcodeCodes" [itemId]="editing?.strId || null"></app-barcode-field>
+          <ng-template #comboBarcodesLoading><small class="text-muted d-block">{{ barcodesFailed ? 'No se pudieron cargar los códigos de barras; puedes guardar y agregarlos después.' : 'Cargando códigos…' }}</small></ng-template>
+        </div>
         <label class="ca-check"><input type="checkbox" [(ngModel)]="form.marketplaceVisible" /> Mostrar en el MarketPlace</label>
 
         <div>

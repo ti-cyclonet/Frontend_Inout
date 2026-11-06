@@ -11,11 +11,14 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
 import { convertUnits, UNIT_OPTIONS, getDischargeUnitOptions, unitLabel } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
+import { BarcodeFieldComponent } from '../../../shared/components/barcode-field/barcode-field.component';
+import { BarcodesService } from '../../../shared/services/barcodes.service';
+import { map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-material-composition',
   standalone: true,
-  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent, InfoTipComponent],
+  imports: [CommonModule, FormsModule, NumberFormatPipe, ImageManagerComponent, ResalePricingComponent, InfoTipComponent, BarcodeFieldComponent],
   templateUrl: './material-composition.component.html',
   styleUrl: './material-composition.component.css'
 })
@@ -31,10 +34,14 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   showCreateModal = false;
   currentStep = 1;
   editingMaterialId: number | null = null;
+  /** Códigos de barras; null mientras se cargan los del compuesto que se edita. */
+  barcodeCodes: string[] | null = [];
+  barcodesFailed = false;
   
   // New material form
   newMaterial = {
     name: '',
+    brand: '',
     description: '',
     measurementUnit: '',
     dischargeUnit: '',
@@ -150,7 +157,8 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     private materialService: MaterialService,
     private categoryService: CategoryService,
     private warehousesService: WarehousesService,
-    private router: Router
+    private router: Router,
+    private barcodesService: BarcodesService
   ) {}
 
   ngOnInit(): void {
@@ -336,6 +344,7 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     
     const materialData: any = {
       strName: this.newMaterial.name,
+      strBrand: (this.newMaterial.brand || '').trim() || null,
       strDescription: this.newMaterial.description,
       strUnitMeasure: this.newMaterial.measurementUnit,
       ingMinStock: Number(this.newMaterial.stockMin),
@@ -382,8 +391,14 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
       ? this.materialService.updateTransformedMaterial(this.editingMaterialId, materialData)
       : this.materialService.createTransformedMaterial(materialData);
 
-    request.subscribe({
-      next: () => {
+    const editingId = this.editingMaterialId;
+    request.pipe(
+      switchMap((saved: any) => this.barcodesService
+        .saveAfter('material_t', saved?.strId || (editingId ? String(editingId) : null), this.barcodeCodes)
+        .pipe(map((barcodeWarning) => ({ saved, barcodeWarning }))))
+    ).subscribe({
+      next: ({ barcodeWarning }) => {
+        if (barcodeWarning) alert('El material compuesto se guardó, pero no sus códigos de barras: ' + barcodeWarning);
         if (!this.editingMaterialId) this.updateMaterialsStock();
         this.saving = false;
         this.closeModal();
@@ -526,8 +541,11 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
   }
 
   resetAll(): void {
+    this.barcodeCodes = [];
+    this.barcodesFailed = false;
     this.newMaterial = {
       name: '',
+      brand: '',
       description: '',
       measurementUnit: '',
       dischargeUnit: '',
@@ -864,10 +882,17 @@ export class MaterialCompositionComponent implements OnInit, OnChanges {
     const materialId = typeof materialIdOrObject === 'string' ? materialIdOrObject : materialIdOrObject.id;
     this.selectedViewMaterial = null;
     this.editingMaterialId = materialId;
+    this.barcodeCodes = null;
+    this.barcodesFailed = false;
+    this.barcodesService.forItem('material_t', String(materialId)).subscribe({
+      next: (codes) => (this.barcodeCodes = codes),
+      error: () => (this.barcodesFailed = true),
+    });
     this.materialService.getTransformedMaterialById(materialId).subscribe({
       next: (data) => {
         this.newMaterial = {
           name: data.strName,
+          brand: data.strBrand || '',
           description: data.strDescription,
           measurementUnit: data.strUnitMeasure,
           dischargeUnit: data.strDischargeUnit,
