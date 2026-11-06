@@ -7,12 +7,13 @@ import { CategoryService, Category } from '../../shared/services/category/catego
 import { StockAlertsService } from '../../shared/services/stock-alerts.service';
 import { ProductFormComponent } from './form/product-form.component';
 import { NumberFormatPipe } from '../../shared/pipes/number-format.pipe';
+import { LabelPrinterComponent } from '../../shared/components/label-printer/label-printer.component';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-products-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductFormComponent, NumberFormatPipe],
+  imports: [CommonModule, FormsModule, ProductFormComponent, NumberFormatPipe, LabelPrinterComponent],
   templateUrl: './products-list.component.html',
   styleUrls: ['./products-list.component.css']
 })
