@@ -11,6 +11,7 @@ import { environment } from '../../../../environments/environment';
 import { dailyDocs, downloadDailySalesXlsx, localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
 import { ReceiptService } from '../../../shared/services/receipt.service';
+import { paymentMethodLabel } from '../../../shared/services/credit.service';
 
 @Component({
   selector: 'app-sales-list',
@@ -207,6 +208,21 @@ import { ReceiptService } from '../../../shared/services/receipt.service';
               </div>
             </div>
 
+            <!-- Pago: medio, referencia y volante -->
+            <div class="pay-proof mt-3" *ngIf="selectedSale">
+              <div>
+                <strong>Pago:</strong> {{ paymentText(selectedSale) }}
+                <span *ngIf="selectedSale.strPaymentReference"> · Ref. {{ selectedSale.strPaymentReference }}</span>
+              </div>
+              <a *ngIf="selectedSale.strPaymentProofUrl" [href]="selectedSale.strPaymentProofUrl" target="_blank" rel="noopener" class="pay-proof-thumb" title="Ver el volante">
+                <img [src]="selectedSale.strPaymentProofUrl" alt="Volante del pago">
+              </a>
+              <label class="btn btn-sm btn-outline-primary mb-0" *ngIf="canAttachProof(selectedSale)">
+                {{ uploadingProof ? 'Subiendo…' : (selectedSale.strPaymentProofUrl ? 'Cambiar volante' : 'Adjuntar volante') }}
+                <input type="file" hidden accept="image/jpeg,image/png,image/webp" (change)="attachProof($event)" [disabled]="uploadingProof">
+              </label>
+            </div>
+
             <!-- Resumen de totales -->
             <div class="mt-3 p-3" style="background-color: #e7f3ff; border-radius: 5px; border: 2px solid #0066cc;">
               <div class="row">
@@ -258,6 +274,9 @@ import { ReceiptService } from '../../../shared/services/receipt.service';
     <div class="modal-backdrop fade" [class.show]="showViewModal" *ngIf="showViewModal"></div>
   `,
   styles: [`
+    .pay-proof { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.9rem; }
+    .pay-proof > div { flex: 1; min-width: 200px; }
+    .pay-proof-thumb img { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
     .receipt-actions { display: inline-flex; gap: 6px; padding: 3px; border-radius: 999px; background: #f1f5f9; }
     .ra-btn { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #fff; color: #1d4ed8; cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, .12); }
     .ra-btn svg { width: 17px; height: 17px; fill: currentColor; }
@@ -966,6 +985,43 @@ export class SalesListComponent implements OnInit {
   getItemsText(sale: Sale): string {
     const items = this.getItems(sale);
     return items.map(item => item.product).join(', ');
+  }
+
+  uploadingProof = false;
+
+  paymentText(sale: Sale): string {
+    if (String(sale.paymentType || '').toUpperCase() === 'CREDITO') return 'Crédito';
+    return `Contado · ${paymentMethodLabel(sale.paymentMethod || 'EFECTIVO')}`;
+  }
+
+  /** Volante solo en contado no en efectivo, y no en ventas anuladas. */
+  canAttachProof(sale: Sale): boolean {
+    return !sale.dtmVoidedAt && this.permissions.canCreate && String(sale.paymentType || 'CONTADO').toUpperCase() !== 'CREDITO'
+      && String(sale.paymentMethod || 'EFECTIVO').toUpperCase() !== 'EFECTIVO';
+  }
+
+  attachProof(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    const sale = this.selectedSale;
+    if (!file || !sale?.strId) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      Swal.fire('Foto no válida', 'El volante debe ser una foto JPG, PNG o WEBP de máximo 5 MB.', 'warning');
+      return;
+    }
+    this.uploadingProof = true;
+    this.salesService.attachPaymentProof(sale.strId, file, '').subscribe({
+      next: (saved) => {
+        this.uploadingProof = false;
+        Object.assign(sale, { strPaymentProofUrl: saved.strPaymentProofUrl, strPaymentReference: saved.strPaymentReference });
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Volante guardado', timer: 1800, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.uploadingProof = false;
+        Swal.fire('No se pudo guardar el volante', typeof err?.error?.message === 'string' ? err.error.message : 'Intenta de nuevo.', 'error');
+      },
+    });
   }
 
   /** Comprobante de la venta: imprimir, guardar en PDF, WhatsApp o correo. */
