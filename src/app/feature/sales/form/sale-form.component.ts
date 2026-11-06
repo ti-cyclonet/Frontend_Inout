@@ -107,6 +107,22 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   
   // Forma de pago
   readonly paymentMethods = PAYMENT_METHODS;
+  /** Volante del datáfono / comprobante (opcional) de un pago de contado no en efectivo. */
+  proofFile: File | null = null;
+  proofReference = '';
+  get needsProof(): boolean { return this.paymentType === 'CONTADO' && this.paymentMethod !== 'EFECTIVO'; }
+
+  onProofFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    input.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      Swal.fire('Foto no válida', 'El volante debe ser una foto JPG, PNG o WEBP de máximo 5 MB.', 'warning');
+      return;
+    }
+    this.proofFile = file;
+  }
   paymentType: PaymentType = 'CONTADO';
   paymentMethod = 'EFECTIVO';
   creditInfo: CreditEligibility | null = null;
@@ -433,6 +449,19 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     this.orderData.total = this.orderData.subtotal + this.orderData.tax;
   }
 
+  /** Sube el volante (si hay) y luego hace lo de la barra del comprobante. */
+  private afterSale(sale: any, contact: { phone: string | null; email: string | null }, proof: { file: File | null; reference: string } | null): void {
+    if (!proof || !sale?.strId) { this.sendReceipt(sale, contact); return; }
+    this.salesService.attachPaymentProof(sale.strId, proof.file, proof.reference).subscribe({
+      next: (saved) => this.sendReceipt({ ...sale, ...saved }, contact),
+      error: () => {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', timer: 5000, showConfirmButton: false,
+          title: 'La venta quedó, pero no se subió el volante', text: 'Adjúntalo desde Ventas directas › Ver.' });
+        this.sendReceipt(sale, contact);
+      },
+    });
+  }
+
   /** Lo que la barra tenga activo, en orden: imprimir, WhatsApp, correo. */
   private async sendReceipt(sale: any, contact: { phone: string | null; email: string | null }): Promise<void> {
     const s = this.receipts.settings;
@@ -641,12 +670,13 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     // Contacto del cliente (para WhatsApp y correo), antes de limpiar el formulario
     const buyer: any = this.customers.find((c) => c.id && c.id === this.orderData.customerId);
     const contact = { phone: buyer?.phone || null, email: buyer?.email || null };
+    const proof = this.needsProof && (this.proofFile || this.proofReference.trim()) ? { file: this.proofFile, reference: this.proofReference } : null;
     this.salesService.createSale(saleData).subscribe({
       next: (response) => {
         console.log('Sale created:', response);
-        // Comprobante: imprimir / WhatsApp / correo, según la barra (por equipo)
+        // Volante del pago (opcional); luego el comprobante: imprimir / WhatsApp / correo
         const sale = (response as any)?.sale;
-        if (sale) this.sendReceipt(sale, contact);
+        if (sale) this.afterSale(sale, contact, proof);
         // Burbuja con la ganancia de esta venta (con sonido)
         this.profitBubble.show((response as any)?.profit, `la venta ${(response as any)?.sale?.strInvoiceCode || ''}`.trim());
         
@@ -719,6 +749,8 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       tax: 0,
       total: 0
     };
+    this.proofFile = null;
+    this.proofReference = '';
     // Lo que se ve en el buscador de clientes (los datos de arriba no lo borran)
     this.customerSearchTerm = '';
     this.filteredCustomers = this.customers;
