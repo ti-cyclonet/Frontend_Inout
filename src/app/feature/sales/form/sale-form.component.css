@@ -476,3 +476,9 @@
 .sale-date-field input { max-width: 220px; }
 .date-hint { display: block; margin-top: 0.3rem; font-size: 0.8rem; color: #b45309; }
 .date-hint.date-error { color: #dc2626; }
+
+.item-brand {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}

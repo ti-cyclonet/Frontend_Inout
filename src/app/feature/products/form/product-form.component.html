@@ -50,10 +50,22 @@
             </div>
 
             <div class="form-group full-width">
+              <label for="productBrand">Marca (opcional)</label>
+              <input type="text" id="productBrand" class="form-control" formControlName="strBrand" maxlength="100" placeholder="Si el producto tiene marca">
+            </div>
+
+            <div class="form-group full-width">
               <label>Descripción *</label>
               <textarea class="form-control" formControlName="strDescription" rows="3" placeholder="Ingresa la descripción"
                 [class.is-invalid]="productForm.get('strDescription')?.invalid && productForm.get('strDescription')?.touched"></textarea>
               <div class="invalid-feedback" *ngIf="productForm.get('strDescription')?.invalid && productForm.get('strDescription')?.touched">{{ getFieldError("strDescription") }}</div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="productBarcodes">Códigos de barras</label>
+              <app-barcode-field *ngIf="barcodeCodes !== null; else productBarcodesLoading" inputId="productBarcodes"
+                [(codes)]="barcodeCodes" [itemId]="productData?.strId || null"></app-barcode-field>
+              <ng-template #productBarcodesLoading><small class="text-muted d-block">{{ barcodesFailed ? 'No se pudieron cargar los códigos de barras; puedes guardar el producto y agregarlos después.' : 'Cargando códigos…' }}</small></ng-template>
             </div>
 
             <div class="form-group">

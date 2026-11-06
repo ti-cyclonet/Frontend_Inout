@@ -2,6 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { map, switchMap } from 'rxjs/operators';
 import { MaterialService } from '../../../shared/services/material.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { CategoryService, Category } from '../../../shared/services/category/category.service';
@@ -11,11 +12,13 @@ import { ImageManagerComponent } from '../../../shared/components/image-manager/
 import { UNIT_OPTIONS, getDischargeUnitOptions, isPackUnit, normalizePackSize } from '../../../shared/utils/unit-conversion.util';
 import { ResalePricingComponent, ResaleConfig, resaleConfigFrom, resaleConfigPayload } from '../../../shared/components/resale-pricing/resale-pricing.component';
 import { MaterialLotsComponent } from './material-lots.component';
+import { BarcodeFieldComponent } from '../../../shared/components/barcode-field/barcode-field.component';
+import { BarcodesService } from '../../../shared/services/barcodes.service';
 
 @Component({
   selector: 'app-material-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent, ResalePricingComponent, MaterialLotsComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent, ResalePricingComponent, MaterialLotsComponent, BarcodeFieldComponent],
   templateUrl: './material-form.component.html',
   styleUrls: ['./material-form.component.css']
 })
@@ -38,6 +41,9 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   resaleConfig: ResaleConfig = resaleConfigFrom();
   @ViewChild(ResalePricingComponent) resalePricing?: ResalePricingComponent;
   materialImages: MaterialImage[] = [];
+  /** Códigos de barras; null mientras se cargan los del material que se edita. */
+  barcodeCodes: string[] | null = [];
+  barcodesFailed = false;
   categories: Category[] = [];
   locationOptions: { value: string; label: string }[] = [];
   showCategoryForm = false;
@@ -56,7 +62,8 @@ export class MaterialFormComponent implements OnInit, OnChanges {
     private categoryService: CategoryService,
     private warehousesService: WarehousesService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    private barcodesService: BarcodesService
   ) {
     this.materialForm = this.createForm();
     // Al cambiar la unidad de medida, la de descarga se limita a sus
@@ -131,6 +138,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
     return this.fb.group({
       // Step 1: Basic Information
       name: ['', [Validators.required, Validators.minLength(2)]],
+      brand: ['', [Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.minLength(5)]],
       measurementUnit: ['', Validators.required],
       dischargeUnit: [''],
@@ -220,12 +228,19 @@ export class MaterialFormComponent implements OnInit, OnChanges {
   loadMaterial(): void {
     if (!this.materialId) return;
     
+    this.barcodeCodes = null;
+    this.barcodesFailed = false;
+    this.barcodesService.forItem('material', String(this.materialId)).subscribe({
+      next: (codes) => (this.barcodeCodes = codes),
+      error: () => (this.barcodesFailed = true),
+    });
     this.loading = true;
     this.materialService.getMaterialById(this.materialId).subscribe({
       next: (material: any) => {
         if (material) {
           this.materialForm.patchValue({
             name: material.strName || material.name,
+            brand: material.strBrand || '',
             description: material.strDescription || material.description,
             measurementUnit: material.strUnitMeasure || material.measurementUnit,
             dischargeUnit: material.strDischargeUnit || material.dischargeUnit,
@@ -330,6 +345,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
       // Mapear campos del frontend al backend
       const materialData: any = {
         strName: formData.name,
+        strBrand: (formData.brand || '').trim() || null,
         strDescription: formData.description,
         strUnitMeasure: formData.measurementUnit,
         strDischargeUnit: this.useDifferentDischargeUnit && formData.dischargeUnit ? formData.dischargeUnit : formData.measurementUnit,
@@ -354,9 +370,16 @@ export class MaterialFormComponent implements OnInit, OnChanges {
         ? this.materialService.updateMaterial(this.materialId!, materialData as any)
         : this.materialService.createMaterial(materialData as any);
 
-      operation.subscribe({
-        next: (material) => {
-          this.notificationService.success('¡Éxito!', 'Material guardado correctamente').then(() => {
+      operation.pipe(
+        switchMap((material: any) => this.barcodesService
+          .saveAfter('material', material?.strId || (this.isEditMode ? String(this.materialId) : null), this.barcodeCodes)
+          .pipe(map((barcodeWarning) => ({ material, barcodeWarning }))))
+      ).subscribe({
+        next: ({ barcodeWarning }) => {
+          const done = barcodeWarning
+            ? this.notificationService.warning('Material guardado', `Pero no se guardaron los códigos de barras: ${barcodeWarning}`)
+            : this.notificationService.success('¡Éxito!', 'Material guardado correctamente');
+          done.then(() => {
             // Limpiar formulario después de crear exitosamente
             this.materialForm.reset({
               price: 0,
@@ -366,6 +389,7 @@ export class MaterialFormComponent implements OnInit, OnChanges {
               status: 'active'
             });
             this.materialImages = [];
+            this.barcodeCodes = [];
             this.resaleConfig = resaleConfigFrom();
             this.currentStep = 1;
             this.useDifferentDischargeUnit = false;

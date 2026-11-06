@@ -66,15 +66,16 @@
                 class="form-control select-input"
                 [(ngModel)]="productSearchTerm" 
                 name="productSearch"
-                placeholder="Buscar producto..."
+                placeholder="Busca o lee el código de barras…"
                 (input)="filterProducts()"
+                (keydown.enter)="onProductSearchEnter($event)"
                 (focus)="showProductDropdown = true"
                 (blur)="showProductDropdown = false"
                 autocomplete="off"
                 [ngModelOptions]="{standalone: true}">
               <div class="select-dropdown" *ngIf="showProductDropdown">
                 <div class="select-option" *ngFor="let product of filteredProducts" (mousedown)="selectProduct(product)" [class.out-of-stock]="product.stock <= 0">
-                  <strong>{{ product.name }}</strong> <span class="item-type-tag" *ngIf="product.itemType === 'material' || product.itemType === 'material_t'">Reventa</span><span class="item-type-tag" *ngIf="itemTypeLabel(product)">{{ itemTypeLabel(product) }}</span>
+                  <strong>{{ product.name }}</strong> <span class="item-brand" *ngIf="product.brand">{{ product.brand }}</span> <span class="item-type-tag" *ngIf="product.itemType === 'material' || product.itemType === 'material_t'">Reventa</span><span class="item-type-tag" *ngIf="itemTypeLabel(product)">{{ itemTypeLabel(product) }}</span>
                   <small *ngIf="product.stock > 0">{{ formatCurrency(product.price) }} - {{ product.unlimited ? 'Bajo pedido' : 'Stock: ' + product.stock }}</small>
                   <small *ngIf="product.stock <= 0" class="stock-empty">{{ formatCurrency(product.price) }} - Sin stock</small>
                 </div>

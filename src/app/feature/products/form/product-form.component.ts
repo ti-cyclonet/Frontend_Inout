@@ -16,6 +16,9 @@ import { actualMargin, effectiveMargin, inheritedMarginLabel, marginPayload, pri
 import Swal from 'sweetalert2';
 import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
 import { ProductPresentation } from '../../../shared/services/product.service';
+import { BarcodeFieldComponent } from '../../../shared/components/barcode-field/barcode-field.component';
+import { BarcodesService } from '../../../shared/services/barcodes.service';
+import { map, switchMap } from 'rxjs/operators';
 
 interface ExtendedMaterial extends Material {
   isComposite?: boolean;
@@ -44,13 +47,16 @@ interface ProductComposition {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [InfoTipComponent, CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent],
+  imports: [InfoTipComponent, CommonModule, ReactiveFormsModule, FormsModule, ImageManagerComponent, BarcodeFieldComponent],
   templateUrl: './product-form.component.html',
   styleUrls: ['./product-form.component.css']
 })
 export class ProductFormComponent implements OnInit {
   @Input() productId?: string;
   @Input() productData?: any;
+  /** Códigos de barras; null mientras se cargan los del producto que se edita. */
+  barcodeCodes: string[] | null = [];
+  barcodesFailed = false;
   @Input() isModal = false;
   @Output() productCreated = new EventEmitter<void>();
   @Output() formCancelled = new EventEmitter<void>();
@@ -143,7 +149,8 @@ export class ProductFormComponent implements OnInit {
     private materialService: MaterialService,
     private categoryService: CategoryService,
     private warehousesService: WarehousesService,
-    private stockAlertsService: StockAlertsService
+    private stockAlertsService: StockAlertsService,
+    private barcodesService: BarcodesService
   ) {}
 
   ngOnInit(): void {
@@ -167,6 +174,7 @@ export class ProductFormComponent implements OnInit {
   initForm(): void {
     this.productForm = this.fb.group({
       strName: ['', Validators.required],
+      strBrand: ['', Validators.maxLength(100)],
       strDescription: ['', Validators.required],
       fltPrice: [0, [Validators.required, Validators.min(0)]],
       strMeasurementUnit: ['', Validators.required],
@@ -201,9 +209,18 @@ export class ProductFormComponent implements OnInit {
   }
 
   loadProductData(): void {
+    if (this.productData?.strId) {
+      this.barcodeCodes = null;
+      this.barcodesFailed = false;
+      this.barcodesService.forItem('product', this.productData.strId).subscribe({
+        next: (codes) => (this.barcodeCodes = codes),
+        error: () => (this.barcodesFailed = true),
+      });
+    }
     this.productForm.patchValue({
       strName: this.productData.strName,
       strDescription: this.productData.strDescription,
+      strBrand: this.productData.strBrand || '',
       fltPrice: this.productData.fltPrice,
       strMeasurementUnit: this.productData.strMeasurementUnit,
       ingStockMin: this.productData.ingStockMin,
@@ -799,6 +816,7 @@ export class ProductFormComponent implements OnInit {
 
     const productData: any = {
       strName: formData.strName.toUpperCase(),
+      strBrand: (formData.strBrand || '').trim() || null,
       strDescription: formData.strDescription,
       fltPrice: +formData.fltPrice,
       fltCost: this.totalUnitCost,
@@ -841,9 +859,14 @@ export class ProductFormComponent implements OnInit {
       ? this.productService.updateProduct(this.productData.strId, productData)
       : this.productService.createProduct(productData);
 
-    request.subscribe({
-      next: () => {
-        Swal.fire('Éxito', `Producto ${this.isEditMode ? 'actualizado' : 'creado'} correctamente`, 'success');
+    request.pipe(
+      switchMap((saved: any) => this.barcodesService
+        .saveAfter('product', saved?.strId || (this.isEditMode ? this.productData?.strId : null), this.barcodeCodes)
+        .pipe(map((barcodeWarning) => ({ saved, barcodeWarning }))))
+    ).subscribe({
+      next: ({ barcodeWarning }) => {
+        if (barcodeWarning) Swal.fire(`Producto ${this.isEditMode ? 'actualizado' : 'creado'}`, `Pero no se guardaron los códigos de barras: ${barcodeWarning}`, 'warning');
+        else Swal.fire('Éxito', `Producto ${this.isEditMode ? 'actualizado' : 'creado'} correctamente`, 'success');
         this.productCreated.emit();
         // Crear/editar un producto puede cambiar su stock o sus mínimos/máximos:
         // refrescar el badge de alertas sin esperar a recargar la página.
