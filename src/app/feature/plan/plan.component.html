@@ -96,6 +96,7 @@
             <b><sup>$</sup>{{ money(price(plan)) }}</b><span>/ {{ cycle === 'annual' ? 'año' : 'mes' }}</span>
           </div>
           <ng-template #askTpl><div class="pl-card__price"><b class="pl-card__ask">Hablemos</b></div></ng-template>
+          <p class="pl-card__note" *ngIf="!(plan.price > 0)">Solución a la medida de tu negocio: te visitamos y armamos el plan contigo.</p>
           <p class="pl-card__note" *ngIf="plan.price > 0">
             <ng-container *ngIf="cycle === 'annual'">Equivale a ${{ money(monthlyEquivalent(plan)) }} / mes</ng-container>
             <ng-container *ngIf="cycle === 'monthly'">Pagas mes a mes</ng-container>
@@ -108,7 +109,7 @@
 
           <button type="button" class="pl-btn pl-btn--block" [class.pl-btn--orange]="plan.isHighlighted" [class.pl-btn--line]="!plan.isHighlighted"
                   [disabled]="isCurrent(plan) || !!pending?.adminSigned" (click)="choose(plan)">
-            {{ isCurrent(plan) ? 'Plan actual' : plan.ctaType === 'contact' ? 'Contactar ventas' : 'Elegir este plan' }}
+            {{ isCurrent(plan) ? 'Plan actual' : plan.ctaType === 'contact' ? 'Contáctanos' : 'Elegir este plan' }}
           </button>
         </article>
       </div>
