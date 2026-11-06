@@ -11,7 +11,7 @@ import { environment } from '../../../../environments/environment';
 import { dailyDocs, downloadDailySalesXlsx, localDay } from '../../../shared/utils/daily-sales-xlsx';
 import Swal from 'sweetalert2';
 import { ReceiptService } from '../../../shared/services/receipt.service';
-import { paymentMethodLabel } from '../../../shared/services/credit.service';
+import { paymentMethodsText } from '../../../shared/services/credit.service';
 
 @Component({
   selector: 'app-sales-list',
@@ -991,13 +991,14 @@ export class SalesListComponent implements OnInit {
 
   paymentText(sale: Sale): string {
     if (String(sale.paymentType || '').toUpperCase() === 'CREDITO') return 'Crédito';
-    return `Contado · ${paymentMethodLabel(sale.paymentMethod || 'EFECTIVO')}`;
+    return `Contado · ${paymentMethodsText(sale)}`;
   }
 
   /** Volante solo en contado no en efectivo, y no en ventas anuladas. */
   canAttachProof(sale: Sale): boolean {
+    const methods = sale.payments?.length ? sale.payments.map((p) => p.method) : [sale.paymentMethod || 'EFECTIVO'];
     return !sale.dtmVoidedAt && this.permissions.canCreate && String(sale.paymentType || 'CONTADO').toUpperCase() !== 'CREDITO'
-      && String(sale.paymentMethod || 'EFECTIVO').toUpperCase() !== 'EFECTIVO';
+      && methods.some((m) => String(m).toUpperCase() !== 'EFECTIVO');
   }
 
   attachProof(event: Event): void {

@@ -20,6 +20,7 @@ import Swal from 'sweetalert2';
 import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 import { ReceiptService } from '../../../shared/services/receipt.service';
+import { extractAmounts, extractReference } from '../../../shared/utils/payment-proof-ocr';
 
 interface OrderItem {
   id: string;
@@ -110,7 +111,57 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   /** Volante del datáfono / comprobante (opcional) de un pago de contado no en efectivo. */
   proofFile: File | null = null;
   proofReference = '';
-  get needsProof(): boolean { return this.paymentType === 'CONTADO' && this.paymentMethod !== 'EFECTIVO'; }
+  get needsProof(): boolean {
+    if (this.paymentType !== 'CONTADO') return false;
+    return this.splitOn ? this.splitParts.some((p) => p.method !== 'EFECTIVO') : this.paymentMethod !== 'EFECTIVO';
+  }
+
+  // ── Pago dividido (ej. una parte en efectivo y otra por transferencia) ──
+  splitOn = false;
+  splitParts: { method: string; amount: number | null }[] = [];
+
+  startSplit(): void {
+    const total = Number(this.orderData.total) || 0;
+    const other = this.paymentMethod !== 'EFECTIVO' ? this.paymentMethod : 'TRANSFERENCIA';
+    this.splitParts = [{ method: 'EFECTIVO', amount: null }, { method: other, amount: total || null }];
+    this.splitOn = true;
+  }
+
+  stopSplit(): void {
+    this.splitOn = false;
+    this.splitParts = [];
+  }
+
+  addSplit(): void {
+    const used = new Set(this.splitParts.map((p) => p.method));
+    const next = this.paymentMethods.find((m) => !used.has(m.value))?.value || 'OTRO';
+    this.splitParts.push({ method: next, amount: this.splitDiff > 0 ? this.splitDiff : null });
+  }
+
+  removeSplit(i: number): void {
+    this.splitParts.splice(i, 1);
+  }
+
+  /** Al escribir un valor, el último medio se completa con lo que falta. */
+  onSplitAmount(i: number): void {
+    const last = this.splitParts.length - 1;
+    if (i === last) return;
+    const others = this.splitParts.slice(0, last).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const rest = Math.round(((Number(this.orderData.total) || 0) - others) * 100) / 100;
+    this.splitParts[last].amount = rest > 0 ? rest : null;
+  }
+
+  /** Lo que falta (+) o sobra (−) para el total. */
+  get splitDiff(): number {
+    const sum = this.splitParts.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const d = Math.round(((Number(this.orderData.total) || 0) - sum) * 100) / 100;
+    return Math.abs(d) < 1 ? 0 : d;
+  }
+
+  get splitValid(): boolean {
+    return this.splitParts.length >= 2 && this.splitParts.every((p) => Number(p.amount) > 0)
+      && new Set(this.splitParts.map((p) => p.method)).size === this.splitParts.length && this.splitDiff === 0;
+  }
 
   onProofFile(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -122,6 +173,49 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       return;
     }
     this.proofFile = file;
+    this.readProof(file);
+  }
+
+  /** Lectura del comprobante (OCR): estado y aviso para mostrar. */
+  proofReading = false;
+  proofNote = '';
+
+  /**
+   * Lee la foto en el navegador (Tesseract, sin enviarla a ningún servicio)
+   * y pone la referencia si el campo está vacío. Si el valor del comprobante
+   * no coincide con el total de la venta, lo avisa.
+   */
+  private async readProof(file: File): Promise<void> {
+    this.proofNote = '';
+    this.proofReading = true;
+    try {
+      // tesseract.js es CommonJS: según el empaquetador llega directo o en «default»
+      const mod: any = await import('tesseract.js');
+      const createWorker = mod.createWorker || mod.default?.createWorker;
+      const worker = await createWorker('spa');
+      const { data } = await worker.recognize(file);
+      await worker.terminate();
+      if (this.proofFile !== file) return; // cambiaron la foto mientras se leía
+      const ref = extractReference(data.text);
+      const amounts = extractAmounts(data.text);
+      const notes: string[] = [];
+      if (ref && !this.proofReference.trim()) {
+        this.proofReference = ref;
+        notes.push('Referencia leída del comprobante: revísala.');
+      } else if (!ref) {
+        notes.push('No se pudo leer la referencia; escríbela si la necesitas.');
+      }
+      const total = Number(this.orderData.total) || 0;
+      if (total > 0 && amounts.length && !amounts.some((a) => Math.abs(a - total) < 1)) {
+        notes.push(`El comprobante dice ${this.formatCurrency(Math.max(...amounts))} y la venta es de ${this.formatCurrency(total)}.`);
+      }
+      this.proofNote = notes.join(' ');
+    } catch (err) {
+      console.warn('No se pudo leer el comprobante', err);
+      if (this.proofFile === file) this.proofNote = 'No se pudo leer el comprobante; escribe la referencia si la necesitas.';
+    } finally {
+      if (this.proofFile === file) this.proofReading = false;
+    }
   }
   paymentType: PaymentType = 'CONTADO';
   paymentMethod = 'EFECTIVO';
@@ -639,6 +733,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
 
   canSubmit(): boolean {
     if (!(this.orderData.customerName && this.orderData.items.length > 0)) return false;
+    if (this.paymentType === 'CONTADO' && this.splitOn && !this.splitValid) return false;
     if (!this.saleDateValid) return false;
     if (this.paymentType === 'CREDITO') return this.canUseCredit && !this.exceedsCredit;
     return !!this.paymentMethod;
@@ -660,6 +755,8 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       customerId: this.orderData.customerId || undefined,
       paymentType: this.paymentType,
       paymentMethod: this.paymentType === 'CONTADO' ? this.paymentMethod : undefined,
+      payments: this.paymentType === 'CONTADO' && this.splitOn
+        ? this.splitParts.map((p) => ({ method: p.method, amount: Number(p.amount) || 0 })) : undefined,
       // productId por ítem: el backend valida y descuenta stock de TODOS
       items: this.orderData.items.map(i => ({ ...i, productName: i.product })),
       subtotal: Number(this.orderData.subtotal),
@@ -749,8 +846,11 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       tax: 0,
       total: 0
     };
+    this.stopSplit();
     this.proofFile = null;
     this.proofReference = '';
+    this.proofNote = '';
+    this.proofReading = false;
     // Lo que se ve en el buscador de clientes (los datos de arriba no lo borran)
     this.customerSearchTerm = '';
     this.filteredCustomers = this.customers;

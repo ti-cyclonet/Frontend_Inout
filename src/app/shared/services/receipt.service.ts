@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { TenantBrandingService } from './tenant-branding.service';
 import { CustomersService } from './customers.service';
-import { paymentMethodLabel } from './credit.service';
+import { paymentMethodsText } from './credit.service';
 import { DisplayLine, groupComboLines } from '../utils/combo-lines.util';
 import { fechaVenta } from '../utils/fecha-venta';
 
@@ -134,7 +134,7 @@ export class ReceiptService {
       tax: Number(sale?.tax) || 0,
       taxLabel: `${inc > 0 ? 'INC' : 'IVA'}${taxPct ? ` ${String(taxPct).replace('.', ',')}%` : ''}`,
       total: Number(sale?.total) || 0,
-      payment: String(sale?.paymentType || '').toUpperCase() === 'CREDITO' ? 'Crédito' : `Contado · ${paymentMethodLabel(sale?.paymentMethod || 'EFECTIVO')}`,
+      payment: String(sale?.paymentType || '').toUpperCase() === 'CREDITO' ? 'Crédito' : `Contado · ${paymentMethodsText(sale || {})}`,
       units: lines.reduce((t, l) => t + (Number(l.quantity) || 0), 0),
       note: String(note || '').trim(),
     };

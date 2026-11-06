@@ -204,12 +204,37 @@
           </button>
         </div>
 
-        <!-- Contado: medio de pago -->
-        <div class="payment-methods" *ngIf="paymentType === 'CONTADO'">
+        <!-- Contado: medio de pago (o dividido en varios) -->
+        <div class="payment-methods" *ngIf="paymentType === 'CONTADO' && !splitOn">
           <button type="button" class="method-chip" *ngFor="let m of paymentMethods" [class.active]="paymentMethod === m.value" (click)="paymentMethod = m.value">
             <svg viewBox="0 0 16 16" width="14" height="14"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + m.icon" /></svg>
             {{ m.label }}
           </button>
+          <button type="button" class="method-chip method-chip--split" (click)="startSplit()" title="Una parte en efectivo y otra por transferencia, por ejemplo">
+            <svg viewBox="0 0 16 16" width="14" height="14"><use xlink:href="./assets/icons/bootstrap-icons.svg#plus-slash-minus" /></svg>
+            Dividir pago
+          </button>
+        </div>
+
+        <div class="split-box" *ngIf="paymentType === 'CONTADO' && splitOn">
+          <div class="split-head">
+            <strong>Pago dividido</strong>
+            <button type="button" class="split-cancel" (click)="stopSplit()">Un solo medio</button>
+          </div>
+          <div class="split-row" *ngFor="let part of splitParts; let i = index">
+            <select class="form-select" [(ngModel)]="part.method" [ngModelOptions]="{standalone: true}" [attr.aria-label]="'Medio ' + (i + 1)">
+              <option *ngFor="let m of paymentMethods" [value]="m.value">{{ m.label }}</option>
+            </select>
+            <input type="number" min="0" step="any" class="form-control" [(ngModel)]="part.amount" [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="onSplitAmount(i)" placeholder="Valor" [attr.aria-label]="'Valor ' + (i + 1)">
+            <button type="button" class="split-remove" *ngIf="splitParts.length > 2" (click)="removeSplit(i)" aria-label="Quitar este medio">×</button>
+          </div>
+          <div class="split-foot">
+            <button type="button" class="split-add" *ngIf="splitParts.length < 4" (click)="addSplit()">+ Otro medio</button>
+            <span [class.split-ok]="splitDiff === 0" [class.split-bad]="splitDiff !== 0">
+              {{ splitDiff === 0 ? '✓ Suma el total' : splitDiff > 0 ? 'Faltan ' + formatCurrency(splitDiff) : 'Sobran ' + formatCurrency(-splitDiff) }}
+            </span>
+          </div>
         </div>
 
         <!-- Contado no en efectivo: volante del datáfono o comprobante (opcional) -->
@@ -224,10 +249,14 @@
               <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use [attr.xlink:href]="'./assets/icons/bootstrap-icons.svg#' + (proofFile ? 'check-circle' : 'camera')" /></svg>
               <span>{{ proofFile ? proofFile.name : 'Adjuntar foto' }}</span>
             </label>
-            <button type="button" class="proof-clear" *ngIf="proofFile" (click)="proofFile = null" aria-label="Quitar la foto">×</button>
+            <button type="button" class="proof-clear" *ngIf="proofFile" (click)="proofFile = null; proofNote = ''; proofReading = false" aria-label="Quitar la foto">×</button>
             <input type="text" class="form-control proof-ref" [(ngModel)]="proofReference" [ngModelOptions]="{standalone: true}" maxlength="100"
-              [placeholder]="paymentMethod === 'TARJETA' ? 'N° de aprobación' : 'N° de referencia'">
+              [placeholder]="proofReading ? 'Leyendo el comprobante…' : (paymentMethod === 'TARJETA' ? 'N° de aprobación' : 'N° de referencia')">
           </div>
+          <small class="proof-note" *ngIf="proofReading">
+            <span class="proof-spin" aria-hidden="true"></span> Leyendo el comprobante…
+          </small>
+          <small class="proof-note" *ngIf="!proofReading && proofNote">{{ proofNote }}</small>
         </div>
 
         <!-- Crédito: cupo y vencimiento -->
