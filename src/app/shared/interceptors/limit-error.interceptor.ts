@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   HttpInterceptor,
   HttpRequest,
@@ -12,6 +13,8 @@ import Swal from 'sweetalert2';
 
 @Injectable()
 export class LimitErrorInterceptor implements HttpInterceptor {
+  constructor(private readonly router: Router) {}
+
   intercept(
     req: HttpRequest<any>,
     next: HttpHandler
@@ -29,9 +32,20 @@ export class LimitErrorInterceptor implements HttpInterceptor {
               title: 'Límite alcanzado',
               html: `Has alcanzado el límite máximo de <b>${resource}</b>.<br>` +
                 `Límite: <b>${limit}</b> | Uso actual: <b>${currentCount}</b>.<br><br>` +
-                `Contacta al administrador para ampliar tu plan.`,
-              confirmButtonText: 'Entendido',
-            });
+                `Para ampliarlo, cambia de plan en Mi plan.`,
+              showCancelButton: true,
+              confirmButtonText: 'Ver planes',
+              cancelButtonText: 'Entendido',
+            }).then((r) => { if (r.isConfirmed) this.router.navigate(['/plan']); });
+          } else if (error.error.error === 'FEATURE_DISABLED') {
+            Swal.fire({
+              icon: 'info',
+              title: 'Función no incluida en tu plan',
+              text: error.error.message ?? 'Tu plan no incluye esta función. Para usarla, cambia de plan en Mi plan.',
+              showCancelButton: true,
+              confirmButtonText: 'Ver planes',
+              cancelButtonText: 'Entendido',
+            }).then((r) => { if (r.isConfirmed) this.router.navigate(['/plan']); });
           } else if (error.error.error === 'CONTRACT_INACTIVE') {
             const message =
               error.error.message ??
