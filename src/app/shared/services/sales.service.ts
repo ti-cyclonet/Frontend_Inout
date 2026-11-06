@@ -23,6 +23,8 @@ export interface Sale {
   /** Volante del datáfono / comprobante del pago (foto) y su referencia. */
   strPaymentProofUrl?: string | null;
   strPaymentReference?: string | null;
+  /** Pago de contado dividido en varios medios. */
+  payments?: { method: string; amount: number }[] | null;
   paymentMethod?: string | null;
   strVoidReason?: string | null;
   strVoidedBy?: string | null;
@@ -53,6 +55,8 @@ export interface CreateSaleDto {
   total?: number;
   paymentType?: 'CONTADO' | 'CREDITO';
   paymentMethod?: string;
+  /** Pago de contado dividido en varios medios. */
+  payments?: { method: string; amount: number }[];
 }
 
 @Injectable({
