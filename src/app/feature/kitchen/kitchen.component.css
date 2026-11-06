@@ -1,0 +1,121 @@
+/* Pantalla de preparación: alto contraste, letra grande y botones táctiles. */
+:host {
+  --k-bg: #0f172a;
+  --k-panel: #111c33;
+  --k-card: #1b2742;
+  --k-line: #2a3a5c;
+  --k-text: #f1f5f9;
+  --k-muted: #94a3b8;
+  --k-ok: #22c55e;
+  --k-warn: #f59e0b;
+  --k-late: #ef4444;
+  --k-ready: #38bdf8;
+  --k-brand: #ff8000;
+  display: block;
+  min-height: 100vh;
+  background: var(--k-bg);
+  color: var(--k-text);
+}
+
+.kds { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Barra superior */
+.kds-bar {
+  display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+  padding: 0.7rem 1rem; background: var(--k-panel); border-bottom: 1px solid var(--k-line);
+  position: sticky; top: 0; z-index: 2;
+}
+.kds-back, .kds-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--k-line);
+  background: transparent; color: var(--k-text); cursor: pointer; text-decoration: none;
+}
+.kds-back svg, .kds-icon-btn svg, .kds-title svg { fill: currentColor; }
+.kds-icon-btn.on { border-color: var(--k-brand); color: var(--k-brand); }
+.kds-title { display: flex; align-items: center; gap: 0.5rem; color: var(--k-brand); }
+.kds-title h1 { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--k-text); }
+.kds-stats { display: flex; gap: 0.9rem; flex-wrap: wrap; color: var(--k-muted); font-size: 0.95rem; margin-left: auto; }
+.kds-stats b { color: var(--k-text); font-size: 1.1rem; }
+.kds-stat-late, .kds-stat-late b { color: var(--k-late) !important; }
+.kds-clock { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 5.5rem; text-align: right; }
+
+.kds-error { margin: 0.6rem 1rem 0; color: var(--k-warn); }
+
+/* Programados */
+.kds-scheduled {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  margin: 0.75rem 1rem 0; padding: 0.55rem 0.75rem; border-radius: 10px;
+  background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.45);
+}
+.kds-scheduled-title { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--k-ready); font-weight: 700; }
+.kds-scheduled-title svg { fill: currentColor; }
+.kds-chip { padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--k-card); font-size: 0.9rem; }
+
+/* Tablero */
+.kds-board {
+  flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem; padding: 1rem; align-items: start;
+}
+.kds-col h2 {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 0 0 0.75rem; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--k-muted);
+}
+.kds-col h2 span { background: var(--k-card); color: var(--k-text); border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.95rem; }
+.kds-none { color: var(--k-muted); text-align: center; padding: 1.5rem 0.5rem; margin: 0; }
+
+/* Comanda */
+.kds-card {
+  background: var(--k-card); border-radius: 14px; padding: 0.85rem 0.95rem; margin-bottom: 0.85rem;
+  border-left: 6px solid var(--k-line); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.kds-card--ok { border-left-color: var(--k-ok); }
+.kds-card--warn { border-left-color: var(--k-warn); }
+.kds-card--late { border-left-color: var(--k-late); background: #2a1c26; animation: kds-pulse 1.6s ease-in-out infinite; }
+.kds-card--ready { border-left-color: var(--k-ready); opacity: 0.9; }
+.kds-card--fresh { outline: 2px solid var(--k-brand); outline-offset: 2px; }
+@keyframes kds-pulse { 50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.35); } }
+@media (prefers-reduced-motion: reduce) { .kds-card--late { animation: none; } }
+
+.kds-card-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.kds-code { font-size: 1.2rem; letter-spacing: 0.02em; }
+.kds-timer { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--k-muted); font-variant-numeric: tabular-nums; }
+.kds-timer svg, .kds-channel svg, .kds-notes svg { fill: currentColor; flex: none; }
+.kds-meta { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin: 0.3rem 0 0.55rem; color: var(--k-muted); font-size: 0.9rem; }
+.kds-channel { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--k-ready); }
+.kds-customer { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+
+.kds-items { list-style: none; margin: 0; padding: 0; }
+.kds-items li { font-size: 1.15rem; line-height: 1.35; padding: 0.15rem 0; }
+.kds-items b { display: inline-block; min-width: 2rem; color: var(--k-brand); }
+.kds-sub { display: block; margin-left: 2rem; font-size: 0.95rem; color: #cbd5e1; }
+.kds-sub::before { content: '· '; color: var(--k-muted); }
+.kds-sub--opt { color: #fde68a; }
+
+.kds-notes {
+  display: flex; gap: 0.4rem; margin: 0.55rem 0 0; padding: 0.45rem 0.6rem; border-radius: 8px;
+  background: rgba(245, 158, 11, 0.12); color: #fcd34d; font-size: 0.95rem;
+}
+
+.kds-card-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin-top: 0.75rem; }
+.kds-due { font-weight: 700; font-variant-numeric: tabular-nums; }
+.kds-card--ok .kds-due { color: var(--k-ok); }
+.kds-card--warn .kds-due { color: var(--k-warn); }
+.kds-card--late .kds-due { color: var(--k-late); }
+.kds-card--ready .kds-due, .kds-card--none .kds-due { color: var(--k-muted); font-weight: 500; }
+.kds-action {
+  margin-left: auto; min-height: 48px; min-width: 120px; padding: 0 1.1rem; border: 0; border-radius: 10px;
+  background: var(--k-brand); color: #fff; font-size: 1.05rem; font-weight: 800; cursor: pointer;
+}
+.kds-action:disabled { opacity: 0.6; cursor: wait; }
+.kds-col--ready .kds-action { background: var(--k-ready); color: #0f172a; }
+
+.kds-empty-state { margin: auto; text-align: center; padding: 2rem 1rem; max-width: 520px; }
+.kds-empty-state h2 { font-size: 1.4rem; }
+.kds-empty-state p, .kds-empty-state a { color: var(--k-muted); }
+.kds-empty-state a { color: var(--k-ready); }
+
+/* Tablet vertical y celular: una columna detrás de otra */
+@media (max-width: 900px) {
+  .kds-board { grid-template-columns: minmax(0, 1fr); }
+  .kds-stats { order: 5; width: 100%; margin-left: 0; }
+}

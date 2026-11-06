@@ -31,6 +31,7 @@ import { CommercialComponent } from './feature/commercial/commercial.component';
 import { CombosPromotionsComponent } from './feature/combos-promotions/combos-promotions.component';
 import { InventoryComponent } from './feature/inventory/inventory.component';
 import { PartnersComponent } from './feature/partners/partners.component';
+import { KitchenComponent } from './feature/kitchen/kitchen.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -38,6 +39,8 @@ export const routes: Routes = [
     { path: 'reset-password', component: ResetPasswordComponent },
     { path: ROOT_REGISTER, component: RegisterComponent },
     { path: 'module-selector', component: ModuleSelectorComponent, canActivate: [AuthGuard] },
+    // Pantalla de preparación (cocina): a pantalla completa, sin el menú de la app
+    { path: 'cocina', component: KitchenComponent, canActivate: [AuthGuard] },
     { path: 'marketplace/:tenantId', component: MarketplaceComponent },
     // Seguimiento público de un pedido (enlace que recibe el comprador)
     { path: 'marketplace/:tenantId/pedido/:token', component: OrderTrackingComponent },

@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,6 +9,7 @@ import { OrdersComponent } from '../orders/orders.component';
 import { PortfolioComponent } from './portfolio/portfolio.component';
 import { GiftCardsAdminComponent } from './gift-cards/gift-cards-admin.component';
 import { PartnerTipComponent } from '../../shared/components/partner-tip/partner-tip.component';
+import { BusinessModulesService } from '../../shared/services/business-modules.service';
 
 /** Pestaña de ?tab= (enlaces de los paneles y del Inicio). */
 const COMMERCIAL_TAB_OF: Record<string, 'dashboard' | 'sales' | 'orders' | 'portfolio' | 'giftcards'> = {
@@ -44,10 +45,10 @@ const COMMERCIAL_TAB_OF: Record<string, 'dashboard' | 'sales' | 'orders' | 'port
         <button class="tab-button" [class.active]="activeTab === 'orders'" (click)="activeTab = 'orders'">
           Pedidos
         </button>
-        <button class="tab-button" [class.active]="activeTab === 'portfolio'" (click)="activeTab = 'portfolio'">
+        <button class="tab-button" *ngIf="credit$ | async" [class.active]="activeTab === 'portfolio'" (click)="activeTab = 'portfolio'">
           Cartera
         </button>
-        <button class="tab-button" [class.active]="activeTab === 'giftcards'" (click)="activeTab = 'giftcards'">
+        <button class="tab-button" *ngIf="giftCards$ | async" [class.active]="activeTab === 'giftcards'" (click)="activeTab = 'giftcards'">
           🎁 Bonos
         </button>
       </div>
@@ -159,6 +160,10 @@ export class CommercialComponent {
   activeTab: 'dashboard' | 'sales' | 'orders' | 'portfolio' | 'giftcards' = 'dashboard';
   showSaleModal = false;
   refreshTrigger = 0;
+  /** Pestañas según las funciones del negocio (Configuración). */
+  private readonly modules = inject(BusinessModulesService);
+  readonly credit$ = this.modules.on$('credit');
+  readonly giftCards$ = this.modules.on$('giftCards');
 
   constructor(private router: Router, route: ActivatedRoute) {
     // /orders y /sales abren su pestaña (los accesos del Dashboard llevan
