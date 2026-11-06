@@ -19,6 +19,14 @@ export function paymentMethodLabel(value?: string | null): string {
   return PAYMENT_METHODS.find((m) => m.value === value)?.label || value || '—';
 }
 
+/** Medios de un pago de contado: «Efectivo $10.000 + Nequi $5.000» si se dividió. */
+export function paymentMethodsText(sale: { paymentMethod?: string | null; payments?: { method: string; amount: number }[] | null }): string {
+  if (Array.isArray(sale.payments) && sale.payments.length) {
+    return sale.payments.map((p) => `${paymentMethodLabel(p.method)} $${Math.round(Number(p.amount) || 0).toLocaleString('es-CO')}`).join(' + ');
+  }
+  return paymentMethodLabel(sale.paymentMethod || 'EFECTIVO');
+}
+
 export interface CreditEligibility {
   hasAccount: boolean;
   accountId: string | null;

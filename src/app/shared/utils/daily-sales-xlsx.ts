@@ -1,6 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import { groupComboLines } from './combo-lines.util';
-import { paymentMethodLabel } from '../services/credit.service';
+import { paymentMethodLabel, paymentMethodsText } from '../services/credit.service';
 
 /**
  * Ventas del día en Excel (.xlsx): ventas directas (registradas ese día) y
@@ -21,6 +21,8 @@ export interface DailyDoc {
   total: number;
   paymentType: string;
   paymentMethod: string;
+  /** Pago dividido: cada medio con su valor (para «Forma de pago»). */
+  parts?: { method: string; amount: number }[];
   /** Ganancia guardada al facturar (null en ventas anteriores a la función). */
   profit: number | null;
   lines: { name: string; quantity: number; unitPrice: number; subtotal: number }[];
@@ -71,7 +73,9 @@ export function saleDoc(sale: any, day: string): DailyDoc | null {
     deliveryFee: 0,
     total: num(sale.total) || num(sale.fltQuantity) * num(sale.fltUnitPrice),
     paymentType: credit ? 'Crédito' : 'Contado',
-    paymentMethod: credit ? '—' : paymentMethodLabel(sale.paymentMethod || 'EFECTIVO'),
+    paymentMethod: credit ? '—' : paymentMethodsText(sale),
+    parts: !credit && Array.isArray(sale.payments) && sale.payments.length
+      ? sale.payments.map((p: any) => ({ method: paymentMethodLabel(p.method), amount: num(p.amount) })) : undefined,
     profit: sale.profit === null || sale.profit === undefined ? null : num(sale.profit),
     lines: docLines(sale.items),
   };
@@ -169,8 +173,11 @@ export function buildDailySalesWorkbook(docs: DailyDoc[], day: string, businessN
   styleHeader(r.addRow(['Forma de pago', 'Total']));
   const byPayment = new Map<string, number>();
   for (const x of docs) {
-    const key = x.paymentType === 'Crédito' ? 'Crédito' : `Contado · ${x.paymentMethod}`;
-    byPayment.set(key, (byPayment.get(key) || 0) + x.total);
+    // Un pago dividido suma cada parte a su medio
+    const parts = x.paymentType === 'Crédito' ? [{ key: 'Crédito', amount: x.total }]
+      : x.parts?.length ? x.parts.map((p) => ({ key: `Contado · ${p.method}`, amount: p.amount }))
+      : [{ key: `Contado · ${x.paymentMethod}`, amount: x.total }];
+    for (const p of parts) byPayment.set(p.key, (byPayment.get(p.key) || 0) + p.amount);
   }
   for (const [k, v] of byPayment) r.addRow([k, v]).getCell(2).numFmt = MONEY;
 

@@ -111,7 +111,57 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   /** Volante del datáfono / comprobante (opcional) de un pago de contado no en efectivo. */
   proofFile: File | null = null;
   proofReference = '';
-  get needsProof(): boolean { return this.paymentType === 'CONTADO' && this.paymentMethod !== 'EFECTIVO'; }
+  get needsProof(): boolean {
+    if (this.paymentType !== 'CONTADO') return false;
+    return this.splitOn ? this.splitParts.some((p) => p.method !== 'EFECTIVO') : this.paymentMethod !== 'EFECTIVO';
+  }
+
+  // ── Pago dividido (ej. una parte en efectivo y otra por transferencia) ──
+  splitOn = false;
+  splitParts: { method: string; amount: number | null }[] = [];
+
+  startSplit(): void {
+    const total = Number(this.orderData.total) || 0;
+    const other = this.paymentMethod !== 'EFECTIVO' ? this.paymentMethod : 'TRANSFERENCIA';
+    this.splitParts = [{ method: 'EFECTIVO', amount: null }, { method: other, amount: total || null }];
+    this.splitOn = true;
+  }
+
+  stopSplit(): void {
+    this.splitOn = false;
+    this.splitParts = [];
+  }
+
+  addSplit(): void {
+    const used = new Set(this.splitParts.map((p) => p.method));
+    const next = this.paymentMethods.find((m) => !used.has(m.value))?.value || 'OTRO';
+    this.splitParts.push({ method: next, amount: this.splitDiff > 0 ? this.splitDiff : null });
+  }
+
+  removeSplit(i: number): void {
+    this.splitParts.splice(i, 1);
+  }
+
+  /** Al escribir un valor, el último medio se completa con lo que falta. */
+  onSplitAmount(i: number): void {
+    const last = this.splitParts.length - 1;
+    if (i === last) return;
+    const others = this.splitParts.slice(0, last).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const rest = Math.round(((Number(this.orderData.total) || 0) - others) * 100) / 100;
+    this.splitParts[last].amount = rest > 0 ? rest : null;
+  }
+
+  /** Lo que falta (+) o sobra (−) para el total. */
+  get splitDiff(): number {
+    const sum = this.splitParts.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const d = Math.round(((Number(this.orderData.total) || 0) - sum) * 100) / 100;
+    return Math.abs(d) < 1 ? 0 : d;
+  }
+
+  get splitValid(): boolean {
+    return this.splitParts.length >= 2 && this.splitParts.every((p) => Number(p.amount) > 0)
+      && new Set(this.splitParts.map((p) => p.method)).size === this.splitParts.length && this.splitDiff === 0;
+  }
 
   onProofFile(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -683,6 +733,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
 
   canSubmit(): boolean {
     if (!(this.orderData.customerName && this.orderData.items.length > 0)) return false;
+    if (this.paymentType === 'CONTADO' && this.splitOn && !this.splitValid) return false;
     if (!this.saleDateValid) return false;
     if (this.paymentType === 'CREDITO') return this.canUseCredit && !this.exceedsCredit;
     return !!this.paymentMethod;
@@ -704,6 +755,8 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       customerId: this.orderData.customerId || undefined,
       paymentType: this.paymentType,
       paymentMethod: this.paymentType === 'CONTADO' ? this.paymentMethod : undefined,
+      payments: this.paymentType === 'CONTADO' && this.splitOn
+        ? this.splitParts.map((p) => ({ method: p.method, amount: Number(p.amount) || 0 })) : undefined,
       // productId por ítem: el backend valida y descuenta stock de TODOS
       items: this.orderData.items.map(i => ({ ...i, productName: i.product })),
       subtotal: Number(this.orderData.subtotal),
@@ -793,6 +846,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       tax: 0,
       total: 0
     };
+    this.stopSplit();
     this.proofFile = null;
     this.proofReference = '';
     this.proofNote = '';
