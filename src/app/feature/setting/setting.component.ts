@@ -9,6 +9,7 @@ import { ProductionPlanPanelComponent } from './production-plan/production-plan-
 import { TenantBranding, TenantBrandingService } from '../../shared/services/tenant-branding.service';
 import { PermissionsService } from '../../shared/services/permissions.service';
 import { InfoTipComponent } from '../../shared/components/info-tip/info-tip.component';
+import { BusinessModules, BusinessModulesService, ModuleKey } from '../../shared/services/business-modules.service';
 
 @Component({
   selector: 'app-setting',
@@ -74,12 +75,17 @@ export class SettingComponent implements OnInit {
   uploadingLogo = false;
   readonly logoAccept = 'image/png,image/jpeg,image/webp';
 
+  /** Funciones de mi negocio (módulos por tipo de negocio). */
+  modules: BusinessModules | null = null;
+  savingModule: ModuleKey | null = null;
+
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
     private uiPrefs: UiPrefsService,
     private brandingService: TenantBrandingService,
     public permissions: PermissionsService,
+    private businessModules: BusinessModulesService,
   ) {
     this.showDeliveryFab = this.uiPrefs.getShowDeliveryFab();
     this.suggestDeliveryOnDeliver = this.uiPrefs.getSuggestDeliveryOnDeliver();
@@ -110,6 +116,7 @@ export class SettingComponent implements OnInit {
 
   ngOnInit(): void {
     this.brandingService.load(true).then((b) => { this.branding = b; this.receiptNote = b?.receiptNote || ''; });
+    this.businessModules.modules$.subscribe((m) => { if (m) this.modules = m; });
     this.loadPeriodos();
     this.loadPeriodoActivo();
     this.loadParametrosDisponibles();
@@ -142,6 +149,24 @@ export class SettingComponent implements OnInit {
           ? 'El archivo es demasiado grande para el servidor. Prueba con una imagen más liviana.'
           : err?.error?.message || 'Intenta de nuevo.';
         Swal.fire('No se pudo subir el logo', msg, 'error');
+      },
+    });
+  }
+
+  toggleModule(key: ModuleKey, enabled: boolean, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.savingModule = key;
+    this.businessModules.set(key, enabled).subscribe({
+      next: (m) => {
+        this.savingModule = null;
+        this.modules = m;
+        const name = m.modules.find((x) => x.key === key)?.name || 'La función';
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${name}: ${enabled ? 'activada' : 'desactivada'}`, timer: 1800, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingModule = null;
+        input.checked = !enabled;
+        Swal.fire('No se pudo cambiar', err?.error?.message || 'Intenta de nuevo.', 'error');
       },
     });
   }

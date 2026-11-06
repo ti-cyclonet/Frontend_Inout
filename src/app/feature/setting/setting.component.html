@@ -39,6 +39,35 @@
       </div>
     </div>
 
+    <!-- Funciones de mi negocio: módulos según el tipo de negocio -->
+    <div class="inner-container">
+      <h3 class="card-title mb-0">Funciones de mi negocio</h3>
+    </div>
+    <div class="inner-container" *ngIf="modules">
+      <p class="bm-intro">
+        Tu negocio es de tipo <strong>{{ modules.sectorLabel }}</strong>. Activa lo que usas: lo que apagues deja de verse en el menú y en las ventas, y tus datos se conservan.
+        <app-info-tip>El tipo de negocio viene de tu contrato con CycloNet. Si no corresponde, escríbenos para cambiarlo.</app-info-tip>
+      </p>
+      <div class="bm-row" *ngFor="let m of modules.modules" [class.bm-row--off]="!m.available || m.blockedReason">
+        <div class="bm-text">
+          <div class="fw-semibold">
+            {{ m.name }}
+            <span class="bm-chip bm-chip--rec" *ngIf="m.recommended && m.available">Recomendado para tu negocio</span>
+            <span class="bm-chip" *ngIf="!m.available">Próximamente</span>
+          </div>
+          <small class="d-block text-muted">{{ m.description }}</small>
+          <small class="d-block bm-applies">Habitual en: {{ m.appliesTo }}</small>
+          <small class="d-block bm-blocked" *ngIf="m.blockedReason">{{ m.blockedReason }}</small>
+        </div>
+        <div class="form-check form-switch m-0">
+          <input class="form-check-input" type="checkbox" role="switch" [id]="'bm-' + m.key" [attr.aria-label]="m.name"
+                 [checked]="m.enabled" [disabled]="!permissions.isAdmin || !m.available || !!m.blockedReason || savingModule === m.key"
+                 (change)="toggleModule(m.key, $any($event.target).checked, $event)" style="cursor:pointer;">
+        </div>
+      </div>
+      <small class="text-muted d-block pb-2" *ngIf="!permissions.isAdmin">Solo un administrador puede cambiarlas.</small>
+    </div>
+
     <!-- Preferencias de interfaz -->
     <div class="inner-container">
       <h3 class="card-title mb-0">Preferencias</h3>

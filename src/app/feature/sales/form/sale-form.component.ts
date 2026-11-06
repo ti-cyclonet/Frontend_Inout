@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
@@ -20,6 +20,7 @@ import Swal from 'sweetalert2';
 import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 import { ReceiptService } from '../../../shared/services/receipt.service';
+import { BusinessModulesService } from '../../../shared/services/business-modules.service';
 import { extractAmounts, extractReference } from '../../../shared/utils/payment-proof-ocr';
 
 interface OrderItem {
@@ -246,6 +247,9 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   filteredProducts: Product[] = [];
 
   constructor(private customersService: CustomersService, private productsService: ProductsService, private salesService: SalesService, private stockService: StockService, private compositionService: CompositionService, private stockAlertsService: StockAlertsService, private creditService: CreditService, private promotionsService: PromotionsService, private profitBubble: ProfitBubbleService, private taxService: TaxService, private barcodesService: BarcodesService, private host: ElementRef<HTMLElement>, public receipts: ReceiptService) {}
+
+  /** Ventas a crédito, si el negocio las usa (Configuración › Funciones de mi negocio). */
+  readonly creditModule$ = inject(BusinessModulesService).on$('credit');
 
   /** IVA o INC del período activo del negocio; 0 si no está configurado. */
   taxLabel: 'IVA' | 'INC' = 'IVA';
