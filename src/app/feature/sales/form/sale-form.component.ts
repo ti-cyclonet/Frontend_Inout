@@ -20,6 +20,7 @@ import Swal from 'sweetalert2';
 import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/services/barcodes.service';
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 import { ReceiptService } from '../../../shared/services/receipt.service';
+import { extractAmounts, extractReference } from '../../../shared/utils/payment-proof-ocr';
 
 interface OrderItem {
   id: string;
@@ -122,6 +123,49 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       return;
     }
     this.proofFile = file;
+    this.readProof(file);
+  }
+
+  /** Lectura del comprobante (OCR): estado y aviso para mostrar. */
+  proofReading = false;
+  proofNote = '';
+
+  /**
+   * Lee la foto en el navegador (Tesseract, sin enviarla a ningún servicio)
+   * y pone la referencia si el campo está vacío. Si el valor del comprobante
+   * no coincide con el total de la venta, lo avisa.
+   */
+  private async readProof(file: File): Promise<void> {
+    this.proofNote = '';
+    this.proofReading = true;
+    try {
+      // tesseract.js es CommonJS: según el empaquetador llega directo o en «default»
+      const mod: any = await import('tesseract.js');
+      const createWorker = mod.createWorker || mod.default?.createWorker;
+      const worker = await createWorker('spa');
+      const { data } = await worker.recognize(file);
+      await worker.terminate();
+      if (this.proofFile !== file) return; // cambiaron la foto mientras se leía
+      const ref = extractReference(data.text);
+      const amounts = extractAmounts(data.text);
+      const notes: string[] = [];
+      if (ref && !this.proofReference.trim()) {
+        this.proofReference = ref;
+        notes.push('Referencia leída del comprobante: revísala.');
+      } else if (!ref) {
+        notes.push('No se pudo leer la referencia; escríbela si la necesitas.');
+      }
+      const total = Number(this.orderData.total) || 0;
+      if (total > 0 && amounts.length && !amounts.some((a) => Math.abs(a - total) < 1)) {
+        notes.push(`El comprobante dice ${this.formatCurrency(Math.max(...amounts))} y la venta es de ${this.formatCurrency(total)}.`);
+      }
+      this.proofNote = notes.join(' ');
+    } catch (err) {
+      console.warn('No se pudo leer el comprobante', err);
+      if (this.proofFile === file) this.proofNote = 'No se pudo leer el comprobante; escribe la referencia si la necesitas.';
+    } finally {
+      if (this.proofFile === file) this.proofReading = false;
+    }
   }
   paymentType: PaymentType = 'CONTADO';
   paymentMethod = 'EFECTIVO';
@@ -751,6 +795,8 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     };
     this.proofFile = null;
     this.proofReference = '';
+    this.proofNote = '';
+    this.proofReading = false;
     // Lo que se ve en el buscador de clientes (los datos de arriba no lo borran)
     this.customerSearchTerm = '';
     this.filteredCustomers = this.customers;
