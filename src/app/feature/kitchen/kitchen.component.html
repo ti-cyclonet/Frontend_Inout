@@ -1,6 +1,9 @@
 <div class="kds">
   <div class="kds-bar" role="banner">
-    <a class="kds-back" routerLink="/commercial" [queryParams]="{ tab: 'pedidos' }" title="Volver a Pedidos" aria-label="Volver a Pedidos">
+    <button type="button" class="kds-back" *ngIf="permissions.isKitchen" (click)="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
+      <svg width="20" height="20" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#box-arrow-right" /></svg>
+    </button>
+    <a class="kds-back" *ngIf="!permissions.isKitchen" routerLink="/commercial" [queryParams]="{ tab: 'pedidos' }" title="Volver a Pedidos" aria-label="Volver a Pedidos">
       <svg width="20" height="20" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-left" /></svg>
     </a>
     <div class="kds-title">
@@ -25,7 +28,8 @@
   <!-- Módulo apagado -->
   <div class="kds-empty-state" *ngIf="!enabled">
     <h2>La pantalla de {{ title.toLowerCase() }} no está activa</h2>
-    <p>Actívala en <a routerLink="/setting">Configuración › Funciones de mi negocio</a>.</p>
+    <p *ngIf="!permissions.isKitchen">Actívala en <a routerLink="/setting">Configuración › Funciones de mi negocio</a>.</p>
+    <p *ngIf="permissions.isKitchen">Pídele al administrador del negocio que la active en Configuración.</p>
   </div>
 
   <ng-container *ngIf="enabled">
@@ -102,7 +106,7 @@
     <div class="kds-card-foot">
       <span class="kds-due" *ngIf="o.status !== 'READY' && timer(o).due">{{ timer(o).due }}</span>
       <span class="kds-due" *ngIf="o.status === 'READY'">{{ o.fulfillment === 'DELIVERY' ? 'Espera el domicilio' : 'Espera al cliente' }}</span>
-      <button type="button" class="kds-action" *ngIf="action(o) && permissions.canEdit" (click)="advance(o)" [disabled]="busy.has(o.id)">
+      <button type="button" class="kds-action" *ngIf="action(o) && canAdvance" (click)="advance(o)" [disabled]="busy.has(o.id)">
         {{ busy.has(o.id) ? '…' : action(o)!.label }}
       </button>
     </div>
