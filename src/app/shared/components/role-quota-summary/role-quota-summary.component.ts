@@ -8,6 +8,7 @@ const STAFF_ROLE_LABELS: Record<string, string> = {
   adminInout: 'Administradores',
   operatorInout: 'Operadores',
   viewerInout: 'Visores',
+  kitchenInout: 'Cocina',
 };
 
 interface RoleQuota {
