@@ -1278,6 +1278,8 @@ export class KardexComponent implements OnInit {
 
   formatNumber(value: number): string {
     const num = Number(value);
+    // Sin valor (ej. movimiento sin costo): guion en vez de "NaN"
+    if (value === null || value === undefined || (value as any) === '' || !Number.isFinite(num)) return '—';
     return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 

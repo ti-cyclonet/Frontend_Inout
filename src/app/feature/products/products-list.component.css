@@ -738,6 +738,9 @@
      así se evita el scroll horizontal por columnas que no caben. */
   .products-table th:nth-child(2) { width: auto; }    /* Nombre - ocupa el espacio disponible */
   .products-table th:nth-child(8) { width: 120px; }   /* Acciones */
+  /* Sin el ancho mínimo de escritorio (1200 px): la tabla cabe en la pantalla */
+  .products-table { min-width: 0; }
+  .table-container { overflow-x: hidden; }
 }
 
 /* Low Stock Highlight (mismo estilo que Materiales) */

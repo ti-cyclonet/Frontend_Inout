@@ -627,9 +627,21 @@ tbody tr:nth-child(even) {
 }
 
 .mobile-mov-table {
+  width: 100%;
   margin: 0;
   font-size: 0.75rem;
+  border-collapse: collapse;
+  /* Columnas fijas: las tres pestañas quedan alineadas igual */
+  table-layout: fixed;
 }
+.mobile-mov-table th:nth-child(1), .mobile-mov-table td:nth-child(1) { width: 18%; }
+.mobile-mov-table th:nth-child(2), .mobile-mov-table td:nth-child(2) { width: 24%; }
+.mobile-mov-table th:nth-child(3), .mobile-mov-table td:nth-child(3) { width: 26%; }
+.mobile-mov-table thead th { background: #0066cc; color: #fff; border: 0; }
+.mobile-mov-table tbody td { border: 0; border-bottom: 1px solid #edf0f5; overflow: hidden; text-overflow: ellipsis; }
+.mobile-mov-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.mobile-mov-table tr.is-open td { background: #eef5ff; }
+.mobile-mov-table .detail-row td { cursor: default; white-space: normal; }
 
 .mobile-mov-table th {
   font-size: 0.7rem;
@@ -638,8 +650,9 @@ tbody tr:nth-child(even) {
 }
 
 .mobile-mov-table td {
-  padding: 0.4rem;
+  padding: 0.45rem 0.4rem;
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .mobile-mov-table tr {
@@ -697,7 +710,8 @@ tbody tr:nth-child(even) {
 .mobile-detail-value {
   font-size: 0.8rem;
   color: #000;
-  white-space: nowrap;
+  /* Nombres largos: bajan de línea en vez de salirse de la tarjeta */
+  overflow-wrap: anywhere;
 }
 
 /* Supplier Form */
@@ -826,4 +840,11 @@ tbody tr:nth-child(even) {
   .ing-table td.ing-name { font-weight: 700; font-size: 0.92rem; text-align: left !important; padding-bottom: 0.35rem; }
   .ing-table td.ing-status { justify-content: flex-end; padding-top: 0.35rem; }
   .ing-cost-box { flex-direction: column; align-items: flex-start !important; margin-bottom: 4rem; }
+}
+
+/* Encabezado en el celular: botón y título en una sola línea */
+@media (max-width: 768px) {
+  .kardex-card .card-header { flex-wrap: nowrap; }
+  .kardex-title { font-size: 1.15rem; white-space: nowrap; }
+  .opening-bulk-btn { white-space: nowrap; }
 }
