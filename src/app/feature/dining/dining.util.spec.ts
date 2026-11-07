@@ -7,7 +7,8 @@ describe('Mesas: estado en vivo y agenda', () => {
   const now = new Date(2026, 10, 6, 19, 0).getTime();
   const res = (o: Partial<Reservation>): Reservation => ({
     id: 'r', code: 'RS-00001', tableIds: ['t1'], customerId: null, customerName: 'Ana', customerPhone: null, customerEmail: null,
-    partySize: 2, startAt: at(20), endAt: at(21, 30), status: 'CONFIRMED', source: 'STAFF', notes: null, orderId: null, seatedAt: null, ...o,
+    partySize: 2, startAt: at(20), endAt: at(21, 30), status: 'CONFIRMED', source: 'STAFF', notes: null, orderId: null, seatedAt: null,
+    depositAmount: null, depositStatus: null, depositProofUrl: null, depositReference: null, trackingToken: null, ...o,
   });
 
   it('libre, reservada pronto, esperando y no ha llegado', () => {

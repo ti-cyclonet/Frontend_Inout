@@ -141,6 +141,10 @@
                 Ver productos
                 <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#arrow-right"/></svg>
               </button>
+              <button type="button" class="mk-btn mk-btn--glass" *ngIf="diningInfo" (click)="showTableBooking = true">
+                <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#calendar2-check"/></svg>
+                Reservar mesa
+              </button>
               <a class="mk-btn mk-btn--glass" *ngIf="storeWhatsappLink" [href]="storeWhatsappLink" target="_blank" rel="noopener">
                 <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#whatsapp"/></svg>
                 Escríbenos
@@ -454,6 +458,8 @@
       </div>
 
       <!-- ═══════ MENÚ DE RESTAURANTE (vista completa) ═══════ -->
+      <!-- Carta: reservar mesa (el encabezado de la tienda no se muestra) -->
+      <button type="button" class="mk-book-fab" *ngIf="showMenuBoard && diningInfo" (click)="showTableBooking = true">🍽️ Reservar mesa</button>
       <app-menu-board *ngIf="showMenuBoard"
         [variant]="$any(displayMode)"
         [products]="filteredProducts"
@@ -736,6 +742,9 @@
       <div class="success-icon">✅</div>
       <h2>¡Pedido Confirmado!</h2>
       <p class="order-code">{{ orderSuccess.order?.orderCode }}</p>
+      <a class="dine-in-ok" *ngIf="orderSuccess.order?.reservation as rs" [routerLink]="['/marketplace', tenantId, 'reserva', rs.token]">
+        🍽️ Mesa reservada ({{ rs.code }}): {{ rs.statusLabel }}. <b>Ver mi reserva →</b>
+      </a>
       <p>Tu pedido ha sido recibido. Te contactaremos pronto para coordinar la entrega.</p>
       <p class="payment-note" *ngIf="successSchedule() as sched">📅 Entrega programada: <strong>{{ sched }}</strong></p>
 
@@ -1028,6 +1037,10 @@
 </ng-template>
 
 <!-- Visor de documentos legales -->
+<!-- Reservar mesa (solo la mesa) -->
+<app-table-booking *ngIf="showTableBooking && diningInfo" [tenantId]="tenantId" [info]="diningInfo" [storeName]="storeName"
+  (closed)="showTableBooking = false" (legal)="openLegal($event)"></app-table-booking>
+
 <div class="legal-overlay" *ngIf="legalDoc">
   <div class="legal-modal" role="dialog" aria-modal="true" [attr.aria-label]="legalDoc.title" (click)="$event.stopPropagation()">
     <div class="legal-header">
@@ -1056,11 +1069,11 @@
 <!-- ¿Cuándo? y ¿Cómo pagas? (con y sin sesión) -->
 <ng-template #whenAndPay>
   <div class="closed-note" *ngIf="ordersPaused">⏸️ Esta tienda no está recibiendo pedidos por ahora.</div>
-  <div class="closed-note" *ngIf="closedNow && !cartIsGiftOnly">
+  <div class="closed-note" *ngIf="closedNow && !cartIsGiftOnly && fulfillment !== 'DINE_IN'">
     🕒 {{ closedMessage }}
     {{ schedulingOptions ? 'Programa tu pedido para una franja de nuestro horario.' : 'Haz tu pedido dentro de nuestro horario de atención.' }}
   </div>
-  <ng-container *ngIf="schedulingOptions">
+  <ng-container *ngIf="schedulingOptions && fulfillment !== 'DINE_IN'">
     <h3 class="checkout-subtitle">🕒 ¿Cuándo lo quieres?</h3>
     <div class="when-toggle">
       <button type="button" [class.active]="deliveryMode === 'ASAP'" [disabled]="closedNow && !cartIsGiftOnly" (click)="setDeliveryMode('ASAP')"
@@ -1169,13 +1182,23 @@
   <div class="form-field" *ngIf="canChooseFulfillment">
     <label>¿Cómo recibes tu pedido?</label>
     <div class="when-toggle fulfillment-toggle">
-      <button type="button" [class.active]="fulfillment === 'DELIVERY'" (click)="fulfillment = 'DELIVERY'">
+      <button type="button" *ngIf="deliveryOptions?.deliveryEnabled" [class.active]="fulfillment === 'DELIVERY'" (click)="fulfillment = 'DELIVERY'">
         🛵 A domicilio<small>{{ deliveryFeeHint }}</small>
       </button>
-      <button type="button" [class.active]="fulfillment === 'PICKUP'" (click)="fulfillment = 'PICKUP'">
+      <button type="button" *ngIf="deliveryOptions?.pickupEnabled" [class.active]="fulfillment === 'PICKUP'" (click)="fulfillment = 'PICKUP'">
         🏪 Recoger en la tienda<small>Sin costo</small>
       </button>
+      <button type="button" *ngIf="canDineIn" [class.active]="fulfillment === 'DINE_IN'" (click)="fulfillment = 'DINE_IN'">
+        🍽️ Comer en el local<small>Reserva tu mesa</small>
+      </button>
     </div>
+  </div>
+
+  <!-- Comer en el local: la reserva de mesa; el pedido queda listo a esa hora -->
+  <div class="dine-in" *ngIf="fulfillment === 'DINE_IN'">
+    <p class="dine-in__title">🍽️ ¿Cuándo vienes y cuántos son?</p>
+    <app-dine-in-picker [tenantId]="tenantId" [info]="diningInfo" (choiceChange)="dineChoice = $event"></app-dine-in-picker>
+    <small class="dine-in__note">Tu pedido estará listo a la hora de tu reserva. Recibes un enlace para ver tu reserva y tu pedido.</small>
   </div>
 
   <!-- Recoger: dónde -->

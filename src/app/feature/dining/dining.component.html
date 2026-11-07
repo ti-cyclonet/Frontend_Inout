@@ -187,9 +187,20 @@
       </a>
     </div>
     <p class="dn-res-notes" *ngIf="r.notes">{{ r.notes }}</p>
+    <div class="dn-res-deposit" *ngIf="r.depositAmount">
+      <span class="dn-chip" [ngClass]="'dp-' + r.depositStatus">{{ depositLabels[r.depositStatus || 'PENDIENTE'] }} · {{ money(Number(r.depositAmount)) }}</span>
+      <a *ngIf="r.depositProofUrl" [href]="r.depositProofUrl" target="_blank" rel="noopener">Ver comprobante</a>
+      <span *ngIf="r.depositReference" class="text-muted">Ref. {{ r.depositReference }}</span>
+      <ng-container *ngIf="canOperate && r.depositStatus === 'POR_VERIFICAR'">
+        <button type="button" class="btn btn-sm btn-success" (click)="reviewDeposit(r, true)">Verificar</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="reviewDeposit(r, false)">Rechazar</button>
+      </ng-container>
+    </div>
+    <a class="dn-res-order" *ngIf="r.orderId" routerLink="/commercial" [queryParams]="{ tab: 'pedidos' }">🧾 Con pedido anticipado: ver en Pedidos</a>
     <div class="dn-res-actions" *ngIf="canOperate && isOpen(r)">
       <button type="button" class="btn btn-sm btn-primary" *ngIf="primaryAction(r) as a" (click)="setStatus(r, a.status)">{{ a.label }}</button>
       <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="r.status === 'PENDING'" (click)="setStatus(r, 'SEATED')">Llegó</button>
+      <a class="btn btn-sm btn-outline-success" *ngIf="whatsappLink(r) as wa" [href]="wa" target="_blank" rel="noopener" title="Escribirle por WhatsApp con el mensaje listo">WhatsApp</a>
       <button type="button" class="btn btn-sm btn-outline-secondary" (click)="editReservation(r)">Cambiar</button>
       <button type="button" class="btn btn-sm btn-outline-warning" *ngIf="canNoShow(r)" (click)="setStatus(r, 'NO_SHOW')">No llegó</button>
       <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="r.status !== 'SEATED'" (click)="setStatus(r, 'CANCELLED')">Cancelar</button>
@@ -316,8 +327,10 @@
         <label>Anticipación mínima (horas) <input type="number" min="0" max="72" class="form-control" [(ngModel)]="s.minLeadHours"></label>
         <label>Reservar hasta (días adelante) <input type="number" min="1" max="120" class="form-control" [(ngModel)]="s.maxDaysAhead"></label>
       </div>
-      <p class="dn-section">Reservas desde la tienda online <span class="dn-chip">Próximamente</span></p>
-      <div class="dn-grid">
+      <p class="dn-section">Reservas desde la tienda online</p>
+      <label class="dn-check mb-2"><input type="checkbox" [(ngModel)]="s.onlineEnabled"> Recibir reservas en la tienda online
+        <app-info-tip>Tus clientes ven «Reservar mesa» en la tienda y, si lo permites, «Comer en el local» al pagar su pedido. En línea se reserva una sola mesa; para grupos más grandes te escriben.</app-info-tip></label>
+      <div class="dn-grid" [class.dn-off]="!s.onlineEnabled">
         <label>Confirmación
           <select class="form-select" [(ngModel)]="s.confirmMode">
             <option value="manual">La confirma el negocio</option>
@@ -342,6 +355,7 @@
         </label>
         <label class="dn-check dn-span2" *ngIf="s.depositMode === 'required'"><input type="checkbox" [(ngModel)]="s.depositPerPerson"> Por persona ({{ money(s.depositAmount) }} × personas)</label>
       </div>
+      <p class="dn-hint" *ngIf="s.onlineEnabled">El anticipo aplica a las reservas solo de mesa: el cliente paga y sube el comprobante, y tú lo verificas aquí. Con pedido anticipado se paga como cualquier pedido de la tienda.</p>
     </div>
     <div class="dn-modal-foot">
       <button type="button" class="btn btn-outline-secondary" (click)="settingsForm = null">Cancelar</button>

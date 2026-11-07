@@ -29,10 +29,12 @@ describe('Pantalla de preparación', () => {
     expect(kitchenAction(order())).toEqual({ label: 'Listo', next: 'READY' });
     expect(kitchenAction(order({ status: 'READY' }))).toEqual({ label: 'Entregado', next: 'DELIVERED' });
     expect(kitchenAction(order({ status: 'READY', fulfillment: 'DELIVERY' }))).toBeNull();
+    expect(kitchenAction(order({ status: 'READY', fulfillment: 'DINE_IN' }))).toEqual({ label: 'Servido', next: 'DELIVERED' });
   });
 
   it('canal del pedido', () => {
     expect(channelLabel(order({ fulfillment: 'DELIVERY', deliveryZone: 'Turbaco' })).text).toBe('Domicilio · Turbaco');
     expect(channelLabel(order()).text).toBe('Recoge en el local');
+    expect(channelLabel(order({ fulfillment: 'DINE_IN', table: 'Mesa 4' })).text).toBe('En el local · Mesa 4');
   });
 });

@@ -84,6 +84,7 @@ export class DiningComponent implements OnInit, OnDestroy {
   readonly stateLabels: Record<string, string> = TABLE_STATE_LABELS;
   readonly statusLabels: Record<string, string> = STATUS_LABELS;
   readonly hhmm = hhmm;
+  readonly Number = Number;
   readonly primaryAction = primaryAction;
   readonly shapes: { value: TableShape; label: string }[] = [
     { value: 'square', label: 'Cuadrada' }, { value: 'round', label: 'Redonda' }, { value: 'rect', label: 'Rectangular' },
@@ -430,6 +431,43 @@ export class DiningComponent implements OnInit, OnDestroy {
     }
     const msg: Record<string, string> = { CONFIRMED: 'Reserva confirmada', SEATED: 'Cliente en la mesa', COMPLETED: 'Mesa liberada' };
     this.dining.setStatus(r.id, status).subscribe({ next: done(msg[status] || 'Listo'), error: (e) => this.fail(e) });
+  }
+
+  reviewDeposit(r: Reservation, approve: boolean): void {
+    this.dining.reviewDeposit(r.id, approve).subscribe({
+      next: (res) => {
+        this.reservations = this.reservations.map((x) => (x.id === res.id ? res : x));
+        this.toast(approve ? 'Anticipo verificado: reserva confirmada' : 'Anticipo rechazado');
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+
+  readonly depositLabels: Record<string, string> = {
+    PENDIENTE: 'Anticipo pendiente', POR_VERIFICAR: 'Anticipo por verificar', PAGADO: 'Anticipo pagado', RECHAZADO: 'Anticipo rechazado',
+  };
+
+  /** WhatsApp al cliente con el mensaje listo: confirmación (o recordatorio si es hoy). */
+  whatsappLink(r: Reservation): string | null {
+    const digits = (r.customerPhone || '').replace(/\D/g, '');
+    if (digits.length < 7) return null;
+    const phone = digits.length === 10 ? `57${digits}` : digits;
+    const start = new Date(r.startAt);
+    const isToday = localDate(start) === localDate(new Date());
+    const when = start.toLocaleString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+    const hour = start.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    const link = r.trackingToken ? `\nTu reserva: ${location.origin}/marketplace/${this.tenantIdFromToken()}/reserva/${r.trackingToken}` : '';
+    const msg = isToday
+      ? `Hola ${r.customerName}, te esperamos hoy a las ${hour} (${r.partySize} personas, ${this.tablesText(r)}). Reserva ${r.code}.${link}`
+      : `Hola ${r.customerName}, tu reserva ${r.code} quedó para el ${when}, ${r.partySize} personas (${this.tablesText(r)}).${link}`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  }
+
+  private tenantIdFromToken(): string {
+    try {
+      const tok = sessionStorage.getItem('authToken') || sessionStorage.getItem('token') || '';
+      return JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).tenantId || '';
+    } catch { return ''; }
   }
 
   canNoShow(r: Reservation): boolean {

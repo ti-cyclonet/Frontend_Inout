@@ -33,6 +33,12 @@ export interface Reservation {
   notes: string | null;
   orderId: string | null;
   seatedAt: string | null;
+  /** Anticipo de una reserva de la tienda. */
+  depositAmount: number | string | null;
+  depositStatus: 'PENDIENTE' | 'POR_VERIFICAR' | 'PAGADO' | 'RECHAZADO' | null;
+  depositProofUrl: string | null;
+  depositReference: string | null;
+  trackingToken: string | null;
 }
 
 export interface DiningSettings {
@@ -112,6 +118,9 @@ export class DiningService {
   }
   updateReservation(id: string, r: ReservationInput): Observable<Reservation> {
     return this.http.patch<Reservation>(`${this.url}/reservations/${id}`, r);
+  }
+  reviewDeposit(id: string, approve: boolean): Observable<Reservation> {
+    return this.http.patch<Reservation>(`${this.url}/reservations/${id}/deposit`, { approve });
   }
   setStatus(id: string, status: ReservationStatus, reason?: string): Observable<Reservation> {
     return this.http.patch<Reservation>(`${this.url}/reservations/${id}/status`, { status, reason });
