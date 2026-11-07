@@ -168,3 +168,12 @@
   .dn-table--rect { width: 100px; }
   .dn-table-info { display: none; }
 }
+
+/* Reservas de la tienda: anticipo y pedido */
+.dn-res-deposit { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 0.35rem; font-size: 0.8rem; }
+.dn-res-deposit .btn { padding: 0.1rem 0.5rem; font-size: 0.78rem; }
+.dn-chip.dp-PENDIENTE, .dn-chip.dp-RECHAZADO { background: #fee2e2; color: #b91c1c; }
+.dn-chip.dp-POR_VERIFICAR { background: #fef3c7; color: #92400e; }
+.dn-chip.dp-PAGADO { background: #dcfce7; color: #15803d; }
+.dn-res-order { display: inline-block; margin-top: 0.3rem; font-size: 0.8rem; }
+.dn-off { opacity: 0.5; pointer-events: none; }

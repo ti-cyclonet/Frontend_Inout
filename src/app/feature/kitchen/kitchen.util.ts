@@ -6,7 +6,9 @@ export interface KitchenOrder {
   status: 'CONFIRMED' | 'IN_PRODUCTION' | 'READY' | string;
   customerName: string;
   notes: string | null;
-  fulfillment: 'DELIVERY' | 'PICKUP' | null;
+  fulfillment: 'DELIVERY' | 'PICKUP' | 'DINE_IN' | null;
+  /** Comer en el local: la mesa de la reserva. */
+  table?: string | null;
   deliveryZone: string | null;
   createdAt: string;
   /** Combos con lo que incluyen; productos para armar con lo escogido. */
@@ -69,6 +71,7 @@ export function isWaitingSchedule(o: KitchenOrder, now: number): boolean {
 export function channelLabel(o: KitchenOrder): { text: string; icon: string } {
   if (o.fulfillment === 'DELIVERY') return { text: o.deliveryZone ? `Domicilio · ${o.deliveryZone}` : 'Domicilio', icon: 'truck' };
   if (o.fulfillment === 'PICKUP') return { text: 'Recoge en el local', icon: 'bag' };
+  if (o.fulfillment === 'DINE_IN') return { text: o.table ? `En el local · ${o.table}` : 'Come en el local', icon: 'grid-3x3-gap' };
   return { text: 'Pedido', icon: 'receipt' };
 }
 
@@ -81,5 +84,6 @@ export function kitchenAction(o: KitchenOrder): { label: string; next: string } 
   if (o.status === 'CONFIRMED') return o.needsProduction ? { label: 'Empezar', next: 'IN_PRODUCTION' } : { label: 'Listo', next: 'READY' };
   if (o.status === 'IN_PRODUCTION') return { label: 'Listo', next: 'READY' };
   if (o.status === 'READY' && o.fulfillment === 'PICKUP') return { label: 'Entregado', next: 'DELIVERED' };
+  if (o.status === 'READY' && o.fulfillment === 'DINE_IN') return { label: 'Servido', next: 'DELIVERED' };
   return null;
 }

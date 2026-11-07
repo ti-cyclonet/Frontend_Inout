@@ -33,6 +33,7 @@ import { InventoryComponent } from './feature/inventory/inventory.component';
 import { PartnersComponent } from './feature/partners/partners.component';
 import { KitchenComponent } from './feature/kitchen/kitchen.component';
 import { DiningComponent } from './feature/dining/dining.component';
+import { ReservationPageComponent } from './feature/marketplace/dining/reservation-page.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -45,6 +46,8 @@ export const routes: Routes = [
     { path: 'marketplace/:tenantId', component: MarketplaceComponent },
     // Seguimiento público de un pedido (enlace que recibe el comprador)
     { path: 'marketplace/:tenantId/pedido/:token', component: OrderTrackingComponent },
+    // Reserva de mesa del cliente (enlace privado)
+    { path: 'marketplace/:tenantId/reserva/:token', component: ReservationPageComponent },
     // Pago de cartera: enlace del recordatorio de pago (sin cuenta)
     { path: 'pago/:token', component: CreditPayComponent },
     {

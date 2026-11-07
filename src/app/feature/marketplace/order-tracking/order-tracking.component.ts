@@ -56,7 +56,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   get steps(): string[] {
     const o = this.order;
     const noProduction = o?.needsProduction === false && o?.status !== 'IN_PRODUCTION';
-    const pickup = o?.fulfillment === 'PICKUP' && o?.status !== 'OUT_FOR_DELIVERY';
+    const pickup = (o?.fulfillment === 'PICKUP' || o?.fulfillment === 'DINE_IN') && o?.status !== 'OUT_FOR_DELIVERY';
     return OrderTrackingComponent.ALL_STEPS.filter((s) => !(noProduction && s === 'IN_PRODUCTION') && !(pickup && s === 'OUT_FOR_DELIVERY'));
   }
   lastUpdated: Date | null = null;

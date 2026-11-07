@@ -67,7 +67,7 @@ interface Order {
   /** Solicitud de domicilio en Shotra que entrega este pedido. */
   shotraRequestId?: string | null;
   /** 'DELIVERY' (a domicilio) | 'PICKUP' (recoge en la tienda); null en pedidos anteriores. */
-  fulfillment?: 'DELIVERY' | 'PICKUP' | null;
+  fulfillment?: 'DELIVERY' | 'PICKUP' | 'DINE_IN' | null;
   /** Valor del domicilio cobrado al cliente (incluido en total): presupuesto mínimo del domicilio en Shotra. */
   deliveryFee?: number | string | null;
   /** Zona de entrega que eligió el cliente ("Turbaco", "Otra zona"). */
@@ -570,7 +570,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** Recoge en la tienda: de Listo pasa directo a Entregado (no hay reparto). */
   nextStatusFor(order: Order): string | null {
-    if (order.fulfillment === 'PICKUP' && order.status === 'READY') return 'DELIVERED';
+    if ((order.fulfillment === 'PICKUP' || order.fulfillment === 'DINE_IN') && order.status === 'READY') return 'DELIVERED';
     // Solo bonos de regalo: no hay nada que preparar ni repartir
     if (this.isGiftOnly(order) && order.status === 'CONFIRMED') return 'DELIVERED';
     // Nada por fabricar: de Confirmado (alistando) directo a Listo

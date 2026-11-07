@@ -101,7 +101,7 @@
     </p>
     <div class="kds-card-foot">
       <span class="kds-due" *ngIf="o.status !== 'READY' && timer(o).due">{{ timer(o).due }}</span>
-      <span class="kds-due" *ngIf="o.status === 'READY'">{{ o.fulfillment === 'DELIVERY' ? 'Espera el domicilio' : 'Espera al cliente' }}</span>
+      <span class="kds-due" *ngIf="o.status === 'READY'">{{ o.fulfillment === 'DELIVERY' ? 'Espera el domicilio' : o.fulfillment === 'DINE_IN' ? 'Para servir en la mesa' : 'Espera al cliente' }}</span>
       <button type="button" class="kds-action" *ngIf="action(o) && permissions.canEdit" (click)="advance(o)" [disabled]="busy.has(o.id)">
         {{ busy.has(o.id) ? '…' : action(o)!.label }}
       </button>
