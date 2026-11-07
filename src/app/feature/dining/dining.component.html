@@ -1,0 +1,351 @@
+<div class="dn">
+  <div class="dn-head">
+    <h5 class="mb-0">Módulo <span class="text-primary fw-bold">MESAS</span> <span style="color: #ff8000">●</span></h5>
+    <div class="dn-head-actions" *ngIf="!disabled && !loading">
+      <button type="button" class="btn btn-sm btn-outline-secondary" *ngIf="isAdmin" (click)="openSettings()">
+        <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#gear" /></svg> Reglas de reservas
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="canOperate && isToday && tables.length" (click)="newReservation({ walkIn: true })">
+        <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#person-walking" /></svg> Llegó sin reserva
+      </button>
+      <button type="button" class="btn btn-sm btn-primary" *ngIf="canOperate && tables.length" (click)="newReservation()">
+        <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#calendar-plus" /></svg> Nueva reserva
+      </button>
+    </div>
+  </div>
+
+  <!-- Módulo apagado -->
+  <div class="dn-empty" *ngIf="disabled">
+    <svg width="40" height="40" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" /></svg>
+    <h3>Mesas y reservas no está activo</h3>
+    <p *ngIf="isAdmin">Actívalo en <a routerLink="/setting">Configuración › Funciones de mi negocio</a>.</p>
+    <p *ngIf="!isAdmin">Pídele al administrador que lo active en Configuración.</p>
+  </div>
+
+  <p class="dn-loading" *ngIf="loading">Cargando mesas…</p>
+
+  <ng-container *ngIf="!disabled && !loading">
+    <!-- Barra: vista, fecha y resumen -->
+    <div class="dn-bar">
+      <div class="dn-views" role="tablist" aria-label="Vista">
+        <button type="button" role="tab" [attr.aria-selected]="view === 'plano'" [class.on]="view === 'plano'" (click)="view = 'plano'">Plano</button>
+        <button type="button" role="tab" [attr.aria-selected]="view === 'agenda'" [class.on]="view === 'agenda'" (click)="view = 'agenda'">Agenda</button>
+      </div>
+      <div class="dn-date">
+        <button type="button" class="dn-icon" (click)="changeDate(-1)" aria-label="Día anterior">
+          <svg width="16" height="16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-left" /></svg>
+        </button>
+        <label class="dn-date-label">
+          <span>{{ dayTitle() }}</span>
+          <input type="date" [ngModel]="date" (ngModelChange)="setDate($event)" aria-label="Fecha">
+        </label>
+        <button type="button" class="dn-icon" (click)="changeDate(1)" aria-label="Día siguiente">
+          <svg width="16" height="16" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#chevron-right" /></svg>
+        </button>
+        <button type="button" class="btn btn-sm btn-link" *ngIf="!isToday" (click)="today()">Hoy</button>
+      </div>
+      <div class="dn-counts">
+        <span *ngIf="isToday"><b>{{ counts.free }}</b> libres</span>
+        <span *ngIf="isToday"><b>{{ counts.seated }}</b> ocupadas</span>
+        <span><b>{{ counts.reservations }}</b> reservas · <b>{{ counts.people }}</b> personas</span>
+      </div>
+    </div>
+
+    <!-- Sin mesas todavía -->
+    <div class="dn-empty" *ngIf="!tables.length">
+      <svg width="40" height="40" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#grid-3x3-gap" /></svg>
+      <h3>Arma el plano de tu local</h3>
+      <p>Agrega tus mesas con su zona (Salón, Terraza…) y sus puestos, y ubícalas en el plano.</p>
+      <button type="button" class="btn btn-primary" *ngIf="isAdmin" (click)="startEditing(); openTableForm()">+ Agregar la primera mesa</button>
+      <p *ngIf="!isAdmin" class="text-muted">El administrador del negocio arma el plano.</p>
+    </div>
+
+    <div class="dn-main" *ngIf="tables.length">
+      <!-- ─── PLANO ─── -->
+      <section class="dn-floor" *ngIf="view === 'plano'">
+        <div class="dn-zones">
+          <button type="button" *ngFor="let z of zones" [class.on]="z === zone" (click)="zone = z; selectedTableId = null">{{ z }}</button>
+          <span class="dn-spacer"></span>
+          <ng-container *ngIf="isAdmin">
+            <button type="button" class="dn-edit" *ngIf="!editing" (click)="startEditing()">
+              <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrows-move" /></svg> Editar plano
+            </button>
+            <ng-container *ngIf="editing">
+              <button type="button" class="dn-edit" (click)="openTableForm()">+ Mesa</button>
+              <button type="button" class="dn-edit" (click)="cancelEditing()">Cancelar</button>
+              <button type="button" class="dn-edit dn-edit--save" (click)="saveLayout()" [disabled]="saving">
+                <svg width="14" height="14" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#save" /></svg> Guardar plano
+              </button>
+            </ng-container>
+          </ng-container>
+        </div>
+        <p class="dn-hint" *ngIf="editing">Arrastra las mesas para ubicarlas. Toca una mesa para cambiar su nombre, puestos o zona.</p>
+
+        <div class="dn-canvas" #canvas [class.editing]="editing">
+          <button type="button" *ngFor="let t of zoneTables"
+                  class="dn-table" [ngClass]="['dn-table--' + t.shape, 'st-' + live(t).state]"
+                  [class.sel]="t.id === selectedTableId" [ngStyle]="pos(t)"
+                  [attr.aria-label]="t.name + ', ' + stateLabels[live(t).state]"
+                  (pointerdown)="dragStart($event, t)" (click)="selectTable(t)">
+            <span class="dn-table-name">{{ t.name }}</span>
+            <span class="dn-table-seats">
+              <svg width="11" height="11" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#people" /></svg> {{ t.seats }}
+            </span>
+            <span class="dn-table-info" *ngIf="!editing && live(t).current as r">
+              {{ r.status === 'SEATED' ? r.customerName : hhmm(r.startAt) + ' · ' + r.partySize + ' p.' }}
+            </span>
+          </button>
+        </div>
+
+        <div class="dn-legend">
+          <span *ngFor="let s of ['free', 'soon', 'waiting', 'late', 'seated', 'overdue']" [ngClass]="'lg-' + s">{{ stateLabels[$any(s)] }}</span>
+        </div>
+      </section>
+
+      <!-- ─── AGENDA ─── -->
+      <section class="dn-agenda" *ngIf="view === 'agenda'">
+        <div class="ag-scroll">
+          <div class="ag-grid">
+            <div class="ag-row ag-row--head">
+              <div class="ag-name"></div>
+              <div class="ag-track">
+                <span class="ag-hour" *ngFor="let h of hours; let i = index" [style.left.%]="(i / hours.length) * 100">{{ h }}:00</span>
+              </div>
+            </div>
+            <div class="ag-row" *ngFor="let t of tables">
+              <div class="ag-name"><b>{{ t.name }}</b><small>{{ t.zone }} · {{ t.seats }} p.</small></div>
+              <div class="ag-track" (click)="agendaClick($event, t)" [class.clickable]="canOperate"
+                   [style.background-size]="(100 / hours.length) + '% 100%'">
+                <ng-container *ngFor="let r of rowReservations(t)">
+                  <button type="button" class="ag-block" *ngIf="block(r) as b" [ngClass]="'rs-' + r.status"
+                          [style.left.%]="b.left" [style.width.%]="b.width"
+                          [title]="hhmm(r.startAt) + '–' + hhmm(r.endAt) + ' · ' + r.customerName + ' (' + r.partySize + ')'"
+                          (click)="selectedTableId = t.id; view = 'plano'; zone = t.zone">
+                    {{ hhmm(r.startAt) }} {{ r.customerName }} · {{ r.partySize }}
+                  </button>
+                </ng-container>
+                <span class="ag-now" *ngIf="nowLine !== null" [style.left.%]="nowLine"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="dn-hint" *ngIf="canOperate">Toca un espacio libre de una mesa para reservarla a esa hora.</p>
+      </section>
+
+      <!-- ─── PANEL LATERAL ─── -->
+      <aside class="dn-side">
+        <!-- Mesa elegida -->
+        <div class="dn-card" *ngIf="selectedTable as t">
+          <div class="dn-card-head">
+            <div>
+              <h6>{{ t.name }} <small>· {{ t.zone }} · {{ t.seats }} puestos</small></h6>
+              <span class="dn-state" [ngClass]="'lg-' + live(t).state">{{ stateLabels[live(t).state] }}</span>
+            </div>
+            <button type="button" class="dn-icon" (click)="selectedTableId = null" aria-label="Cerrar">×</button>
+          </div>
+          <div class="dn-card-actions" *ngIf="canOperate">
+            <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="isToday && live(t).state !== 'seated' && live(t).state !== 'overdue'"
+                    (click)="newReservation({ tableId: t.id, walkIn: true })">Sentar sin reserva</button>
+            <button type="button" class="btn btn-sm btn-primary" (click)="newReservation({ tableId: t.id })">Reservar</button>
+          </div>
+          <p class="dn-none" *ngIf="!selectedReservations.length">Sin reservas este día.</p>
+          <ng-container *ngFor="let r of selectedReservations">
+            <ng-container *ngTemplateOutlet="resTpl; context: { $implicit: r }"></ng-container>
+          </ng-container>
+        </div>
+
+        <!-- Reservas del día -->
+        <div class="dn-card" *ngIf="!selectedTable">
+          <div class="dn-card-head"><h6>Reservas del día</h6></div>
+          <p class="dn-none" *ngIf="!dayList.length">No hay reservas para este día.</p>
+          <ng-container *ngFor="let r of dayList">
+            <ng-container *ngTemplateOutlet="resTpl; context: { $implicit: r }"></ng-container>
+          </ng-container>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+</div>
+
+<!-- Reserva en el panel -->
+<ng-template #resTpl let-r>
+  <div class="dn-res" [ngClass]="'rs-' + r.status">
+    <div class="dn-res-top">
+      <b>{{ hhmm(r.startAt) }}–{{ hhmm(r.endAt) }}</b>
+      <span class="dn-chip" [ngClass]="'rs-' + r.status">{{ statusLabels[r.status] }}</span>
+    </div>
+    <div class="dn-res-who">
+      {{ r.customerName }} · {{ r.partySize }} {{ r.partySize === 1 ? 'persona' : 'personas' }}
+      <span class="text-muted">· {{ tablesText(r) }}</span>
+    </div>
+    <div class="dn-res-meta">
+      <span>{{ r.code }}</span>
+      <span *ngIf="r.source === 'WALK_IN'">Sin reserva</span>
+      <span *ngIf="r.source === 'MARKETPLACE'">Tienda online</span>
+      <a *ngIf="r.customerPhone" [href]="'tel:' + r.customerPhone">
+        <svg width="12" height="12" aria-hidden="true"><use xlink:href="./assets/icons/bootstrap-icons.svg#telephone" /></svg> {{ r.customerPhone }}
+      </a>
+    </div>
+    <p class="dn-res-notes" *ngIf="r.notes">{{ r.notes }}</p>
+    <div class="dn-res-actions" *ngIf="canOperate && isOpen(r)">
+      <button type="button" class="btn btn-sm btn-primary" *ngIf="primaryAction(r) as a" (click)="setStatus(r, a.status)">{{ a.label }}</button>
+      <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="r.status === 'PENDING'" (click)="setStatus(r, 'SEATED')">Llegó</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="editReservation(r)">Cambiar</button>
+      <button type="button" class="btn btn-sm btn-outline-warning" *ngIf="canNoShow(r)" (click)="setStatus(r, 'NO_SHOW')">No llegó</button>
+      <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="r.status !== 'SEATED'" (click)="setStatus(r, 'CANCELLED')">Cancelar</button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- ─── Ventana: reserva ─── -->
+<div class="dn-overlay" *ngIf="resForm as f" (click)="resForm = null">
+  <div class="dn-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="dn-modal-head">
+      <h5>{{ f.id ? 'Cambiar reserva' : f.walkIn ? 'Llegó sin reserva' : 'Nueva reserva' }}</h5>
+      <button type="button" class="dn-icon" (click)="resForm = null" aria-label="Cerrar">×</button>
+    </div>
+    <div class="dn-modal-body">
+      <div class="dn-grid">
+        <label>Personas
+          <input type="number" min="1" max="200" class="form-control" [(ngModel)]="f.partySize" (change)="loadSlots()">
+        </label>
+        <label *ngIf="!f.walkIn">Fecha
+          <input type="date" class="form-control" [(ngModel)]="f.date" (change)="loadSlots()">
+        </label>
+        <label *ngIf="!f.walkIn">Hora
+          <input type="time" class="form-control" [(ngModel)]="f.time" step="900">
+        </label>
+        <label>Duración (min)
+          <input type="number" min="15" max="720" step="15" class="form-control" [(ngModel)]="f.durationMinutes">
+        </label>
+      </div>
+
+      <div class="dn-slots" *ngIf="!f.walkIn && !f.id">
+        <small class="text-muted d-block mb-1">Horas con mesa para {{ f.partySize }} {{ f.partySize == 1 ? 'persona' : 'personas' }}
+          <app-info-tip>Según el horario de atención (Pedidos programados en la tienda), la duración de la reserva y las mesas libres.</app-info-tip>
+        </small>
+        <span *ngIf="loadingSlots" class="text-muted">Buscando…</span>
+        <span *ngIf="!loadingSlots && !slots.length" class="text-muted">Ese día no hay horario de atención.</span>
+        <button type="button" *ngFor="let s of slots" class="dn-slot" [class.on]="f.time === hhmm(s.start)" [disabled]="!s.available"
+                [title]="s.available ? 'Mesa sugerida: ' + s.tableName : s.reason === 'LLENA' ? 'Sin mesas libres' : 'No disponible'" (click)="pickSlot(s)">
+          {{ hhmm(s.start) }}
+        </button>
+      </div>
+
+      <div class="dn-pick">
+        <small class="text-muted d-block mb-1">
+          Mesa{{ f.tableIds.length > 1 ? 's unidas' : '' }}
+          <span *ngIf="f.tableIds.length"> · {{ seatsOf(f.tableIds) }} puestos</span>
+          <span class="text-warning" *ngIf="f.tableIds.length && seatsOf(f.tableIds) < f.partySize"> · no caben todos</span>
+        </small>
+        <button type="button" *ngFor="let t of tables" class="dn-tchip" [class.on]="f.tableIds.includes(t.id)" (click)="toggleTable(t.id)">
+          {{ t.name }} <small>{{ t.seats }}p · {{ t.zone }}</small>
+        </button>
+      </div>
+
+      <div class="dn-grid">
+        <label class="dn-span2">Nombre
+          <input type="text" class="form-control" maxlength="120" [(ngModel)]="f.customerName" [placeholder]="f.walkIn ? 'Opcional' : 'Quién reserva'">
+        </label>
+        <label>Celular
+          <input type="tel" class="form-control" maxlength="30" [(ngModel)]="f.customerPhone">
+        </label>
+        <label>Correo
+          <input type="email" class="form-control" maxlength="120" [(ngModel)]="f.customerEmail">
+        </label>
+        <label class="dn-span4">Notas
+          <input type="text" class="form-control" maxlength="500" [(ngModel)]="f.notes" placeholder="Cumpleaños, silla de bebé, junto a la ventana…">
+        </label>
+      </div>
+    </div>
+    <div class="dn-modal-foot">
+      <button type="button" class="btn btn-outline-secondary" (click)="resForm = null">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="saveReservation()"
+              [disabled]="saving || !f.tableIds.length || !(f.partySize >= 1) || (!f.walkIn && (!f.date || !f.time)) || (!f.walkIn && !f.customerName.trim())">
+        {{ saving ? 'Guardando…' : f.id ? 'Guardar cambios' : f.walkIn ? 'Sentar' : 'Reservar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Ventana: mesa ─── -->
+<div class="dn-overlay" *ngIf="tableForm as f" (click)="tableForm = null">
+  <div class="dn-modal dn-modal--sm" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="dn-modal-head">
+      <h5>{{ f.id ? 'Mesa' : 'Nueva mesa' }}</h5>
+      <button type="button" class="dn-icon" (click)="tableForm = null" aria-label="Cerrar">×</button>
+    </div>
+    <div class="dn-modal-body">
+      <div class="dn-grid">
+        <label class="dn-span2">Nombre <input type="text" class="form-control" maxlength="30" [(ngModel)]="f.name"></label>
+        <label>Zona
+          <input type="text" class="form-control" maxlength="40" [(ngModel)]="f.zone" list="dn-zones">
+          <datalist id="dn-zones"><option *ngFor="let z of zones" [value]="z"></option></datalist>
+        </label>
+        <label>Puestos <input type="number" min="1" max="30" class="form-control" [(ngModel)]="f.seats"></label>
+        <label class="dn-span2">Forma
+          <select class="form-select" [(ngModel)]="f.shape"><option *ngFor="let s of shapes" [value]="s.value">{{ s.label }}</option></select>
+        </label>
+        <label class="dn-check dn-span2"><input type="checkbox" [(ngModel)]="f.joinable"> Se puede unir con otras para grupos grandes</label>
+      </div>
+    </div>
+    <div class="dn-modal-foot">
+      <button type="button" class="btn btn-outline-danger me-auto" *ngIf="f.id" (click)="removeTable()">Quitar</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="tableForm = null">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="saveTable()" [disabled]="saving || !f.name.trim() || !(f.seats >= 1)">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Ventana: reglas de reservas ─── -->
+<div class="dn-overlay" *ngIf="settingsForm as s" (click)="settingsForm = null">
+  <div class="dn-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="dn-modal-head">
+      <h5>Reglas de reservas</h5>
+      <button type="button" class="dn-icon" (click)="settingsForm = null" aria-label="Cerrar">×</button>
+    </div>
+    <div class="dn-modal-body">
+      <div class="dn-grid">
+        <label>Duración de una reserva (min) <input type="number" min="15" max="360" step="15" class="form-control" [(ngModel)]="s.durationMinutes"></label>
+        <label>Tolerancia de llegada (min)
+          <input type="number" min="0" max="120" class="form-control" [(ngModel)]="s.toleranceMinutes">
+        </label>
+        <label>Horas para reservar cada
+          <select class="form-select" [(ngModel)]="s.slotMinutes"><option [ngValue]="15">15 min</option><option [ngValue]="30">30 min</option><option [ngValue]="60">1 hora</option></select>
+        </label>
+        <label>Anticipación mínima (horas) <input type="number" min="0" max="72" class="form-control" [(ngModel)]="s.minLeadHours"></label>
+        <label>Reservar hasta (días adelante) <input type="number" min="1" max="120" class="form-control" [(ngModel)]="s.maxDaysAhead"></label>
+      </div>
+      <p class="dn-section">Reservas desde la tienda online <span class="dn-chip">Próximamente</span></p>
+      <div class="dn-grid">
+        <label>Confirmación
+          <select class="form-select" [(ngModel)]="s.confirmMode">
+            <option value="manual">La confirma el negocio</option>
+            <option value="auto">Queda confirmada sola</option>
+          </select>
+        </label>
+        <label>Pedido anticipado
+          <select class="form-select" [(ngModel)]="s.preorderMode">
+            <option value="none">Solo la mesa</option>
+            <option value="optional">Opcional: puede dejar el pedido hecho</option>
+            <option value="required">Obligatorio: reserva con el pedido</option>
+          </select>
+        </label>
+        <label>Anticipo
+          <select class="form-select" [(ngModel)]="s.depositMode">
+            <option value="none">Sin anticipo</option>
+            <option value="required">Con anticipo</option>
+          </select>
+        </label>
+        <label *ngIf="s.depositMode === 'required'">Valor del anticipo
+          <input type="number" min="0" step="1000" class="form-control" [(ngModel)]="s.depositAmount">
+        </label>
+        <label class="dn-check dn-span2" *ngIf="s.depositMode === 'required'"><input type="checkbox" [(ngModel)]="s.depositPerPerson"> Por persona ({{ money(s.depositAmount) }} × personas)</label>
+      </div>
+    </div>
+    <div class="dn-modal-foot">
+      <button type="button" class="btn btn-outline-secondary" (click)="settingsForm = null">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="saveSettings()" [disabled]="saving">Guardar</button>
+    </div>
+  </div>
+</div>

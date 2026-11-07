@@ -32,6 +32,7 @@ import { CombosPromotionsComponent } from './feature/combos-promotions/combos-pr
 import { InventoryComponent } from './feature/inventory/inventory.component';
 import { PartnersComponent } from './feature/partners/partners.component';
 import { KitchenComponent } from './feature/kitchen/kitchen.component';
+import { DiningComponent } from './feature/dining/dining.component';
 
 export const routes: Routes = [
     { path: ROOT_LOGIN, component: LoginComponent },
@@ -65,6 +66,7 @@ export const routes: Routes = [
             { path: 'consumos', component: UsagePanelComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             // Mi plan / actualizar plan: sin exigir periodo activo (una prueba vencida también debe poder cambiar de plan)
             { path: 'plan', component: PlanComponent, canActivate: [AuthGuard] },
+            { path: 'mesas', component: DiningComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'combos', component: CombosPromotionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: 'servicios', component: PartnersComponent, canActivate: [AuthGuard] },
             { path: 'training-sessions', component: TrainingSessionsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
