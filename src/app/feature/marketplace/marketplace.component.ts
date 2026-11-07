@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, HostBinding, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, HostBinding, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -7,6 +7,9 @@ import { Title } from '@angular/platform-browser';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { LEGAL_VERSIONS, LegalDocKey, LegalDocument, buildLegalDocument } from './legal/marketplace-legal';
+import { DineInChoice, DiningPublicInfo, DiningPublicService, slotLabel } from './dining/dining-public.service';
+import { DineInPickerComponent } from './dining/dine-in-picker.component';
+import { TableBookingComponent } from './dining/table-booking.component';
 import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-upload.component';
@@ -162,7 +165,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent, DineInPickerComponent, TableBookingComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css', './marketplace-themes.css']
 })
@@ -331,7 +334,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Formas de entrega de la tienda (GET marketplace-config/:tenantId/delivery-options). */
   deliveryOptions: DeliveryOptions | null = null;
   /** Cómo recibe el cliente su pedido. */
-  fulfillment: 'DELIVERY' | 'PICKUP' = 'DELIVERY';
+  fulfillment: 'DELIVERY' | 'PICKUP' | 'DINE_IN' = 'DELIVERY';
+  /** Reservas de mesa en la tienda (null = la tienda no las recibe). */
+  diningInfo: DiningPublicInfo | null = null;
+  showTableBooking = false;
+  /** Comer en el local: día, hora y personas elegidos en el pago. */
+  dineChoice: DineInChoice | null = null;
+  private readonly diningPublic = inject(DiningPublicService);
   /** Zona de entrega elegida (nombre de la zona u OTHER_ZONE); '' = sin elegir. */
   deliveryZone = '';
   readonly OTHER_ZONE = OTHER_ZONE;
@@ -927,6 +936,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.deliveryOptions = deliveryOptions || null;
       // Por defecto, la modalidad que ofrezca la tienda (domicilio si ofrece ambas)
       this.fulfillment = this.deliveryOptions && !this.deliveryOptions.deliveryEnabled ? 'PICKUP' : 'DELIVERY';
+      // Reservas de mesa (comer en el local)
+      this.diningInfo = null;
+      this.diningPublic.info(tenantId).subscribe({ next: (i) => { this.diningInfo = i?.enabled ? i : null; }, error: () => {} });
       this.products = (productsResponse.data || []).map((product: any) => ({
         ...product,
         itemType: 'product',
@@ -1639,7 +1651,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** Cerrada y sin programación: solo se puede pedir en el horario (los bonos no dependen de él). */
   get orderBlockedByHours(): boolean {
-    return this.closedNow && !this.schedulingOptions && !this.cartIsGiftOnly;
+    return this.closedNow && !this.schedulingOptions && !this.cartIsGiftOnly && this.fulfillment !== 'DINE_IN';
   }
 
   get closedMessage(): string {
@@ -2361,9 +2373,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return this.getCartTotal() + this.deliveryFeeApplied;
   }
 
-  /** La tienda ofrece las dos modalidades: el cliente elige. */
+  /** Comer en el local con pedido anticipado (reserva de mesa). */
+  get canDineIn(): boolean {
+    return !!this.diningInfo && this.diningInfo.preorderMode !== 'none';
+  }
+
+  /** La tienda ofrece más de una modalidad: el cliente elige. */
   get canChooseFulfillment(): boolean {
-    return !!this.deliveryOptions?.deliveryEnabled && !!this.deliveryOptions?.pickupEnabled;
+    const n = [this.deliveryOptions?.deliveryEnabled, this.deliveryOptions?.pickupEnabled, this.canDineIn].filter(Boolean).length;
+    return n > 1;
   }
 
   /** Formas de pago que ofrece la tienda para este carrito y este comprador. */
@@ -3116,13 +3134,19 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       Swal.fire({ icon: 'warning', title: 'Forma de pago', text: 'No hay una forma de pago disponible para este pedido. Revisa las opciones o contacta a la tienda.' });
       return;
     }
-    if (!this.cartIsGiftOnly && this.closedNow && this.deliveryMode !== 'SCHEDULED') {
+    // Comer en el local: la hora la da la reserva
+    if (!this.cartIsGiftOnly && this.closedNow && this.deliveryMode !== 'SCHEDULED' && this.fulfillment !== 'DINE_IN') {
       Swal.fire({ icon: 'info', title: 'Tienda cerrada', text: this.schedulingOptions ? `${this.closedMessage} Programa tu pedido para cuando estemos abiertos.` : `${this.closedMessage} Haz tu pedido dentro de nuestro horario de atención.` });
       if (this.schedulingOptions) this.setDeliveryMode('SCHEDULED');
       return;
     }
-    if (this.deliveryMode === 'SCHEDULED' && !this.scheduledStart) {
+    if (this.deliveryMode === 'SCHEDULED' && !this.scheduledStart && this.fulfillment !== 'DINE_IN') {
       Swal.fire({ icon: 'warning', title: 'Elige una franja', text: 'Selecciona el día y la franja horaria de entrega, o elige "Lo antes posible".' });
+      return;
+    }
+
+    if (this.fulfillment === 'DINE_IN' && !this.cartIsGiftOnly && !this.dineChoice) {
+      Swal.fire({ icon: 'warning', title: 'Elige tu reserva', text: 'Escoge el día, la hora y cuántas personas van a comer en el local.' });
       return;
     }
 
@@ -3140,7 +3164,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       source: this.orderSource(),
       customerName: this.checkoutData.customerName.trim(),
       customerPhone: this.checkoutData.customerPhone.trim(),
-      customerAddress: this.fulfillment === 'PICKUP' || this.cartIsGiftOnly ? undefined : this.checkoutData.customerAddress.trim() || undefined,
+      customerAddress: this.fulfillment !== 'DELIVERY' || this.cartIsGiftOnly ? undefined : this.checkoutData.customerAddress.trim() || undefined,
       customerEmail: this.checkoutData.customerEmail.trim() || undefined,
       items: this.orderItemsPayload(),
       notes: this.checkoutData.notes.trim() || undefined,
@@ -3153,12 +3177,13 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       // Bonos con los que paga (solo con sesión; el servidor valida saldo y dueño)
       ...(this.giftCardApplied > 0 ? { giftCardIds: [...this.selectedGiftCardIds] } : {}),
       ...(this.clientLoggedIn ? {} : this.consentPayload()),
-      ...(this.deliveryLocation && this.fulfillment !== 'PICKUP' && !this.cartIsGiftOnly ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
+      ...(this.fulfillment === 'DINE_IN' && this.dineChoice && !this.cartIsGiftOnly ? { reservation: this.dineChoice } : {}),
+      ...(this.deliveryLocation && this.fulfillment === 'DELIVERY' && !this.cartIsGiftOnly ? { deliveryLatitude: this.deliveryLocation.lat, deliveryLongitude: this.deliveryLocation.lng } : {}),
       // Formas de pago configuradas por la tienda; sin ellas, el checkout clásico
       ...(plan
         ? { paymentPlan: plan }
         : coveredByGiftCards ? {} : this.clientLoggedIn ? { paymentPreference: this.canPayWithCredit && this.paymentPreference === 'CREDITO' ? 'CREDITO' : 'CONTADO' } : {}),
-      ...(this.deliveryMode === 'SCHEDULED' && this.scheduledStart ? { scheduledStart: this.scheduledStart } : {}),
+      ...(this.deliveryMode === 'SCHEDULED' && this.scheduledStart && this.fulfillment !== 'DINE_IN' ? { scheduledStart: this.scheduledStart } : {}),
     };
 
     const onSuccess = (response: any) => {
@@ -3177,6 +3202,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       }
       this.paymentPlan = null;
       this.deliveryMode = 'ASAP';
+      this.dineChoice = null;
       this.scheduleDate = '';
       this.scheduleSlots = [];
       this.scheduledStart = null;
@@ -3187,7 +3213,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
           ? ` - ${planLabel(o.paymentPlan, o).replace(/^\S+\s/, '')}`
           : o.requestedPaymentType === 'CREDITO' ? ' - A crédito' : ' - Contra-entrega';
         const cuando = o.scheduledStart ? ` - Entrega: ${formatScheduleRange(o.scheduledStart, o.scheduledEnd)}` : '';
-        const entrega = o.fulfillment === 'PICKUP' ? ' - Recoge en tienda' : o.fulfillment === 'DELIVERY' ? ' - A domicilio' : '';
+        const mesa = o.reservation ? ` - Comer en el local: ${o.reservation.code}, ${new Date(o.reservation.startAt).toLocaleString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}, ${o.reservation.partySize} personas` : ' - Comer en el local';
+        const entrega = o.fulfillment === 'PICKUP' ? ' - Recoge en tienda' : o.fulfillment === 'DELIVERY' ? ' - A domicilio' : o.fulfillment === 'DINE_IN' ? mesa : '';
         const msg = encodeURIComponent(`¡Nuevo pedido ${o.orderCode}! - ${payload.customerName} - Total: ${this.formatCurrency(Number(o.total) || payload.total)}${entrega}${pago}${cuando}`);
         window.open(`https://wa.me/${response.whatsapp}?text=${msg}`, '_blank');
       }
