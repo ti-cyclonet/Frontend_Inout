@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
@@ -68,7 +68,19 @@ export class KitchenComponent implements OnInit, OnDestroy {
     private businessModules: BusinessModulesService,
     public permissions: PermissionsService,
     private host: ElementRef<HTMLElement>,
+    private router: Router,
   ) {}
+
+  /** Admin y operador, o el usuario de cocina. */
+  get canAdvance(): boolean {
+    return this.permissions.canEdit || this.permissions.isKitchen;
+  }
+
+  /** El usuario de cocina no tiene el resto del panel: sale cerrando sesión. */
+  logout(): void {
+    sessionStorage.clear();
+    this.router.navigate(['/login']).then(() => setTimeout(() => window.location.reload(), 100));
+  }
 
   ngOnInit(): void {
     try { this.soundOn = localStorage.getItem(SOUND_KEY) === '1'; } catch { /* sin almacenamiento */ }
@@ -187,7 +199,7 @@ export class KitchenComponent implements OnInit, OnDestroy {
 
   advance(o: KitchenOrder): void {
     const act = kitchenAction(o);
-    if (!act || !this.permissions.canEdit || this.busy.has(o.id)) return;
+    if (!act || !this.canAdvance || this.busy.has(o.id)) return;
     this.unlockAudio();
     this.busy.add(o.id);
     this.http.patch(`${environment.apiUrl}/orders/${o.id}/status`, { status: act.next }).subscribe({

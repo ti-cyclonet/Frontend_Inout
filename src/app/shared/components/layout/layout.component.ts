@@ -233,6 +233,19 @@ export default class LayoutComponent implements OnInit, OnDestroy {
           idApplication: this.application?.id ?? '',
         });
 
+        // Mesas y reservas, si está activo
+        this.optionsMenu.push({
+          id: 'tables',
+          name: 'Mesas',
+          description: 'Mesas',
+          url: '/mesas',
+          icon: 'grid-3x3-gap',
+          type: 'main_menu',
+          idMPather: null,
+          order: '48',
+          idApplication: this.application?.id ?? '',
+        });
+
         // Ordenar por ingOrder numérico
         this.optionsMenu.sort((a, b) => parseInt(a.order) - parseInt(b.order));
         this.fullMenu = this.optionsMenu;
@@ -248,6 +261,7 @@ export default class LayoutComponent implements OnInit, OnDestroy {
     const hidden = new Set<string>();
     if (!this.businessModules.isOn('kitchen', this.modules)) hidden.add('kitchen');
     if (!this.businessModules.isOn('combos', this.modules)) hidden.add('combos-promotions');
+    if (!this.businessModules.isOn('tables', this.modules)) hidden.add('tables');
     this.deliveryOn = this.businessModules.isOn('delivery', this.modules);
     const label = this.modules?.kitchenLabel || 'Cocina';
     this.optionsMenu = this.fullMenu

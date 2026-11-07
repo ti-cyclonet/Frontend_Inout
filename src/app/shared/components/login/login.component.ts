@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth/auth.service';
 import { LoginDTO } from '../../model/login';
 import { NAME_APP_SHORT } from '../../../config/config';
 import { NotificationsComponent } from "../notifications/notifications.component";
+import { isKitchenUser } from '../../guards/kitchen-home.guard';
 
 interface ClientContract {
   contractId: string;
@@ -166,6 +167,11 @@ export class LoginComponent {
   private completeLogin(response: any) {
     this.authService.setUserSession(response);
     this.showToast('Inicio de sesión exitoso', 'success', 'A', 0);
+    // Cocina: directo a la pantalla de preparación
+    if (isKitchenUser()) {
+      this.router.navigate(['/cocina']);
+      return;
+    }
     const back = this.safeReturnUrl();
     if (back) {
       this.router.navigateByUrl(back);
