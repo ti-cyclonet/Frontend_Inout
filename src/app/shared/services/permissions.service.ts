@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type InoutRole = 'admin' | 'operator' | 'viewer';
+export type InoutRole = 'admin' | 'operator' | 'viewer' | 'kitchen';
 
 /**
  * Service to check user permissions based on their role.
@@ -27,6 +27,11 @@ export class PermissionsService {
 
   get isOperator(): boolean {
     return this.currentRole === 'operator';
+  }
+
+  /** Cocina: solo la pantalla de preparación (empieza, marca listo y entrega en el local). */
+  get isKitchen(): boolean {
+    return this.currentRole === 'kitchen';
   }
 
   get isViewer(): boolean {
@@ -73,6 +78,7 @@ export class PermissionsService {
       'adminInout': 'admin',
       'operatorInout': 'operator',
       'viewerInout': 'viewer',
+      'kitchenInout': 'kitchen',
       'admin': 'admin',
       'operator': 'operator',
       'viewer': 'viewer',
