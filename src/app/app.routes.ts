@@ -32,6 +32,7 @@ import { CombosPromotionsComponent } from './feature/combos-promotions/combos-pr
 import { InventoryComponent } from './feature/inventory/inventory.component';
 import { PartnersComponent } from './feature/partners/partners.component';
 import { KitchenComponent } from './feature/kitchen/kitchen.component';
+import { kitchenHomeGuard } from './shared/guards/kitchen-home.guard';
 import { DiningComponent } from './feature/dining/dining.component';
 
 export const routes: Routes = [
@@ -39,7 +40,7 @@ export const routes: Routes = [
     // Enlace del correo de "¿Olvidaste tu contraseña?" (Authoriza)
     { path: 'reset-password', component: ResetPasswordComponent },
     { path: ROOT_REGISTER, component: RegisterComponent },
-    { path: 'module-selector', component: ModuleSelectorComponent, canActivate: [AuthGuard] },
+    { path: 'module-selector', component: ModuleSelectorComponent, canActivate: [AuthGuard, kitchenHomeGuard] },
     // Pantalla de preparación (cocina): a pantalla completa, sin el menú de la app
     { path: 'cocina', component: KitchenComponent, canActivate: [AuthGuard] },
     { path: 'marketplace/:tenantId', component: MarketplaceComponent },
@@ -50,7 +51,8 @@ export const routes: Routes = [
     {
         path: '',
         component: LayoutComponent,
-        canActivate: [AuthGuard],
+        // El usuario de cocina solo tiene la pantalla de preparación
+        canActivate: [AuthGuard, kitchenHomeGuard],
         children: [
             { path: ROOT_HOME, component: HomeComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },
             { path: ROOT_MATERIALS, component: MaterialsComponent, canActivate: [AuthGuard, ActivePeriodGuard, ActiveParametersGuard] },

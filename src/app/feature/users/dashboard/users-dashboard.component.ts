@@ -11,6 +11,7 @@ const ROLES: { key: string; label: string; color: string }[] = [
   { key: 'adminInout', label: 'Administradores', color: '#0057b8' },
   { key: 'operatorInout', label: 'Operadores', color: '#11998e' },
   { key: 'viewerInout', label: 'Visores', color: '#667eea' },
+  { key: 'kitchenInout', label: 'Cocina', color: '#ef6c00' },
   { key: 'clienteInout', label: 'Clientes (MarketPlace)', color: '#f5a623' },
 ];
 
@@ -136,7 +137,7 @@ export class UsersDashboardComponent extends LivePanel<UsersSummary> implements 
     const isClientOnly = (d: any) => { const r = roleNames(d); return r.length > 0 && r.every((n) => n === 'clienteInout'); };
     const staff = deps.filter((d) => !isClientOnly(d));
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-    const SINGULAR: Record<string, string> = { adminInout: 'Administrador', operatorInout: 'Operador', viewerInout: 'Visor', clienteInout: 'Cliente' };
+    const SINGULAR: Record<string, string> = { adminInout: 'Administrador', operatorInout: 'Operador', viewerInout: 'Visor', kitchenInout: 'Cocina', clienteInout: 'Cliente' };
     const label = (d: any) => SINGULAR[ROLES.find((x) => roleNames(d).includes(x.key))?.key || ''] || 'Sin rol';
     return {
       total: deps.length,

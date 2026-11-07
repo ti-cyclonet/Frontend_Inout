@@ -33,6 +33,7 @@ function normalizeRole(role: string): string {
     'adminInout': 'admin',
     'operatorInout': 'operator',
     'viewerInout': 'viewer',
+    'kitchenInout': 'kitchen',
     'admin': 'admin',
     'operator': 'operator',
     'viewer': 'viewer',
