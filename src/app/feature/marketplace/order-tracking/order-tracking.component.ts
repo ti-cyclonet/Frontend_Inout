@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { PaymentVoucherUploadComponent } from './payment-voucher-upload.component';
+import { PayOnlineButtonComponent } from './pay-online-button.component';
 import { PAYMENT_PLAN_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, formatScheduleRange, planLabel } from './order-labels';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { DisplayLine, groupComboLines } from '../../../shared/utils/combo-lines.util';
@@ -25,7 +26,7 @@ const THANKS_KEY = 'inout.thanks.';
 @Component({
   selector: 'app-order-tracking',
   standalone: true,
-  imports: [CommonModule, RouterModule, PaymentVoucherUploadComponent],
+  imports: [CommonModule, RouterModule, PaymentVoucherUploadComponent, PayOnlineButtonComponent],
   templateUrl: './order-tracking.component.html',
   styleUrls: ['./order-tracking.component.css'],
 })
@@ -60,6 +61,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     return OrderTrackingComponent.ALL_STEPS.filter((s) => !(noProduction && s === 'IN_PRODUCTION') && !(pickup && s === 'OUT_FOR_DELIVERY'));
   }
   lastUpdated: Date | null = null;
+  /** Vuelta de Mercado Pago (?pago=ok|pendiente|error): aviso arriba de los pagos. */
+  payReturn: 'ok' | 'pendiente' | 'error' | null = null;
   /** Modal de agradecimiento al entregarse el pedido. */
   showThanks = false;
   /** Reloj para "actualizado hace…" (cada 15 s). */
@@ -73,7 +76,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.token = this.route.snapshot.paramMap.get('token') || '';
     this.storeId = this.route.snapshot.paramMap.get('tenantId') || '';
+    const pago = this.route.snapshot.queryParamMap.get('pago');
+    this.payReturn = pago === 'ok' || pago === 'pendiente' || pago === 'error' ? pago : null;
     this.load();
+    // El pago aprobado llega por la notificación de Mercado Pago: se vuelve a consultar en unos segundos
+    if (this.payReturn === 'ok' && typeof window !== 'undefined') setTimeout(() => this.load(true), 6000);
     if (typeof window === 'undefined') return;
     // Si el cliente deja la página abierta, ve los cambios de estado solos
     this.refreshTimer = setInterval(() => { if (!this.isFinal) this.load(true); }, REFRESH_MS);
@@ -282,6 +289,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   /** Forma de pago del abono: "Bono" para los pagos con bono de regalo. */
   paymentMethodText(method: string): string {
+    if (method === 'MERCADOPAGO') return '🌐 Mercado Pago';
     return method === 'BONO' ? '🎁 Bono' : '';
   }
 

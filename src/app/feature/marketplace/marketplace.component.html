@@ -757,6 +757,7 @@
           <strong>Datos para pagar</strong>
           <p>{{ paymentOptions.instructions }}</p>
         </div>
+        <app-pay-online-button *ngIf="successNeedsPayment" [token]="orderSuccess.order.trackingToken"></app-pay-online-button>
         <app-payment-voucher-upload *ngIf="successNeedsPayment" [token]="orderSuccess.order.trackingToken"
           [suggestedAmount]="orderSuccess.order.depositRequired"></app-payment-voucher-upload>
       </ng-container>
@@ -1068,12 +1069,18 @@
 </div>
 
 <!-- ¿Cuándo? y ¿Cómo pagas? (con y sin sesión) -->
-<!-- Pago en línea: todavía no está disponible; se muestra desactivado -->
+<!-- Pago en línea: con la cuenta de Mercado Pago de la tienda se paga desde el
+     pedido confirmado; mientras no esté disponible se muestra desactivado -->
 <ng-template #payOnlineSoon>
-  <label class="pay-option disabled pay-option--soon" aria-disabled="true" title="Próximamente">
-    <input type="radio" name="mkPayOnline" disabled>
-    <span><strong>🌐 Pagar en línea <em class="pay-soon">Próximamente</em></strong><small>PSE, tarjeta, Nequi o botón Bancolombia.</small></span>
-  </label>
+  <p class="pay-online-note" *ngIf="onlinePayments?.available; else payOnlineDisabled">
+    🌐 <strong>Puedes pagar en línea con Mercado Pago</strong> (tarjeta, PSE o efectivo) al confirmar el pedido.
+  </p>
+  <ng-template #payOnlineDisabled>
+    <label class="pay-option disabled pay-option--soon" aria-disabled="true" title="Próximamente">
+      <input type="radio" name="mkPayOnline" disabled>
+      <span><strong>🌐 Pagar en línea <em class="pay-soon">Próximamente</em></strong><small>Tarjeta, PSE o efectivo con Mercado Pago.</small></span>
+    </label>
+  </ng-template>
 </ng-template>
 
 <ng-template #whenAndPay>

@@ -79,6 +79,14 @@
         <p class="pre">{{ order.paymentInstructions }}</p>
       </div>
 
+      <p class="tracking-pay-return" *ngIf="payReturn" [ngClass]="'tracking-pay-return--' + payReturn" role="status">
+        <ng-container [ngSwitch]="payReturn">
+          <ng-container *ngSwitchCase="'ok'">✅ Recibimos tu pago en Mercado Pago. Se confirma solo en unos segundos.</ng-container>
+          <ng-container *ngSwitchCase="'pendiente'">⏳ Tu pago está en proceso (PSE o efectivo pueden tardar). Lo verás aquí cuando se confirme.</ng-container>
+          <ng-container *ngSwitchDefault>⚠ El pago no se completó y no se hizo ningún cobro. Puedes intentarlo de nuevo.</ng-container>
+        </ng-container>
+      </p>
+      <app-pay-online-button *ngIf="canUploadVoucher" [token]="token" [refreshKey]="order.amountPaid"></app-pay-online-button>
       <app-payment-voucher-upload *ngIf="canUploadVoucher" [token]="token" [suggestedAmount]="suggestedAmount" (uploaded)="load()"></app-payment-voucher-upload>
 
       <div class="tracking-payments" *ngIf="order.payments?.length">

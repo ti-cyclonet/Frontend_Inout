@@ -186,3 +186,9 @@
 .gift-btn--wa:hover { background: #1fb959; color: #fff; }
 .gift-ticket__hint { opacity: 0.92; }
 .tracking-gifts { margin-top: 12px; }
+
+/* Vuelta de Mercado Pago */
+.tracking-pay-return { margin: 0.5rem 0; padding: 0.55rem 0.75rem; border-radius: 10px; font-size: 0.85rem; }
+.tracking-pay-return--ok { background: #ecfdf5; color: #065f46; }
+.tracking-pay-return--pendiente { background: #fffbeb; color: #92400e; }
+.tracking-pay-return--error { background: #fef2f2; color: #991b1b; }
