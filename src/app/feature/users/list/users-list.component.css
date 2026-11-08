@@ -215,6 +215,9 @@
   fill: #6c757d;
 }
 
+/* El correo bajo el nombre solo se ve en el celular */
+.user-email-mobile { display: none; }
+
 /* Column widths */
 .col-name { width: 22%; }
 .col-email { width: 22%; }
@@ -461,6 +464,15 @@
   .col-email { width: auto; }
   .col-status { width: auto; }
   .col-actions { width: auto; }
+
+  /* Sin la columna del correo: nombre (con el correo debajo), estado y acciones caben en la pantalla */
+  .users-table td:first-child { max-width: 0; width: 100%; }
+  .user-info { min-width: 0; }
+  .user-name { min-width: 0; }
+  .user-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-email-mobile { display: block; color: #6c757d; font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .users-table td.text-center, .users-table th.text-center { width: 1%; white-space: nowrap; }
+  .users-table th, .users-table td { padding-left: 0.4rem; padding-right: 0.4rem; }
 
   .pagination-container {
     flex-direction: column;
