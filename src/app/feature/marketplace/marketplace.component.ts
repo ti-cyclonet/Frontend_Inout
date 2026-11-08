@@ -13,6 +13,8 @@ import { TableBookingComponent } from './dining/table-booking.component';
 import { decodeJwtPayload } from '../../shared/utils/jwt.util';
 
 import { PaymentVoucherUploadComponent } from './order-tracking/payment-voucher-upload.component';
+import { PayOnlineButtonComponent } from './order-tracking/pay-online-button.component';
+import { OnlinePaymentsService, StoreOnlinePayments } from '../../shared/services/online-payments.service';
 import { MarketplaceSalesSettingsComponent } from './sales-settings/marketplace-sales-settings.component';
 import { PAYMENT_PLAN_LABELS, formatScheduleRange, planLabel } from './order-tracking/order-labels';
 import { formatCop } from '../../shared/utils/currency.util';
@@ -165,7 +167,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent, DineInPickerComponent, TableBookingComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, PayOnlineButtonComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent, DineInPickerComponent, TableBookingComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css', './marketplace-themes.css']
 })
@@ -414,6 +416,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   // ─── Formas de pago y pedidos programados (configurados por la tienda) ───
   /** null = el backend no las ofrece (versión anterior): checkout clásico. */
   paymentOptions: any = null;
+  /** Pago en línea de la tienda (Mercado Pago): disponible o "próximamente". */
+  onlinePayments: StoreOnlinePayments | null = null;
+  private readonly onlinePaymentsApi = inject(OnlinePaymentsService);
   schedulingOptions: any = null;
   paymentPlan: string | null = null;
   deliveryMode: 'ASAP' | 'SCHEDULED' = 'ASAP';
@@ -930,6 +935,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       if (this.clientLoggedIn && this.giftCardOptions.enabled) this.loadMyGiftCards();
       this.storeContract = contractResponse || null;
       this.paymentOptions = paymentOptions || null;
+      this.onlinePaymentsApi.storeStatus(tenantId).subscribe((s) => (this.onlinePayments = s));
       this.schedulingOptions = scheduling?.enabled ? scheduling : null;
       this.storeSchedule = scheduling || null;
       this.weekHours = showsHours(this.storeSchedule) ? weeklyHours(this.storeSchedule, new Date()) : [];

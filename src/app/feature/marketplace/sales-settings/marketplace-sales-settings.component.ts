@@ -11,6 +11,7 @@ import {
   DEFAULT_THANKS_MESSAGES, THANKS_MAX_LENGTH, THANKS_STYLES, ThanksMessages, ThanksTextKey, fillThanks, isThanksStyle, loadThanksFonts,
 } from '../order-tracking/thanks-messages';
 import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.component';
+import { OnlinePaymentsSettingsComponent } from './online-payments-settings.component';
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -33,7 +34,7 @@ const WELCOME_MAX_LENGTH = 300;
 @Component({
   selector: 'app-marketplace-sales-settings',
   standalone: true,
-  imports: [InfoTipComponent, CommonModule, FormsModule],
+  imports: [InfoTipComponent, CommonModule, FormsModule, OnlinePaymentsSettingsComponent],
   templateUrl: './marketplace-sales-settings.component.html',
   styleUrls: ['./marketplace-sales-settings.component.css'],
 })
