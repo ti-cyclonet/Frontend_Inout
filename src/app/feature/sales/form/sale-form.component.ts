@@ -21,7 +21,7 @@ import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/s
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 import { ReceiptService } from '../../../shared/services/receipt.service';
 import { BusinessModulesService } from '../../../shared/services/business-modules.service';
-import { readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
+import { amountMatches, readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
 import { PaymentReferencesService } from '../../../shared/services/payment-references.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -182,6 +182,26 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   /** Lectura del comprobante (OCR): estado y aviso para mostrar. */
   proofReading = false;
   proofNote = '';
+  /** Valores en pesos que leyó el OCR en el volante. */
+  proofAmounts: number[] = [];
+
+  /**
+   * Valores que puede tener el volante: el total de la venta o, con pago
+   * dividido, el de cada parte que no es en efectivo (o la suma de ellas).
+   */
+  get proofExpected(): number[] {
+    const total = Number(this.orderData.total) || 0;
+    if (!this.splitOn) return [total];
+    const parts = this.splitParts.filter((p) => p.method !== 'EFECTIVO').map((p) => Number(p.amount) || 0);
+    return [...parts, parts.reduce((s, a) => s + a, 0)];
+  }
+
+  /** El volante dice otro valor: "dice $X y el pago es de $Y", o null si coincide. */
+  get proofAmountMismatch(): string | null {
+    if (!this.proofFile || amountMatches(this.proofAmounts, this.proofExpected)) return null;
+    const expected = this.proofExpected[this.proofExpected.length - 1];
+    return `El volante dice ${this.formatCurrency(Math.max(...this.proofAmounts))} y el pago ${this.splitOn ? 'que no es en efectivo ' : ''}es de ${this.formatCurrency(expected)}.`;
+  }
   /** La referencia ya se usó en otra transacción: no se puede confirmar. */
   proofDuplicate: string | null = null;
   private readonly references = inject(PaymentReferencesService);
@@ -203,6 +223,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
    */
   private async readProof(file: File): Promise<void> {
     this.proofNote = '';
+    this.proofAmounts = [];
     this.proofReading = true;
     try {
       const { reference: ref, amounts } = await readPaymentProof(file);
@@ -215,10 +236,8 @@ export class SaleFormComponent implements OnInit, OnDestroy {
       } else if (!ref) {
         notes.push('No se pudo leer la referencia; escríbela si la necesitas.');
       }
-      const total = Number(this.orderData.total) || 0;
-      if (total > 0 && amounts.length && !amounts.some((a) => Math.abs(a - total) < 1)) {
-        notes.push(`El comprobante dice ${this.formatCurrency(Math.max(...amounts))} y la venta es de ${this.formatCurrency(total)}.`);
-      }
+      // Si el valor no coincide, el aviso en rojo (proofAmountMismatch) lo muestra
+      this.proofAmounts = amounts;
       this.proofNote = notes.join(' ');
     } catch (err) {
       console.warn('No se pudo leer el comprobante', err);
@@ -766,6 +785,21 @@ export class SaleFormComponent implements OnInit, OnDestroy {
         return;
       }
     }
+    // El volante debe ser por el valor del pago (o de su parte, con pago dividido)
+    const mismatch = this.needsProof ? this.proofAmountMismatch : null;
+    if (mismatch) {
+      const ok = await Swal.fire({
+        icon: 'warning',
+        title: 'El valor del volante no coincide',
+        text: `${mismatch} Revisa el valor o el pago dividido antes de registrar la venta.`,
+        showCancelButton: true,
+        confirmButtonText: 'Registrar de todos modos',
+        cancelButtonText: 'Revisar',
+        confirmButtonColor: '#64748b',
+        reverseButtons: true,
+      });
+      if (!ok.isConfirmed) { this.loading = false; return; }
+    }
     
     const saleData: CreateSaleDto = {
       strTenantId: 'default-tenant',
@@ -873,6 +907,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     this.proofFile = null;
     this.proofReference = '';
     this.proofDuplicate = null;
+    this.proofAmounts = [];
     this.proofNote = '';
     this.proofReading = false;
     // Lo que se ve en el buscador de clientes (los datos de arriba no lo borran)

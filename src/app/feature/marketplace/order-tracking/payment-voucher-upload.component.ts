@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { formatCop } from '../../../shared/utils/currency.util';
-import { readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
+import { amountMatches, readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
 
 /** Medios con los que el comprador suele pagar por fuera (el efectivo lo registra el negocio). */
 const CUSTOMER_METHODS = [
@@ -108,10 +108,13 @@ export class PaymentVoucherUploadComponent implements OnChanges {
   /** Lectura de la foto (OCR) para poner la referencia sola. */
   reading = false;
   note = '';
+  /** Valores en pesos que leyó el OCR en la foto. */
+  amounts: number[] = [];
 
   onFile(event: Event): void {
     this.file = (event.target as HTMLInputElement).files?.[0] || null;
     this.note = '';
+    this.amounts = [];
     if (this.file) this.readFile(this.file);
   }
 
@@ -126,8 +129,9 @@ export class PaymentVoucherUploadComponent implements OnChanges {
       } else if (!reference) {
         this.note = 'No pudimos leer la referencia: escríbela tal como aparece en el comprobante.';
       }
-      if (this.amount && amounts.length && !amounts.some((a) => Math.abs(a - Number(this.amount)) < 1)) {
-        this.note += ` El comprobante dice ${formatCop(Math.max(...amounts))}; revisa el valor pagado.`;
+      this.amounts = amounts;
+      if (this.amount && !amountMatches(amounts, Number(this.amount))) {
+        this.note += ` El comprobante dice ${formatCop(Math.max(...amounts))}: el valor pagado debe ser el del comprobante.`;
       }
     } catch {
       if (this.file === file) this.note = 'Escribe la referencia tal como aparece en el comprobante.';
@@ -141,6 +145,13 @@ export class PaymentVoucherUploadComponent implements OnChanges {
     if (!this.amount || this.amount <= 0) { this.error = 'Indica el valor que pagaste.'; return; }
     if (!this.file) { this.error = 'Adjunta la foto del comprobante.'; return; }
     if (this.file.size > 5 * 1024 * 1024) { this.error = 'La imagen supera 5 MB.'; return; }
+    if (this.reading) { this.error = 'Espera un momento: estamos leyendo el comprobante.'; return; }
+    // Cada comprobante se reporta por su valor (si pagaste en partes, sube un comprobante por cada pago)
+    if (!amountMatches(this.amounts, Number(this.amount))) {
+      this.error = `El comprobante dice ${formatCop(Math.max(...this.amounts))} y estás reportando ${formatCop(Number(this.amount))}. `
+        + 'Escribe el valor del comprobante; si pagaste en varias partes, sube cada comprobante por separado. Si el valor sí es el correcto, sube una foto más clara.';
+      return;
+    }
     // La referencia evita que un mismo comprobante se use en dos pagos
     if (this.reference.replace(/[^A-Za-z0-9]/g, '').length < 4) { this.error = 'Escribe el número de referencia del comprobante.'; return; }
 
