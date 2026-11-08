@@ -818,6 +818,7 @@
             <span><strong>💳 A crédito</strong>
               <small>Disponible {{ formatCurrency(clientCredit.eligibility.available) }} · pagas a {{ clientCredit.eligibility.termDays }} días</small></span>
           </label>
+          <ng-container *ngTemplateOutlet="payOnlineSoon"></ng-container>
         </div>
         <p class="credit-status" *ngIf="creditStatusText">{{ creditStatusText }}</p>
         <a href="javascript:void(0)" class="credit-request-link" *ngIf="canRequestCredit" (click)="requestCredit()">
@@ -1067,6 +1068,14 @@
 </div>
 
 <!-- ¿Cuándo? y ¿Cómo pagas? (con y sin sesión) -->
+<!-- Pago en línea: todavía no está disponible; se muestra desactivado -->
+<ng-template #payOnlineSoon>
+  <label class="pay-option disabled pay-option--soon" aria-disabled="true" title="Próximamente">
+    <input type="radio" name="mkPayOnline" disabled>
+    <span><strong>🌐 Pagar en línea <em class="pay-soon">Próximamente</em></strong><small>PSE, tarjeta, Nequi o botón Bancolombia.</small></span>
+  </label>
+</ng-template>
+
 <ng-template #whenAndPay>
   <div class="closed-note" *ngIf="ordersPaused">⏸️ Esta tienda no está recibiendo pedidos por ahora.</div>
   <div class="closed-note" *ngIf="closedNow && !cartIsGiftOnly && fulfillment !== 'DINE_IN'">
@@ -1107,6 +1116,7 @@
         <input type="radio" name="mkPlan" [value]="c.plan" [checked]="effectivePlan === c.plan" [disabled]="c.disabled" (change)="paymentPlan = c.plan">
         <span><strong>{{ c.label }}</strong><small>{{ c.detail }}</small><small class="pay-note" *ngIf="c.note">{{ c.note }}</small></span>
       </label>
+      <ng-container *ngIf="planChoices.length"><ng-container *ngTemplateOutlet="payOnlineSoon"></ng-container></ng-container>
     </div>
     <p class="schedule-hint" *ngIf="!planChoices.length">Esta tienda aún no tiene formas de pago disponibles.</p>
   </ng-container>
