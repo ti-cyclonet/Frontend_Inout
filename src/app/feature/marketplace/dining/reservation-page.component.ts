@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 import { DiningPublicService, PublicReservation } from './dining-public.service';
+import { amountMatches, readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
 
 const REFRESH_MS = 60_000;
 
@@ -50,8 +51,9 @@ const REFRESH_MS = 60_000;
               <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile($event)" hidden>
               📷 {{ file ? file.name : 'Elegir foto del comprobante' }}
             </label>
-            <input type="text" class="rp-input" maxlength="100" [(ngModel)]="reference" placeholder="N° de referencia (opcional)">
-            <button type="button" class="rp-btn" (click)="upload()" [disabled]="!file || uploading">{{ uploading ? 'Enviando…' : 'Enviar comprobante' }}</button>
+            <input type="text" class="rp-input" maxlength="100" [(ngModel)]="reference" [placeholder]="reading ? 'Leyendo el comprobante…' : 'N° de referencia'">
+            <small class="rp-note" *ngIf="note">{{ note }}</small>
+            <button type="button" class="rp-btn" (click)="upload()" [disabled]="!file || uploading || reading || referenceTooShort">{{ uploading ? 'Enviando…' : 'Enviar comprobante' }}</button>
           </ng-container>
           <a *ngIf="d.proofUrl" [href]="d.proofUrl" target="_blank" rel="noopener" class="rp-link">Ver el comprobante que enviaste</a>
         </div>
@@ -94,6 +96,7 @@ const REFRESH_MS = 60_000;
     .rp-ok { color: #15803d; } .rp-wait { color: #92400e; } .rp-bad { color: #b91c1c; }
     .rp-file { border: 1px dashed #fb923c; background: #fff; border-radius: 10px; padding: 0.6rem; text-align: center; cursor: pointer; font-weight: 600; }
     .rp-input { border: 1px solid #d1d5db; border-radius: 10px; padding: 0.55rem 0.65rem; }
+    .rp-note { color: #9a3412; font-size: 0.82rem; }
     .rp-link { font-size: 0.85rem; }
     .rp-hint { margin: 0; color: #6b7280; font-size: 0.85rem; }
     .rp-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -165,12 +168,56 @@ export class ReservationPageComponent implements OnInit, OnDestroy {
     return '$' + Math.round(n).toLocaleString('es-CO');
   }
 
+  reading = false;
+  note = '';
+  /** Valores en pesos que leyó el OCR en la foto. */
+  amounts: number[] = [];
+
+  /** La referencia evita que un mismo comprobante se use en dos pagos. */
+  get referenceTooShort(): boolean {
+    return this.reference.replace(/[^A-Za-z0-9]/g, '').length < 4;
+  }
+
   onFile(e: Event): void {
     this.file = (e.target as HTMLInputElement).files?.[0] || null;
+    this.note = '';
+    this.amounts = [];
+    if (this.file) this.readFile(this.file);
+  }
+
+  /** Lee la referencia de la foto (OCR, en el navegador). */
+  private async readFile(file: File): Promise<void> {
+    this.reading = true;
+    try {
+      const { reference, amounts } = await readPaymentProof(file);
+      if (this.file !== file) return;
+      if (reference && !this.reference.trim()) {
+        this.reference = reference;
+        this.note = 'Leímos la referencia del comprobante: revisa que esté bien.';
+      } else if (!reference) {
+        this.note = 'No pudimos leer la referencia: escríbela tal como aparece en el comprobante.';
+      }
+      const amount = this.r?.deposit?.amount || 0;
+      this.amounts = amounts;
+      if (amount && !amountMatches(amounts, amount)) {
+        this.note += ` El comprobante dice ${this.money(Math.max(...amounts))} y el anticipo es de ${this.money(amount)}.`;
+      }
+    } catch {
+      if (this.file === file) this.note = 'Escribe la referencia tal como aparece en el comprobante.';
+    } finally {
+      if (this.file === file) this.reading = false;
+    }
   }
 
   upload(): void {
     if (!this.file) return;
+    // El comprobante debe ser por el valor del anticipo
+    const amount = this.r?.deposit?.amount || 0;
+    if (amount && !amountMatches(this.amounts, amount)) {
+      Swal.fire('El valor no coincide', `El comprobante dice ${this.money(Math.max(...this.amounts))} y el anticipo es de ${this.money(amount)}. `
+        + 'Sube el comprobante del pago del anticipo; si el valor sí es el correcto, sube una foto más clara.', 'warning');
+      return;
+    }
     this.uploading = true;
     this.dining.uploadDeposit(this.token, this.file, this.reference.trim()).subscribe({
       next: (r) => { this.uploading = false; this.r = r; this.file = null; },

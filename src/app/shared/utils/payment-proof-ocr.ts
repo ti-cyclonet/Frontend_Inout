@@ -53,3 +53,29 @@ export function extractAmounts(text: string): number[] {
   }
   return out;
 }
+
+/**
+ * ¿El comprobante es por alguno de los valores esperados? Sin valores leídos
+ * no se puede saber (foto borrosa): no se bloquea.
+ */
+export function amountMatches(amounts: number[], expected: number | number[]): boolean {
+  const list = (Array.isArray(expected) ? expected : [expected]).map(Number).filter((e) => e > 0);
+  return !amounts.length || !list.length || amounts.some((a) => list.some((e) => Math.abs(a - e) < 1));
+}
+
+/**
+ * Lee la foto del comprobante en el navegador (Tesseract; la imagen no sale
+ * del equipo) y devuelve la referencia y los valores que encontró.
+ */
+export async function readPaymentProof(file: File): Promise<{ reference: string | null; amounts: number[] }> {
+  // tesseract.js es CommonJS: según el empaquetador llega directo o en «default»
+  const mod: any = await import('tesseract.js');
+  const createWorker = mod.createWorker || mod.default?.createWorker;
+  const worker = await createWorker('spa');
+  try {
+    const { data } = await worker.recognize(file);
+    return { reference: extractReference(data.text), amounts: extractAmounts(data.text) };
+  } finally {
+    await worker.terminate();
+  }
+}

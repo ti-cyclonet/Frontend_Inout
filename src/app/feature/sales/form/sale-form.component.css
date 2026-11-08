@@ -539,3 +539,6 @@
   color: #64748b;
   font-weight: 500;
 }
+
+/* Soporte de pago ya usado en otra transacción */
+.proof-dup { display: block; margin-top: 0.35rem; color: #b91c1c; font-weight: 600; font-size: 0.8rem; }
