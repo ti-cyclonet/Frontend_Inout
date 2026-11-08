@@ -251,12 +251,14 @@
             </label>
             <button type="button" class="proof-clear" *ngIf="proofFile" (click)="proofFile = null; proofNote = ''; proofReading = false" aria-label="Quitar la foto">×</button>
             <input type="text" class="form-control proof-ref" [(ngModel)]="proofReference" [ngModelOptions]="{standalone: true}" maxlength="100"
+              [class.is-invalid]="!!proofDuplicate" (ngModelChange)="proofDuplicate = null" (blur)="checkProofReference()"
               [placeholder]="proofReading ? 'Leyendo el comprobante…' : (paymentMethod === 'TARJETA' ? 'N° de aprobación' : 'N° de referencia')">
           </div>
           <small class="proof-note" *ngIf="proofReading">
             <span class="proof-spin" aria-hidden="true"></span> Leyendo el comprobante…
           </small>
           <small class="proof-note" *ngIf="!proofReading && proofNote">{{ proofNote }}</small>
+          <small class="proof-dup" *ngIf="proofDuplicate" role="alert">⚠ {{ proofDuplicate }}</small>
         </div>
 
         <!-- Crédito: cupo y vencimiento -->

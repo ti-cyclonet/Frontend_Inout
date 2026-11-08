@@ -21,7 +21,9 @@ import { BarcodeRow, BarcodesService, normalizeBarcode } from '../../../shared/s
 import { BarcodeScanner } from '../../../shared/utils/barcode-scanner';
 import { ReceiptService } from '../../../shared/services/receipt.service';
 import { BusinessModulesService } from '../../../shared/services/business-modules.service';
-import { extractAmounts, extractReference } from '../../../shared/utils/payment-proof-ocr';
+import { readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
+import { PaymentReferencesService } from '../../../shared/services/payment-references.service';
+import { firstValueFrom } from 'rxjs';
 
 interface OrderItem {
   id: string;
@@ -180,6 +182,19 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   /** Lectura del comprobante (OCR): estado y aviso para mostrar. */
   proofReading = false;
   proofNote = '';
+  /** La referencia ya se usó en otra transacción: no se puede confirmar. */
+  proofDuplicate: string | null = null;
+  private readonly references = inject(PaymentReferencesService);
+
+  /** Revisa que la referencia no esté ya usada (al leerla de la foto o al escribirla). */
+  checkProofReference(): void {
+    const ref = this.proofReference.trim();
+    this.proofDuplicate = null;
+    if (!ref) return;
+    this.references.check(ref).subscribe((r) => {
+      if (this.proofReference.trim() === ref) this.proofDuplicate = r.used ? r.message : null;
+    });
+  }
 
   /**
    * Lee la foto en el navegador (Tesseract, sin enviarla a ningún servicio)
@@ -190,19 +205,13 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     this.proofNote = '';
     this.proofReading = true;
     try {
-      // tesseract.js es CommonJS: según el empaquetador llega directo o en «default»
-      const mod: any = await import('tesseract.js');
-      const createWorker = mod.createWorker || mod.default?.createWorker;
-      const worker = await createWorker('spa');
-      const { data } = await worker.recognize(file);
-      await worker.terminate();
+      const { reference: ref, amounts } = await readPaymentProof(file);
       if (this.proofFile !== file) return; // cambiaron la foto mientras se leía
-      const ref = extractReference(data.text);
-      const amounts = extractAmounts(data.text);
       const notes: string[] = [];
       if (ref && !this.proofReference.trim()) {
         this.proofReference = ref;
         notes.push('Referencia leída del comprobante: revísala.');
+        this.checkProofReference();
       } else if (!ref) {
         notes.push('No se pudo leer la referencia; escríbela si la necesitas.');
       }
@@ -743,10 +752,20 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     return !!this.paymentMethod;
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (!this.canSubmit() || this.loading) return;
 
     this.loading = true;
+    // Un mismo volante no se usa en dos ventas: se revisa antes de crear la venta
+    if (this.needsProof && this.proofReference.trim()) {
+      const r = await firstValueFrom(this.references.check(this.proofReference));
+      if (r.used) {
+        this.loading = false;
+        this.proofDuplicate = r.message;
+        Swal.fire({ icon: 'warning', title: 'Soporte de pago ya usado', text: r.message || 'Esta referencia ya se usó en otra transacción.' });
+        return;
+      }
+    }
     
     const saleData: CreateSaleDto = {
       strTenantId: 'default-tenant',
@@ -853,6 +872,7 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     this.stopSplit();
     this.proofFile = null;
     this.proofReference = '';
+    this.proofDuplicate = null;
     this.proofNote = '';
     this.proofReading = false;
     // Lo que se ve en el buscador de clientes (los datos de arriba no lo borran)
