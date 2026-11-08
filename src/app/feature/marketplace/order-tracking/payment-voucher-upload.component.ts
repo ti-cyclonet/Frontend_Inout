@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { formatCop } from '../../../shared/utils/currency.util';
+import { amountMatches, readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
 
 /** Medios con los que el comprador suele pagar por fuera (el efectivo lo registra el negocio). */
 const CUSTOMER_METHODS = [
@@ -38,13 +39,14 @@ const CUSTOMER_METHODS = [
         </select>
       </div>
       <div class="voucher-row">
-        <label>Referencia <small>(opcional)</small></label>
-        <input type="text" maxlength="100" [(ngModel)]="reference" placeholder="Número de la transacción" />
-      </div>
-      <div class="voucher-row">
         <label>Foto del comprobante</label>
         <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFile($event)" />
       </div>
+      <div class="voucher-row">
+        <label>Referencia</label>
+        <input type="text" maxlength="100" [(ngModel)]="reference" [placeholder]="reading ? 'Leyendo el comprobante…' : 'Número de la transacción'" />
+      </div>
+      <p class="voucher-note" *ngIf="note">{{ note }}</p>
       <p class="voucher-error" *ngIf="error">{{ error }}</p>
       <button type="button" class="voucher-btn" [disabled]="sending" (click)="send()">
         {{ sending ? 'Enviando…' : 'Enviar comprobante' }}
@@ -60,6 +62,7 @@ const CUSTOMER_METHODS = [
     .voucher-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; font-size: 0.85rem; }
     .voucher-row input, .voucher-row select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; }
     .voucher-error { color: #c62828; font-size: 0.82rem; margin: 4px 0; }
+    .voucher-note { color: #475569; font-size: 0.8rem; margin: 2px 0 4px; }
     .voucher-btn { width: 100%; border: none; border-radius: 10px; padding: 10px; background: #e65c00; color: #fff; font-weight: 600; cursor: pointer; }
     .voucher-btn:disabled { opacity: .6; cursor: default; }
     .voucher-sent { background: #e8f5e9; color: #2e7d32; border-radius: 10px; padding: 10px; font-size: 0.88rem; }
@@ -102,8 +105,39 @@ export class PaymentVoucherUploadComponent implements OnChanges {
     input.setSelectionRange(input.value.length, input.value.length);
   }
 
+  /** Lectura de la foto (OCR) para poner la referencia sola. */
+  reading = false;
+  note = '';
+  /** Valores en pesos que leyó el OCR en la foto. */
+  amounts: number[] = [];
+
   onFile(event: Event): void {
     this.file = (event.target as HTMLInputElement).files?.[0] || null;
+    this.note = '';
+    this.amounts = [];
+    if (this.file) this.readFile(this.file);
+  }
+
+  private async readFile(file: File): Promise<void> {
+    this.reading = true;
+    try {
+      const { reference, amounts } = await readPaymentProof(file);
+      if (this.file !== file) return;
+      if (reference && !this.reference.trim()) {
+        this.reference = reference;
+        this.note = 'Leímos la referencia del comprobante: revisa que esté bien.';
+      } else if (!reference) {
+        this.note = 'No pudimos leer la referencia: escríbela tal como aparece en el comprobante.';
+      }
+      this.amounts = amounts;
+      if (this.amount && !amountMatches(amounts, Number(this.amount))) {
+        this.note += ` El comprobante dice ${formatCop(Math.max(...amounts))}: el valor pagado debe ser el del comprobante.`;
+      }
+    } catch {
+      if (this.file === file) this.note = 'Escribe la referencia tal como aparece en el comprobante.';
+    } finally {
+      if (this.file === file) this.reading = false;
+    }
   }
 
   send(): void {
@@ -111,11 +145,20 @@ export class PaymentVoucherUploadComponent implements OnChanges {
     if (!this.amount || this.amount <= 0) { this.error = 'Indica el valor que pagaste.'; return; }
     if (!this.file) { this.error = 'Adjunta la foto del comprobante.'; return; }
     if (this.file.size > 5 * 1024 * 1024) { this.error = 'La imagen supera 5 MB.'; return; }
+    if (this.reading) { this.error = 'Espera un momento: estamos leyendo el comprobante.'; return; }
+    // Cada comprobante se reporta por su valor (si pagaste en partes, sube un comprobante por cada pago)
+    if (!amountMatches(this.amounts, Number(this.amount))) {
+      this.error = `El comprobante dice ${formatCop(Math.max(...this.amounts))} y estás reportando ${formatCop(Number(this.amount))}. `
+        + 'Escribe el valor del comprobante; si pagaste en varias partes, sube cada comprobante por separado. Si el valor sí es el correcto, sube una foto más clara.';
+      return;
+    }
+    // La referencia evita que un mismo comprobante se use en dos pagos
+    if (this.reference.replace(/[^A-Za-z0-9]/g, '').length < 4) { this.error = 'Escribe el número de referencia del comprobante.'; return; }
 
     const form = new FormData();
     form.append('amount', String(this.amount));
     form.append('method', this.method);
-    if (this.reference.trim()) form.append('reference', this.reference.trim());
+    form.append('reference', this.reference.trim());
     form.append('file', this.file);
 
     this.sending = true;
