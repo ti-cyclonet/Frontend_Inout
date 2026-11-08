@@ -86,7 +86,7 @@
               Nombre
               <svg viewBox="0 0 16 16" class="sort-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" /></svg>
             </th>
-            <th (click)="onSort('email')" class="sortable col-email">
+            <th (click)="onSort('email')" class="sortable col-email hide-mobile">
               Correo
               <svg viewBox="0 0 16 16" class="sort-icon"><use xlink:href="./assets/icons/bootstrap-icons.svg#arrow-up-down" /></svg>
             </th>
@@ -105,10 +105,12 @@
                 <div class="user-name">
                   <strong>{{ getUserName(user) }}</strong>
                   <small class="text-muted d-block">{{ user.customerCode || '' }}</small>
+                  <!-- En el celular el correo va aquí (se oculta su columna) -->
+                  <small class="user-email-mobile" *ngIf="user.email">{{ user.email }}</small>
                 </div>
               </div>
             </td>
-            <td class="col-email">{{ user.email || 'N/A' }}</td>
+            <td class="col-email hide-mobile">{{ user.email || 'N/A' }}</td>
             <td class="col-phone hide-mobile">{{ user.phone || 'N/A' }}</td>
             <td class="col-document hide-mobile">
               <span class="text-muted">{{ user.documentType || '' }} {{ user.documentNumber || 'N/A' }}</span>
