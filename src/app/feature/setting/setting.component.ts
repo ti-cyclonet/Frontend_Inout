@@ -1,3 +1,4 @@
+import { EinvoicingSettingsComponent } from './einvoicing-settings.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -14,7 +15,7 @@ import { BusinessModules, BusinessModulesService, ModuleKey } from '../../shared
 @Component({
   selector: 'app-setting',
   standalone: true,
-  imports: [InfoTipComponent, CommonModule, FormsModule, ReactiveFormsModule, ProductionPlanPanelComponent],
+  imports: [InfoTipComponent, CommonModule, FormsModule, ReactiveFormsModule, ProductionPlanPanelComponent, EinvoicingSettingsComponent],
   templateUrl: './setting.component.html',
   styleUrls: ['./setting.component.css']
 })
