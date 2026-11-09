@@ -1,3 +1,6 @@
+/* Ocupa el ancho de su contenedor (sin esto el contenido se salía por la derecha) */
+:host { display: block; width: 100%; min-width: 0; }
+.ei { min-width: 0; overflow-wrap: anywhere; }
 .ei { padding: 0.25rem 0 0.75rem; display: grid; gap: 0.6rem; }
 .ei-loading, .ei-error { font-size: 0.85rem; color: #6b7280; margin: 0; }
 .ei-error { color: #b91c1c; }

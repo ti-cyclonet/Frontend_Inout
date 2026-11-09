@@ -66,6 +66,7 @@ export class EinvoicingSettingsComponent implements OnInit {
 
   private apply(s: EinvoicingStatus): void {
     this.st = s;
+    this.computeSteps(s);
     this.loading = false;
     this.busy = false;
     this.error = '';
@@ -95,13 +96,21 @@ export class EinvoicingSettingsComponent implements OnInit {
     return this.issuer.idType === '31' ? nitCheckDigit(this.issuer.idNumber) : null;
   }
 
-  /** Pasos para dejar lista la facturación (para el asistente). */
-  get steps() {
-    const s = this.st;
-    return [
-      { key: 'datos' as const, title: 'Datos fiscales del negocio', done: !!s?.issuer && !(s?.issuerErrors?.length) },
-      { key: 'dian' as const, title: 'Habilitación ante la DIAN', done: false },
-      { key: 'numeracion' as const, title: 'Resolución de numeración', done: !!s?.resolutions?.some((r) => r.docType === 'FACTURA' || r.docType === 'POS') },
+  /**
+   * Pasos del asistente. Se calculan al recibir el estado, NO en un getter:
+   * un arreglo nuevo en cada detección de cambios hacía que el *ngFor
+   * recreara los campos (con ngModel) sin fin y la página se congelaba.
+   */
+  steps: { key: 'datos' | 'dian' | 'numeracion'; title: string; done: boolean }[] = [];
+  trackStep = (_: number, s: { key: string }) => s.key;
+  trackTier = (_: number, t: { code: string }) => t.code;
+  trackRes = (_: number, r: { id: string }) => r.id;
+
+  private computeSteps(s: EinvoicingStatus): void {
+    this.steps = [
+      { key: 'datos', title: 'Datos fiscales del negocio', done: !!s.issuer && !s.issuerErrors?.length },
+      { key: 'dian', title: 'Habilitación ante la DIAN', done: false },
+      { key: 'numeracion', title: 'Resolución de numeración', done: !!s.resolutions?.some((r) => r.docType === 'FACTURA' || r.docType === 'POS') },
     ];
   }
 
