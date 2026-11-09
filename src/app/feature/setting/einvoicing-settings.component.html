@@ -26,7 +26,7 @@
       </ul>
 
       <div class="ei-tiers" role="radiogroup" aria-label="Plan de facturación electrónica">
-        <label class="ei-tier" *ngFor="let t of st.catalog.tiers" [class.ei-tier--on]="tier === t.code">
+        <label class="ei-tier" *ngFor="let t of st.catalog.tiers; trackBy: trackTier" [class.ei-tier--on]="tier === t.code">
           <input type="radio" name="eiTier" [value]="t.code" [(ngModel)]="tier" [disabled]="!isAdmin">
           <span class="ei-tier-name">{{ t.name }}</span>
           <span class="ei-tier-units">{{ t.includedUnits }} documentos/mes</span>
@@ -68,13 +68,13 @@
         <small>{{ st.usage.used }} de {{ st.usage.included }} documentos este mes<ng-container *ngIf="st.usage.used > st.usage.included"> · {{ st.usage.used - st.usage.included }} adicionales</ng-container></small>
       </div>
 
-      <div class="ei-warn" *ngFor="let r of st.resolutions">
+      <div class="ei-warn" *ngFor="let r of st.resolutions; trackBy: trackRes">
         <ng-container *ngIf="r.warning">⚠ {{ r.warning }}</ng-container>
       </div>
 
       <!-- Asistente -->
       <ol class="ei-steps">
-        <li *ngFor="let s of steps; let i = index" [class.ei-step--done]="s.done" [class.ei-step--open]="step === s.key">
+        <li *ngFor="let s of steps; let i = index; trackBy: trackStep" [class.ei-step--done]="s.done" [class.ei-step--open]="step === s.key">
           <button type="button" class="ei-step-head" (click)="step = step === s.key ? null : s.key" [attr.aria-expanded]="step === s.key">
             <span class="ei-step-n">{{ s.done ? '✓' : i + 1 }}</span> {{ s.title }}
           </button>
@@ -143,7 +143,7 @@
           <!-- 3 · Numeración -->
           <div class="ei-step-body" *ngIf="step === 'numeracion' && s.key === 'numeracion'">
             <table class="ei-res" *ngIf="st.resolutions.length">
-              <tr *ngFor="let r of st.resolutions"><td>{{ r.docType === 'POS' ? 'POS electrónico' : r.docType === 'FACTURA' ? 'Factura' : 'Nota crédito' }}</td><td>{{ r.prefix }} {{ r.rangeFrom }}–{{ r.rangeTo }}</td><td>hasta {{ r.validTo }}</td><td>usados {{ r.lastNumber >= r.rangeFrom ? r.lastNumber - r.rangeFrom + 1 : 0 }}</td></tr>
+              <tr *ngFor="let r of st.resolutions; trackBy: trackRes"><td>{{ r.docType === 'POS' ? 'POS electrónico' : r.docType === 'FACTURA' ? 'Factura' : 'Nota crédito' }}</td><td>{{ r.prefix }} {{ r.rangeFrom }}–{{ r.rangeTo }}</td><td>hasta {{ r.validTo }}</td><td>usados {{ r.lastNumber >= r.rangeFrom ? r.lastNumber - r.rangeFrom + 1 : 0 }}</td></tr>
             </table>
             <ng-container *ngIf="isAdmin">
               <div class="ei-grid">
