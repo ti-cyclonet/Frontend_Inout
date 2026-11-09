@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { EinvoicingService } from '../../../shared/services/einvoicing.service';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -223,6 +224,17 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
               </label>
             </div>
 
+            <!-- Documento electrónico DIAN (si el negocio tiene la facturación electrónica activa) -->
+            <div class="einv mt-2" *ngIf="selectedSale?.strEinvoiceStatus && selectedSale as es" [class.einv--error]="es.strEinvoiceStatus === 'ERROR' || es.strEinvoiceStatus === 'RECHAZADO'">
+              <span>🧾 <strong>{{ einvoiceLabel(es) }}</strong></span>
+              <span class="einv-status">{{ einvoiceStatusText(es.strEinvoiceStatus || '') }}</span>
+              <span *ngIf="es.strEinvoiceCreditNote"> · Nota crédito {{ es.strEinvoiceCreditNote }}</span>
+              <small class="d-block" *ngIf="es.strEinvoiceMessage">{{ es.strEinvoiceMessage }}</small>
+              <button type="button" class="btn btn-sm btn-outline-primary mt-1" *ngIf="es.strEinvoiceStatus === 'ERROR' && !es.dtmVoidedAt" [disabled]="retryingEinvoice" (click)="retryEinvoice()">
+                {{ retryingEinvoice ? 'Enviando…' : 'Reintentar documento electrónico' }}
+              </button>
+            </div>
+
             <!-- Resumen de totales -->
             <div class="mt-3 p-3" style="background-color: #e7f3ff; border-radius: 5px; border: 2px solid #0066cc;">
               <div class="row">
@@ -274,6 +286,9 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
     <div class="modal-backdrop fade" [class.show]="showViewModal" *ngIf="showViewModal"></div>
   `,
   styles: [`
+    .einv { padding: 8px 12px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; font-size: 0.88rem; }
+    .einv--error { background: #fef2f2; border-color: #fecaca; }
+    .einv-status { margin-left: 6px; font-size: 0.8rem; color: #475569; }
     .pay-proof { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.9rem; }
     .pay-proof > div { flex: 1; min-width: 200px; }
     .pay-proof-thumb img { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
@@ -862,6 +877,39 @@ export class SalesListComponent implements OnInit {
       (sale.customerName || '').toLowerCase().includes(term) ||
       (sale.strInvoiceCode || '').toLowerCase().includes(term)
     );
+  }
+
+  /** Facturación electrónica: número del documento y estado ante la DIAN. */
+  retryingEinvoice = false;
+  private readonly einvoicing = inject(EinvoicingService);
+
+  einvoiceLabel(sale: any): string {
+    const n = sale?.strEinvoiceNumber;
+    return n ? `Documento electrónico ${n}` : 'Documento electrónico';
+  }
+
+  einvoiceStatusText(status: string): string {
+    return ({
+      PENDIENTE: 'Por enviar a la DIAN', EN_PROCESO: 'En validación', ACEPTADO: 'Aceptado por la DIAN',
+      RECHAZADO: 'Rechazado por la DIAN', CONTINGENCIA: 'En contingencia: se enviará solo', ERROR: 'No se emitió',
+    } as Record<string, string>)[status] || status;
+  }
+
+  retryEinvoice(): void {
+    const sale = this.selectedSale;
+    if (!sale?.strId) return;
+    this.retryingEinvoice = true;
+    this.einvoicing.retrySale(sale.strId).subscribe({
+      next: (docs) => {
+        this.retryingEinvoice = false;
+        const d = (docs || []).find((x) => x.type === 'FACTURA' || x.type === 'POS');
+        if (d) Object.assign(sale, { strEinvoiceNumber: d.fullNumber, strEinvoiceStatus: d.status, strEinvoiceMessage: null });
+      },
+      error: (e) => {
+        this.retryingEinvoice = false;
+        Swal.fire('No se pudo emitir', e?.error?.message || 'Intenta de nuevo.', 'warning');
+      },
+    });
   }
 
   viewSale(id: string): void {
