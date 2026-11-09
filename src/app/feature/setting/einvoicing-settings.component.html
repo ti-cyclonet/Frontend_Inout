@@ -1,0 +1,177 @@
+<div class="ei">
+  <p class="ei-loading" *ngIf="loading">Consultando…</p>
+  <p class="ei-error" *ngIf="error">{{ error }} <button type="button" class="ei-link" (click)="load()">Reintentar</button></p>
+
+  <ng-container *ngIf="st && !loading">
+    <div class="ei-head">
+      <div>
+        <strong class="ei-title">🧾 Facturación electrónica DIAN</strong>
+        <span class="ei-chip" [class.ei-chip--config]="!st.available && st.addon?.status !== 'ACTIVO'" [class.ei-chip--ok]="st.addon?.status === 'ACTIVO'">{{ statusLabel }}</span>
+      </div>
+      <small class="text-muted">Tus ventas salen como factura electrónica o POS electrónico, validados por la DIAN. Complemento opcional de tu plan.</small>
+    </div>
+
+    <p class="ei-msg" *ngIf="!st.available" role="status">
+      ⏳ Estamos terminando de configurar la facturación electrónica. <strong>Todavía no está disponible</strong>, pero ya puedes solicitarla y dejar listos tus datos:
+      te avisaremos cuando la activemos. <strong>No se cobra nada hasta que esté activa.</strong>
+    </p>
+
+    <!-- ═══ Oferta: sin solicitud ═══ -->
+    <ng-container *ngIf="!st.addon">
+      <ul class="ei-benefits">
+        <li>✓ Factura electrónica al cliente identificado y <strong>POS electrónico</strong> en el mostrador.</li>
+        <li>✓ Anular una venta emite su <strong>nota crédito</strong> automáticamente.</li>
+        <li>✓ La venta nunca espera a la DIAN: si se cae, el documento se envía solo después.</li>
+        <li>✓ Tu cliente recibe el documento por correo, con su código QR y CUFE.</li>
+      </ul>
+
+      <div class="ei-tiers" role="radiogroup" aria-label="Plan de facturación electrónica">
+        <label class="ei-tier" *ngFor="let t of st.catalog.tiers" [class.ei-tier--on]="tier === t.code">
+          <input type="radio" name="eiTier" [value]="t.code" [(ngModel)]="tier" [disabled]="!isAdmin">
+          <span class="ei-tier-name">{{ t.name }}</span>
+          <span class="ei-tier-units">{{ t.includedUnits }} documentos/mes</span>
+          <span class="ei-tier-price">{{ money(t.monthly) }}<small *ngIf="t.monthly != null"> /mes</small></span>
+        </label>
+      </div>
+      <small class="text-muted d-block mb-2">
+        Documentos adicionales: {{ money(st.catalog.extraUnit) }}{{ st.catalog.extraUnit != null ? ' c/u' : '' }}.
+        <ng-container *ngIf="!st.catalog.pricesDefined"> Te confirmaremos el precio antes de activarla.</ng-container>
+        Se suma a la factura mensual de tu contrato; si te pasas del cupo no se bloquea: se cobra el excedente.
+      </small>
+
+      <ng-container *ngIf="isAdmin; else noAdmin">
+        <label class="ei-terms">
+          <input type="checkbox" [(ngModel)]="acceptTerms">
+          <span>Acepto los <button type="button" class="ei-link" (click)="showTerms = !showTerms">términos del servicio de facturación electrónica</button>.</span>
+        </label>
+        <div class="ei-terms-box" *ngIf="showTerms">
+          <p><strong>Mandato.</strong> Autorizas a CycloNet S.A.S. y a su proveedor tecnológico autorizado por la DIAN a generar, firmar, transmitir y entregar en tu nombre tus documentos electrónicos (factura, POS electrónico y notas).</p>
+          <p><strong>Responsabilidad.</strong> Tú sigues siendo el responsable ante la DIAN de lo que facturas: tus datos fiscales, los impuestos, la numeración y los datos de tus clientes. CycloNet y el proveedor son el medio tecnológico.</p>
+          <p><strong>Costo.</strong> El valor mensual del plan elegido y los documentos adicionales se suman a la factura de tu contrato desde la activación. Antes de activarla no se cobra nada.</p>
+          <p><strong>Datos.</strong> Tratamos los datos de tus compradores solo para emitir y entregar tus documentos (Ley 1581 de 2012). Los documentos se conservan y puedes consultarlos aunque canceles.</p>
+          <p><strong>Cancelación.</strong> Puedes cancelarla cuando quieras; se desactiva al terminar el periodo pagado.</p>
+          <small class="text-muted">Versión {{ st.catalog.termsVersion }}</small>
+        </div>
+        <button type="button" class="ei-btn" [disabled]="busy || !acceptTerms" (click)="request()">{{ busy ? 'Enviando…' : 'Solicitar facturación electrónica' }}</button>
+      </ng-container>
+      <ng-template #noAdmin><small class="text-muted">Solo un administrador puede solicitarla.</small></ng-template>
+    </ng-container>
+
+    <!-- ═══ Solicitada o activa ═══ -->
+    <ng-container *ngIf="st.addon as a">
+      <p class="ei-plan">
+        Plan <strong>{{ a.tier | titlecase }}</strong> · {{ a.includedUnits }} documentos/mes · {{ money(a.monthlyValue) }}{{ a.monthlyValue != null ? '/mes' : '' }}
+      </p>
+
+      <div class="ei-usage" *ngIf="a.status === 'ACTIVO'">
+        <div class="ei-usage-bar"><span [style.width.%]="usagePct" [class.ei-usage--high]="usagePct >= 80"></span></div>
+        <small>{{ st.usage.used }} de {{ st.usage.included }} documentos este mes<ng-container *ngIf="st.usage.used > st.usage.included"> · {{ st.usage.used - st.usage.included }} adicionales</ng-container></small>
+      </div>
+
+      <div class="ei-warn" *ngFor="let r of st.resolutions">
+        <ng-container *ngIf="r.warning">⚠ {{ r.warning }}</ng-container>
+      </div>
+
+      <!-- Asistente -->
+      <ol class="ei-steps">
+        <li *ngFor="let s of steps; let i = index" [class.ei-step--done]="s.done" [class.ei-step--open]="step === s.key">
+          <button type="button" class="ei-step-head" (click)="step = step === s.key ? null : s.key" [attr.aria-expanded]="step === s.key">
+            <span class="ei-step-n">{{ s.done ? '✓' : i + 1 }}</span> {{ s.title }}
+          </button>
+
+          <!-- 1 · Datos fiscales -->
+          <div class="ei-step-body" *ngIf="step === 'datos' && s.key === 'datos'">
+            <ul class="ei-errors" *ngIf="st.issuer && st.issuerErrors.length"><li *ngFor="let e of st.issuerErrors">{{ e }}</li></ul>
+            <div class="ei-grid">
+              <label>Persona
+                <select [(ngModel)]="issuer.personType" [disabled]="!isAdmin"><option value="JURIDICA">Jurídica</option><option value="NATURAL">Natural</option></select>
+              </label>
+              <label>Documento
+                <select [(ngModel)]="issuer.idType" [disabled]="!isAdmin"><option value="31">NIT</option><option value="13">Cédula</option></select>
+              </label>
+              <label>Número <small *ngIf="dv !== null">DV {{ dv }}</small>
+                <input [(ngModel)]="issuer.idNumber" inputmode="numeric" maxlength="20" [disabled]="!isAdmin" placeholder="901565464">
+              </label>
+              <label class="ei-wide">Razón social o nombre (como en el RUT)
+                <input [(ngModel)]="issuer.legalName" maxlength="200" [disabled]="!isAdmin">
+              </label>
+              <label class="ei-wide">Nombre comercial <small>(opcional)</small>
+                <input [(ngModel)]="issuer.tradeName" maxlength="200" [disabled]="!isAdmin">
+              </label>
+              <label>IVA
+                <select [(ngModel)]="issuer.taxRegime" [disabled]="!isAdmin"><option value="48">Responsable de IVA</option><option value="49">No responsable de IVA</option></select>
+              </label>
+              <label>Actividad (CIIU) <small>(opcional)</small>
+                <input [(ngModel)]="issuer.ciiu" maxlength="10" [disabled]="!isAdmin" placeholder="5611">
+              </label>
+              <label class="ei-wide">Dirección
+                <input [(ngModel)]="issuer.address" maxlength="255" [disabled]="!isAdmin">
+              </label>
+              <label>Municipio (código DANE)
+                <input [(ngModel)]="issuer.municipalityCode" inputmode="numeric" maxlength="5" [disabled]="!isAdmin" placeholder="13001">
+              </label>
+              <label>Correo de facturación
+                <input type="email" [(ngModel)]="issuer.email" maxlength="255" [disabled]="!isAdmin">
+              </label>
+              <label>Teléfono <small>(opcional)</small>
+                <input [(ngModel)]="issuer.phone" maxlength="30" [disabled]="!isAdmin">
+              </label>
+            </div>
+            <fieldset class="ei-resp">
+              <legend>Responsabilidades fiscales (casilla 53 del RUT)</legend>
+              <label *ngFor="let r of responsibilities">
+                <input type="checkbox" [checked]="issuer.responsibilities?.includes(r.code)" (change)="toggleResponsibility(r.code, $any($event.target).checked)" [disabled]="!isAdmin">
+                {{ r.code }} · {{ r.label }}
+              </label>
+            </fieldset>
+            <button type="button" class="ei-btn" *ngIf="isAdmin" [disabled]="busy" (click)="saveIssuer()">{{ busy ? 'Guardando…' : 'Guardar datos fiscales' }}</button>
+          </div>
+
+          <!-- 2 · DIAN -->
+          <div class="ei-step-body" *ngIf="step === 'dian' && s.key === 'dian'">
+            <p>Estos pasos se hacen una sola vez en el portal de la DIAN (te acompañamos si lo necesitas):</p>
+            <ol class="ei-dian">
+              <li>Tener en el RUT la responsabilidad <strong>52 · Facturador electrónico</strong>.</li>
+              <li>Registrarte como facturador electrónico y elegir la modalidad <strong>«Proveedor tecnológico»</strong>.
+                <span class="ei-pending" *ngIf="!st.available">Te diremos qué proveedor seleccionar cuando la activemos.</span>
+                <span *ngIf="st.available">Selecciona el proveedor que te indicamos.</span></li>
+              <li>Pedir la <strong>resolución de numeración</strong> (formulario 1876) para factura electrónica y, si vendes en mostrador, para el POS electrónico.</li>
+              <li>Asociar tus prefijos al proveedor tecnológico y cargar aquí la resolución (paso 3).</li>
+            </ol>
+          </div>
+
+          <!-- 3 · Numeración -->
+          <div class="ei-step-body" *ngIf="step === 'numeracion' && s.key === 'numeracion'">
+            <table class="ei-res" *ngIf="st.resolutions.length">
+              <tr *ngFor="let r of st.resolutions"><td>{{ r.docType === 'POS' ? 'POS electrónico' : r.docType === 'FACTURA' ? 'Factura' : 'Nota crédito' }}</td><td>{{ r.prefix }} {{ r.rangeFrom }}–{{ r.rangeTo }}</td><td>hasta {{ r.validTo }}</td><td>usados {{ r.lastNumber >= r.rangeFrom ? r.lastNumber - r.rangeFrom + 1 : 0 }}</td></tr>
+            </table>
+            <ng-container *ngIf="isAdmin">
+              <div class="ei-grid">
+                <label>Documento
+                  <select [(ngModel)]="resolution.docType"><option value="FACTURA">Factura electrónica</option><option value="POS">POS electrónico</option></select>
+                </label>
+                <label>N° de resolución <input [(ngModel)]="resolution.resolutionNumber" maxlength="30" placeholder="18764000001234"></label>
+                <label>Prefijo <input [(ngModel)]="resolution.prefix" maxlength="4" placeholder="FE"></label>
+                <label>Desde <input type="number" min="1" [(ngModel)]="resolution.rangeFrom"></label>
+                <label>Hasta <input type="number" min="1" [(ngModel)]="resolution.rangeTo"></label>
+                <label>Vigente desde <input type="date" [(ngModel)]="resolution.validFrom"></label>
+                <label>Vigente hasta <input type="date" [(ngModel)]="resolution.validTo"></label>
+                <label class="ei-wide">Clave técnica <small>(la ves en el portal de la DIAN; opcional si te la da el proveedor)</small>
+                  <input [(ngModel)]="resolution.technicalKey" maxlength="100" autocomplete="off">
+                </label>
+              </div>
+              <button type="button" class="ei-btn" [disabled]="busy" (click)="saveResolution()">{{ busy ? 'Guardando…' : 'Guardar resolución' }}</button>
+            </ng-container>
+          </div>
+        </li>
+      </ol>
+
+      <p class="ei-msg" *ngIf="a.status === 'SOLICITADO' && st.available && steps[0].done && steps[2].done">
+        ✅ Todo listo: la activaremos en cuanto el proveedor confirme tu habilitación.
+      </p>
+      <button type="button" class="ei-link ei-link--danger" *ngIf="isAdmin" [disabled]="busy" (click)="cancel()">
+        {{ a.status === 'ACTIVO' ? 'Cancelar la facturación electrónica' : 'Retirar la solicitud' }}
+      </button>
+    </ng-container>
+  </ng-container>
+</div>

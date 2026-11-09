@@ -68,6 +68,14 @@
       <small class="text-muted d-block pb-2" *ngIf="!permissions.isAdmin">Solo un administrador puede cambiarlas.</small>
     </div>
 
+    <!-- Facturación electrónica DIAN: complemento opcional del contrato -->
+    <div class="inner-container">
+      <h3 class="card-title mb-0">Facturación electrónica</h3>
+    </div>
+    <div class="inner-container">
+      <app-einvoicing-settings [isAdmin]="permissions.isAdmin"></app-einvoicing-settings>
+    </div>
+
     <!-- Preferencias de interfaz -->
     <div class="inner-container">
       <h3 class="card-title mb-0">Preferencias</h3>

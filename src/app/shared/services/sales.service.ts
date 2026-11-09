@@ -23,6 +23,12 @@ export interface Sale {
   /** Volante del datáfono / comprobante del pago (foto) y su referencia. */
   strPaymentProofUrl?: string | null;
   strPaymentReference?: string | null;
+  /** Facturación electrónica: documento de la venta (factura o POS), estado, nota crédito y último error. */
+  strEinvoiceId?: string | null;
+  strEinvoiceNumber?: string | null;
+  strEinvoiceStatus?: string | null;
+  strEinvoiceCreditNote?: string | null;
+  strEinvoiceMessage?: string | null;
   /** Pago de contado dividido en varios medios. */
   payments?: { method: string; amount: number }[] | null;
   paymentMethod?: string | null;
