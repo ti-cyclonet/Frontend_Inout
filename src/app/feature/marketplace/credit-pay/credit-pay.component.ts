@@ -74,7 +74,8 @@ const STATUS: Record<string, string> = {
     </div>
   `,
   styles: [`
-    .cp-page { min-height: 100vh; background: #f4f5f7; padding: 24px 12px; font-family: 'Segoe UI', Arial, sans-serif; }
+    /* La app bloquea el scroll de html/body: la página hace el suyo (como el seguimiento de pedido) */
+    .cp-page { box-sizing: border-box; height: 100vh; height: 100dvh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; background: #f4f5f7; padding: 24px 12px; font-family: 'Segoe UI', Arial, sans-serif; }
     .cp-card { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,.08); }
     .cp-brand { text-align: center; padding: 26px 24px 18px; border-bottom: 4px solid #1f2a44; }
     .cp-brand img { display: block; margin: 0 auto 12px; max-width: 160px; max-height: 80px; }
