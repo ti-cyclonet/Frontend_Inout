@@ -2536,7 +2536,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       quantity: Number(item.quantity),
       unitPrice: this.lineUnitPrice(item),
       subtotal: this.lineUnitPrice(item) * Number(item.quantity),
-      ...(item.choices?.length ? { choices: item.choices } : {}),
+      // Solo lo escogido: el precio de las adiciones lo pone el servidor desde la carta
+      ...(item.choices?.length ? { choices: item.choices.map(({ group, options }) => ({ group, options })) } : {}),
       ...(item.giftCard ? { giftCard: item.giftCard } : {}),
     }));
   }
