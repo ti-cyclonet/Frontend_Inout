@@ -199,7 +199,9 @@ export class ReservationPageComponent implements OnInit, OnDestroy {
       }
       const amount = this.r?.deposit?.amount || 0;
       this.amounts = amounts;
-      if (amount && !amountMatches(amounts, amount)) {
+      if (amount && !amounts.length) {
+        this.note += ' No pudimos leer el valor en la foto: sube una foto más clara donde se vea completo el comprobante.';
+      } else if (amount && !amountMatches(amounts, amount)) {
         this.note += ` El comprobante dice ${this.money(Math.max(...amounts))} y el anticipo es de ${this.money(amount)}.`;
       }
     } catch {
@@ -213,6 +215,11 @@ export class ReservationPageComponent implements OnInit, OnDestroy {
     if (!this.file) return;
     // El comprobante debe ser por el valor del anticipo
     const amount = this.r?.deposit?.amount || 0;
+    // Sin un valor legible no se puede comprobar que sea el pago del anticipo
+    if (amount && !this.amounts.length) {
+      Swal.fire('No pudimos leer el valor', 'Sube una foto más clara donde se vea completo el comprobante, con el valor pagado.', 'warning');
+      return;
+    }
     if (amount && !amountMatches(this.amounts, amount)) {
       Swal.fire('El valor no coincide', `El comprobante dice ${this.money(Math.max(...this.amounts))} y el anticipo es de ${this.money(amount)}. `
         + 'Sube el comprobante del pago del anticipo; si el valor sí es el correcto, sube una foto más clara.', 'warning');

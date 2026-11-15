@@ -6,6 +6,9 @@ import { environment } from '../../../../environments/environment';
 import { formatCop } from '../../../shared/utils/currency.util';
 import { amountMatches, readPaymentProof } from '../../../shared/utils/payment-proof-ocr';
 
+/** No se leyó ningún valor en la foto: no se deja enviar. */
+const UNREADABLE_AMOUNT = 'No pudimos leer el valor pagado en la foto. Sube una foto más clara donde se vea completo el comprobante.';
+
 /** Medios con los que el comprador suele pagar por fuera (el efectivo lo registra el negocio). */
 const CUSTOMER_METHODS = [
   { value: 'TRANSFERENCIA', label: 'Transferencia bancaria' },
@@ -130,11 +133,13 @@ export class PaymentVoucherUploadComponent implements OnChanges {
         this.note = 'No pudimos leer la referencia: escríbela tal como aparece en el comprobante.';
       }
       this.amounts = amounts;
-      if (this.amount && !amountMatches(amounts, Number(this.amount))) {
+      if (!amounts.length) {
+        this.note += ` ${UNREADABLE_AMOUNT}`;
+      } else if (this.amount && !amountMatches(amounts, Number(this.amount))) {
         this.note += ` El comprobante dice ${formatCop(Math.max(...amounts))}: el valor pagado debe ser el del comprobante.`;
       }
     } catch {
-      if (this.file === file) this.note = 'Escribe la referencia tal como aparece en el comprobante.';
+      if (this.file === file) this.note = UNREADABLE_AMOUNT;
     } finally {
       if (this.file === file) this.reading = false;
     }
@@ -146,6 +151,8 @@ export class PaymentVoucherUploadComponent implements OnChanges {
     if (!this.file) { this.error = 'Adjunta la foto del comprobante.'; return; }
     if (this.file.size > 5 * 1024 * 1024) { this.error = 'La imagen supera 5 MB.'; return; }
     if (this.reading) { this.error = 'Espera un momento: estamos leyendo el comprobante.'; return; }
+    // Sin un valor legible no se puede comprobar que el comprobante sea por lo reportado
+    if (!this.amounts.length) { this.error = UNREADABLE_AMOUNT; return; }
     // Cada comprobante se reporta por su valor (si pagaste en partes, sube un comprobante por cada pago)
     if (!amountMatches(this.amounts, Number(this.amount))) {
       this.error = `El comprobante dice ${formatCop(Math.max(...this.amounts))} y estás reportando ${formatCop(Number(this.amount))}. `
