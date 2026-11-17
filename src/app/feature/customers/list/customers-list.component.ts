@@ -1,4 +1,5 @@
-import { Component, OnInit, Output, EventEmitter, Input, OnChanges } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnInit, OnDestroy, Output, EventEmitter, Input, NgZone, OnChanges, inject } from '@angular/core';
+import { FitRows } from '../../../shared/utils/fit-rows';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,7 +19,7 @@ interface CustomerFilters {
   templateUrl: './customers-list.component.html',
   styleUrls: ['./customers-list.component.css']
 })
-export class CustomersListComponent implements OnInit, OnChanges {
+export class CustomersListComponent implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
   
@@ -106,13 +107,9 @@ export class CustomersListComponent implements OnInit, OnChanges {
           filteredCustomers = filteredCustomers.filter(customer => customer.documentType === this.filters.documentType);
         }
         
-        this.totalItems = filteredCustomers.length;
-        this.totalPages = Math.ceil(this.totalItems / this.pageSize);
-        
-        // Apply pagination
-        const startIndex = (this.currentPage - 1) * this.pageSize;
-        this.customers = filteredCustomers.slice(startIndex, startIndex + this.pageSize);
-        
+        this.filteredAll = filteredCustomers;
+        this.applyPage();
+
         this.loading = false;
       },
       error: (error: any) => {
@@ -120,6 +117,55 @@ export class CustomersListComponent implements OnInit, OnChanges {
         this.loading = false;
       }
     });
+  }
+
+  /** Página actual de la lista ya filtrada (sin volver a pedirla al servidor). */
+  private applyPage(): void {
+    this.totalItems = this.filteredAll.length;
+    this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+    if (this.totalPages && this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    this.customers = this.filteredAll.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  // ── Filas por página según el alto de la pantalla ───────────────────
+  private filteredAll: Customer[] = [];
+  /** "Automático": las filas/tarjetas que caben sin scroll. */
+  autoPageSize = true;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly fitRows = new FitRows(inject(NgZone), {
+    frame: () => this.host.nativeElement.querySelector<HTMLElement>('.customers-list-container'),
+    area: () => this.host.nativeElement.querySelector<HTMLElement>(this.viewMode === 'table' ? '.table-container' : '.cards-container'),
+    item: '.customers-table tbody tr, .customer-card',
+    header: 'thead',
+    paused: () => this.loading,
+    onChange: (count) => {
+      if (!this.autoPageSize) return;
+      const firstIndex = (this.currentPage - 1) * this.pageSize; // conserva la primera visible
+      this.pageSize = count;
+      this.currentPage = Math.floor(firstIndex / count) + 1;
+      this.applyPage();
+    },
+  });
+
+  ngAfterViewChecked(): void {
+    this.fitRows.refresh();
+  }
+
+  ngOnDestroy(): void {
+    this.fitRows.destroy();
+  }
+
+  /** Selector "por página": 0 = Automático. */
+  onPageSizeChoice(size: number): void {
+    this.autoPageSize = !+size;
+    this.currentPage = 1;
+    if (this.autoPageSize) {
+      this.fitRows.reset();
+    } else {
+      this.pageSize = +size;
+      this.applyPage();
+    }
   }
 
   onFilterChange(): void {

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
+import { FitRows } from '../../shared/utils/fit-rows';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,7 +18,7 @@ import Swal from 'sweetalert2';
   templateUrl: './products-list.component.html',
   styleUrls: ['./products-list.component.css']
 })
-export class ProductsListComponent implements OnInit {
+export class ProductsListComponent implements OnInit, AfterViewChecked, OnDestroy {
   products: any[] = [];
   categories: Category[] = [];
   showModal = false;
@@ -162,6 +163,34 @@ export class ProductsListComponent implements OnInit {
   closeModal(): void {
     this.showModal = false;
     this.editingProduct = null;
+  }
+
+  // ── Filas por página según el alto de la pantalla ───────────────────
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly fitRows = new FitRows(inject(NgZone), {
+    frame: () => this.host.nativeElement.querySelector<HTMLElement>('.products-list-wrapper'),
+    area: () => this.host.nativeElement.querySelector<HTMLElement>(this.viewMode === 'table' ? '.table-container' : '.cards-container'),
+    item: '.products-table tbody tr, .product-card',
+    header: 'thead',
+    paused: () => this.loading,
+    onChange: (count) => {
+      const firstIndex = (this.page - 1) * this.limit; // conserva el primero visible
+      this.limit = count;
+      this.page = Math.floor(firstIndex / count) + 1;
+      this.loadProducts();
+    },
+  });
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.total / this.limit));
+  }
+
+  ngAfterViewChecked(): void {
+    this.fitRows.refresh();
+  }
+
+  ngOnDestroy(): void {
+    this.fitRows.destroy();
   }
 
   nextPage(): void {

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
+import { FitRows } from '../../shared/utils/fit-rows';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -23,7 +24,7 @@ import { convertUnits, isPackUnit } from '../../shared/utils/unit-conversion.uti
   templateUrl: './kardex.component.html',
   styleUrls: ['./kardex.component.css']
 })
-export class KardexComponent implements OnInit {
+export class KardexComponent implements OnInit, AfterViewChecked, OnDestroy {
   materials: any[] = [];
   selectedMaterial: any = null;
   movements: any[] = [];
@@ -1248,6 +1249,31 @@ export class KardexComponent implements OnInit {
       'OTHER': 'Otro'
     };
     return labels[reason] || reason;
+  }
+
+  // ── Filas por página según el alto de la pantalla ───────────────────
+  // La tabla de movimientos sigue el flujo de la página (debajo del material):
+  // caben las filas que hay desde su borde hasta el final de la ventana.
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly fitRows = new FitRows(inject(NgZone), {
+    area: () => this.host.nativeElement.querySelector<HTMLElement>('.movements-table-container'),
+    item: '.movements-table tbody tr',
+    header: 'thead',
+    flow: { reserveBelow: 84 }, // paginación (~56 px) + padding inferior de la tarjeta (24 px)
+    min: 6,
+    onChange: (count) => {
+      const firstIndex = this.page * this.pageSize; // conserva el primero visible
+      this.pageSize = count;
+      this.page = Math.min(Math.max(0, this.totalPages - 1), Math.floor(firstIndex / count));
+    },
+  });
+
+  ngAfterViewChecked(): void {
+    this.fitRows.refresh();
+  }
+
+  ngOnDestroy(): void {
+    this.fitRows.destroy();
   }
 
   get paginatedMovements() {

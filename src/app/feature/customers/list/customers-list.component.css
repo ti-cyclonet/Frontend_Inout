@@ -636,3 +636,9 @@
   width: 14px;
   height: 14px;
 }
+/* Paginación según el alto de pantalla (FitRows): el contenedor llega al borde
+   inferior de la ventana y la tabla/tarjetas ocupan el espacio libre. */
+.customers-list-container { min-height: 320px; }
+.customers-list-container > .table-container,
+.customers-list-container > .cards-container { flex: 1 1 auto; min-height: 0; }
+.customers-list-container > .cards-container { grid-auto-rows: max-content; align-content: start; } /* alto natural: la medición no depende de cuántas haya */
