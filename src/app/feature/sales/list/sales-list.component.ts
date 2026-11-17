@@ -313,7 +313,7 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.5rem;
+      padding: 0.6rem 1.5rem;
       background: white;
       border-bottom: 1px solid #e9ecef;
       flex-shrink: 0;
@@ -449,14 +449,20 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
       background: #f8f9fa;
       border-bottom: 2px solid #dee2e6;
       font-weight: 700;
-      font-size: 0.875rem;
-      padding: 1rem 0.75rem;
+      font-size: 0.8125rem;
+      padding: 0.5rem 0.75rem;
       white-space: nowrap;
       color: #495057;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
-    
+
+    /* Filas compactas: más ventas a la vista sin scroll */
     .sales-table td {
-      padding: 1rem 0.75rem;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.3;
       vertical-align: middle;
       border-bottom: 1px solid #e9ecef;
     }
@@ -466,9 +472,9 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
     }
     
     .status-badge {
-      padding: 0.25rem 0.5rem;
+      padding: 0.1rem 0.45rem;
       border-radius: 12px;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 500;
       text-transform: uppercase;
     }
@@ -518,7 +524,8 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
     }
     
     .action-buttons .btn {
-      padding: 0.25rem 0.5rem;
+      padding: 0.125rem 0.5rem;
+      gap: 0.3rem;
     }
     
     .action-buttons svg {
