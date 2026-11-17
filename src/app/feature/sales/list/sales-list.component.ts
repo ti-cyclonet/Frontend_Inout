@@ -1,5 +1,5 @@
 import { EinvoicingService } from '../../../shared/services/einvoicing.service';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, NgZone, OnDestroy, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -19,7 +19,7 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="sales-list-container">
+    <div class="sales-list-container" #listBox>
       <div class="list-header">
         <div class="title-container">
           <svg viewBox="0 0 16 16">
@@ -81,7 +81,7 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
         </div>
       </div>
 
-      <div class="table-container" *ngIf="!loading">
+      <div class="table-container" #tableBox *ngIf="!loading">
         <table class="sales-table" *ngIf="filteredSales.length > 0; else noSales">
           <thead>
             <tr>
@@ -94,7 +94,7 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sale of filteredSales" [class.voided]="sale.dtmVoidedAt">
+            <tr *ngFor="let sale of pagedSales" [class.voided]="sale.dtmVoidedAt">
               <td>{{ sale.strInvoiceCode || 'N/A' }}</td>
               <td>{{ sale.customerName || 'N/A' }}</td>
               <td>{{ formatCurrency(sale.total || (sale.fltQuantity || 0) * (sale.fltUnitPrice || 0)) }}</td>
@@ -126,6 +126,18 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
             <p>Crea tu primera venta para comenzar</p>
           </div>
         </ng-template>
+      </div>
+
+      <!-- Paginación: las filas por página dependen del alto disponible en pantalla -->
+      <div class="pagination-bar" *ngIf="!loading && filteredSales.length > 0">
+        <span class="pagination-info">
+          {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, filteredSales.length) }} de {{ filteredSales.length }} ventas
+        </span>
+        <div class="pagination-buttons" *ngIf="totalPages > 1">
+          <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)" aria-label="Página anterior">‹ Anterior</button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)" aria-label="Página siguiente">Siguiente ›</button>
+        </div>
       </div>
 
       <div class="loading-container" *ngIf="loading">
@@ -300,8 +312,28 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
     .ra-btn--wa:hover { background: #16a34a; }
     .ra-btn--mail { color: #ea580c; }
     .ra-btn--mail:hover { background: #ea580c; }
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      padding: 0.4rem 1rem;
+      background: white;
+      border-top: 1px solid #e9ecef;
+      font-size: 0.8125rem;
+      color: #6c757d;
+    }
+    .pagination-buttons { display: flex; align-items: center; gap: 0.5rem; }
+    .pagination-buttons .btn:disabled { opacity: 0.45; cursor: default; }
+    .pagination-buttons .btn:disabled:hover { background: transparent; color: #007bff; }
+    .page-info { white-space: nowrap; }
+
     .sales-list-container {
+      /* Respaldo; el alto real se ajusta al espacio que queda en la ventana (fitToViewport) */
       height: calc(100vh - 200px);
+      min-height: 320px;
       display: flex;
       flex-direction: column;
       background: #f8f9fa;
@@ -780,7 +812,7 @@ import { paymentMethodsText } from '../../../shared/services/credit.service';
     .movements-table td:nth-child(4) { width: 20% !important; }
   `]
 })
-export class SalesListComponent implements OnInit {
+export class SalesListComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Fecha de venta para la plantilla (ver shared/utils/fecha-venta). */
   readonly fechaVenta = fechaVenta;
   @Input() refreshTrigger = 0;
@@ -797,6 +829,92 @@ export class SalesListComponent implements OnInit {
   showViewModal = false;
   exporting = false;
   voiding = false;
+  readonly Math = Math;
+
+  // ── Paginación según el alto de la pantalla ─────────────────────────
+  /** Filas por página: las que caben en el alto disponible de la tabla. */
+  pageSize = 10;
+  currentPage = 1;
+  /** Alto de fila compacta (respaldo si aún no hay filas para medir). */
+  private static readonly ROW_HEIGHT = 37;
+  /** Margen libre bajo la lista, en px. */
+  private static readonly BOTTOM_GAP = 12;
+  @ViewChild('listBox') private listBox?: ElementRef<HTMLElement>;
+  private tableBoxEl?: HTMLElement;
+  /** El alto de la tabla cambia con la ventana y con el panel de filtros: se recalcula al vuelo. */
+  private readonly tableResize = typeof ResizeObserver !== 'undefined'
+    ? new ResizeObserver(() => this.zone.run(() => this.computePageSize()))
+    : null;
+  @ViewChild('tableBox') private set tableBox(ref: ElementRef<HTMLElement> | undefined) {
+    const el = ref?.nativeElement;
+    if (el === this.tableBoxEl) return;
+    if (this.tableBoxEl) this.tableResize?.unobserve(this.tableBoxEl);
+    this.tableBoxEl = el;
+    if (el) { this.tableResize?.observe(el); this.scheduleLayout(); }
+  }
+  private layoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly zone = inject(NgZone);
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredSales.length / this.pageSize));
+  }
+
+  get pagedSales(): Sale[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredSales.slice(start, start + this.pageSize);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = Math.min(this.totalPages, Math.max(1, page));
+    if (this.tableBoxEl) this.tableBoxEl.scrollTop = 0;
+  }
+
+  ngAfterViewInit(): void {
+    this.scheduleLayout();
+  }
+
+  ngOnDestroy(): void {
+    this.tableResize?.disconnect();
+    if (this.layoutTimer) clearTimeout(this.layoutTimer);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.scheduleLayout();
+  }
+
+  /** Recalcula después de que Angular pinte (y agrupa varios eventos de resize). */
+  private scheduleLayout(): void {
+    if (this.layoutTimer) clearTimeout(this.layoutTimer);
+    this.layoutTimer = setTimeout(() => {
+      this.layoutTimer = null;
+      this.fitToViewport();
+      this.computePageSize();
+    }, 50);
+  }
+
+  /** La lista ocupa hasta el borde inferior de la ventana, sea cual sea el tamaño de pantalla. */
+  private fitToViewport(): void {
+    const box = this.listBox?.nativeElement;
+    if (!box || !box.getClientRects().length) return; // pestaña oculta
+    const top = box.getBoundingClientRect().top;
+    const height = Math.max(320, Math.floor(window.innerHeight - top - SalesListComponent.BOTTOM_GAP));
+    box.style.height = `${height}px`;
+  }
+
+  /** Cuántas filas caben en la tabla sin scroll: alto libre ÷ alto de una fila. */
+  private computePageSize(): void {
+    const el = this.tableBoxEl;
+    if (!el || !el.clientHeight) return;
+    const headH = el.querySelector('thead')?.getBoundingClientRect().height || SalesListComponent.ROW_HEIGHT;
+    const rowH = el.querySelector('tbody tr')?.getBoundingClientRect().height || SalesListComponent.ROW_HEIGHT;
+    const fit = Math.max(3, Math.floor((el.clientHeight - headH) / rowH));
+    if (fit === this.pageSize) return;
+    // Conserva la primera venta visible al cambiar el tamaño de página
+    const firstIndex = (this.currentPage - 1) * this.pageSize;
+    this.pageSize = fit;
+    this.currentPage = Math.min(this.totalPages, Math.floor(firstIndex / fit) + 1);
+  }
 
   constructor(private salesService: SalesService, private productsService: ProductsService, private http: HttpClient, public permissions: PermissionsService, private receipts: ReceiptService) {}
 
@@ -820,7 +938,9 @@ export class SalesListComponent implements OnInit {
         // Por fecha de venta, la más reciente primero (el API ordena por fecha de registro).
         this.sales = [...(response.data || response)].sort(compararPorFechaVenta);
         this.filteredSales = this.sales;
+        this.currentPage = 1;
         this.loading = false;
+        this.scheduleLayout();
       },
       error: (error) => {
         console.error('Error loading sales:', error);
@@ -874,6 +994,7 @@ export class SalesListComponent implements OnInit {
   }
 
   filterSales(): void {
+    this.currentPage = 1;
     if (!this.searchTerm) {
       this.filteredSales = this.sales;
       return;
