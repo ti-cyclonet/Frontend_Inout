@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomersService } from '../../../shared/services/customers.service';
@@ -106,6 +106,14 @@ export class SaleFormComponent implements OnInit, OnDestroy {
   get isBackdated(): boolean { return !!this.saleDate && this.saleDate < this.maxSaleDate; }
   get saleDateValid(): boolean { return !!this.saleDate && this.saleDate >= this.minSaleDate && this.saleDate <= this.maxSaleDate; }
   showProductDropdown = false;
+  /** Tabla de búsqueda de artículos (F12): todos los resultados del buscador. */
+  showProductPicker = false;
+  /** Fila resaltada en la tabla (teclado / mouse). */
+  pickerIndex = 0;
+  @ViewChild('productInput') private productInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('quantityInput') private quantityInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('pickerSearch') private pickerSearch?: ElementRef<HTMLInputElement>;
+  @ViewChild('pickerWrap') private pickerWrap?: ElementRef<HTMLElement>;
   customerSearchTerm = '';
   productSearchTerm = '';
   
@@ -293,7 +301,79 @@ export class SaleFormComponent implements OnInit, OnDestroy {
     // oculto) y sin otra ventana encima (los avisos tipo toast no cuentan)
     if (!this.host.nativeElement.getClientRects().length) return;
     if (document.querySelector('.swal2-popup:not(.swal2-toast):not(.swal2-hide)')) return;
+    // F12: abre la tabla de búsqueda de artículos (en vez de las herramientas del navegador)
+    if (event.key === 'F12') {
+      event.preventDefault();
+      if (!this.showProductPicker) this.openProductPicker();
+      return;
+    }
+    if (this.showProductPicker) return; // la tabla maneja su propio teclado
     this.scanner.handle(event);
+  }
+
+  // ── Tabla de búsqueda de artículos (F12) ────────────────────────────
+
+  /** Abre la tabla con el mismo filtro del buscador (lo escrito se conserva). */
+  openProductPicker(): void {
+    this.showProductDropdown = false;
+    this.filterProducts();
+    this.pickerIndex = 0;
+    this.showProductPicker = true;
+    setTimeout(() => this.pickerSearch?.nativeElement.focus());
+  }
+
+  closeProductPicker(): void {
+    this.showProductPicker = false;
+    setTimeout(() => this.productInput?.nativeElement.focus());
+  }
+
+  /** Clic o Enter en una fila: carga el artículo igual que una sugerencia del buscador. */
+  pickProduct(product: Product): void {
+    if (product.stock <= 0) {
+      this.selectProduct(product); // avisa que no tiene stock; la tabla sigue abierta
+      return;
+    }
+    this.showProductPicker = false;
+    this.selectProduct(product);
+    setTimeout(() => this.quantityInput?.nativeElement.select());
+  }
+
+  onPickerKeydown(event: KeyboardEvent): void {
+    const count = this.filteredProducts.length;
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+      case 'PageDown':
+      case 'PageUp': {
+        event.preventDefault();
+        if (!count) return;
+        const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : event.key === 'PageDown' ? 10 : -10;
+        this.pickerIndex = Math.min(count - 1, Math.max(0, this.pickerIndex + step));
+        setTimeout(() => this.pickerWrap?.nativeElement.querySelector('tbody tr.active')?.scrollIntoView({ block: 'nearest' }));
+        break;
+      }
+      case 'Enter': {
+        event.preventDefault();
+        const product = this.filteredProducts[this.pickerIndex];
+        if (product) this.pickProduct(product);
+        break;
+      }
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeProductPicker();
+        break;
+    }
+  }
+
+  pickerTypeLabel(product: Product): string {
+    switch (product.itemType) {
+      case 'material': return 'Material';
+      case 'material_t': return 'Material compuesto';
+      case 'kit': return 'Kit';
+      case 'combo': return 'Combo';
+      default: return 'Producto';
+    }
   }
 
   ngOnInit(): void {
