@@ -753,3 +753,11 @@
 .role-badge-client { background: #d1e7dd; color: #0f5132; }
 
 .role-quotas { padding: 6px 16px 2px; }
+
+/* Paginación según el alto de pantalla (FitRows): el contenedor llega al borde
+   inferior de la ventana y la tabla/tarjetas ocupan el espacio libre. */
+.users-list-container { min-height: 320px; }
+.users-list-container > .table-container,
+.users-list-container > .cards-container { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.users-list-container > .cards-container { align-content: start; }
+.users-list-container > .cards-container { grid-auto-rows: max-content; align-content: start; } /* alto natural: la medición no depende de cuántas haya */

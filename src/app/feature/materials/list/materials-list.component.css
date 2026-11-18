@@ -1203,3 +1203,10 @@
 .mobile-list-item.mobile-low-stock {
   background-color: #fff5f5 !important;
 }
+
+/* Paginación según el alto de pantalla (FitRows): el contenedor llega al borde
+   inferior de la ventana y la tabla/tarjetas ocupan el espacio libre. */
+.materials-list-container { min-height: 320px; }
+.materials-list-container > .table-container,
+.materials-list-container > .cards-container { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.materials-list-container > .cards-container { grid-auto-rows: max-content; align-content: start; } /* alto natural: la medición no depende de cuántas haya */
