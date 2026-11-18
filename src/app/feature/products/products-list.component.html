@@ -362,6 +362,18 @@
     <h3>No se encontraron productos</h3>
     <p>Crea tu primer producto para comenzar.</p>
   </div>
+
+  <!-- Paginación: los productos por página dependen del alto disponible en pantalla -->
+  <div class="pagination-bar" *ngIf="!loading && products.length > 0">
+    <span class="pagination-info">
+      {{ (page - 1) * limit + 1 }}–{{ Math.min(page * limit, total) }} de {{ total }} productos
+    </span>
+    <div class="pagination-buttons" *ngIf="totalPages > 1">
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="page === 1" (click)="prevPage()">‹ Anterior</button>
+      <span class="page-info">Página {{ page }} de {{ totalPages }}</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="page >= totalPages" (click)="nextPage()">Siguiente ›</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal Ver Producto -->

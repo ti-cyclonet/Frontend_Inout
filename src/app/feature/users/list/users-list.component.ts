@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, OnChanges, Output, EventEmitter } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, Input, NgZone, OnDestroy, OnInit, OnChanges, Output, EventEmitter, inject } from '@angular/core';
+import { FitRows } from '../../../shared/utils/fit-rows';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable, firstValueFrom } from 'rxjs';
@@ -15,7 +16,7 @@ import { InfoTipComponent } from '../../../shared/components/info-tip/info-tip.c
   templateUrl: './users-list.component.html',
   styleUrls: ['./users-list.component.css']
 })
-export class UsersListComponent implements OnInit, OnChanges {
+export class UsersListComponent implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
 
@@ -308,7 +309,7 @@ export class UsersListComponent implements OnInit, OnChanges {
     // Pagination
     this.totalItems = result.length;
     this.totalPages = Math.ceil(this.totalItems / this.pageSize);
-    if (this.currentPage > this.totalPages) this.currentPage = 1;
+    if (this.currentPage > this.totalPages) this.currentPage = Math.max(1, this.totalPages);
 
     const start = (this.currentPage - 1) * this.pageSize;
     this.filteredUsers = result.slice(start, start + this.pageSize);
@@ -332,6 +333,45 @@ export class UsersListComponent implements OnInit, OnChanges {
   onPageChange(page: number): void {
     this.currentPage = page;
     this.applyFilters();
+  }
+
+  // ── Filas por página según el alto de la pantalla ───────────────────
+  /** "Automático": las filas/tarjetas que caben sin scroll. */
+  autoPageSize = true;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly fitRows = new FitRows(inject(NgZone), {
+    frame: () => this.host.nativeElement.querySelector<HTMLElement>('.users-list-container'),
+    area: () => this.host.nativeElement.querySelector<HTMLElement>(this.viewMode === 'table' ? '.table-container' : '.cards-container'),
+    item: '.users-table tbody tr, .user-card',
+    header: 'thead',
+    paused: () => this.loading,
+    onChange: (count) => {
+      if (!this.autoPageSize) return;
+      const firstIndex = (this.currentPage - 1) * this.pageSize; // conserva la primera visible
+      this.pageSize = count;
+      this.currentPage = Math.floor(firstIndex / count) + 1;
+      this.applyFilters();
+    },
+  });
+
+  ngAfterViewChecked(): void {
+    this.fitRows.refresh();
+  }
+
+  ngOnDestroy(): void {
+    this.fitRows.destroy();
+  }
+
+  /** Selector "por página": 0 = Automático. */
+  onPageSizeChoice(size: number): void {
+    this.autoPageSize = !+size;
+    this.currentPage = 1;
+    if (this.autoPageSize) {
+      this.fitRows.reset();
+    } else {
+      this.pageSize = +size;
+      this.applyFilters();
+    }
   }
 
   onPageSizeChange(): void {

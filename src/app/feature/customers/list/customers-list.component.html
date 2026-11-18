@@ -268,8 +268,9 @@
     </div>
     
     <div class="pagination-controls">
-      <select class="form-select page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
-        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} por página</option>
+      <select class="form-select page-size-select" [ngModel]="autoPageSize ? 0 : pageSize" (ngModelChange)="onPageSizeChoice($event)" title="Automático: las que caben en la pantalla">
+        <option [ngValue]="0">Automático ({{ pageSize }})</option>
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }} por página</option>
       </select>
       
       <div class="pagination-buttons">

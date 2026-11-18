@@ -762,3 +762,25 @@
 .product-card.card-low-stock:hover {
   border-color: #fca5a5 !important;
 }
+
+/* Paginación según el alto de pantalla (FitRows): el contenedor llega al borde
+   inferior de la ventana y la tabla/tarjetas ocupan el espacio libre. */
+.products-list-wrapper { min-height: 320px; }
+.products-list-wrapper > .table-container,
+.products-list-wrapper > .cards-container { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.products-list-wrapper > .pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  background: white;
+  border-top: 1px solid #e9ecef;
+  font-size: 0.8125rem;
+  color: #6c757d;
+}
+.products-list-wrapper > .pagination-bar .pagination-buttons { display: flex; align-items: center; gap: 0.5rem; }
+.products-list-wrapper > .pagination-bar .page-info { white-space: nowrap; }
+.products-list-wrapper > .cards-container { grid-auto-rows: max-content; align-content: start; } /* alto natural: la medición no depende de cuántas haya */

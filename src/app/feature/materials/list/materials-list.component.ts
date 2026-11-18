@@ -1,4 +1,5 @@
-import { Component, OnInit, Output, EventEmitter, Input, OnChanges, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, NgZone, OnDestroy, OnInit, Output, EventEmitter, Input, OnChanges, inject } from '@angular/core';
+import { FitRows } from '../../../shared/utils/fit-rows';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { CommonModule } from '@angular/common';
@@ -29,7 +30,7 @@ const escapeHtml = (s: string) =>
   templateUrl: './materials-list.component.html',
   styleUrls: ['./materials-list.component.css']
 })
-export class MaterialsListComponent implements OnInit, OnChanges {
+export class MaterialsListComponent implements OnInit, OnChanges, AfterViewChecked, OnDestroy {
   @Input() refreshTrigger = 0;
   @Output() openCreateModal = new EventEmitter<void>();
   @Output() openEditModal = new EventEmitter<Material>();
@@ -209,6 +210,45 @@ export class MaterialsListComponent implements OnInit, OnChanges {
   onPageChange(page: number): void {
     this.currentPage = page;
     this.loadMaterials();
+  }
+
+  // ── Filas por página según el alto de la pantalla ───────────────────
+  /** "Automático": las filas/tarjetas que caben sin scroll. */
+  autoPageSize = true;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly fitRows = new FitRows(inject(NgZone), {
+    frame: () => this.host.nativeElement.querySelector<HTMLElement>('.materials-list-container'),
+    area: () => this.host.nativeElement.querySelector<HTMLElement>(this.viewMode === 'table' ? '.table-container' : '.cards-container'),
+    item: '.materials-table tbody tr, .material-card',
+    header: 'thead',
+    paused: () => this.loading,
+    onChange: (count) => {
+      if (!this.autoPageSize) return;
+      const firstIndex = (this.currentPage - 1) * this.pageSize; // conserva la primera visible
+      this.pageSize = count;
+      this.currentPage = Math.floor(firstIndex / count) + 1;
+      this.loadMaterials();
+    },
+  });
+
+  ngAfterViewChecked(): void {
+    this.fitRows.refresh();
+  }
+
+  ngOnDestroy(): void {
+    this.fitRows.destroy();
+  }
+
+  /** Selector "por página": 0 = Automático. */
+  onPageSizeChoice(size: number): void {
+    this.autoPageSize = !+size;
+    this.currentPage = 1;
+    if (this.autoPageSize) {
+      this.fitRows.reset();
+    } else {
+      this.pageSize = +size;
+      this.loadMaterials();
+    }
   }
 
   onPageSizeChange(): void {
