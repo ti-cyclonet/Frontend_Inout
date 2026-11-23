@@ -22,6 +22,7 @@ import {
   ShotraConversation,
   ShotraNotification,
   CreateShotraRequest,
+  ShotraPackageSize,
 } from '../../../shared/services/shotra/shotra.service';
 import { UiPrefsService } from '../../../shared/services/ui-prefs/ui-prefs.service';
 import { DeliveryLauncherService, DeliveryPrefill } from '../../../shared/services/delivery-launcher.service';
@@ -210,6 +211,7 @@ export class DeliveryRequestComponent implements OnDestroy {
     this.stopBellPolling();
     this.prefSub?.unsubscribe();
     this.launcherSub?.unsubscribe();
+    if (this.coverageTimer) clearTimeout(this.coverageTimer);
     this.destroyMap();
   }
 
@@ -324,6 +326,7 @@ export class DeliveryRequestComponent implements OnDestroy {
       longitude: undefined,
       isUrgent: false,
       scheduledAt: undefined,
+      packageSize: 'SMALL',
     };
   }
 
@@ -555,7 +558,11 @@ export class DeliveryRequestComponent implements OnDestroy {
       this.form.categoryId = this.subcategories[0].id;
     }
     // Reinicia el estado del mini-mapa (origen/destino/ruta) del formulario anterior.
-    this.originCoords = null;
+    // La recogida arranca en la del último domicilio (normalmente la tienda):
+    // sin recogida, Shotra no puede ofrecer el pedido a quien va de camino.
+    this.originCoords = this.lastPickup();
+    this.originFromMemory = !!this.originCoords;
+    this.routeCoverage = null;
     this.destCoords = null;
     this.geocoding = false;
     this.geocodeFailed = false;
@@ -597,6 +604,7 @@ export class DeliveryRequestComponent implements OnDestroy {
   /** Selecciona el tipo de entrega y cierra el bottom-sheet. */
   selectCategory(id: string): void {
     this.form.categoryId = id;
+    this.refreshCoverage();
     this.showCategorySheet = false;
     this.categorySearch = '';
   }
@@ -653,7 +661,71 @@ export class DeliveryRequestComponent implements OnDestroy {
   // debe recorrer el domiciliario, pero no se persiste (Shotra no tiene un
   // campo de origen en su modelo de solicitud).
   originCoords: { lat: number; lng: number } | null = null;
+  /** La recogida viene del último domicilio publicado (no de 📍 en este formulario). */
+  originFromMemory = false;
   destCoords: { lat: number; lng: number } | null = null;
+
+  // ─── Pedidos en ruta ─────────────────────────────────────────────────────
+  //
+  // Los domiciliarios de Shotra pueden publicar un trayecto que ya van a hacer
+  // y Shotra les ofrece los domicilios que caen en él (recogida y entrega
+  // sobre la ruta, en ese orden). Aquí: el tamaño del paquete y una pista de
+  // cuántos pasan cerca. Shotra solo devuelve el conteo, nunca las rutas.
+  readonly packageSizes: { value: ShotraPackageSize; label: string }[] = [
+    { value: 'SMALL', label: 'Pequeño (cabe en un morral)' },
+    { value: 'MEDIUM', label: 'Mediano (caja, va en parrilla)' },
+    { value: 'LARGE', label: 'Grande (requiere carro o moto de carga)' },
+  ];
+  routeCoverage: number | null = null;
+  private coverageTimer: any = null;
+  private static readonly PICKUP_KEY = 'shotra_last_pickup';
+
+  /** Recalcula (con debounce) cuántos domiciliarios en ruta pasan por recogida y entrega. */
+  refreshCoverage(): void {
+    if (this.coverageTimer) clearTimeout(this.coverageTimer);
+    if (!this.originCoords || !this.destCoords) {
+      this.routeCoverage = null;
+      return;
+    }
+    const origin = this.originCoords;
+    const dest = this.destCoords;
+    this.coverageTimer = setTimeout(() => {
+      this.shotra
+        .getRouteCoverage({
+          pickLat: origin.lat,
+          pickLng: origin.lng,
+          dropLat: dest.lat,
+          dropLng: dest.lng,
+          categoryId: this.form.categoryId || undefined,
+          at: this.form.scheduledAt ? new Date(this.form.scheduledAt).toISOString() : undefined,
+          urgent: !!this.form.isUrgent,
+          packageSize: this.form.packageSize,
+        })
+        .subscribe((res) => {
+          // El formulario pudo cambiar mientras respondía
+          if (this.originCoords === origin && this.destCoords === dest) this.routeCoverage = res?.count ?? 0;
+        });
+    }, 600);
+  }
+
+  private lastPickup(): { lat: number; lng: number } | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    try {
+      const v = JSON.parse(localStorage.getItem(DeliveryRequestComponent.PICKUP_KEY) || 'null');
+      return Number.isFinite(v?.lat) && Number.isFinite(v?.lng) ? { lat: v.lat, lng: v.lng } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private rememberPickup(p: { lat: number; lng: number }): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem(DeliveryRequestComponent.PICKUP_KEY, JSON.stringify(p));
+    } catch {
+      // Sin almacenamiento (modo privado): solo se pierde el recordatorio.
+    }
+  }
   geocoding = false;
   geocodeFailed = false;
   private geocodeTimer: any = null;
@@ -701,6 +773,8 @@ export class DeliveryRequestComponent implements OnDestroy {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         this.originCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        this.originFromMemory = false;
+        this.rememberPickup(this.originCoords);
         this.drawRoute();
         Swal.fire({ icon: 'success', title: 'Punto de recogida capturado', timer: 1200, showConfirmButton: false });
       },
@@ -792,6 +866,7 @@ export class DeliveryRequestComponent implements OnDestroy {
 
   /** Dibuja/actualiza los marcadores de origen y destino y reencuadra el mapa. */
   private drawRoute(): void {
+    this.refreshCoverage();
     if (!this.map || !this.L) return;
     const L = this.L;
 
@@ -908,6 +983,7 @@ export class DeliveryRequestComponent implements OnDestroy {
       payload.originAddress = 'Punto de recogida (GPS)';
     }
     if (this.form.scheduledAt) payload.scheduledAt = new Date(this.form.scheduledAt).toISOString();
+    if (this.form.packageSize) payload.packageSize = this.form.packageSize;
 
     const orderId = this.pendingOrderId;
     this.pendingOrderId = null;

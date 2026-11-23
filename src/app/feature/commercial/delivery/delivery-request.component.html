@@ -133,8 +133,14 @@
         <small class="hint" *ngIf="!form.address?.trim()">
           Escribe la dirección del cliente: es obligatoria para publicar el domicilio. Con 📍 puedes marcar además tu ubicación como punto de recogida.
         </small>
-        <small class="hint" *ngIf="originCoords">
+        <small class="hint" *ngIf="originCoords && !originFromMemory">
           🏪 Punto de recogida capturado ({{ originCoords.lat | number:'1.4-4' }}, {{ originCoords.lng | number:'1.4-4' }})
+        </small>
+        <small class="hint" *ngIf="originCoords && originFromMemory">
+          🏪 Recogida: la misma de tu último domicilio. Si hoy sale de otro lugar, márcalo con 📍.
+        </small>
+        <small class="hint" *ngIf="!originCoords && form.address?.trim()">
+          Marca con 📍 el punto de recogida: así también te ofertan los domiciliarios que ya van de camino.
         </small>
         <small class="hint" *ngIf="geocoding">Ubicando la dirección de entrega en el mapa…</small>
         <small class="hint-warn" *ngIf="geocodeFailed">
@@ -166,14 +172,27 @@
       <div class="form-row">
         <div class="form-group half">
           <label>¿Para cuándo?</label>
-          <input type="datetime-local" [(ngModel)]="form.scheduledAt" name="scheduledAt" class="form-control" />
+          <input type="datetime-local" [(ngModel)]="form.scheduledAt" name="scheduledAt" class="form-control"
+            (ngModelChange)="refreshCoverage()" />
         </div>
         <div class="form-group half check">
           <label class="check-label">
-            <input type="checkbox" [(ngModel)]="form.isUrgent" name="isUrgent" />
+            <input type="checkbox" [(ngModel)]="form.isUrgent" name="isUrgent" (ngModelChange)="refreshCoverage()" />
             Es urgente
           </label>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tamaño del paquete</label>
+        <select [(ngModel)]="form.packageSize" name="packageSize" class="form-control" (ngModelChange)="refreshCoverage()">
+          <option *ngFor="let s of packageSizes" [ngValue]="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+
+      <div class="route-coverage" *ngIf="routeCoverage">
+        🛵 {{ routeCoverage === 1 ? '1 domiciliario pasa' : routeCoverage + ' domiciliarios pasan' }} cerca de esta ruta.
+        Al publicar les llega tu pedido directo, y como ya van de camino suelen cobrar menos.
       </div>
     </div>
 
@@ -282,6 +301,8 @@
           <div class="offer-provider">
             {{ p.provider?.displayName || 'Domiciliario' }}
             <span class="offer-rating" *ngIf="p.provider?.averageRating">★ {{ p.provider?.averageRating | number:'1.1-1' }}</span>
+            <span class="offer-via-route" *ngIf="p.viaRoute"
+              title="Este domiciliario ya iba de camino por tu zona; por eso puede cobrarte menos">En ruta</span>
           </div>
           <div class="offer-desc">{{ p.description }}</div>
           <div class="offer-time" *ngIf="p.estimatedTime">⏱ {{ p.estimatedTime }}</div>
