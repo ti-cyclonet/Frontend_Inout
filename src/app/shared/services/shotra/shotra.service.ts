@@ -118,6 +118,30 @@ export class ShotraService {
     );
   }
 
+  /**
+   * Cuántos domiciliarios publicaron una ruta que pasa por la recogida y la
+   * entrega a una hora compatible. Shotra solo devuelve el conteo, nunca las
+   * rutas. Es una pista: si falla, se devuelve 0 y no se muestra nada.
+   */
+  getRouteCoverage(q: ShotraCoverageQuery): Observable<{ count: number }> {
+    const params: Record<string, string> = {
+      pickLat: String(q.pickLat),
+      pickLng: String(q.pickLng),
+      dropLat: String(q.dropLat),
+      dropLng: String(q.dropLng),
+    };
+    if (q.categoryId) params['categoryId'] = q.categoryId;
+    if (q.at) params['at'] = q.at;
+    if (q.urgent) params['urgent'] = 'true';
+    if (q.packageSize) params['packageSize'] = q.packageSize;
+    return this.request((token) =>
+      this.http.get<{ count: number }>(`${this.shotraApi}/routes/coverage`, {
+        headers: this.authHeaders(token),
+        params,
+      }),
+    ).pipe(catchError(() => of({ count: 0 })));
+  }
+
   /** Mis solicitudes (como solicitante). */
   getMyRequests(): Observable<ShotraRequest[]> {
     return this.request((token) =>
@@ -349,9 +373,26 @@ export interface CreateShotraRequest {
   originLatitude?: number;
   originLongitude?: number;
   originAddress?: string;
+  // Tamaño del paquete: se cruza con lo que acepta llevar cada domiciliario
+  // que publicó una ruta ("pedidos en ruta"). Sin valor = pequeño.
+  packageSize?: ShotraPackageSize;
   isRemote?: boolean;
   scheduledAt?: string;
   isUrgent?: boolean;
+}
+
+export type ShotraPackageSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+
+/** Consulta de cobertura: cuántos domiciliarios pasan por la recogida y la entrega. */
+export interface ShotraCoverageQuery {
+  pickLat: number;
+  pickLng: number;
+  dropLat: number;
+  dropLng: number;
+  categoryId?: string;
+  at?: string;
+  urgent?: boolean;
+  packageSize?: ShotraPackageSize;
 }
 
 export interface ShotraRequest {
@@ -393,6 +434,8 @@ export interface ShotraProposal {
   };
   // Hasta 3 fotos que el domiciliario eligió mostrar en esta oferta puntual.
   images?: { id: string; imageUrl: string; title: string }[];
+  // La oferta salió de una ruta que el domiciliario ya iba a hacer ("En ruta").
+  viaRoute?: boolean;
 }
 
 export interface ShotraRequestDetail extends ShotraRequest {
