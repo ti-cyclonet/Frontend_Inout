@@ -52,6 +52,11 @@ export class MaterialsDashboardComponent implements OnInit, OnChanges {
   categoriesExpanded = true;
   uploadingCategories = false;
 
+  /** Material compuesto solo aplica al módulo de Manufactura. */
+  get isManufacturing(): boolean {
+    return sessionStorage.getItem('selectedModule') === 'manufacturing';
+  }
+
   constructor(private materialService: MaterialService, private router: Router, private categoryService: CategoryService, private documentsService: DocumentsService, private http: HttpClient) {}
 
   ngOnInit(): void {

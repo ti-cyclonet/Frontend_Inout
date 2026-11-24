@@ -213,7 +213,9 @@
 .products-table {
   margin: 0;
   width: 100%;
-  min-width: 1200px;
+  /* Sin ancho mínimo fijo: la tabla se ajusta al ancho disponible (portátiles
+     incluidos) en vez de mostrar scroll horizontal. */
+  min-width: 0;
   table-layout: fixed;
 }
 
@@ -226,14 +228,27 @@
   white-space: nowrap;
 }
 
-.products-table th:nth-child(1) { width: 3%; }
-.products-table th:nth-child(2) { width: 18%; }
-.products-table th:nth-child(3) { width: 8%; }
-.products-table th:nth-child(4) { width: 30%; }
-.products-table th:nth-child(5) { width: 12%; }
-.products-table th:nth-child(6) { width: 10%; }
-.products-table th:nth-child(7) { width: 8%; }
-.products-table th:nth-child(8) { width: 11%; }
+.products-table th:nth-child(1) { width: 40px; }   /* Checkbox */
+.products-table th:nth-child(2) { width: auto; }   /* Nombre - absorbe el espacio libre */
+.products-table th:nth-child(3) { width: 110px; }  /* Código */
+.products-table th:nth-child(4) { width: 22%; }    /* Descripción (oculta < 1200 px) */
+.products-table th:nth-child(5) { width: 150px; }  /* Stock */
+.products-table th:nth-child(6) { width: 120px; }  /* Precio */
+.products-table th:nth-child(7) { width: 95px; }   /* Estado */
+.products-table th:nth-child(8) { width: 140px; }  /* Acciones (3 botones) */
+
+.products-table td.text-center small {
+  white-space: normal;
+}
+
+/* Tablets / portátiles pequeños: columnas numéricas más angostas */
+@media (min-width: 769px) and (max-width: 1099px) {
+  .products-table th:nth-child(3) { width: 90px; }
+  .products-table th:nth-child(5) { width: 110px; }
+  .products-table th:nth-child(6) { width: 95px; }
+  .products-table th:nth-child(7) { width: 80px; }
+  .products-table th:nth-child(8) { width: 125px; }
+}
 
 .products-table td {
   padding: 0.75rem 0.5rem;
@@ -282,9 +297,9 @@
 }
 
 .description-text {
+  display: block;
   font-size: 0.875rem;
   color: #6c757d;
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -738,8 +753,6 @@
      así se evita el scroll horizontal por columnas que no caben. */
   .products-table th:nth-child(2) { width: auto; }    /* Nombre - ocupa el espacio disponible */
   .products-table th:nth-child(8) { width: 120px; }   /* Acciones */
-  /* Sin el ancho mínimo de escritorio (1200 px): la tabla cabe en la pantalla */
-  .products-table { min-width: 0; }
   .table-container { overflow-x: hidden; }
 }
 
