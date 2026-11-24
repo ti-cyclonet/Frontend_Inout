@@ -44,9 +44,11 @@
     position: relative;
     min-height: 100vh;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 100px 15px 70px;
+    /* Abajo deja sitio al mensaje inferior (que ya no es fijo, ver
+       .login-bottom-message) para que nunca tape la tarjeta. */
+    padding: 90px 15px 90px;
     background-image: url('/assets/img/login_inout.jpg');
     background-size: cover;
     background-position: center;
@@ -244,6 +246,10 @@
 .login-wrapper {
   position: relative;
   min-height: 100vh;
+  /* app.component.css pone overflow: hidden en html/body; el login lleva su
+     propio scroll para que en pantallas muy bajas no quede nada inalcanzable. */
+  height: 100vh;
+  overflow-y: auto;
 }
 
 /* Mensaje superior izquierda */
@@ -271,11 +277,18 @@
 }
 
 /* Mensaje inferior centrado */
-.login-bottom-message {
-  position: fixed;
+.login-container > .login-bottom-message {
+  /* absolute (no fixed) dentro de .login-container: queda al final del
+     contenido, en el espacio que reserva su padding-bottom, en vez de
+     quedarse encima del botón en pantallas bajas. */
+  position: absolute;
+  margin: 0;
   bottom: 12px;
-  left: 0;
-  right: 0;
+  /* .login-container es un .row de Bootstrap (márgenes negativos de 12 px y
+     .row > * con width: 100%): se compensa para no salirse por los lados. */
+  left: 12px;
+  right: 12px;
+  width: auto;
   text-align: center;
   color: #ffffff;
   font-size: 0.78rem;
@@ -295,10 +308,42 @@
 }
 
 @media (max-width: 431px) {
-  .login-bottom-message {
+  .login-container > .login-bottom-message {
     font-size: 0.68rem;
     bottom: 10px;
     padding: 0 8px;
+  }
+}
+
+/* En móvil el mensaje inferior ocupa varias líneas: más espacio abajo */
+@media (max-width: 767px) {
+  .login-container {
+    padding-bottom: 120px;
+  }
+}
+
+/* Pantallas bajas (portátiles con escala 125–150 %): tarjeta más compacta
+   para que quepa entera sin quedar debajo del mensaje inferior. */
+@media (max-height: 820px) {
+  .login-container {
+    padding-top: 70px;
+  }
+  .custom-card {
+    padding: 20px 24px !important;
+  }
+  .card-bottom {
+    margin: 12px -24px -20px -24px;
+    padding: 16px 24px 18px 24px;
+  }
+  .logo-img {
+    max-width: 42%;
+    margin-bottom: 10px;
+  }
+  .custom-welcome {
+    margin-bottom: 0;
+  }
+  .login-container hr {
+    margin: 0.75rem 0;
   }
 }
 
