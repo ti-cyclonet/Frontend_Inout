@@ -1,16 +1,20 @@
+/* app.component.css pone overflow: hidden en html/body: el selector lleva su
+   propio scroll para que en pantallas bajas (portátiles) las tarjetas no
+   queden cortadas e inalcanzables. */
 .modern-selector-container {
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
-  align-items: center;
   justify-content: center;
 }
 
+/* Fondo fijo: sigue cubriendo la pantalla aunque el contenido haga scroll */
 .modern-selector-container::before {
   content: '';
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -23,7 +27,7 @@
 }
 
 .background-pattern {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -46,6 +50,9 @@
   padding: 2rem;
   position: relative;
   z-index: 2;
+  /* margin auto (en vez de align-items: center) centra en vertical cuando
+     cabe, y cuando no cabe deja hacer scroll sin cortar la parte de arriba */
+  margin: auto 0;
 }
 
 .header-section {
@@ -254,6 +261,62 @@
 .loading-text {
   color: white;
   font-size: 1.1rem;
+}
+
+/* Pantallas bajas (portátiles con escala 125–150 %): todo más compacto
+   para que logo, título y tarjetas quepan sin scroll. */
+@media (max-height: 820px) {
+  .content-wrapper {
+    padding: 1.25rem 2rem;
+  }
+
+  .header-section {
+    margin-bottom: 1.75rem;
+  }
+
+  .logo-wrapper {
+    margin-bottom: 1rem;
+  }
+
+  .animated-logo {
+    width: 150px;
+  }
+
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    margin-bottom: 0;
+  }
+
+  .modules-grid {
+    margin-bottom: 0;
+  }
+
+  .module-card {
+    padding: 1.75rem 1.5rem;
+  }
+
+  .icon-container {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+  }
+
+  .module-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .module-name {
+    font-size: 1.35rem;
+  }
+
+  .module-desc {
+    margin-bottom: 1rem;
+  }
 }
 
 @media (max-width: 768px) {
