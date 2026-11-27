@@ -107,7 +107,7 @@
 .contact-item { display: flex; gap: 0.4rem; align-items: center; min-width: 0; }
 .contact-item a { color: var(--mk-sector-ink); overflow: hidden; text-overflow: ellipsis; }
 .modal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: auto; }
-.btn-modal-cart { flex: 1; padding: 0.7rem 1rem; font-size: 0.9rem; }
+.btn-modal-cart { flex: 1; padding: 0.7rem 1rem; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; white-space: nowrap; }
 .btn-modal-contact { flex: 1; border: 1px solid #25d366; background: #fff; color: #128c4a; border-radius: 10px; padding: 0.7rem 1rem; font-weight: 600; cursor: pointer; }
 
 /* ─── Checkout ─── */
