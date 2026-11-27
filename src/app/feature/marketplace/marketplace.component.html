@@ -394,6 +394,8 @@
               <app-marketplace-sales-settings [tenantId]="tenantId"></app-marketplace-sales-settings>
               <!-- Información de la carta: proteínas, salsas, zonas de domicilio… -->
               <app-menu-extras-settings [tenantId]="tenantId"></app-menu-extras-settings>
+              <!-- Opiniones de clientes: activarlas, revisarlas, publicarlas y responderlas -->
+              <app-reviews-admin></app-reviews-admin>
             </div>
 
             <!-- Display Mode Selector -->
@@ -637,6 +639,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Opiniones de los clientes (si la tienda las tiene activas) -->
+        <app-product-reviews [tenantId]="selectedProductTenant" [itemId]="selectedProduct.strId"></app-product-reviews>
 
         <!-- Información del Proveedor -->
         <div class="modal-provider" *ngIf="providerInfo">

@@ -1,0 +1,47 @@
+/* Mismo aspecto que las secciones plegables del panel de la tienda (menu-extras-settings). */
+.rv-block { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; overflow: hidden; }
+.rv-header {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  background: #f8f9fa; border: none; padding: 0.65rem 0.9rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; text-align: left;
+}
+.rv-header small { font-weight: 400; color: #6b7280; display: inline-flex; align-items: center; gap: 0.35rem; }
+.rv-badge { background: #f59e0b; color: #fff; border-radius: 999px; padding: 0 0.45rem; font-size: 0.72rem; font-weight: 700; line-height: 1.4; }
+.rv-body { padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; }
+.rv-help { margin: 0 0 0.3rem; color: #4b5563; font-size: 0.82rem; }
+
+.rv-check { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0.35rem 0; cursor: pointer; }
+.rv-check input { margin-top: 0.25rem; }
+.rv-check span { display: flex; flex-direction: column; }
+.rv-check small { color: #6b7280; font-size: 0.78rem; }
+
+.rv-tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.6rem 0 0.3rem; }
+.rv-tabs button { border: 1px solid #e5e7eb; background: #fff; border-radius: 999px; padding: 0.28rem 0.8rem; font-size: 0.8rem; font-weight: 600; color: #4b5563; cursor: pointer; }
+.rv-tabs button span { margin-left: 0.25rem; color: #9ca3af; font-weight: 700; }
+.rv-tabs button.active { background: #1f2937; border-color: #1f2937; color: #fff; }
+.rv-tabs button.active span { color: #fcd34d; }
+.rv-empty { color: #6b7280; margin: 0.5rem 0; }
+
+.rv-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.65rem 0.75rem; margin-top: 0.45rem; background: #fcfcfd; transition: opacity 0.15s; }
+.rv-card.rv-busy { opacity: 0.55; }
+.rv-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; }
+.rv-stars { color: #f59e0b; letter-spacing: 1px; white-space: nowrap; }
+.rv-item { color: #1f2937; }
+.rv-card-head time { margin-left: auto; color: #9ca3af; font-size: 0.75rem; }
+.rv-author { margin: 0.2rem 0 0; color: #6b7280; font-size: 0.8rem; }
+.rv-author a { color: #15803d; font-weight: 600; text-decoration: none; }
+.rv-comment { margin: 0.35rem 0 0; color: #374151; white-space: pre-line; overflow-wrap: anywhere; }
+
+.rv-reply { margin-top: 0.45rem; padding: 0.45rem 0.6rem; border-left: 3px solid #f59e0b; background: #fffbeb; border-radius: 0 8px 8px 0; }
+.rv-reply strong { color: #92400e; font-size: 0.72rem; text-transform: uppercase; }
+.rv-reply p { margin: 0.15rem 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+.rv-reply-form { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.rv-label { font-weight: 600; font-size: 0.8rem; }
+.rv-label small { font-weight: 400; color: #6b7280; }
+.rv-reply-form textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 0.4rem 0.55rem; font: inherit; font-size: 0.85rem; resize: vertical; box-sizing: border-box; }
+.rv-reply-form textarea:focus { outline: none; border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12); }
+
+.rv-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+.rv-btn { border: 1px solid #d1d5db; background: #fff; border-radius: 8px; padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600; color: #374151; cursor: pointer; }
+.rv-btn:disabled { opacity: 0.5; cursor: default; }
+.rv-primary { background: #0d6efd; border-color: #0d6efd; color: #fff; }
+.rv-danger { color: #b91c1c; border-color: #fecaca; }
