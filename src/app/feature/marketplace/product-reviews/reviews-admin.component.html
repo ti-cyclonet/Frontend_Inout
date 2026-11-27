@@ -1,0 +1,76 @@
+<div class="rv-block">
+  <button type="button" class="rv-header" (click)="toggle()" [attr.aria-expanded]="open">
+    <span><i class="bi bi-star me-1"></i> Opiniones de clientes</span>
+    <small>
+      <span class="rv-badge" *ngIf="settings?.enabled && counts.PENDING">{{ counts.PENDING }}</span>
+      {{ summary }} {{ open ? '▲' : '▼' }}
+    </small>
+  </button>
+
+  <div class="rv-body" *ngIf="open && settings">
+    <p class="rv-help">Tus clientes califican de 1 a 5 estrellas y dejan su opinión o sugerencia en el detalle de cada producto. Tú decides qué se publica en tu tienda y puedes responder.</p>
+
+    <label class="rv-check">
+      <input type="checkbox" [checked]="settings.enabled" [disabled]="savingSettings"
+             (change)="saveSettings({ enabled: $any($event.target).checked })">
+      <span><strong>Mostrar opiniones en mi tienda y dejar opinar</strong>
+        <small>Apagado, la tienda no muestra opiniones ni el botón para opinar.</small></span>
+    </label>
+    <label class="rv-check">
+      <input type="checkbox" [checked]="settings.autoPublish" [disabled]="savingSettings || !settings.enabled"
+             (change)="saveSettings({ autoPublish: $any($event.target).checked })">
+      <span><strong>Publicar sin revisar</strong>
+        <small>Si no, cada opinión espera en «Por revisar» hasta que la publiques.</small></span>
+    </label>
+
+    <div class="rv-tabs" role="tablist">
+      <button type="button" role="tab" *ngFor="let t of tabs" [class.active]="tab === t.status" [attr.aria-selected]="tab === t.status"
+              (click)="selectTab(t.status)">
+        {{ t.label }} <span>{{ counts[t.status] }}</span>
+      </button>
+    </div>
+
+    <p class="rv-empty" *ngIf="loading && !reviews.length">Cargando…</p>
+    <p class="rv-empty" *ngIf="!loading && !reviews.length">
+      {{ tab === 'PENDING' ? 'No hay opiniones por revisar.' : tab === 'PUBLISHED' ? 'Aún no has publicado opiniones.' : 'No hay opiniones ocultas.' }}
+    </p>
+
+    <article class="rv-card" *ngFor="let r of reviews; trackBy: trackById" [class.rv-busy]="busy === r.id">
+      <header class="rv-card-head">
+        <span class="rv-stars" [attr.aria-label]="r.rating + ' de 5 estrellas'">{{ stars(r.rating) }}</span>
+        <strong class="rv-item">{{ r.itemName }}</strong>
+        <time [attr.datetime]="r.createdAt">{{ day(r.createdAt) }}</time>
+      </header>
+      <p class="rv-author">
+        {{ r.authorName }}
+        <ng-container *ngIf="r.authorPhone">
+          · <a *ngIf="whatsapp(r.authorPhone) as wa; else plainPhone" [href]="wa" target="_blank" rel="noopener">{{ r.authorPhone }}</a>
+          <ng-template #plainPhone>{{ r.authorPhone }}</ng-template>
+        </ng-container>
+      </p>
+      <p class="rv-comment">{{ r.comment }}</p>
+
+      <div class="rv-reply" *ngIf="r.reply && replying !== r.id">
+        <strong>Tu respuesta</strong>
+        <p>{{ r.reply }}</p>
+      </div>
+
+      <div class="rv-reply-form" *ngIf="replying === r.id">
+        <label class="rv-label" [for]="'rv-reply-' + r.id">Respuesta pública <small>({{ (replyDraft[r.id] || '').length }}/{{ limits.reply }})</small></label>
+        <textarea [id]="'rv-reply-' + r.id" rows="3" [maxlength]="limits.reply" [(ngModel)]="replyDraft[r.id]"
+                  placeholder="¡Gracias por tu opinión! …"></textarea>
+        <div class="rv-actions">
+          <button type="button" class="rv-btn" (click)="replying = ''" [disabled]="busy === r.id">Cancelar</button>
+          <button type="button" class="rv-btn rv-primary" (click)="saveReply(r)" [disabled]="busy === r.id">Guardar respuesta</button>
+        </div>
+      </div>
+
+      <div class="rv-actions" *ngIf="replying !== r.id">
+        <button type="button" class="rv-btn rv-primary" *ngIf="r.status !== 'PUBLISHED'" (click)="setStatus(r, 'PUBLISHED')" [disabled]="busy === r.id">Publicar</button>
+        <button type="button" class="rv-btn" *ngIf="r.status !== 'HIDDEN'" (click)="setStatus(r, 'HIDDEN')" [disabled]="busy === r.id">Ocultar</button>
+        <button type="button" class="rv-btn" (click)="startReply(r)" [disabled]="busy === r.id">{{ r.reply ? 'Editar respuesta' : 'Responder' }}</button>
+        <button type="button" class="rv-btn rv-danger" (click)="remove(r)" [disabled]="busy === r.id">Eliminar</button>
+      </div>
+    </article>
+  </div>
+</div>

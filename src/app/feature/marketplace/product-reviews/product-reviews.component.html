@@ -1,0 +1,71 @@
+<section class="pr" *ngIf="enabled" aria-labelledby="pr-title">
+  <div class="pr-head">
+    <h3 id="pr-title">⭐ Opiniones</h3>
+    <div class="pr-summary" *ngIf="summary.count; else noReviews">
+      <span class="pr-avg">{{ average(summary.average) }}</span>
+      <span class="pr-stars" [attr.aria-label]="summary.average + ' de 5 estrellas'">{{ stars(summary.average) }}</span>
+      <small>({{ summary.count }} {{ summary.count === 1 ? 'opinión' : 'opiniones' }})</small>
+    </div>
+    <ng-template #noReviews><small class="pr-muted">Aún no hay opiniones. ¡Sé la primera persona en opinar!</small></ng-template>
+  </div>
+
+  <p class="pr-sent" *ngIf="sentMessage" role="status">{{ sentMessage }}</p>
+
+  <button type="button" class="pr-open" *ngIf="!formOpen" (click)="openForm()">✍️ Dejar mi opinión</button>
+
+  <!-- Formulario -->
+  <form class="pr-form" *ngIf="formOpen" (ngSubmit)="send()" novalidate>
+    <fieldset class="pr-rate">
+      <legend>Tu calificación</legend>
+      <div class="pr-rate-stars" (mouseleave)="hoverRating = 0">
+        <button type="button" *ngFor="let n of scale"
+                [class.on]="n <= (hoverRating || draft.rating)"
+                (mouseenter)="hoverRating = n" (click)="setRating(n)"
+                [attr.aria-label]="n + (n === 1 ? ' estrella' : ' estrellas')" [attr.aria-pressed]="draft.rating === n">★</button>
+        <span class="pr-rate-word">{{ ratingWord(hoverRating || draft.rating) }}</span>
+      </div>
+    </fieldset>
+
+    <label class="pr-label" for="pr-name">Tu nombre</label>
+    <input id="pr-name" name="authorName" class="pr-input" type="text" autocomplete="name"
+           [maxlength]="limits.authorName" [(ngModel)]="draft.authorName" placeholder="Ej.: María Gómez">
+    <small class="pr-hint">En la tienda se verá solo tu nombre y la inicial de tu apellido.</small>
+
+    <label class="pr-label" for="pr-comment">Tu opinión o sugerencia <small>({{ draft.comment.length }}/{{ limits.comment }})</small></label>
+    <textarea id="pr-comment" name="comment" class="pr-input" rows="4" [maxlength]="limits.comment" [(ngModel)]="draft.comment"
+              placeholder="¿Qué te gustó? ¿Qué cambiarías? Talla, tela, largo, colores…"></textarea>
+
+    <label class="pr-label" for="pr-phone">Teléfono <small>(opcional)</small></label>
+    <input id="pr-phone" name="authorPhone" class="pr-input" type="tel" autocomplete="tel" inputmode="tel"
+           [maxlength]="limits.phone" [(ngModel)]="draft.authorPhone" placeholder="Para que la tienda te contacte">
+    <small class="pr-hint">No se publica: solo lo ve la tienda.</small>
+
+    <label class="pr-check">
+      <input type="checkbox" name="consentPublish" [(ngModel)]="draft.consentPublish">
+      <span>Acepto que mi nombre (nombre e inicial del apellido) y mi opinión se publiquen en esta tienda.</span>
+    </label>
+
+    <p class="pr-error" *ngIf="error" role="alert">{{ error }}</p>
+
+    <div class="pr-actions">
+      <button type="button" class="pr-cancel" (click)="cancel()" [disabled]="sending">Cancelar</button>
+      <button type="submit" class="pr-send" [disabled]="sending">{{ sending ? 'Enviando…' : 'Enviar opinión' }}</button>
+    </div>
+  </form>
+
+  <!-- Opiniones publicadas -->
+  <ul class="pr-list" *ngIf="reviews.length">
+    <li class="pr-item" *ngFor="let r of reviews; trackBy: trackById">
+      <div class="pr-item-head">
+        <span class="pr-stars" [attr.aria-label]="r.rating + ' de 5 estrellas'">{{ stars(r.rating) }}</span>
+        <strong>{{ r.author }}</strong>
+        <time [attr.datetime]="r.createdAt">{{ day(r.createdAt) }}</time>
+      </div>
+      <p class="pr-comment">{{ r.comment }}</p>
+      <div class="pr-reply" *ngIf="r.reply">
+        <strong>Respuesta de la tienda</strong>
+        <p>{{ r.reply }}</p>
+      </div>
+    </li>
+  </ul>
+</section>
