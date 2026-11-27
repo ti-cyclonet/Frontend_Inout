@@ -472,3 +472,22 @@
   --mk-sector: #1e3a5f; --mk-sector-soft: #e6ecf4; --mk-sector-ink: #1a3252;
   --mk-night-2: #e6e9f0; --mk-bg: #f6f7fa; --mk-surface: #fdfdff; --mk-border: #dde2ea; --mk-muted: #5f6672; --mk-muted-d: #5f6672;
 }
+/* ═══════════════════════ VITRINA CYCLONET MARKET (home) ═══════════════════════
+ * Colores planos y vivos, sin degradados. Casi todos los degradados van de
+ * --mk-orange a --mk-orange-d (o de azul a azul oscuro): con los dos extremos
+ * iguales quedan planos. Los textos y bordes con degradado pasan a color sólido.
+ * Solo en la vitrina ([data-home]); las tiendas conservan su estilo. */
+:host([data-home]) {
+  --mk-orange: #ff6a00;
+  --mk-orange-d: #ff6a00;
+  --mk-blue: #1f6bff;
+  --mk-blue-d: #1f6bff;
+  --mk-blue-l: #1f6bff;
+}
+:host([data-home]) :is(.brand .market, .mk-hero-title em, .mk-h2 em) {
+  background: none; -webkit-background-clip: border-box; background-clip: border-box;
+  -webkit-text-fill-color: currentColor; color: var(--mk-orange);
+}
+:host([data-home]) .gift-btn { background: #9333ea; box-shadow: none; }
+:host([data-home]) .offer-badge { background: var(--mk-orange); }
+:host([data-home]) .mk-footer { border-image: none; border-top: 3px solid var(--mk-orange); }

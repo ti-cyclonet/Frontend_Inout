@@ -683,7 +683,13 @@
 
         <div class="modal-actions">
           <span class="stock-tag" *ngIf="stockTag(selectedProduct!) as tag" [ngClass]="tag.cls">{{ tag.text }}</span>
-          <button class="btn-modal-cart" (click)="addToCart(selectedProduct!); closeProductDetails()">Agregar al Carrito</button>
+          <!-- En la vitrina (home) el pedido se hace en la tienda del producto: addToCart lleva allá -->
+          <button class="btn-modal-cart" (click)="addToCart(selectedProduct!); closeProductDetails()">
+            <ng-container *ngIf="tenantId === 'home'; else addLabel">
+              <svg class="mk-ico" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#shop"/></svg> Ir a la tienda
+            </ng-container>
+            <ng-template #addLabel>Agregar al Carrito</ng-template>
+          </button>
           <a class="btn-modal-contact" *ngIf="whatsappProducto(providerInfo?.whatsapp, selectedProduct) as wa"
              [href]="wa" target="_blank" rel="noopener" style="text-decoration: none; text-align: center;">
             Contactar por WhatsApp
