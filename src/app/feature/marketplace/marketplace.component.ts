@@ -30,6 +30,7 @@ import { ReviewsAdminComponent } from './product-reviews/reviews-admin.component
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraPriceLabel, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 import { GRID_THEMES, gridPaletteAttr, gridThemeAttr, isGridMode } from './grid-themes';
+import { ThemePalette, paletteFor, paletteLabel, palettesFor } from './theme-palettes';
 import { HomeSector, HomeStore, MarketHomeComponent } from './market-home/market-home.component';
 import { TenantBrandingService } from '../../shared/services/tenant-branding.service';
 import { StoreSchedule, isOpenAt, nextOpeningLabel, showsHours, todayStatus, weeklyHours } from './store-hours';
@@ -191,9 +192,10 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     return this.tenantId && !this.showMenuBoard ? gridThemeAttr(this.displayMode) : null;
   }
 
-  /** Paleta del tema Minorista (rosa, rojo o azul). */
+  /** Paleta: la del tema Minorista (rosa, rojo o azul) o la elegida para el tema (theme-palettes.ts). */
   @HostBinding('attr.data-palette') get paletteAttr(): string | null {
-    return this.tenantId && !this.showMenuBoard ? gridPaletteAttr(this.displayMode) : null;
+    if (!this.tenantId || this.showMenuBoard) return null;
+    return gridPaletteAttr(this.displayMode) || paletteFor(this.displayMode, this.palette);
   }
   tenantId: string = '';
   businessName: string = '';
@@ -288,6 +290,9 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   }
   /** Modo guardado de la tienda: para avisar si el elegido aún no se guarda. */
   savedDisplayMode = 'grid';
+  /** Paleta de colores del tema (theme-palettes.ts); null = la original. */
+  palette: string | null = null;
+  savedPalette: string | null = null;
   /** Vitrina CycloNet Market: la cuenta de CycloNet puede cambiarle el tema. */
   canEditHomeTheme = false;
   /** Acceso de administrador en la vitrina: sin sesión, revisando, permitido, sin permiso o sesión vencida. */
@@ -297,6 +302,8 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   savingHomeTheme = false;
   homeThemeSaved = 'grid';
   private previewMode: string | null = null;
+  /** Paleta de la vista previa (?color=), aún sin guardar. */
+  private previewPalette: string | null = null;
   /** WhatsApp y mensaje de bienvenida de la tienda (se muestran en el menú). */
   storeWhatsapp = '';
   storeWelcome = '';
@@ -591,6 +598,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       this.isAdminMode = queryParams['admin'] === 'true';
       // ?vista=menu-chalk: vista previa de un diseño sin guardarlo
       this.previewMode = isMenuMode(queryParams['vista']) || GRID_THEMES.some((t) => t.value === queryParams['vista']) ? queryParams['vista'] : null;
+      this.previewPalette = /^[a-z]{2,20}$/.test(queryParams['color'] || '') ? queryParams['color'] : null;
       if (this.isAdminMode) {
         this.checkAuthentication();
         this.loadCurrentSlug();
@@ -1008,7 +1016,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
         this.displayMode = configResponse.displayMode;
         this.savedDisplayMode = configResponse.displayMode;
       }
-      if (this.previewMode && !this.isAdminMode) this.displayMode = this.previewMode;
+      this.palette = this.savedPalette = configResponse?.palette || null;
+      if (this.previewMode && !this.isAdminMode) {
+        this.displayMode = this.previewMode;
+        this.palette = this.previewPalette;
+      }
       this.storeWhatsapp = configResponse?.whatsapp || '';
       this.storeWelcome = configResponse?.welcomeMessage || '';
       this.menuExtras = menuExtrasFrom(configResponse?.menuExtras);
@@ -1439,14 +1451,36 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   // ═══════ DISPLAY MODE ═══════
   setDisplayMode(mode: string): void {
+    // Cada tema tiene sus paletas: al cambiar de tema se empieza por la original
+    if (mode !== this.displayMode) this.palette = null;
     this.displayMode = mode;
+  }
+
+  /** Paletas del tema elegido (vacío si no tiene, p. ej. Minorista). */
+  get themePalettes(): ThemePalette[] {
+    return palettesFor(this.displayMode);
+  }
+
+  /** Paleta activa del selector (la original si no hay otra). */
+  get activePalette(): string {
+    return paletteFor(this.displayMode, this.palette) || this.themePalettes[0]?.value || '';
+  }
+
+  setPalette(value: string): void {
+    this.palette = paletteFor(this.displayMode, value);
+  }
+
+  /** Paleta del menú de restaurante (null = la original del diseño). */
+  get menuPalette(): string | null {
+    return paletteFor(this.displayMode, this.palette);
   }
 
   /** Abre la tienda pública con el diseño elegido, aún sin guardar. */
   previewDisplayMode(): void {
     if (typeof window === 'undefined') return;
     const store = this.savedSlug || this.tenantId;
-    window.open(`/marketplace/${store}?vista=${this.displayMode}`, '_blank', 'noopener');
+    const color = paletteFor(this.displayMode, this.palette);
+    window.open(`/marketplace/${store}?vista=${this.displayMode}${color ? '&color=' + color : ''}`, '_blank', 'noopener');
   }
 
   isMenuMode(): boolean {
@@ -1459,13 +1493,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
 
   /** El modo elegido es distinto del guardado (en la tienda pública aún no se ve). */
   get displayModeUnsaved(): boolean {
-    return this.displayMode !== this.savedDisplayMode;
+    return this.displayMode !== this.savedDisplayMode
+      || paletteFor(this.displayMode, this.palette) !== paletteFor(this.savedDisplayMode, this.savedPalette);
   }
 
   get displayModeLabel(): string {
+    const color = paletteFor(this.displayMode, this.palette) ? ` · ${paletteLabel(this.displayMode, this.palette)}` : '';
     const v = MENU_VARIANTS.find((m) => m.value === this.displayMode);
-    if (v) return `Menú · ${v.label}`;
-    return `Tarjetas · ${GRID_THEMES.find((t) => t.value === this.displayMode)?.label || 'Nocturno'}`;
+    if (v) return `Menú · ${v.label}${color}`;
+    return `Tarjetas · ${GRID_THEMES.find((t) => t.value === this.displayMode)?.label || 'Nocturno'}${color}`;
   }
 
   /** La tienda pública se muestra como menú de restaurante (vista completa). */
@@ -1501,9 +1537,12 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) return;
 
+    const palette = paletteFor(this.displayMode, this.palette);
     const payload = {
       tenantId: this.tenantId,
-      displayMode: this.displayMode
+      displayMode: this.displayMode,
+      // '' = la paleta original del tema
+      palette: palette || '',
     };
 
     this.http.post(`${this.baseUrl}/marketplace-config`, payload, {
@@ -1511,6 +1550,7 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.savedDisplayMode = this.displayMode;
+        this.savedPalette = palette;
         Swal.fire({
           icon: 'success',
           title: 'Modo de visualización guardado',
