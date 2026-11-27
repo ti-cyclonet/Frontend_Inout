@@ -25,6 +25,8 @@ import {
   allocateGiftCards, formatExpiry, giftCardOptionsFrom,
 } from './gift-cards/gift-cards';
 import { MenuExtrasSettingsComponent } from './menu-extras-settings/menu-extras-settings.component';
+import { ProductReviewsComponent } from './product-reviews/product-reviews.component';
+import { ReviewsAdminComponent } from './product-reviews/reviews-admin.component';
 import { EMPTY_MENU_EXTRAS, MenuExtras, extraPriceLabel, extraThumb, joinZones, menuExtrasFrom } from './menu-board/menu-extras';
 import { MENU_VARIANTS, MenuBoardComponent, isMenuMode } from './menu-board/menu-board.component';
 import { GRID_THEMES, gridPaletteAttr, gridThemeAttr, isGridMode } from './grid-themes';
@@ -167,7 +169,7 @@ interface MarketStats {
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, PayOnlineButtonComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent, DineInPickerComponent, TableBookingComponent],
+  imports: [CommonModule, RouterLink, FormsModule, PaymentVoucherUploadComponent, PayOnlineButtonComponent, MarketplaceSalesSettingsComponent, MenuBoardComponent, MenuExtrasSettingsComponent, GiftCardBuyComponent, MarketHomeComponent, DineInPickerComponent, TableBookingComponent, ProductReviewsComponent, ReviewsAdminComponent],
   templateUrl: './marketplace.component.html',
   styleUrls: ['./marketplace.component.css', './marketplace-store.css', './marketplace-checkout.css', './marketplace-themes.css']
 })
@@ -1830,6 +1832,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
     const dx = (ev.changedTouches[0]?.clientX ?? this.modalTouchX) - this.modalTouchX;
     this.modalTouchX = null;
     if (Math.abs(dx) > 40) this.goModalImage(this.modalImageIndex + (dx < 0 ? 1 : -1));
+  }
+
+  /** Tienda del ítem abierto en el detalle (para sus opiniones). */
+  get selectedProductTenant(): string | null {
+    return this.selectedProduct ? this.tenantDe(this.selectedProduct) : null;
   }
 
   /** Tienda a la que pertenece un ítem (los combos no traen strTenantId: son de la tienda abierta). */
