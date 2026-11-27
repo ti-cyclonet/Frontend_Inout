@@ -447,6 +447,19 @@
                   <span><strong>{{ v.label }}</strong><small>{{ v.hint }}</small></span>
                 </button>
               </div>
+              <!-- Colores del tema elegido: mismo diseño, otra paleta -->
+              <div class="theme-palettes" *ngIf="themePalettes.length" role="radiogroup" aria-label="Color del tema">
+                <span class="theme-palettes-label">Color</span>
+                <button type="button" class="palette-chip" *ngFor="let p of themePalettes"
+                        role="radio" [attr.aria-checked]="activePalette === p.value"
+                        [class.active]="activePalette === p.value" (click)="setPalette(p.value)" [title]="p.label">
+                  <i [style.background]="'linear-gradient(135deg, ' + p.swatch[0] + ' 0 50%, ' + p.swatch[1] + ' 50% 100%)'"></i>
+                  <span>{{ p.label }}</span>
+                </button>
+              </div>
+              <p class="theme-palettes-hint" *ngIf="themePalettes.length && isMenuMode()">
+                El menú se ve en tu tienda pública: usa <strong>Vista previa</strong> para ver el color antes de guardar.
+              </p>
             </div>
             </div>
 
@@ -464,6 +477,7 @@
       <button type="button" class="mk-book-fab" *ngIf="showMenuBoard && diningInfo" (click)="showTableBooking = true">🍽️ Reservar mesa</button>
       <app-menu-board *ngIf="showMenuBoard"
         [variant]="$any(displayMode)"
+        [palette]="menuPalette"
         [products]="filteredProducts"
         [businessName]="storeName"
         [logoUrl]="storeLogoUrl"

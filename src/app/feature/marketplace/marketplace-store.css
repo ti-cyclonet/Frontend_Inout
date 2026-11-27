@@ -54,7 +54,7 @@
 .cart-icon {
   position: relative; display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; cursor: pointer;
   color: #fff; font-size: 1.1rem; background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d));
-  box-shadow: 0 10px 26px -10px rgba(255, 122, 26, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.25); transition: transform 0.2s var(--mk-ease);
+  box-shadow: 0 10px 26px -10px color-mix(in srgb, var(--mk-orange) 85%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.25); transition: transform 0.2s var(--mk-ease);
 }
 .cart-icon:hover { transform: translateY(-1px); }
 .cart-count {
@@ -71,17 +71,17 @@
   background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); transition: background 0.2s, color 0.2s;
 }
 .category-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
-.category-btn.active { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 8px 22px -10px rgba(255, 122, 26, 0.9); }
+.category-btn.active { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--mk-orange) 90%, transparent); }
 
 /* ─── Hero ─── */
 .mk-hero {
   position: relative; isolation: isolate; overflow: hidden; color: var(--mk-ink-d);
-  background: radial-gradient(700px 420px at 92% 20%, rgba(255, 122, 26, 0.16), transparent 62%), var(--mk-night);
+  background: radial-gradient(700px 420px at 92% 20%, color-mix(in srgb, var(--mk-orange) 16%, transparent), transparent 62%), var(--mk-night);
   padding: clamp(2.2rem, 5vw, 4rem) 0 calc(clamp(2.2rem, 5vw, 4rem) + 40px);
 }
 .mk-hero-grid {
   position: absolute; inset: 0; z-index: -2;
-  background-image: linear-gradient(rgba(122, 168, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(122, 168, 255, 0.07) 1px, transparent 1px);
+  background-image: linear-gradient(color-mix(in srgb, var(--mk-blue-l) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--mk-blue-l) 7%, transparent) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse 80% 75% at 40% 40%, #000 30%, transparent 78%); -webkit-mask-image: radial-gradient(ellipse 80% 75% at 40% 40%, #000 30%, transparent 78%);
 }
@@ -105,7 +105,7 @@
   font: 600 0.95rem/1 var(--mk-font-b); text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform 0.25s var(--mk-ease), box-shadow 0.25s, background 0.25s;
 }
 .mk-btn:hover { transform: translateY(-2px); }
-.mk-btn--orange { color: #fff; background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 14px 34px -12px rgba(255, 122, 26, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.mk-btn--orange { color: #fff; background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 14px 34px -12px color-mix(in srgb, var(--mk-orange) 75%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
 .mk-btn--glass { color: #fff; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16); backdrop-filter: blur(10px); }
 .mk-btn--glass:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 .mk-pills { list-style: none; padding: 0; margin: 1.5rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -164,7 +164,7 @@
 .offers-section {
   max-width: 1200px; margin: 0 auto 2.2rem; padding: 1.4rem var(--mk-gutter) 1.2rem; position: relative;
 }
-.offers-section::before { content: ''; position: absolute; inset: 0 calc(var(--mk-gutter) - 0.9rem); z-index: -1; border-radius: var(--mk-radius-lg); background: radial-gradient(500px 220px at 100% 0%, rgba(255, 122, 26, 0.16), transparent 70%), #fff; box-shadow: inset 0 0 0 1px var(--mk-border); }
+.offers-section::before { content: ''; position: absolute; inset: 0 calc(var(--mk-gutter) - 0.9rem); z-index: -1; border-radius: var(--mk-radius-lg); background: radial-gradient(500px 220px at 100% 0%, color-mix(in srgb, var(--mk-orange) 16%, transparent), transparent 70%), #fff; box-shadow: inset 0 0 0 1px var(--mk-border); }
 .offers-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 0.6rem; }
 .offers-sub { margin: 0.35rem 0 0; font-size: 0.88rem; color: var(--mk-muted); }
 .offers-all { border: none; background: transparent; color: var(--mk-sector-ink); font-weight: 700; font-size: 0.88rem; cursor: pointer; white-space: nowrap; }
@@ -237,10 +237,10 @@
 .product-actions-modern { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; }
 .btn-add-cart {
   flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.62rem 0.8rem; border-radius: 999px; font-size: 0.84rem; white-space: nowrap;
-  background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 10px 22px -12px rgba(255, 122, 26, 0.9);
+  background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--mk-orange) 90%, transparent);
 }
 .btn-details { border: none; background: transparent; color: var(--mk-muted); padding: 0.45rem 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 999px; white-space: nowrap; }
-.btn-details:hover { color: var(--mk-blue-d); background: rgba(47, 123, 255, 0.08); }
+.btn-details:hover { color: var(--mk-blue-d); background: color-mix(in srgb, var(--mk-blue) 8%, transparent); }
 .no-products-modern { text-align: center; padding: 3rem 1rem; color: var(--mk-muted); }
 .empty-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
 .no-products-modern h3 { font: 700 1.05rem var(--mk-font-d); color: var(--mk-text); margin: 0 0 0.25rem; }
@@ -248,7 +248,7 @@
 /* ─── Pie ─── */
 .mk-footer {
   position: static; width: auto; margin: 3.5rem 0 0; padding: 2rem var(--mk-gutter) 6rem; text-align: center; color: var(--mk-muted-d);
-  background: radial-gradient(600px 200px at 50% 0%, rgba(47, 123, 255, 0.18), transparent 70%), var(--mk-night);
+  background: radial-gradient(600px 200px at 50% 0%, color-mix(in srgb, var(--mk-blue) 18%, transparent), transparent 70%), var(--mk-night);
   border-top: 1px solid transparent; border-image: linear-gradient(90deg, transparent, var(--mk-blue), var(--mk-orange), transparent) 1;
 }
 .mk-footer a { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--mk-ink-d); font-size: 0.82rem; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 999px; background: #fff1; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
@@ -260,7 +260,7 @@
 .floating-cart {
   position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 950; color: #fff; border-radius: 999px; padding: 0.8rem 1.5rem;
   font-weight: 600; font-size: 0.9rem; cursor: pointer; white-space: nowrap;
-  background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 16px 36px -12px rgba(255, 122, 26, 0.85);
+  background: linear-gradient(135deg, var(--mk-orange), var(--mk-orange-d)); box-shadow: 0 16px 36px -12px color-mix(in srgb, var(--mk-orange) 85%, transparent);
 }
 
 /* ─── Responsive ─── */

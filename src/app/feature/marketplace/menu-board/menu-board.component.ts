@@ -36,10 +36,12 @@ interface MenuSection {
   imports: [CommonModule],
   templateUrl: './menu-board.component.html',
   styleUrls: ['./menu-board.component.css'],
-  host: { '[attr.data-variant]': 'variant' },
+  host: { '[attr.data-variant]': 'variant', '[attr.data-palette]': 'palette' },
 })
 export class MenuBoardComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() variant: MenuVariant = 'menu';
+  /** Paleta de colores del diseño (theme-palettes.ts); null = la original. */
+  @Input() palette: string | null = null;
   @Input() products: any[] = [];
   @Input() businessName = '';
   /** Logo del negocio (opcional), sobre el título del menú. */
