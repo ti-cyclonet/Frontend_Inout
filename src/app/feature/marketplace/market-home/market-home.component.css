@@ -69,7 +69,9 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
 .mh-slide--welcome .mh-title em { color: #111316; }
 .mh-slide--welcome .mh-lead, .mh-slide--product .mh-lead { color: rgba(255, 255, 255, 0.88); }
 .mh-slide--welcome .mh-facts, .mh-slide--welcome .mh-facts b { color: #fff; }
-.mh-slide--product .mh-price { color: #fff; }
+/* Dos colores de texto, como la bienvenida: blanco + negro en el azul, blanco + naranja en la tienda */
+.mh-slide--product .mh-title em, .mh-slide--product .mh-price { color: #111316; }
+.mh-slide--store .mh-title em { color: var(--h-accent); }
 
 .mh-kicker { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 0.9rem; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--h-accent); }
 .mh-title { margin: 0; font-family: var(--mk-font-d, 'Sora', 'Inter', sans-serif); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; font-size: clamp(2rem, 4.4vw, 3.4rem); color: inherit; }

@@ -48,7 +48,7 @@
               <ng-container *ngIf="$any(sl).store as st">
                 <div class="mh-slide-copy">
                   <p class="mh-kicker"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#star-fill"/></svg> Tienda destacada</p>
-                  <h2 class="mh-title">{{ st.name }}</h2>
+                  <h2 class="mh-title" *ngIf="titleParts(st.name) as t">{{ t[0] }} <em *ngIf="t[1]">{{ t[1] }}</em></h2>
                   <p class="mh-lead">{{ st.sectorLabel }} · {{ st.count }} producto{{ st.count === 1 ? '' : 's' }} para pedir en línea.</p>
                   <button type="button" class="mh-btn" (click)="store.emit(st)" [tabindex]="i === slideIndex ? 0 : -1">
                     Visitar tienda <svg viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons/bootstrap-icons.svg#arrow-right"/></svg>
@@ -69,7 +69,7 @@
               <ng-container *ngIf="$any(sl).item as it">
                 <div class="mh-slide-copy">
                   <p class="mh-kicker">El más pedido</p>
-                  <h2 class="mh-title">{{ it.strName }}</h2>
+                  <h2 class="mh-title" *ngIf="titleParts(it.strName) as t">{{ t[0] }} <em *ngIf="t[1]">{{ t[1] }}</em></h2>
                   <p class="mh-price">{{ money(it.fltPrice) }}</p>
                   <p class="mh-lead" *ngIf="$any(sl).storeName">En {{ $any(sl).storeName }}</p>
                   <button type="button" class="mh-btn" (click)="product.emit(it)" [tabindex]="i === slideIndex ? 0 : -1">

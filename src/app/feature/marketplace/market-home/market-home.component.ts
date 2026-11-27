@@ -131,6 +131,18 @@ export class MarketHomeComponent implements OnInit, OnChanges, OnDestroy {
     return [...list.filter((p) => p.image), ...list.filter((p) => !p.image)].slice(0, 8);
   }
 
+  /**
+   * Título en dos colores (como "Lo mejor de los negocios / de tu ciudad."):
+   * la primera mitad de las palabras y el resto. "Arepa combinada" →
+   * ["Arepa", "combinada"]; una sola palabra queda entera en la primera parte.
+   */
+  titleParts(text: string): [string, string] {
+    const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+    if (words.length < 2) return [words.join(' '), ''];
+    const cut = Math.ceil(words.length / 2);
+    return [words.slice(0, cut).join(' '), words.slice(cut).join(' ')];
+  }
+
   storeNameOf(p: HomeItem): string | null {
     return this.stores.find((s) => s.tenantId === p.strTenantId)?.name || null;
   }
