@@ -841,12 +841,15 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
       }))
       .sort((a, b) => Number(b.promoted) - Number(a.promoted) || b.count - a.count);
     const counts = new Map<string, number>();
+    // Foto de cada sector (círculos de la portada): la del primer producto con foto
+    const images = new Map<string, string>();
     for (const p of this.products) {
       const cat = this.categoryOf(p);
       if (cat && cat !== 'all') counts.set(cat, (counts.get(cat) || 0) + 1);
+      if (cat && cat !== 'all' && p.image && !images.has(cat)) images.set(cat, p.image);
     }
     this.homeSectors = [...counts.entries()]
-      .map(([value, count]) => ({ value, label: labels.get(value) || 'Otros', count }))
+      .map(([value, count]) => ({ value, label: labels.get(value) || 'Otros', count, image: images.get(value) || null }))
       .sort((a, b) => b.count - a.count);
   }
 
