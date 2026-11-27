@@ -11,7 +11,9 @@
   --h-line: #e8e6e1;
   --h-soft: #f5f4f0;
   --h-paper: #ffffff;
-  --h-accent: var(--mk-orange-d, #e85f00);
+  /* Colores planos y vivos (sin degradados): naranja, azul y negro */
+  --h-accent: var(--mk-orange, #ff6a00);
+  --h-blue: var(--mk-blue, #1f6bff);
   --h-radius: 18px;
   --h-max: 1240px;
   display: block;
@@ -49,7 +51,8 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
 
 /* ─── Banner principal ─── */
 /* El banner no lleva el relleno lateral de las demás secciones: va recortado con bordes redondeados */
-.mh > .mh-banner { position: relative; overflow: hidden; border-radius: var(--h-radius); padding: 0; max-width: calc(var(--h-max) - 2 * var(--mk-gutter, 20px)); }
+/* clip (no hidden): el banner nunca se desplaza de lado si algo de una diapositiva oculta toma el foco */
+.mh > .mh-banner { position: relative; overflow: hidden; overflow: clip; border-radius: var(--h-radius); padding: 0; max-width: calc(var(--h-max) - 2 * var(--mk-gutter, 20px)); }
 @media (max-width: 1290px) { .mh > .mh-banner { margin-left: var(--mk-gutter, 20px); margin-right: var(--mk-gutter, 20px); } }
 .mh-track { display: flex; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 .mh-slide {
@@ -58,8 +61,15 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
   padding: clamp(1.8rem, 4.5vw, 3.4rem) clamp(1.5rem, 5vw, 4rem);
   background: var(--h-soft); color: var(--h-ink);
 }
-.mh-slide--store { background: #17191d; color: #fff; }
-.mh-slide--product { background: linear-gradient(120deg, var(--h-soft) 0 55%, color-mix(in srgb, var(--h-accent) 10%, var(--h-soft)) 55%); }
+/* Cada diapositiva con un color plano y vivo: bienvenida naranja, tienda negra, producto azul */
+.mh-slide--welcome { background: var(--h-accent); color: #fff; }
+.mh-slide--store { background: #111316; color: #fff; }
+.mh-slide--product { background: var(--h-blue); color: #fff; }
+.mh-slide--welcome .mh-kicker, .mh-slide--product .mh-kicker { color: #fff; opacity: 0.9; }
+.mh-slide--welcome .mh-title em { color: #111316; }
+.mh-slide--welcome .mh-lead, .mh-slide--product .mh-lead { color: rgba(255, 255, 255, 0.88); }
+.mh-slide--welcome .mh-facts, .mh-slide--welcome .mh-facts b { color: #fff; }
+.mh-slide--product .mh-price { color: #fff; }
 
 .mh-kicker { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 0.9rem; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--h-accent); }
 .mh-title { margin: 0; font-family: var(--mk-font-d, 'Sora', 'Inter', sans-serif); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; font-size: clamp(2rem, 4.4vw, 3.4rem); color: inherit; }
@@ -84,7 +94,8 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
 
 .mh-btn { display: inline-flex; align-items: center; gap: 0.55rem; margin-top: 1.6rem; border: 0; border-radius: 999px; padding: 0.85rem 1.5rem; background: var(--h-accent); color: #fff; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: gap 0.2s ease, filter 0.2s ease; }
 .mh-btn:hover { gap: 0.8rem; filter: brightness(0.95); }
-.mh-slide--product .mh-btn { background: var(--h-ink); }
+.mh-slide--product .mh-btn { background: #fff; color: var(--h-blue); }
+.mh-slide--product .mh-btn:hover { filter: none; background: #111316; color: #fff; }
 
 /* Mosaico de la bienvenida */
 .mh-mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.8rem; height: clamp(240px, 30vw, 340px); }
@@ -113,15 +124,15 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
 .mh-arrow--prev { left: 0.8rem; }
 .mh-arrow--next { right: 0.8rem; }
 .mh-dots { position: absolute; left: 50%; bottom: 0.9rem; transform: translateX(-50%); display: flex; gap: 0.4rem; }
-.mh-dots button { width: 8px; height: 8px; border-radius: 999px; border: 0; padding: 0; background: rgba(0, 0, 0, 0.22); cursor: pointer; transition: width 0.3s ease, background 0.3s ease; }
-.mh-dots button.on { width: 26px; background: var(--h-accent); }
-.mh-banner--dark .mh-dots button:not(.on) { background: rgba(255, 255, 255, 0.35); }
+/* Todas las diapositivas son de color: puntos blancos */
+.mh-dots button { width: 8px; height: 8px; border-radius: 999px; border: 0; padding: 0; background: rgba(255, 255, 255, 0.45); cursor: pointer; transition: width 0.3s ease, background 0.3s ease; }
+.mh-dots button.on { width: 26px; background: #fff; }
 
 /* ─── Beneficios ─── */
 .mh-benefits { list-style: none; margin-top: 1.4rem; margin-bottom: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
 .mh-benefits li { display: flex; align-items: center; gap: 0.8rem; padding: 1rem 1.1rem; border-top: 1px solid var(--h-line); border-bottom: 1px solid var(--h-line); }
 .mh-benefits li + li { border-left: 1px solid var(--h-line); }
-.mh-benefits svg { font-size: 1.5rem; color: var(--h-ink); }
+.mh-benefits svg { font-size: 1.5rem; color: var(--h-accent); }
 .mh-benefits span { display: flex; flex-direction: column; min-width: 0; }
 .mh-benefits strong { font-size: 0.88rem; font-weight: 600; color: var(--h-ink); }
 .mh-benefits small { font-size: 0.76rem; color: var(--h-muted); line-height: 1.35; }
@@ -139,7 +150,7 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
 /* La foto va en posición absoluta: así una foto vertical no estira la tarjeta (el marco manda) */
 .mh-store-cover { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--h-soft); }
 .mh-store-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.mh-store-badge { position: absolute; top: 0.7rem; left: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 999px; background: var(--h-ink); color: #fff; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; }
+.mh-store-badge { position: absolute; top: 0.7rem; left: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 999px; background: var(--h-accent); color: #fff; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; }
 .mh-store-body { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; }
 .mh-store-logo { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--h-soft); box-shadow: inset 0 0 0 1px var(--h-line); font: 700 1.05rem var(--mk-font-d, sans-serif); }
 .mh-store-logo img { width: 100%; height: 100%; object-fit: cover; }
@@ -167,14 +178,15 @@ svg { width: 1em; height: 1em; fill: currentColor; flex-shrink: 0; }
 .mh-cta {
   max-width: var(--h-max); margin: clamp(2rem, 5vw, 3.5rem) auto; padding: clamp(1.8rem, 4vw, 2.8rem) clamp(1.5rem, 4vw, 3rem);
   box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem 2rem;
-  border-radius: var(--h-radius); background: #17191d; color: #fff;
+  border-radius: var(--h-radius); background: var(--h-blue); color: #fff;
 }
+.mh-cta .mh-kicker { color: #fff; opacity: 0.85; }
 @media (max-width: 1290px) { .mh-cta { margin-left: var(--mk-gutter, 20px); margin-right: var(--mk-gutter, 20px); } }
 .mh-cta-copy { max-width: 38rem; }
 .mh-cta h2 { margin: 0; font: 700 clamp(1.4rem, 2.8vw, 2rem)/1.15 var(--mk-font-d, 'Sora', sans-serif); letter-spacing: -0.02em; }
-.mh-cta p:last-child { margin: 0.6rem 0 0; color: rgba(255, 255, 255, 0.7); line-height: 1.55; }
-.mh-cta-btn { display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.85rem 1.5rem; border-radius: 999px; background: #fff; color: #17191d; font-weight: 600; text-decoration: none; transition: gap 0.2s ease; }
-.mh-cta-btn:hover { gap: 0.8rem; color: #17191d; }
+.mh-cta p:last-child { margin: 0.6rem 0 0; color: rgba(255, 255, 255, 0.88); line-height: 1.55; }
+.mh-cta-btn { display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.85rem 1.5rem; border-radius: 999px; background: #fff; color: var(--h-blue); font-weight: 700; text-decoration: none; transition: gap 0.2s ease; }
+.mh-cta-btn:hover { gap: 0.8rem; color: var(--h-blue); }
 
 /* ─── Responsive ─── */
 @media (max-width: 900px) {

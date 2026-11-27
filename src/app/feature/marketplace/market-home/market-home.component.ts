@@ -157,7 +157,8 @@ export class MarketHomeComponent implements OnInit, OnChanges, OnDestroy {
     if (this.reduced) return;
     this.zone.runOutsideAngular(() => {
       this.timer = setInterval(() => {
-        if (this.paused || this.slides.length < 2) return;
+        // Sin avanzar con el mouse encima, con una sola diapositiva o con la pestaña en segundo plano
+        if (this.paused || this.slides.length < 2 || (typeof document !== 'undefined' && document.hidden)) return;
         this.zone.run(() => {
           this.slideIndex = (this.slideIndex + 1) % this.slides.length;
           this.cdr.markForCheck();

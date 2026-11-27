@@ -182,6 +182,11 @@ export class MarketplaceComponent implements OnInit, OnDestroy {
   /** Tema de la vista de tarjetas (marketplace-themes.css). En la vitrina de
    *  CycloNet Market (home) es el que elige la cuenta de CycloNet; los
    *  diseños de menú conservan su propio estilo. */
+  /** Vitrina CycloNet Market: colores planos y vivos, sin degradados (marketplace-themes.css). */
+  @HostBinding('attr.data-home') get homeAttr(): string | null {
+    return this.tenantId === 'home' ? '' : null;
+  }
+
   @HostBinding('attr.data-theme') get themeAttr(): string | null {
     return this.tenantId && !this.showMenuBoard ? gridThemeAttr(this.displayMode) : null;
   }
