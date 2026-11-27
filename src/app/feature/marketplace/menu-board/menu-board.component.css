@@ -18,6 +18,14 @@
   --mb-line: #fed7aa;
   --mb-price: #c2410c;
   --mb-shadow: 0 14px 30px -18px rgba(124, 45, 18, 0.45);
+  /* Póster: manchas de las esquinas, sombra del título de sección y botón del carrito */
+  --mb-blob-1: rgba(234, 88, 12, 0.92);
+  --mb-blob-2: rgba(194, 65, 12, 0.85);
+  --mb-blob-3: rgba(253, 186, 116, 0.5);
+  --mb-section-shadow: #7c2d12;
+  --mb-add-glow: rgba(194, 65, 12, 0.9);
+  --mb-cart-from: #f97316;
+  --mb-cart-to: #c2410c;
   --mb-title-font: 'Pacifico', 'Brush Script MT', cursive;
   --mb-head-font: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
   --mb-body-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -73,9 +81,9 @@
 /* Póster: manchas de color en las esquinas, como el fondo de un menú impreso */
 :host([data-variant="menu"]) .mb-page {
   background:
-    radial-gradient(circle at 0% 0%, rgba(234, 88, 12, 0.92) 0 90px, transparent 91px),
-    radial-gradient(ellipse at 100% 0%, rgba(194, 65, 12, 0.85) 0 110px, transparent 111px),
-    radial-gradient(ellipse at 100% 100%, rgba(253, 186, 116, 0.5) 0 150px, transparent 151px),
+    radial-gradient(circle at 0% 0%, var(--mb-blob-1) 0 90px, transparent 91px),
+    radial-gradient(ellipse at 100% 0%, var(--mb-blob-2) 0 110px, transparent 111px),
+    radial-gradient(ellipse at 100% 100%, var(--mb-blob-3) 0 150px, transparent 151px),
     var(--mb-bg);
 }
 /* Pizarra: textura de tiza y marco de madera */
@@ -89,8 +97,8 @@
 }
 /* Elegante: filete dorado */
 :host([data-variant="menu-clean"]) .mb-page {
-  background: radial-gradient(600px 300px at 50% 0%, rgba(201, 169, 110, 0.1), transparent 70%), var(--mb-bg);
-  box-shadow: inset 0 0 0 1px var(--mb-line), inset 0 0 0 7px var(--mb-bg), inset 0 0 0 8px rgba(201, 169, 110, 0.18);
+  background: radial-gradient(600px 300px at 50% 0%, var(--mb-soft), transparent 70%), var(--mb-bg);
+  box-shadow: inset 0 0 0 1px var(--mb-line), inset 0 0 0 7px var(--mb-bg), inset 0 0 0 8px color-mix(in srgb, var(--mb-accent) 18%, transparent);
 }
 
 /* ─── Encabezado ─── */
@@ -177,7 +185,7 @@
   background: var(--mb-accent); color: var(--mb-accent-ink); border-radius: 14px 14px 14px 4px;
   box-shadow: 3px 3px 0 var(--mb-accent-2);
 }
-:host([data-variant="menu"]) .mb-section-title span { box-shadow: 4px 4px 0 #7c2d12; }
+:host([data-variant="menu"]) .mb-section-title span { box-shadow: 4px 4px 0 var(--mb-section-shadow); }
 :host([data-variant="menu-chalk"]) .mb-section-title span { background: var(--mb-bg); color: var(--mb-accent); box-shadow: none; text-transform: none; font-size: 2.2rem; }
 :host([data-variant="menu-clean"]) .mb-section-title { text-align: center; }
 :host([data-variant="menu-clean"]) .mb-section-title span { background: var(--mb-bg); color: var(--mb-accent); box-shadow: none; font-size: 1.3rem; letter-spacing: 0.2em; font-weight: 500; padding: 0.15rem 1.4rem; }
@@ -230,7 +238,7 @@
   padding: 0.45rem 0.95rem; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: transform 0.15s, filter 0.15s; white-space: nowrap;
 }
 .mb-add span { font-size: 1.05em; line-height: 1; }
-:host([data-variant="menu"]) .mb-add { box-shadow: 0 8px 18px -10px rgba(194, 65, 12, 0.9); }
+:host([data-variant="menu"]) .mb-add { box-shadow: 0 8px 18px -10px var(--mb-add-glow); }
 :host([data-variant="menu-clean"]) .mb-add { background: transparent; color: var(--mb-accent); box-shadow: inset 0 0 0 1px var(--mb-accent); border-radius: 2px; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.72rem; font-weight: 600; }
 :host([data-variant="menu-clean"]) .mb-add:hover:not(:disabled) { background: var(--mb-accent); color: var(--mb-accent-ink); }
 .mb-add:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
@@ -288,7 +296,7 @@
   border: none; border-radius: 999px; padding: 0.75rem 1.25rem; cursor: pointer;
   background: var(--mb-accent-2); color: var(--mb-accent-ink); box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.45); font-size: 0.95rem;
 }
-:host([data-variant="menu"]) .mb-cartbar button { background: linear-gradient(135deg, #f97316, #c2410c); }
+:host([data-variant="menu"]) .mb-cartbar button { background: linear-gradient(135deg, var(--mb-cart-from), var(--mb-cart-to)); }
 :host([data-variant="menu-clean"]) .mb-cartbar button { border-radius: 4px; letter-spacing: 0.04em; }
 .mb-cartbar-count { min-width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgba(255, 255, 255, 0.25); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
 :host([data-variant="menu-chalk"]) .mb-cartbar-count, :host([data-variant="menu-clean"]) .mb-cartbar-count { background: rgba(0, 0, 0, 0.15); }
@@ -313,8 +321,8 @@
   .mb-cards { grid-template-columns: 1fr; }
   :host([data-variant="menu"]) .mb-page {
     background:
-      radial-gradient(circle at 0% 0%, rgba(234, 88, 12, 0.92) 0 55px, transparent 56px),
-      radial-gradient(circle at 100% 0%, rgba(194, 65, 12, 0.85) 0 60px, transparent 61px),
+      radial-gradient(circle at 0% 0%, var(--mb-blob-1) 0 55px, transparent 56px),
+      radial-gradient(circle at 100% 0%, var(--mb-blob-2) 0 60px, transparent 61px),
       var(--mb-bg);
   }
 }
@@ -325,3 +333,58 @@
 
 /* Adición con precio: lo que suma al plato */
 .mb-bubble-price { font-size: 0.75rem; font-weight: 700; color: var(--mb-accent-2, var(--mb-ink)); font-variant-numeric: tabular-nums; }
+
+/* ═══════════ Paletas de color (theme-palettes.ts) ═══════════
+ * Cada diseño trae su paleta original (sin data-palette) y al menos dos más.
+ * Solo cambian los colores: la forma y la letra son las del diseño. */
+
+/* Póster · Rojo */
+:host([data-variant="menu"][data-palette="rojo"]) {
+  --mb-bg: #fef2f2; --mb-ink: #3f0d0d; --mb-muted: #7f2d2d;
+  --mb-accent: #dc2626; --mb-accent-2: #b91c1c; --mb-soft: #fee2e2; --mb-line: #fecaca; --mb-price: #b91c1c;
+  --mb-shadow: 0 14px 30px -18px rgba(127, 29, 29, 0.45);
+  --mb-blob-1: rgba(220, 38, 38, 0.9); --mb-blob-2: rgba(153, 27, 27, 0.85); --mb-blob-3: rgba(252, 165, 165, 0.5);
+  --mb-section-shadow: #7f1d1d; --mb-add-glow: rgba(185, 28, 28, 0.9); --mb-cart-from: #ef4444; --mb-cart-to: #b91c1c;
+}
+/* Póster · Verde */
+:host([data-variant="menu"][data-palette="verde"]) {
+  --mb-bg: #f0fdf4; --mb-ink: #0f2e1c; --mb-muted: #3f6a4f;
+  --mb-accent: #16a34a; --mb-accent-2: #15803d; --mb-soft: #dcfce7; --mb-line: #bbf7d0; --mb-price: #15803d;
+  --mb-shadow: 0 14px 30px -18px rgba(20, 83, 45, 0.45);
+  --mb-blob-1: rgba(22, 163, 74, 0.9); --mb-blob-2: rgba(21, 128, 61, 0.85); --mb-blob-3: rgba(134, 239, 172, 0.5);
+  --mb-section-shadow: #14532d; --mb-add-glow: rgba(21, 128, 61, 0.9); --mb-cart-from: #22c55e; --mb-cart-to: #15803d;
+}
+/* Póster · Azul */
+:host([data-variant="menu"][data-palette="azul"]) {
+  --mb-bg: #eff6ff; --mb-ink: #0f1f3d; --mb-muted: #3b5480;
+  --mb-accent: #2563eb; --mb-accent-2: #1d4ed8; --mb-soft: #dbeafe; --mb-line: #bfdbfe; --mb-price: #1d4ed8;
+  --mb-shadow: 0 14px 30px -18px rgba(30, 58, 138, 0.45);
+  --mb-blob-1: rgba(37, 99, 235, 0.9); --mb-blob-2: rgba(30, 64, 175, 0.85); --mb-blob-3: rgba(147, 197, 253, 0.5);
+  --mb-section-shadow: #1e3a8a; --mb-add-glow: rgba(29, 78, 216, 0.9); --mb-cart-from: #3b82f6; --mb-cart-to: #1d4ed8;
+}
+
+/* Pizarra · Negra (tiza blanca y rosada) */
+:host([data-variant="menu-chalk"][data-palette="negra"]) {
+  --mb-bg: #1d1f22; --mb-paper: #26292d; --mb-ink: #f4f4f2; --mb-muted: #c7c7c2;
+  --mb-accent: #f9a8d4; --mb-accent-2: #f9a8d4; --mb-accent-ink: #1d1f22;
+  --mb-soft: rgba(249, 168, 212, 0.14); --mb-line: rgba(244, 244, 242, 0.3); --mb-price: #f9a8d4;
+}
+/* Pizarra · Azul (tiza celeste) */
+:host([data-variant="menu-chalk"][data-palette="azul"]) {
+  --mb-bg: #18273a; --mb-paper: #1f3247; --mb-ink: #eef6fb; --mb-muted: #bcd0de;
+  --mb-accent: #a5f3fc; --mb-accent-2: #a5f3fc; --mb-accent-ink: #18273a;
+  --mb-soft: rgba(165, 243, 252, 0.14); --mb-line: rgba(238, 246, 251, 0.3); --mb-price: #a5f3fc;
+}
+
+/* Elegante · Negro y plata */
+:host([data-variant="menu-clean"][data-palette="plata"]) {
+  --mb-bg: #0f1115; --mb-paper: #171a20; --mb-ink: #eceff3; --mb-muted: #9aa3ae;
+  --mb-accent: #c5ccd6; --mb-accent-2: #c5ccd6; --mb-accent-ink: #0f1115;
+  --mb-soft: rgba(197, 204, 214, 0.1); --mb-line: rgba(197, 204, 214, 0.32); --mb-price: #dfe4ea;
+}
+/* Elegante · Vino y oro rosa */
+:host([data-variant="menu-clean"][data-palette="vino"]) {
+  --mb-bg: #1a0b10; --mb-paper: #241016; --mb-ink: #f3e6e3; --mb-muted: #b59a98;
+  --mb-accent: #e0a98c; --mb-accent-2: #e0a98c; --mb-accent-ink: #1a0b10;
+  --mb-soft: rgba(224, 169, 140, 0.1); --mb-line: rgba(224, 169, 140, 0.32); --mb-price: #e0a98c;
+}
